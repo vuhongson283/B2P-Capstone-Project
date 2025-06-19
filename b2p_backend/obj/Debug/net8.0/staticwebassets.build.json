@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "htGyjbuQup0Jc4tzE3e8yLoFJGD2qFoYNUcWxM+cflg=",
+  "Source": "b2p_backend",
+  "BasePath": "_content/b2p_backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

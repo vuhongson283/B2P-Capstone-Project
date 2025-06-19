@@ -1,0 +1,6 @@
+@b2p_backend_HostAddress = http://localhost:5087
+
+GET {{b2p_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
