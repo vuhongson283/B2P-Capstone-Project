@@ -1,0 +1,27 @@
+# Build results
+bin/
+obj/
+*.exe
+*.dll
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# Rider/JetBrains
+.idea/
+
+# ASP.NET
+project.lock.json
+project.fragment.lock.json
+
+# Others
+*.vsidx
+*.pdb
+*.dbmdl
+*.bak
+*.orig
+*.tmp
