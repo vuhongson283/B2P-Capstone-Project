@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("B2P_API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a85dc76e5bb5c000e5342faf0ab91261a7d51cc2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+650ce49ae1dc7603163110e43f03671abded6036")]
 [assembly: System.Reflection.AssemblyProductAttribute("B2P_API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("B2P_API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
