@@ -22,7 +22,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
+<<<<<<< HEAD
+          "SelectedChildIndex": 7,
+=======
           "SelectedChildIndex": 9,
+>>>>>>> SangNN
           "Children": [
             {
               "$type": "Bookmark",
@@ -54,12 +58,14 @@
             },
             {
               "$type": "Document",
+<<<<<<< HEAD
+=======
               "DocumentIndex": 2,
               "Title": "PagedResponse.cs",
               "DocumentMoniker": "C:\\Users\\nguye\\OneDrive\\M\u00E1y t\u00EDnh\\B2P\\B2P_API\\B2P_API\\Response\\PagedResponse.cs",
               "RelativeDocumentMoniker": "B2P_API\\Response\\PagedResponse.cs",
-              "ToolTip": "C:\\Users\\nguye\\OneDrive\\M\u00E1y t\u00EDnh\\B2P\\B2P_API\\B2P_API\\Response\\PagedResponse.cs*",
-              "RelativeToolTip": "B2P_API\\Response\\PagedResponse.cs*",
+              "ToolTip": "C:\\Users\\nguye\\OneDrive\\M\u00E1y t\u00EDnh\\B2P\\B2P_API\\B2P_API\\Response\\PagedResponse.cs",
+              "RelativeToolTip": "B2P_API\\Response\\PagedResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-20T08:17:51.491Z",
@@ -80,13 +86,14 @@
             },
             {
               "$type": "Document",
+>>>>>>> SangNN
               "DocumentIndex": 0,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\nguye\\OneDrive\\M\u00E1y t\u00EDnh\\B2P\\B2P_API\\B2P_API\\appsettings.json",
               "RelativeDocumentMoniker": "B2P_API\\appsettings.json",
               "ToolTip": "C:\\Users\\nguye\\OneDrive\\M\u00E1y t\u00EDnh\\B2P\\B2P_API\\B2P_API\\appsettings.json",
               "RelativeToolTip": "B2P_API\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAABDAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-06-20T05:23:45.448Z",
               "EditorCaption": ""
