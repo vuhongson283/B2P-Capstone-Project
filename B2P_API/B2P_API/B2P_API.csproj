@@ -20,11 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\" />
     <Folder Include="Interface\" />
     <Folder Include="Map\" />
-    <Folder Include="Services\" />
-    <Folder Include="Repository\" />
   </ItemGroup>
 
   <ItemGroup>
