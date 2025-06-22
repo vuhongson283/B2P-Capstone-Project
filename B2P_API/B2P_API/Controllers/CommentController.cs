@@ -64,30 +64,20 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetByUserId(
-    int userId,
-    [FromQuery] int page = 1,
-    [FromQuery] int size = 10,
-    [FromQuery] string sortBy = "PostAt",
-    [FromQuery] string sortDir = "desc")
+        public async Task<IActionResult> GetByUserId(int userId, [FromQuery] CommentQueryParameters queryParams)
         {
-            var result = await _service.GetByUserIdAsync(userId, page, size, sortBy, sortDir);
+            var result = await _service.GetByUserIdAsync(userId, queryParams);
             return StatusCode(result.Status, result);
         }
 
+
         [HttpGet]
-        public async Task<IActionResult> GetAll(
-    [FromQuery] int page = 1,
-    [FromQuery] int size = 10,
-    [FromQuery] string sortBy = "postAt",
-    [FromQuery] string sortDir = "desc",
-    [FromQuery] int? userId = null,
-    [FromQuery] int? blogId = null,
-    [FromQuery] bool? hasParent = null)
+        public async Task<IActionResult> GetAll([FromQuery] CommentQueryParameters queryParams)
         {
-            var result = await _service.GetAllAsync(page, size, sortBy, sortDir, userId, blogId, hasParent);
+            var result = await _service.GetAllAsync(queryParams);
             return StatusCode(result.Status, result);
         }
+
 
 
     }

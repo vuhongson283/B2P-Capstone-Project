@@ -20,7 +20,7 @@ public class BlogController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] BlogQueryParameters query)
     {
-        var response = await _blogService.GetPagedAsync(query);
+        var response = await _blogService.GetAllAsync(query);
         return StatusCode(response.Status, response);
     }
 
@@ -79,16 +79,12 @@ public class BlogController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetByUserId(
-    int userId,
-    [FromQuery] int page = 1,
-    [FromQuery] int size = 10,
-    [FromQuery] string sortBy = "postAt",
-    [FromQuery] string sortDir = "desc")
+    public async Task<IActionResult> GetByUserId(int userId, [FromQuery] BlogQueryParameters queryParams)
     {
-        var result = await _blogService.GetByUserIdAsync(userId, page, size, sortBy, sortDir);
+        var result = await _blogService.GetByUserIdAsync(userId, queryParams);
         return StatusCode(result.Status, result);
     }
+
 
 
 }

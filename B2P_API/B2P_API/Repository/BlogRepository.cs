@@ -1,6 +1,6 @@
-﻿using B2P_API.Models;
+﻿using B2P_API.DTOs;
+using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
-
 namespace B2P_API.Repositories;
 
 public class BlogRepository
@@ -12,10 +12,7 @@ public class BlogRepository
         _context = context;
     }
 
-    public async Task<List<Blog>> GetAllAsync()
-    {
-        return await _context.Blogs.Include(b => b.User).ToListAsync();
-    }
+  
 
     public IQueryable<Blog> GetAllWithRelated()
     {
@@ -67,28 +64,93 @@ public class BlogRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<(List<Blog>, int)> GetByUserIdAsync(int userId, int page, int size, string sortBy, string sortDir)
+    
+
+    public async Task<List<Blog>> GetAllAsync(BlogQueryParameters queryParams)
     {
         var query = _context.Blogs
-            .Include(b => b.User)
+            .Include(b => b.Comments)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(queryParams.Search))
+        {
+            query = query.Where(b => b.Title.Contains(queryParams.Search) || b.Content.Contains(queryParams.Search));
+        }
+
+        // Sắp xếp
+        query = queryParams.SortBy?.ToLower() switch
+        {
+            "commenttime" => queryParams.SortDirection.ToLower() == "asc"
+                ? query.OrderBy(b => b.Comments.Max(c => c.PostAt))
+                : query.OrderByDescending(b => b.Comments.Max(c => c.PostAt)),
+
+            _ => queryParams.SortDirection.ToLower() == "asc"
+                ? query.OrderBy(b => b.PostAt)
+                : query.OrderByDescending(b => b.PostAt)
+        };
+
+        // Phân trang
+        return await query
+            .Skip((queryParams.Page - 1) * queryParams.PageSize)
+            .Take(queryParams.PageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> CountAsync(string? search)
+    {
+        var query = _context.Blogs.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(b => b.Title.Contains(search) || b.Content.Contains(search));
+        }
+
+        return await query.CountAsync();
+    }
+
+    public async Task<List<Blog>> GetByUserIdAsync(int userId, BlogQueryParameters queryParams)
+    {
+        var query = _context.Blogs
             .Include(b => b.Comments)
             .Where(b => b.UserId == userId);
 
-        var totalItems = await query.CountAsync();
-
-        query = sortBy.ToLower() switch
+        if (!string.IsNullOrWhiteSpace(queryParams.Search))
         {
-            "updatedat" => sortDir == "asc" ? query.OrderBy(b => b.UpdatedAt) : query.OrderByDescending(b => b.UpdatedAt),
-            _ => sortDir == "asc" ? query.OrderBy(b => b.PostAt) : query.OrderByDescending(b => b.PostAt)
+            query = query.Where(b =>
+                b.Title.Contains(queryParams.Search) ||
+                b.Content.Contains(queryParams.Search));
+        }
+
+        query = queryParams.SortBy?.ToLower() switch
+        {
+            "commenttime" => queryParams.SortDirection.ToLower() == "asc"
+                ? query.OrderBy(b => b.Comments.Max(c => c.PostAt))
+                : query.OrderByDescending(b => b.Comments.Max(c => c.PostAt)),
+
+            _ => queryParams.SortDirection.ToLower() == "asc"
+                ? query.OrderBy(b => b.PostAt)
+                : query.OrderByDescending(b => b.PostAt)
         };
 
-        var result = await query
-            .Skip((page - 1) * size)
-            .Take(size)
+        return await query
+            .Skip((queryParams.Page - 1) * queryParams.PageSize)
+            .Take(queryParams.PageSize)
             .ToListAsync();
-
-        return (result, totalItems);
     }
+
+    public async Task<int> CountByUserIdAsync(int userId, string? search)
+    {
+        var query = _context.Blogs.Where(b => b.UserId == userId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(b => b.Title.Contains(search) || b.Content.Contains(search));
+        }
+
+        return await query.CountAsync();
+    }
+
+
 
 
 }

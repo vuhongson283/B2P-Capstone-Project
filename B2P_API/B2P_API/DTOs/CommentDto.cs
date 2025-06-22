@@ -44,4 +44,16 @@ namespace B2P_API.DTOs
         public string? UserName { get; set; } // nếu cần hiện tên người dùng
     }
 
+    public class CommentQueryParameters
+    {
+        public string? Search { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+
+        // Sắp xếp theo thời gian đăng (postAt) hoặc chỉnh sửa (updatedAt)
+        public string SortBy { get; set; } = "postAt";
+        public string SortDirection { get; set; } = "desc"; // asc | desc
+    }
+
+
 }

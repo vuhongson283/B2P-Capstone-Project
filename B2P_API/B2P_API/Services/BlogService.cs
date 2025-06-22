@@ -17,10 +17,109 @@ public class BlogService
         _context = context;
     }
 
-    public async Task<List<Blog>> GetAllAsync()
+    public async Task<ApiResponse<PagedResponse<BlogResponseDto>>> GetAllAsync(BlogQueryParameters queryParams)
     {
-        return await _repository.GetAllAsync();
+        // 1. Validate page và size
+        if (queryParams.Page <= 0 || queryParams.PageSize <= 0)
+        {
+            return new ApiResponse<PagedResponse<BlogResponseDto>>
+            {
+                Success = false,
+                Message = "Số trang và kích thước mỗi trang phải lớn hơn 0.",
+                Status = 400
+            };
+        }
+
+        // 2. Validate sortBy
+        var validSortBy = new[] { "postat", "commenttime" };
+        if (!validSortBy.Contains(queryParams.SortBy?.ToLower()))
+        {
+            return new ApiResponse<PagedResponse<BlogResponseDto>>
+            {
+                Success = false,
+                Message = "Trường sortBy không hợp lệ. Hỗ trợ: postAt, commentTime.",
+                Status = 400
+            };
+        }
+
+        // 3. Validate sortDirection
+        var dir = queryParams.SortDirection?.ToLower();
+        if (dir != "asc" && dir != "desc")
+        {
+            return new ApiResponse<PagedResponse<BlogResponseDto>>
+            {
+                Success = false,
+                Message = "Trường sortDirection phải là 'asc' hoặc 'desc'.",
+                Status = 400
+            };
+        }
+
+        // 4. Lấy tổng số item
+        var totalItems = await _repository.CountAsync(queryParams.Search);
+        var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
+
+        if (totalPages > 0 && queryParams.Page > totalPages)
+        {
+            return new ApiResponse<PagedResponse<BlogResponseDto>>
+            {
+                Success = false,
+                Message = $"Số trang không hợp lệ. Tổng số trang là {totalPages}.",
+                Status = 400
+            };
+        }
+
+        // 5. Lấy dữ liệu từ repository
+        var blogs = await _repository.GetAllAsync(queryParams);
+
+        if (!blogs.Any())
+        {
+            return new ApiResponse<PagedResponse<BlogResponseDto>>
+            {
+                Success = true,
+                Message = "Không có blog nào phù hợp.",
+                Status = 200,
+                Data = new PagedResponse<BlogResponseDto>
+                {
+                    CurrentPage = queryParams.Page,
+                    ItemsPerPage = queryParams.PageSize,
+                    TotalItems = 0,
+                    TotalPages = 0,
+                    Items = new List<BlogResponseDto>()
+                }
+            };
+        }
+
+        // 6. Mapping
+        var blogDtos = blogs.Select(b => new BlogResponseDto
+        {
+            BlogId = b.BlogId,
+            UserId = b.UserId ?? 0,
+            Title = b.Title,
+            Content = b.Content,
+            PostAt = b.PostAt,
+            UpdatedAt = b.UpdatedAt,
+            TotalComments = b.Comments.Count
+        });
+
+        // 7. Response
+        var response = new PagedResponse<BlogResponseDto>
+        {
+            CurrentPage = queryParams.Page,
+            ItemsPerPage = queryParams.PageSize,
+            TotalItems = totalItems,
+            TotalPages = totalPages,
+            Items = blogDtos
+        };
+
+        return new ApiResponse<PagedResponse<BlogResponseDto>>
+        {
+            Success = true,
+            Message = "Lấy danh sách blog thành công.",
+            Status = 200,
+            Data = response
+        };
     }
+
 
     public async Task<ApiResponse<PagedResponse<BlogResponseDto>>> GetPagedAsync(BlogQueryParameters query)
     {
@@ -297,43 +396,31 @@ public class BlogService
         };
     }
 
-    public async Task<ApiResponse<PagedResponse<BlogResponseDto>>> GetByUserIdAsync(int userId, int page, int size, string sortBy, string sortDir)
+    public async Task<ApiResponse<PagedResponse<BlogResponseDto>>> GetByUserIdAsync(int userId, BlogQueryParameters queryParams)
     {
-        var validSort = new[] { "postat", "updatedat" };
-        if (!validSort.Contains(sortBy.ToLower()))
-        {
-            return new ApiResponse<PagedResponse<BlogResponseDto>>
-            {
-                Success = false,
-                Message = "Trường sortBy không hợp lệ.",
-                Status = 400
-            };
-        }
+        // Validate như GetAll
+        if (queryParams.Page <= 0 || queryParams.PageSize <= 0)
+            return new ApiResponse<PagedResponse<BlogResponseDto>> { Success = false, Message = "Page/Size không hợp lệ", Status = 400 };
 
-        var (blogs, totalItems) = await _repository.GetByUserIdAsync(userId, page, size, sortBy, sortDir);
+        var validSortBy = new[] { "postat", "commenttime" };
+        if (!validSortBy.Contains(queryParams.SortBy?.ToLower()))
+            return new ApiResponse<PagedResponse<BlogResponseDto>> { Success = false, Message = "SortBy không hợp lệ", Status = 400 };
 
-        if (totalItems == 0)
-        {
-            return new ApiResponse<PagedResponse<BlogResponseDto>>
-            {
-                Success = false,
-                Message = "Người dùng này chưa có blog nào.",
-                Status = 404
-            };
-        }
+        var dir = queryParams.SortDirection?.ToLower();
+        if (dir != "asc" && dir != "desc")
+            return new ApiResponse<PagedResponse<BlogResponseDto>> { Success = false, Message = "SortDirection không hợp lệ", Status = 400 };
 
-        var totalPages = (int)Math.Ceiling((double)totalItems / size);
-        if (page > totalPages)
-        {
-            return new ApiResponse<PagedResponse<BlogResponseDto>>
-            {
-                Success = false,
-                Message = "Số trang vượt quá tổng số trang.",
-                Status = 400
-            };
-        }
+        // Get count
+        var totalItems = await _repository.CountByUserIdAsync(userId, queryParams.Search);
+        var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
 
-        var items = blogs.Select(b => new BlogResponseDto
+        if (totalPages > 0 && queryParams.Page > totalPages)
+            return new ApiResponse<PagedResponse<BlogResponseDto>> { Success = false, Message = $"Số trang vượt quá tổng số trang ({totalPages}).", Status = 400 };
+
+        // Get data
+        var blogs = await _repository.GetByUserIdAsync(userId, queryParams);
+
+        var blogDtos = blogs.Select(b => new BlogResponseDto
         {
             BlogId = b.BlogId,
             UserId = b.UserId ?? 0,
@@ -341,24 +428,26 @@ public class BlogService
             Content = b.Content,
             PostAt = b.PostAt,
             UpdatedAt = b.UpdatedAt,
-            TotalComments = b.Comments?.Count ?? 0
+            TotalComments = b.Comments.Count
         });
 
+        var response = new PagedResponse<BlogResponseDto>
+        {
+            CurrentPage = queryParams.Page,
+            ItemsPerPage = queryParams.PageSize,
+            TotalItems = totalItems,
+            TotalPages = totalPages,
+            Items = blogDtos
+        };
 
         return new ApiResponse<PagedResponse<BlogResponseDto>>
         {
             Success = true,
-            Message = "Lấy danh sách blog theo người dùng thành công.",
+            Message = "Lấy blog theo UserId thành công.",
             Status = 200,
-            Data = new PagedResponse<BlogResponseDto>
-            {
-                CurrentPage = page,
-                ItemsPerPage = size,
-                TotalItems = totalItems,
-                TotalPages = totalPages,
-                Items = items
-            }
+            Data = response
         };
     }
+
 
 }

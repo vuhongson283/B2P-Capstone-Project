@@ -1,6 +1,7 @@
 ﻿using B2P_API.Models;
 using System;
 using Microsoft.EntityFrameworkCore;
+using B2P_API.DTOs;
 
 
 namespace B2P_API.Repository
@@ -61,67 +62,104 @@ namespace B2P_API.Repository
         }
 
 
-        public async Task<(List<Comment>, int)> GetByUserIdAsync(int userId, int page, int size, string sortBy, string sortDir)
+        public async Task<List<Comment>> GetByUserIdAsync(int userId, CommentQueryParameters queryParams)
         {
             var query = _context.Comments
                 .Include(c => c.Blog)
+                .Include(c => c.ParentComment)
                 .Where(c => c.UserId == userId);
 
-            // Tổng số comment
-            var totalItems = await query.CountAsync();
+            if (!string.IsNullOrWhiteSpace(queryParams.Search))
+            {
+                query = query.Where(c =>
+                    c.Content!.Contains(queryParams.Search) ||
+                    c.Blog!.Title!.Contains(queryParams.Search));
+            }
 
             // Sắp xếp
-            query = sortBy.ToLower() switch
+            query = queryParams.SortBy.ToLower() switch
             {
-                "updatedat" => sortDir == "desc" ? query.OrderByDescending(c => c.UpdatedAt) : query.OrderBy(c => c.UpdatedAt),
-                _ => sortDir == "desc" ? query.OrderByDescending(c => c.PostAt) : query.OrderBy(c => c.PostAt)
+                "updatedat" => queryParams.SortDirection.ToLower() == "asc"
+                    ? query.OrderBy(c => c.UpdatedAt)
+                    : query.OrderByDescending(c => c.UpdatedAt),
+
+                _ => queryParams.SortDirection.ToLower() == "asc"
+                    ? query.OrderBy(c => c.PostAt)
+                    : query.OrderByDescending(c => c.PostAt)
             };
 
-            var items = await query
-                .Skip((page - 1) * size)
-                .Take(size)
+            return await query
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
                 .ToListAsync();
-
-            return (items, totalItems);
         }
 
-        public async Task<(List<Comment>, int)> GetAllAsync(
-    int page, int size, string sortBy, string sortDir,
-    int? userId, int? blogId, bool? hasParent)
+        public async Task<int> CountByUserIdAsync(int userId, string? keyword)
+        {
+            var query = _context.Comments.Where(c => c.UserId == userId);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(c => c.Content!.Contains(keyword));
+            }
+
+            return await query.CountAsync();
+        }
+
+
+        public async Task<List<Comment>> GetAllAsync(CommentQueryParameters queryParams)
         {
             var query = _context.Comments
                 .Include(c => c.Blog)
+                .Include(c => c.User)
+                .Include(c => c.ParentComment)
                 .AsQueryable();
 
-            if (userId.HasValue)
-                query = query.Where(c => c.UserId == userId.Value);
-
-            if (blogId.HasValue)
-                query = query.Where(c => c.BlogId == blogId.Value);
-
-            if (hasParent.HasValue)
+            if (!string.IsNullOrWhiteSpace(queryParams.Search))
             {
-                if (hasParent.Value)
-                    query = query.Where(c => c.ParentCommentId != null);
-                else
-                    query = query.Where(c => c.ParentCommentId == null);
+                var keyword = queryParams.Search.ToLower();
+                query = query.Where(c =>
+                    c.Content!.ToLower().Contains(keyword) ||
+                    c.Blog!.Title!.ToLower().Contains(keyword) ||
+                    c.User!.Username!.ToLower().Contains(keyword));
             }
 
-            var totalItems = await query.CountAsync();
-
-            query = sortBy.ToLower() switch
+            query = queryParams.SortBy.ToLower() switch
             {
-                "updatedat" => sortDir == "asc" ? query.OrderBy(c => c.UpdatedAt) : query.OrderByDescending(c => c.UpdatedAt),
-                _ => sortDir == "asc" ? query.OrderBy(c => c.PostAt) : query.OrderByDescending(c => c.PostAt)
+                "updatedat" => queryParams.SortDirection.ToLower() == "asc"
+                    ? query.OrderBy(c => c.UpdatedAt)
+                    : query.OrderByDescending(c => c.UpdatedAt),
+
+                _ => queryParams.SortDirection.ToLower() == "asc"
+                    ? query.OrderBy(c => c.PostAt)
+                    : query.OrderByDescending(c => c.PostAt)
             };
 
-            var result = await query
-                .Skip((page - 1) * size)
-                .Take(size)
+            return await query
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
                 .ToListAsync();
-
-            return (result, totalItems);
         }
+
+        public async Task<int> CountAllAsync(string? search)
+        {
+            var query = _context.Comments.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var keyword = search.ToLower();
+                query = query
+                    .Include(c => c.Blog)
+                    .Include(c => c.User)
+                    .Where(c =>
+                        c.Content!.ToLower().Contains(keyword) ||
+                        c.Blog!.Title!.ToLower().Contains(keyword) ||
+                        c.User!.Username!.ToLower().Contains(keyword));
+            }
+
+            return await query.CountAsync();
+        }
+
 
     }
 

@@ -151,133 +151,153 @@ namespace B2P_API.Services
             };
         }
 
-        public async Task<ApiResponse<PagedResponse<CommentResponseDto>>> GetByUserIdAsync(int userId, int page, int size, string sortBy, string sortDir)
+        public async Task<ApiResponse<PagedResponse<CommentResponseDto>>> GetByUserIdAsync(int userId, CommentQueryParameters queryParams)
         {
+            if (queryParams.Page <= 0 || queryParams.PageSize <= 0)
+            {
+                return new ApiResponse<PagedResponse<CommentResponseDto>>
+                {
+                    Success = false,
+                    Message = "Giá trị 'page' và 'pageSize' phải lớn hơn 0.",
+                    Status = 400
+                };
+            }
+
             var validSortBy = new[] { "postat", "updatedat" };
-            if (!validSortBy.Contains(sortBy.ToLower()))
+            if (!validSortBy.Contains(queryParams.SortBy.ToLower()))
             {
                 return new ApiResponse<PagedResponse<CommentResponseDto>>
                 {
                     Success = false,
-                    Message = $"Trường sortBy không hợp lệ. Chỉ cho phép: {string.Join(", ", validSortBy)}",
+                    Message = "Trường 'sortBy' không hợp lệ. Chỉ chấp nhận: 'postAt', 'updatedAt'.",
                     Status = 400
                 };
             }
 
-            var (comments, totalItems) = await _repository.GetByUserIdAsync(userId, page, size, sortBy, sortDir);
-
-            if (totalItems == 0)
+            if (queryParams.SortDirection.ToLower() != "asc" && queryParams.SortDirection.ToLower() != "desc")
             {
                 return new ApiResponse<PagedResponse<CommentResponseDto>>
                 {
                     Success = false,
-                    Message = "Người dùng này chưa có comment nào.",
-                    Status = 404
-                };
-            }
-
-            var totalPages = (int)Math.Ceiling((double)totalItems / size);
-            if (page > totalPages)
-            {
-                return new ApiResponse<PagedResponse<CommentResponseDto>>
-                {
-                    Success = false,
-                    Message = "Số trang vượt quá tổng số trang.",
+                    Message = "Trường 'sortDirection' phải là 'asc' hoặc 'desc'.",
                     Status = 400
                 };
             }
 
-            var items = comments.Select(c => new CommentResponseDto
+            var totalItems = await _repository.CountByUserIdAsync(userId, queryParams.Search);
+            var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
+
+            if (totalPages > 0 && queryParams.Page > totalPages)
+            {
+                return new ApiResponse<PagedResponse<CommentResponseDto>>
+                {
+                    Success = false,
+                    Message = $"Số trang vượt quá tổng số trang hiện có ({totalPages}).",
+                    Status = 400
+                };
+            }
+
+            var comments = await _repository.GetByUserIdAsync(userId, queryParams);
+
+            var commentDtos = comments.Select(c => new CommentResponseDto
             {
                 CommentId = c.CommentId,
                 BlogId = c.BlogId ?? 0,
-                BlogTitle = c.Blog?.Title ?? "",
+                BlogTitle = c.Blog?.Title ?? "(Không có tiêu đề)",
                 Content = c.Content ?? "",
                 PostAt = c.PostAt,
                 UpdatedAt = c.UpdatedAt,
                 ParentCommentId = c.ParentCommentId
             });
 
+            var response = new PagedResponse<CommentResponseDto>
+            {
+                CurrentPage = queryParams.Page,
+                ItemsPerPage = queryParams.PageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = commentDtos
+            };
+
             return new ApiResponse<PagedResponse<CommentResponseDto>>
             {
                 Success = true,
-                Message = "Lấy danh sách comment thành công.",
+                Message = "Lấy bình luận theo UserId thành công.",
                 Status = 200,
-                Data = new PagedResponse<CommentResponseDto>
-                {
-                    CurrentPage = page,
-                    ItemsPerPage = size,
-                    TotalItems = totalItems,
-                    TotalPages = totalPages,
-                    Items = items
-                }
+                Data = response
             };
         }
 
-        public async Task<ApiResponse<PagedResponse<CommentResponseDto>>> GetAllAsync(
-    int page, int size, string sortBy, string sortDir,
-    int? userId, int? blogId, bool? hasParent)
+
+        public async Task<ApiResponse<PagedResponse<CommentResponseDto>>> GetAllAsync(CommentQueryParameters queryParams)
         {
-            var validSort = new[] { "postat", "updatedat" };
-            if (!validSort.Contains(sortBy.ToLower()))
-            {
+            if (queryParams.Page <= 0 || queryParams.PageSize <= 0)
                 return new ApiResponse<PagedResponse<CommentResponseDto>>
                 {
                     Success = false,
-                    Message = "sortBy không hợp lệ.",
+                    Message = "Giá trị 'page' và 'pageSize' phải lớn hơn 0.",
                     Status = 400
                 };
-            }
 
-            var (comments, totalItems) = await _repository.GetAllAsync(page, size, sortBy, sortDir, userId, blogId, hasParent);
-
-            if (totalItems == 0)
-            {
+            var validSortBy = new[] { "postat", "updatedat" };
+            if (!validSortBy.Contains(queryParams.SortBy.ToLower()))
                 return new ApiResponse<PagedResponse<CommentResponseDto>>
                 {
                     Success = false,
-                    Message = "Không có comment nào.",
-                    Status = 404
-                };
-            }
-
-            var totalPages = (int)Math.Ceiling((double)totalItems / size);
-            if (page > totalPages)
-            {
-                return new ApiResponse<PagedResponse<CommentResponseDto>>
-                {
-                    Success = false,
-                    Message = "Số trang vượt quá tổng số trang.",
+                    Message = "Trường 'sortBy' không hợp lệ. Chỉ chấp nhận: 'postAt', 'updatedAt'.",
                     Status = 400
                 };
-            }
 
-            var items = comments.Select(c => new CommentResponseDto
+            if (queryParams.SortDirection.ToLower() != "asc" && queryParams.SortDirection.ToLower() != "desc")
+                return new ApiResponse<PagedResponse<CommentResponseDto>>
+                {
+                    Success = false,
+                    Message = "Trường 'sortDirection' phải là 'asc' hoặc 'desc'.",
+                    Status = 400
+                };
+
+            var totalItems = await _repository.CountAllAsync(queryParams.Search);
+            var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
+
+            if (totalPages > 0 && queryParams.Page > totalPages)
+                return new ApiResponse<PagedResponse<CommentResponseDto>>
+                {
+                    Success = false,
+                    Message = $"Số trang vượt quá tổng số trang hiện có ({totalPages}).",
+                    Status = 400
+                };
+
+            var comments = await _repository.GetAllAsync(queryParams);
+
+            var commentDtos = comments.Select(c => new CommentResponseDto
             {
                 CommentId = c.CommentId,
                 BlogId = c.BlogId ?? 0,
-                BlogTitle = c.Blog?.Title ?? "",
+                BlogTitle = c.Blog?.Title ?? "(Không có tiêu đề)",
                 Content = c.Content ?? "",
                 PostAt = c.PostAt,
                 UpdatedAt = c.UpdatedAt,
                 ParentCommentId = c.ParentCommentId
             });
 
+            var response = new PagedResponse<CommentResponseDto>
+            {
+                CurrentPage = queryParams.Page,
+                ItemsPerPage = queryParams.PageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = commentDtos
+            };
+
             return new ApiResponse<PagedResponse<CommentResponseDto>>
             {
                 Success = true,
-                Message = "Lấy danh sách comment thành công.",
+                Message = "Lấy danh sách bình luận thành công.",
                 Status = 200,
-                Data = new PagedResponse<CommentResponseDto>
-                {
-                    CurrentPage = page,
-                    ItemsPerPage = size,
-                    TotalItems = totalItems,
-                    TotalPages = totalPages,
-                    Items = items
-                }
+                Data = response
             };
         }
+
 
     }
 
