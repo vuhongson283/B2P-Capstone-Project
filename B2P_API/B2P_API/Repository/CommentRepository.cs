@@ -45,9 +45,21 @@ namespace B2P_API.Repository
 
         public async Task DeleteAsync(Comment comment)
         {
+            // Xóa các comment con (reply) trước
+            var replies = await _context.Comments
+                .Where(c => c.ParentCommentId == comment.CommentId)
+                .ToListAsync();
+
+            if (replies.Any())
+            {
+                _context.Comments.RemoveRange(replies);
+            }
+
+            // Sau đó xóa comment cha
             _context.Comments.Remove(comment);
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<(List<Comment>, int)> GetByUserIdAsync(int userId, int page, int size, string sortBy, string sortDir)
         {

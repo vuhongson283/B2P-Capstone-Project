@@ -150,6 +150,7 @@ public partial class SportBookingDbContext : DbContext
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Comment__ParentC__7C4F7684");
 
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
