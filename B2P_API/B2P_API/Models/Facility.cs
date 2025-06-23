@@ -15,6 +15,8 @@ public partial class Facility
 
     public string? Contact { get; set; }
 
+    public string FacilityName { get; set; } = null!;
+
     public virtual ICollection<Court> Courts { get; set; } = new List<Court>();
 
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
