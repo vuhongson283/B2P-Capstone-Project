@@ -17,7 +17,7 @@ public partial class Court
 
     public decimal? PricePerHour { get; set; }
 
-    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
 
     public virtual CourtCategory? Category { get; set; }
 
