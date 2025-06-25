@@ -174,3 +174,5 @@ D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\obj\Debug\net8.0\stat
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\BCrypt.Net-Next.dll
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.Bcl.Memory.dll
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\Twilio.dll
+D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\AutoMapper.dll
+D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
