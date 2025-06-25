@@ -15,6 +15,8 @@ public partial class TimeSlot
 
     public TimeOnly? EndTime { get; set; }
 
+    public decimal? Discount { get; set; }
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual Facility? Facility { get; set; }
