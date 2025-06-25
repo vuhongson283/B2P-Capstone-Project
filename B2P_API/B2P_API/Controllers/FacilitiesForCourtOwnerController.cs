@@ -6,16 +6,16 @@ namespace B2P_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FacilitiesController : ControllerBase
+    public class FacilitiesForCourtOwnerController : ControllerBase
     {
         private readonly IFacilityService _facilityService;
 
-        public FacilitiesController(IFacilityService facilityService)
+        public FacilitiesForCourtOwnerController(IFacilityService facilityService)
         {
             _facilityService = facilityService;
         }
 
-        [HttpGet("facilities/{userId}")]
+        [HttpGet("/{userId}")]
         public async Task<IActionResult> GetFacilitiesByUser(
         int userId,
         [FromQuery] string? facilityName = null,
