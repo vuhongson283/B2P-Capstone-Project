@@ -121,7 +121,7 @@ namespace B2P_API.Repository
                 query = query.Where(c =>
                     c.Content!.ToLower().Contains(keyword) ||
                     c.Blog!.Title!.ToLower().Contains(keyword) ||
-                    c.User!.Username!.ToLower().Contains(keyword));
+                    c.User!.FullName!.ToLower().Contains(keyword));
             }
 
             query = queryParams.SortBy.ToLower() switch
@@ -154,7 +154,7 @@ namespace B2P_API.Repository
                     .Where(c =>
                         c.Content!.ToLower().Contains(keyword) ||
                         c.Blog!.Title!.ToLower().Contains(keyword) ||
-                        c.User!.Username!.ToLower().Contains(keyword));
+                        c.User!.FullName!.ToLower().Contains(keyword));
             }
 
             return await query.CountAsync();
