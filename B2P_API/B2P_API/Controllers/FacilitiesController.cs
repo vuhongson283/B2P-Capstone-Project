@@ -16,11 +16,10 @@ namespace B2P_API.Controllers
         {
             _facilityService = facilityService;
         }
-        [HttpPost("search")]
-        public async Task<IActionResult> SearchFacilities([FromBody] SearchFormRequest request, int pageNumber = 1, int pageSize = 10)
+        [HttpPost("get-all-facility-by-player")]
+        public async Task<IActionResult> GetAllFacilitiesByPlayer([FromBody] SearchFormRequest request, int pageNumber = 1, int pageSize = 10)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var response = await _facilityService.SearchFacilities(request, pageNumber, pageSize);
+            var response = await _facilityService.GetAllFacilitiesByPlayer(request, pageNumber, pageSize);
             if (!response.Success)
             {
                 return StatusCode(response.Status, response.Message);

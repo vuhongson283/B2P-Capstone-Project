@@ -13,6 +13,13 @@ namespace B2P_API.Repository
             _context = context;
         }
 
+        public async Task<User?> CheckEmailExistedByUserId(int userId, string email)
+        {
+            return await _context.Users
+            .Where(u => u.UserId != userId && u.Email == email)
+            .FirstOrDefaultAsync();
+        }
+
         public async Task<User?> CheckPhoneExistedByUserId(int userId, string phone)
         {
             return await _context.Users
@@ -29,30 +36,50 @@ namespace B2P_API.Repository
 
         public async Task<User?> GetUserByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync(x=>x.Email.Equals(email));
+            return await _context.Users.FirstOrDefaultAsync(x => x.Email.Equals(email));
         }
 
         public async Task<User?> GetUserByIdAsync(int userId)
         {
             return await _context.Users
                 .Include(u => u.BankAccount).ThenInclude(u => u.BankType)
-                .Include(u => u.Status).Include(u=>u.Images)
+                .Include(u => u.Status).Include(u => u.Images)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
+        }
+
+        public async Task<User?> GetUserByPhoneAsync(string phone)
+        {
+            return await _context.Users.FirstOrDefaultAsync(x => x.Phone.Equals(phone));
         }
 
         public async Task<bool> UpdateAvatar(Image image)
         {
-            _context.Images.Update(image);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                _context.Images.Update(image);
+                await _context.SaveChangesAsync();
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         public async Task<bool> UpdateUserAsync(User user)
         {
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
-    }
 
+    }
 }

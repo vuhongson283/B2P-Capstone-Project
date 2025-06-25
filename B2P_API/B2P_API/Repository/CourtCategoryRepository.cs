@@ -11,12 +11,22 @@ namespace B2P_API.Repository
         {
             _context = context;
         }
-        public Task<bool> AddCourtCategoryAsync(CourtCategory courtCategory)
+        public async Task<bool> AddCourtCategoryAsync(CourtCategory courtCategory)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _context.CourtCategories.Add(courtCategory);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        public Task<bool> DeleteCourtCategoryAsync(int id)
+
+        public Task<bool> DeleteCourtCategoryAsync(int? id)
         {
             throw new NotImplementedException();
         }
@@ -26,14 +36,24 @@ namespace B2P_API.Repository
             return await _context.CourtCategories.ToListAsync();
         }
 
-        public Task<CourtCategory?> GetCourtCategoryByIdAsync(int id)
+        public async Task<CourtCategory?> GetCourtCategoryByIdAsync(int? id)
         {
-            throw new NotImplementedException();
+            return await _context.CourtCategories.FirstOrDefaultAsync(x=>x.CategoryId == id);
         }
 
-        public Task<bool> UpdateCourtCategoryAsync(CourtCategory courtCategory)
+        public async Task<bool> UpdateCourtCategoryAsync(CourtCategory courtCategory)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _context.CourtCategories.Update(courtCategory);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
         }
     }
 }

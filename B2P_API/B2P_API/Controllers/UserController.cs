@@ -1,5 +1,6 @@
-using Azure;
+﻿using Azure;
 using B2P_API.DTOs.UserDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Http;
@@ -12,17 +13,17 @@ namespace B2P_API.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
-        public UserController(UserService userService)
+        private readonly ISMSService _sMSService;
+        public UserController(UserService userService, ISMSService sMSService)
         {
             _userService = userService;
+            _sMSService = sMSService;
         }
 
         [HttpPost("forgot-password-by-email")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestByEmailDto request)
+        public async Task<IActionResult> ForgotPasswordByEmail([FromBody] ForgotPasswordRequestByEmailDto request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var response = await _userService.SendPasswordResetOtpAsync(request);
+            var response = await _userService.SendPasswordResetOtpByEmailAsync(request);
 
             if (!response.Success)
             {
@@ -33,11 +34,9 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("reset-password-by-email")]
-        public async Task<IActionResult> ResetPassword([FromBody] VerifyOtpDto request)
+        public async Task<IActionResult> ResetPasswordByEmail([FromBody] VerifyOtpDtoByEmail request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var response = await _userService.VerifyOtpAndResetPasswordAsync(request);
+            var response = await _userService.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             if (!response.Success)
             {
@@ -48,11 +47,9 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("resend-otp-by-email")]
-        public async Task<IActionResult> ResendOtp([FromBody] ResendOtpDto request)
+        public async Task<IActionResult> ResendOtpByEmail([FromBody] ResendOtpDtoByEmail? request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var response = await _userService.ResendPasswordResetOtpAsync(request.Email);
+            var response = await _userService.ResendPasswordResetOtpByEmailAsync(request);
 
             if (!response.Success)
             {
@@ -61,9 +58,48 @@ namespace B2P_API.Controllers
 
             return Ok(response);
         }
-    
 
-        [HttpGet("get-user")]
+        [HttpPost("forgot-password-by-sms")]
+        public async Task<IActionResult> ForgotPasswordBySms([FromBody] ForgotPasswordRequestBySmsDto request)
+        {
+            var response = await _userService.SendPasswordResetOtpBySMSAsync(request);
+
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPost("reset-password-by-sms")]
+        public async Task<IActionResult> ResetPasswordBySms([FromBody] VerifyOtpBySmsDto request)
+        {
+            var response = await _userService.VerifyOtpAndResetPasswordBySMSAsync(request);
+
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPost("resend-otp-by-sms")]
+        public async Task<IActionResult> ResendOtpBySms([FromBody] ResendOtpBySmsDto? request)
+        {
+            var response = await _userService.ResendPasswordResetOtpBySMSAsync(request);
+
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+
+            return Ok(response);
+        }
+
+
+        [HttpGet("get-user-by-id")]
         public async Task<IActionResult> GetUserById(int userId)
         {
             var response = await _userService.GetUserByIdAsync(userId);
@@ -78,7 +114,6 @@ namespace B2P_API.Controllers
         [HttpPut("update-user")]
         public async Task<IActionResult> UpdateUser(int userId,[FromBody] UpdateUserRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
             var response = await _userService.UpdateUserAsync(userId,request);
             if (!response.Success)
             {
@@ -90,7 +125,6 @@ namespace B2P_API.Controllers
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
             var response = await _userService.ChangePasswordAsync(request);
             if (!response.Success)
             {
@@ -98,5 +132,8 @@ namespace B2P_API.Controllers
             }
             return Ok(response);
         }
+
+
+
     }
 }

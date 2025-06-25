@@ -6,6 +6,8 @@
         public List<int>? Type { get; set; }
         public string? City { get; set; }
         public string? Ward { get; set; }
-        //public int Order { get; set; } = 1; // Xếp theo giá( 1: Thấp-> Cao, 2: Cao -> Thấp )
+
+        // Xếp theo tiêu chí( 1:Giá thấp-> Cao, 2:Giá cao -> Thấp; 3: Số sao cao -> thấp  )
+        public int Order { get; set; } = 1; 
     }
 }

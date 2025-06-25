@@ -1,4 +1,6 @@
-﻿using B2P_API.Services;
+﻿using B2P_API.DTOs.CourtCategoryDTO;
+using B2P_API.Models;
+using B2P_API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,14 +17,48 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("get-all-court-categories")]
-        public async Task<IActionResult> GetAllCourtCategories()
+        public async Task<IActionResult> GetAllCourtCategories(string? search, int pageNumber = 1, int pageSize = 10)
         {
-            var response = await _courtCategoryService.GetAllCourtCategoriesAsync();
+            var response = await _courtCategoryService.GetAllCourtCategoriesAsync(search, pageNumber, pageSize);
             if (!response.Success)
             {
                 return StatusCode(response.Status, response.Message);
             }
             return Ok(response);
         }
+
+        [HttpPost("add-court-category")]
+        public async Task<IActionResult> AddCourtCategory([FromBody] CourtCategoryAddRequest request)
+        {
+            var response = await _courtCategoryService.AddCourtCategoryAsync(request);
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+            return Ok(response);
+        }
+        [HttpPut("update-court-category")]
+        public async Task<IActionResult> UpdateCourtCategory([FromBody] CourtCategoryUpdateRequest request)
+        {
+            var response = await _courtCategoryService.UpdateCourtCategoryAsync(request);
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+            return Ok(response);
+        }
+
+        [HttpGet("get-court-category-by-id")]
+        public async Task<IActionResult> GetCourtCategoryById(int categoryId)
+        {
+            var response = await _courtCategoryService.GetCourtCategoryByIdAsync(categoryId);
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+            return Ok(response);
+        }
+
     }
+
 }

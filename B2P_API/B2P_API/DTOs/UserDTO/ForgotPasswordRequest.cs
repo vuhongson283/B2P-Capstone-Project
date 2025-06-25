@@ -5,30 +5,44 @@ namespace B2P_API.DTOs.UserDTO
 {
     public class ForgotPasswordRequestByEmailDto
     {
-        [Required]
-        [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ.")]
         public string Email { get; set; }
     }
 
-    public class VerifyOtpDto
+    public class VerifyOtpDtoByEmail
     {
-        [Required]
-        [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ.")]
         public string Email { get; set; }
-        [Required]
+
         public string OtpCode { get; set; }
-        [Required]
-        [MinLength(8, ErrorMessage = MessagesCodes.MSG_13)]
+
         public string NewPassword { get; set; }
-        [Required]
+
         public string ConfirmPassword { get; set; }
 
     }
 
-    public class ResendOtpDto
+    public class ResendOtpDtoByEmail
     {
-        [Required]
-        [EmailAddress(ErrorMessage = "Địa chỉ email không hợp lệ.")]
         public string Email { get; set; }
     }
+
+
+    //SMS DTOs
+    public class ForgotPasswordRequestBySmsDto
+    {
+        public string PhoneNumber { get; set; }
+    }
+
+    public class VerifyOtpBySmsDto
+    {
+        public string PhoneNumber { get; set; }
+        public string OtpCode { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmPassword { get; set; }
+    }
+
+    public class ResendOtpBySmsDto
+    {
+        public string PhoneNumber { get; set; }
+    }
+
 }

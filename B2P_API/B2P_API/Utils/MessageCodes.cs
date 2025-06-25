@@ -69,6 +69,8 @@
         public const string MSG_65 = "Không tìm thấy người dùng.";
         public const string MSG_66 = "Số điện thoại đã được sử dụng";
         public const string MSG_67 = "Lỗi cập nhật ảnh";
+        public const string MSG_68 = "Địa chỉ Email không hợp lệ";
+        public const string MSG_69 = "Email đã được sử dụng";
     }
 
 }

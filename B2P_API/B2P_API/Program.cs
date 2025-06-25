@@ -1,8 +1,9 @@
-using B2P_API.Interface;
+﻿using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,12 @@ builder.Services.AddScoped<IFacilityRepository, FacilityRepository>();
 builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISMSService, eSMSService>();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
 
 var app = builder.Build();
 

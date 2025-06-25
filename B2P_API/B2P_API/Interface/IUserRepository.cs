@@ -10,7 +10,9 @@ namespace B2P_API.Interface
         Task<bool> UpdateAvatar(Image image);
         Task<Image?> GetImageByUserId(int userId);
         Task<User?> CheckPhoneExistedByUserId(int userId, string phone);
+        Task<User?>CheckEmailExistedByUserId(int userId, string email);
         Task<User?> GetUserByEmailAsync(string email);
+        Task<User?> GetUserByPhoneAsync(string phone);
 
     }
 }

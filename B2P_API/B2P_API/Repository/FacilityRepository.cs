@@ -11,10 +11,11 @@ namespace B2P_API.Repository
         {
             _context = context;
         }
-        public async Task<List<Facility>?> SearchFacilities()
+        public async Task<List<Facility>?> GetAllFacilitiesByPlayer()
         {
             return await _context.Facilities.Include(f => f.Status).Include(f => f.Images).
-                Include(f => f.Courts).Include(x=>x.TimeSlots)
+                Include(f => f.Courts).ThenInclude(f => f.BookingDetails).ThenInclude(x=>x.Booking).ThenInclude(f=>f.Ratings).
+                Include(x=>x.TimeSlots)
                 .ToListAsync();
         }
     }
