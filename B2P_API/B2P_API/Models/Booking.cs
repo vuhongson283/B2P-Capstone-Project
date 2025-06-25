@@ -17,6 +17,10 @@ public partial class Booking
 
     public decimal? TotalPrice { get; set; }
 
+    public bool? IsDayOff { get; set; }
+
+    public DateTime OrderDate { get; set; }
+
     public virtual Court? Court { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
