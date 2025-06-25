@@ -23,6 +23,8 @@ public partial class SportBookingDbContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
+    public virtual DbSet<BookingDetail> BookingDetails { get; set; }
+
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<Court> Courts { get; set; }
@@ -112,28 +114,52 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("Booking");
 
-            entity.Property(e => e.IsDayOff).HasDefaultValue(false);
-            entity.Property(e => e.OrderDate)
+            entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.IsDayOff).HasDefaultValue(false);
             entity.Property(e => e.TotalPrice).HasColumnType("decimal(10, 2)");
-
-            entity.HasOne(d => d.Court).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.CourtId)
-                .HasConstraintName("FK__Booking__CourtId__6A30C649");
+            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Status).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.StatusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Booking_Status");
 
-            entity.HasOne(d => d.TimeSlot).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.TimeSlotId)
-                .HasConstraintName("FK__Booking__TimeSlo__6B24EA82");
-
             entity.HasOne(d => d.User).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__Booking__UserId__693CA210");
+        });
+
+        modelBuilder.Entity<BookingDetail>(entity =>
+        {
+            entity.HasKey(e => e.BookingDetailId).HasName("PK__BookingD__8136D45A1FD9E5D5");
+
+            entity.ToTable("BookingDetail");
+
+            entity.Property(e => e.CheckInDate).HasColumnType("datetime");
+            entity.Property(e => e.CreateAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.BookingDetails)
+                .HasForeignKey(d => d.BookingId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BookingDetail_Booking");
+
+            entity.HasOne(d => d.Court).WithMany(p => p.BookingDetails)
+                .HasForeignKey(d => d.CourtId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BookingDetail_Court");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.BookingDetails)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BookingDetail_Status");
+
+            entity.HasOne(d => d.TimeSlot).WithMany(p => p.BookingDetails)
+                .HasForeignKey(d => d.TimeSlotId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BookingDetail_TimeSlot");
         });
 
         modelBuilder.Entity<Comment>(entity =>
@@ -329,8 +355,6 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("User");
 
-            entity.HasIndex(e => e.Username, "UQ__User__536C85E4EC4F884F").IsUnique();
-
             entity.HasIndex(e => e.Email, "UQ__User__A9D10534D6ABFED3").IsUnique();
 
             entity.Property(e => e.Address).HasMaxLength(255);
@@ -339,11 +363,10 @@ public partial class SportBookingDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FullName)
-                .HasMaxLength(200)
+                .HasMaxLength(100)
                 .HasDefaultValue("");
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.StatusId).HasDefaultValue(1);
-            entity.Property(e => e.Username).HasMaxLength(50);
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)

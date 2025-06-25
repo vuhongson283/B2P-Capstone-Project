@@ -15,7 +15,7 @@ namespace B2P_API.Controllers
             _facilityService = facilityService;
         }
 
-        [HttpGet("/{userId}")]
+        [HttpGet("listCourt/{userId}")]
         public async Task<IActionResult> GetFacilitiesByUser(
         int userId,
         [FromQuery] string? facilityName = null,
