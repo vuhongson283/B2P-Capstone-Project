@@ -19,6 +19,9 @@ namespace B2P_API.Services
         public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(int pageNumber, int pageSize,
             string? search, int? status, int? categoryId)
         {
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0 || pageSize > 10) pageSize = 10;
+
             var paginatedResult = await _repository.GetAllCourts(
                 pageNumber, pageSize, search, status, categoryId
             );
@@ -39,16 +42,6 @@ namespace B2P_API.Services
                 Status = 200,
                 Data = response
             };
-
-            //var courts = await _repository.GetAllCourts();
-
-            //return new ApiResponse<List<CourtDTO>>
-            //{
-            //    Success = true,
-            //    Message = "Get all courts successful",
-            //    Status = 200,
-            //    Data = courts
-            //};
         }
 
         public async Task<ApiResponse<CourtDetailDTO>> GetCourtDetail(int courtId)

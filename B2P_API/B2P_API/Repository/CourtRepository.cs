@@ -59,19 +59,6 @@ namespace B2P_API.Repository
                 TotalPages = totalPages,
                 Items = data
             };
-
-            //    return await _context.Courts
-            //    .Include(c => c.Category)
-            //    .Include(c => c.Facility)
-            //    .Include(c => c.Status)
-            //    .Select(c => new CourtDTO
-            //    {
-            //        CourtId = c.CourtId,
-            //        CourtName = c.CourtName,
-            //        CategoryName = c.Category != null ? c.Category.CategoryName : null,
-            //        StatusName = c.Status != null ? c.Status.StatusName : null,
-            //    })
-            //.ToListAsync();
         }
 
         public async Task<CourtDetailDTO> GetCourtDetail(int courtId)
