@@ -109,6 +109,7 @@ namespace B2P_API.Repository
 				var user = await _context.Users
 					.Include(u => u.Role)
 					.Include(u => u.Status)
+					.Include(u=>u.Images)
 					.AsNoTracking()
 					.FirstOrDefaultAsync(u => u.UserId == userId);
 
@@ -123,24 +124,27 @@ namespace B2P_API.Repository
 					};
 				}
 
-				// Manual mapping sang DTO
-				var dto = new GetAccountByIdResponse
-				{
-					UserId = user.UserId,
-					Statusname = user.Status?.StatusName ?? string.Empty,
-					Username = user.Username,       
-					Email = user.Email,
-					Phone = user.Phone,
-					IsMale = user.IsMale,
-					AvatarUrl = user.AvatarUrl,
-					RoleName = user.Role?.RoleName ?? string.Empty,
-					CreateAt = user.CreateAt,
-					FullName = user.FullName,
-					Address = user.Address,
-					Dob = user.Dob
-				};
+			var avatarUrl = user.Images
+            .Where(i => i.UserId == user.UserId)   // chỉ ảnh mà UserId = user.UserId
+            .OrderBy(i => i.Order)                 // nếu bạn có Order để ưu tiên
+            .FirstOrDefault()?.ImageUrl;
+			// Manual mapping sang DTO
+			var dto = new GetAccountByIdResponse
+			{
+				UserId = user.UserId,
+				Statusname = user.Status?.StatusName ?? string.Empty,
+				Email = user.Email,
+				Phone = user.Phone,
+				IsMale = user.IsMale,
+				AvatarUrl = avatarUrl,               // đúng ảnh của user
+				RoleName = user.Role?.RoleName ?? string.Empty,
+				CreateAt = user.CreateAt,
+				FullName = user.FullName,
+				Address = user.Address,
+				Dob = user.Dob
+			};
 
-				return new ApiResponse<GetAccountByIdResponse>
+			return new ApiResponse<GetAccountByIdResponse>
 				{
 					Success = true,
 					Message = "Lấy thông tin tài khoản thành công.",
@@ -220,7 +224,6 @@ namespace B2P_API.Repository
 		{
 			try
 			{
-				// 1) Load User kèm theo toàn bộ cây con
 				var user = await _context.Users
 					.Include(u => u.Blogs)
 						.ThenInclude(b => b.Comments)
@@ -236,49 +239,48 @@ namespace B2P_API.Repository
 						.ThenInclude(b => b.Payments)
 					.Include(u => u.Bookings)
 						.ThenInclude(b => b.Ratings)
+					.Include(u => u.Bookings)
+						.ThenInclude(b => b.BookingDetails)    // <-- thêm include này
 					.Include(u => u.Comments)
 					.Include(u => u.UserTokens)
 					.Include(u => u.BankAccount)
+					.Include(u => u.Images)                    // nhớ include ảnh user nếu có
 					.FirstOrDefaultAsync(u => u.UserId == userId);
 
 				if (user == null)
-					return new ApiResponse<string>
-					{
-						Success = false,
-						Message = MessagesCodes.MSG_46, // "Không tìm thấy tài khoản."
-						Status = 404,
-						Data = null
-					};
+					return new ApiResponse<string> { Success = false, Message = MessagesCodes.MSG_46, Status = 404 };
 
-				if (user.StatusId != 4) // 4 = banned
-					return new ApiResponse<string>
-					{
-						Success = false,
-						Message = "Chỉ được xóa tài khoản đang ở trạng thái banned.",
-						Status = 400,
-						Data = null
-					};
+				if (user.StatusId != 4)
+					return new ApiResponse<string> { Success = false, Message = "Chỉ được xóa tài khoản đang ở trạng thái banned.", Status = 400 };
 
-				// 2) Xóa "cháu" của Blog: Comments, Images
+				// 1) Xóa ảnh user
+				if (user.Images.Any())
+					_context.Images.RemoveRange(user.Images);
+
+				// 2) Xóa "cháu" của Blog
 				var blogComments = user.Blogs.SelectMany(b => b.Comments);
 				if (blogComments.Any()) _context.Comments.RemoveRange(blogComments);
 
 				var blogImages = user.Blogs.SelectMany(b => b.Images);
 				if (blogImages.Any()) _context.Images.RemoveRange(blogImages);
 
-				// 3) Xóa "cháu" của Facility: Courts, Images, TimeSlots
+				// 3) Xóa "cháu" của Facility
 				var facilityCourts = user.Facilities.SelectMany(f => f.Courts);
 				var facilityImages = user.Facilities.SelectMany(f => f.Images);
 				var facilityTimeSlots = user.Facilities.SelectMany(f => f.TimeSlots);
-
 				if (facilityCourts.Any()) _context.Courts.RemoveRange(facilityCourts);
 				if (facilityImages.Any()) _context.Images.RemoveRange(facilityImages);
 				if (facilityTimeSlots.Any()) _context.TimeSlots.RemoveRange(facilityTimeSlots);
 
-				// 4) Xóa "cháu" của Booking: Payments, Ratings
+				// 4) Xóa "cháu" của Booking
+				// 4.1) BookingDetails
+				var bookingDetails = user.Bookings.SelectMany(b => b.BookingDetails);
+				if (bookingDetails.Any())
+					_context.Set<BookingDetail>().RemoveRange(bookingDetails);
+
+				// 4.2) Payments, Ratings
 				var payments = user.Bookings.SelectMany(b => b.Payments);
 				var ratings = user.Bookings.SelectMany(b => b.Ratings);
-
 				if (payments.Any()) _context.Payments.RemoveRange(payments);
 				if (ratings.Any()) _context.Ratings.RemoveRange(ratings);
 
@@ -302,18 +304,20 @@ namespace B2P_API.Repository
 					Data = userId.ToString()
 				};
 			}
-			catch
+			catch (Exception ex)
 			{
-				// Trả về chung chung, không lộ chi tiết
+				var inner = ex.InnerException?.Message;
 				return new ApiResponse<string>
 				{
 					Success = false,
-					Message =MessagesCodes.MSG_50,
+					Message = $"{MessagesCodes.MSG_50}: {ex.Message}"
+							  + (inner != null ? $"\nInner: {inner}" : ""),
 					Status = 500,
 					Data = null
 				};
 			}
 		}
+
 
 
 
