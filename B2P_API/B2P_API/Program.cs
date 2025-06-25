@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 using B2P_API;
 using B2P_API.Interface;
 using B2P_API.Map;
@@ -11,24 +10,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Đọc connection string
 var connectionString = builder.Configuration.GetConnectionString("MyCnn");
-=======
-using B2P_API.Models;
-using B2P_API.Repository;
-using B2P_API.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.EntityFrameworkCore;
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddDbContext<SportBookingDbContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("MyCnn")));
->>>>>>> BachNH
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
@@ -46,7 +31,6 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-<<<<<<< HEAD
 // Caching
 builder.Services.AddMemoryCache();
 
@@ -63,7 +47,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
 
-builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // nếu dùng
+builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // Nếu dùng
 builder.Services.AddScoped<IFacilityRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
 
@@ -87,10 +71,9 @@ builder.Services.AddScoped<BlogService>();
 
 builder.Services.AddScoped<CommentRepository>();
 builder.Services.AddScoped<CommentService>();
-=======
+
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
->>>>>>> BachNH
 
 var app = builder.Build();
 
