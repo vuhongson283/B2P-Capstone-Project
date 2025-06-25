@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace B2P_API.Repository
 {
-    public class FacilityRepository : IFacilityRepository
+    public class FacilityRepository : IFacilityRepositoryForUser
     {
         private readonly SportBookingDbContext _context;
         public FacilityRepository(SportBookingDbContext context)

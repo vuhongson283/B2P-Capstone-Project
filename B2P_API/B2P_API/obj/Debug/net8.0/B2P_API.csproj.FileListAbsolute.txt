@@ -171,3 +171,6 @@ D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\Syst
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Management.dll
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\credentials.json
 D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\BCrypt.Net-Next.dll
+D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.Bcl.Memory.dll
+D:\FU learning\SEP490\B2P-Capstone-Project\B2P_API\B2P_API\bin\Debug\net8.0\Twilio.dll

@@ -1,29 +1,16 @@
-<<<<<<< HEAD
 
-=======
->>>>>>> QuanCD
 ﻿using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Services;
-<<<<<<< HEAD
 using Microsoft.EntityFrameworkCore;
-
 ﻿using B2P_API.Repositories;
-using B2P_API.Services;
-using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API;
-using Microsoft.EntityFrameworkCore;
-using B2P_API.Repository;
-
-
-=======
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
->>>>>>> QuanCD
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -43,7 +30,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
-builder.Services.AddScoped<IFacilityRepository, FacilityRepository>();
+builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
 builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();

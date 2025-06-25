@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 ﻿namespace B2P_API.Interface
 {
     using B2P_API.DTOs.FacilityDTOs;
@@ -11,15 +11,8 @@
         Task<bool> DeleteAsync(int id);
         Task<List<Facility>> GetByUserIdAsync(int userId);
         Task<bool> UpdateAsync(Facility facility);
-        
-=======
-﻿using B2P_API.Models;
+       
 
-namespace B2P_API.Interface
-{
-    public interface IFacilityRepository
-    {
-        Task<List<Facility>?> GetAllFacilitiesByPlayer();
->>>>>>> QuanCD
+
     }
 }
