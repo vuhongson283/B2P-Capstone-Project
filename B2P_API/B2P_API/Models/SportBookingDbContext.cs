@@ -175,14 +175,17 @@ public partial class SportBookingDbContext : DbContext
 
             entity.HasOne(d => d.Blog).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.BlogId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Comment__BlogId__02084FDA");
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Comment__ParentC__02FC7413");
 
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Comment__UserId__5441852A");
         });
 
