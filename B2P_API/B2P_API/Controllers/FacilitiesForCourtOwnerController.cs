@@ -1,4 +1,5 @@
-﻿using B2P_API.Interface;
+﻿using B2P_API.DTOs.FacilityDTOs;
+using B2P_API.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,5 +36,58 @@ namespace B2P_API.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
+
+        [HttpPost("createFacility")]
+        public async Task<IActionResult> CreateCourt([FromBody] CreateFacilityRequest request)
+        {
+            
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var response = await _facilityService.CreateFacility(request);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("updateFacility/{facilityId}")]
+        public async Task<IActionResult> UpdateFacility([FromRoute] int facilityId, [FromBody] UpdateFacilityRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var response = await _facilityService.UpdateFacility(request, facilityId);
+                if (!response.Success)
+                {
+                    return StatusCode(response.Status, response.Message);
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Lỗi máy chủ: " + ex.Message);
+            }
+        }
+
+        [HttpDelete("{facilityId}")]
+        public async Task<IActionResult> DeleteFacility(int facilityId)
+        {
+            var response = await _facilityService.DeleteFacility(facilityId);
+            return StatusCode(response.Status, response);
+        }
+
     }
 }
