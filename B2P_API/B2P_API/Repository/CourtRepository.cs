@@ -17,7 +17,7 @@ namespace B2P_API.Repository
         }
 
         public async Task<PagedResponse<CourtDTO>> GetAllCourts(int pageNumber, int pageSize, 
-            string? search, int? status, int? categoryId)
+             int facilityId, string? search, int? status, int? categoryId)
         {
             var query = _context.Courts.AsQueryable();
 
@@ -35,6 +35,8 @@ namespace B2P_API.Repository
             {
                 query = query.Where(c => c.CategoryId == categoryId.Value);
             }
+
+            query = query.Where(c => c.FacilityId == facilityId);
 
             var totalItems = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
@@ -57,7 +59,7 @@ namespace B2P_API.Repository
                 ItemsPerPage = pageSize,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
-                Items = data
+                Items = data.Any() ? data : null
             };
         }
 

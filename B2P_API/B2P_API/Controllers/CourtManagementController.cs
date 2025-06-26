@@ -3,26 +3,28 @@ using B2P_API.Models;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace B2P_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CourtsController : ControllerBase
+    public class CourtManagementController : ControllerBase
     {
         private readonly CourtServices _courseService;
 
-        public CourtsController(CourtServices courseService)
+        public CourtManagementController(CourtServices courseService)
         {
             _courseService = courseService;
         }
 
         [HttpGet("CourtList")]
         public async Task<IActionResult> Get(int pageNumber, int pageSize,
+            [FromQuery, BindRequired] int facilityId,
             string? search, int? status, int? categoryId)
         {
             var response = await _courseService.GetAllCourts(pageNumber, pageSize,
-            search,  status, categoryId);
+            facilityId, search,  status, categoryId);
             return StatusCode(response.Status, response);
         }
         
