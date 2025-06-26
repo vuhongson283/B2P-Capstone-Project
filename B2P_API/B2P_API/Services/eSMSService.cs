@@ -13,8 +13,8 @@ namespace B2P_API.Services
     {
         
             private static readonly HttpClient client = new HttpClient();
-            private const string ApiKey = "3D7D79DECD4B5C70EA0C4EAFC0B376"; // Thay bằng API Key thực tế
-            private const string SecretKey = "5B4405CC7D3FD6705B8DCDB56D53DD"; // Thay bằng Secret Key thực tế
+            private const string ApiKey = "3D7D79DECD4B5C70EA0C4EAFC0B376";
+            private const string SecretKey = "5B4405CC7D3FD6705B8DCDB56D53DD"; 
             private const string CampaignId = "Cảm ơn đã sử dụng dịch vụ của B2P";
 
             // Gửi OTP

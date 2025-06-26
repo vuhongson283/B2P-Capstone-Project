@@ -1,7 +1,8 @@
+using B2P_API.DTOs.CourtCategoryDTO;
+using B2P_API.DTOs.FacilityDTO;
 using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.DTOs.ImageDTOs;
 using B2P_API.DTOs.StatuDTOs;
-using B2P_API.DTOs.FacilityDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
@@ -237,7 +238,28 @@ namespace B2P_API.Services
                 // Pagination
                 var totalItems = results.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-                pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+
+                if (totalPages == 0)
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
+                    {
+                        Data = null,
+                        Message = "Không có kết quả tìm kiếm.",
+                        Success = false,
+                        Status = 404
+                    };
+                }
+
+                if (pageNumber < 1 || pageNumber > totalPages)
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
+                    {
+                        Data = null,
+                        Message = $"Số trang không hợp lệ",
+                        Success = false,
+                        Status = 400
+                    };
+                }
 
                 var pagedItems = results
                     .Skip((pageNumber - 1) * pageSize)
