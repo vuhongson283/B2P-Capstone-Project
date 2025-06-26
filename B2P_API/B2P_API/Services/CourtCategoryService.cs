@@ -1,6 +1,5 @@
 ﻿using Azure;
 using B2P_API.DTOs.CourtCategoryDTO;
-using B2P_API.DTOs.FacilityDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
@@ -62,31 +61,12 @@ namespace B2P_API.Services
                     CategoryName = c.CategoryName,
                 }).ToList();
 
-                // Tính tổng trang
+                // Apply pagination
                 var totalItems = response.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
-                if (totalPages == 0)
-                {
-                    return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
-                    {
-                        Data = null,
-                        Message = "Không có kết quả tìm kiếm.",
-                        Success = false,
-                        Status = 404
-                    };
-                }
-
-                if (pageNumber < 1 || pageNumber > totalPages)
-                {
-                    return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
-                    {
-                        Data = null,
-                        Message = "Số trang không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
-                }
+                // Ensure pageNumber is valid
+                pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
 
                 var pagedItems = response
                     .Skip((pageNumber - 1) * pageSize)
@@ -109,7 +89,6 @@ namespace B2P_API.Services
                     Success = true,
                     Status = 200
                 };
-
             }
             catch (Exception ex)
             {
@@ -127,11 +106,11 @@ namespace B2P_API.Services
         {
             try
             {   
-                if (request == null||string.IsNullOrEmpty(request.CategoryName?.Trim()))
+                if (request == null||string.IsNullOrEmpty(request.CategoryName))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = false,
                         Message = "Tên kiểu sân không được để trống",
                         Success = false,
                         Status = 400
@@ -147,7 +126,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = true,
                         Message = "Thêm kiểu sân thành công",
                         Success = true,
                         Status = 200
@@ -157,7 +136,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = false,
                         Message = "Thêm kiểu sân thất bại",
                         Success = false,
                         Status = 500
@@ -191,13 +170,11 @@ namespace B2P_API.Services
                     };
                 }
 
-                request.CategoryName = request.CategoryName?.Trim();
-
                 if (string.IsNullOrEmpty(request.CategoryName))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = false,
                         Message = "Tên kiểu sân không được để trống",
                         Success = false,
                         Status = 400
@@ -209,7 +186,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = false,
                         Message = "Không tìm thấy kiểu sân với ID đã cho",
                         Success = false,
                         Status = 404
@@ -221,7 +198,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
+                        Data = true,
                         Message = "Cập nhật kiểu sân thành công",
                         Success = true,
                         Status = 200

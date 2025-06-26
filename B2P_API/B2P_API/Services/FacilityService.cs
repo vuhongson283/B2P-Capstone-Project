@@ -1,4 +1,3 @@
-using B2P_API.DTOs.CourtCategoryDTO;
 using B2P_API.DTOs.FacilityDTO;
 using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.DTOs.ImageDTOs;
@@ -7,6 +6,7 @@ using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Utils;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace B2P_API.Services
 {
@@ -238,28 +238,7 @@ namespace B2P_API.Services
                 // Pagination
                 var totalItems = results.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-                if (totalPages == 0)
-                {
-                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
-                    {
-                        Data = null,
-                        Message = "Không có kết quả tìm kiếm.",
-                        Success = false,
-                        Status = 404
-                    };
-                }
-
-                if (pageNumber < 1 || pageNumber > totalPages)
-                {
-                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
-                    {
-                        Data = null,
-                        Message = $"Số trang không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
-                }
+                pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
 
                 var pagedItems = results
                     .Skip((pageNumber - 1) * pageSize)
@@ -333,5 +312,286 @@ namespace B2P_API.Services
 
             return new TimeOnly(time.Hour, time.Minute);
         }
+
+        public async Task<ApiResponse<Facility>> CreateFacility(CreateFacilityRequest request)
+        {
+            // Kiểm tra tên cơ sở
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng",
+                    Data = null
+                };
+            }
+
+            // Kiểm tra status
+            if (request.StatusId <= 0)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái không hợp lệ",
+                    Data = null
+                };
+            }
+
+            // Giờ mở < đóng
+            if (request.OpenHour >= request.CloseHour)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                    Data = null
+                };
+            }
+
+            // Kiểm tra slot duration
+            if (request.SlotDuration <= 0 || request.SlotDuration > 180)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Thời lượng mỗi lượt phải từ 1 đến 180 phút",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                var facility = new Facility
+                {
+                    FacilityName = request.FacilityName.Trim(),
+                    Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
+                    Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim(),
+                    StatusId = request.StatusId,
+                    UserId = request.UserId
+                };
+
+                var timeSlots = new List<TimeSlot>();
+                var startTime = new TimeOnly(request.OpenHour, 0);
+                var endTime = new TimeOnly(request.CloseHour, 0);
+                var duration = TimeSpan.FromMinutes(request.SlotDuration);
+
+                var current = startTime;
+                int slotLimit = 1000;
+                int count = 0;
+
+                while (current.Add(duration) <= endTime && count < slotLimit)
+                {
+                    timeSlots.Add(new TimeSlot
+                    {
+                        StartTime = current,
+                        EndTime = current.Add(duration),
+                    });
+
+                    current = current.Add(duration);
+                    count++;
+                }
+
+                facility.TimeSlots = timeSlots;
+
+                var created = await _facilityRepository.CreateFacilityAsync(facility);
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Tạo cơ sở thành công",
+                    Data = created
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Tạo cơ sở thất bại: " + ex.Message,
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<ApiResponse<Facility>> UpdateFacility(UpdateFacilityRequest request, int facilityId)
+        {
+            var data = await _facilityRepository.GetByIdAsync(facilityId);
+            if (data == null)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở hợp lệ",
+                    Data = null
+                };
+            }
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng",
+                    Data = null
+                };
+            }
+
+            if (request.StatusId <= 0)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái không hợp lệ",
+                    Data = null
+                };
+            }
+
+            if (request.OpenHour >= request.CloseHour)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                    Data = null
+                };
+            }
+
+            if (request.SlotDuration <= 0 || request.SlotDuration > 180)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Thời lượng mỗi lượt phải từ 1 đến 180 phút",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                // Update các thuộc tính
+                data.FacilityName = request.FacilityName.Trim();
+                data.Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim();
+                data.Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim();
+                data.StatusId = request.StatusId;
+
+                // Tạo lại TimeSlots mới
+                var timeSlots = new List<TimeSlot>();
+                var startTime = new TimeOnly(request.OpenHour, 0);
+                var endTime = new TimeOnly(request.CloseHour, 0);
+                var duration = TimeSpan.FromMinutes(request.SlotDuration);
+
+                var current = startTime;
+                int slotLimit = 1000;
+                int count = 0;
+
+                while (current.Add(duration) <= endTime && count < slotLimit)
+                {
+                    timeSlots.Add(new TimeSlot
+                    {
+                        StartTime = current,
+                        EndTime = current.Add(duration),
+                    });
+
+                    current = current.Add(duration);
+                    count++;
+                }
+
+                // Gán TimeSlot mới (nếu bạn muốn xóa hết slot cũ)
+                data.TimeSlots = timeSlots;
+
+                var updated = await _facilityRepository.UpdateAsync(data);
+                if (updated == null)
+                {
+                    return new ApiResponse<Facility>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Cập nhật thất bại",
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Cập nhật cơ sở thành công",
+                    Data = updated
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Cập nhật cơ sở thất bại: " + ex.Message,
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<ApiResponse<Facility>> DeleteFacility(int facilityId)
+        {
+            var data = await _facilityRepository.GetByIdAsync(facilityId);
+            if (data == null)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở hợp lệ",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                var deleted = await _facilityRepository.DeleteAsync(facilityId);
+
+                if (!deleted)
+                {
+                    return new ApiResponse<Facility>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Xóa cơ sở thất bại",
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Xóa cơ sở thành công",
+                    Data = data // trả lại thông tin facility đã xóa nếu cần
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = $"Đã xảy ra lỗi khi xóa: {ex.Message}",
+                    Data = null
+                };
+            }
+        }
     }
 }
+

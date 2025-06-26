@@ -170,7 +170,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.OtpCode.Trim()))
+                if (string.IsNullOrEmpty(request.OtpCode))
                 {
                     return new ApiResponse<object>
                     {
@@ -192,7 +192,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.NewPassword.Trim()))
+                if (string.IsNullOrEmpty(request.NewPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -214,7 +214,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.ConfirmPassword.Trim()))
+                if (string.IsNullOrEmpty(request.ConfirmPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -427,7 +427,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.OldPassword.Trim()))
+                if (string.IsNullOrEmpty(changePasswordRequest.OldPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -438,7 +438,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.NewPassword.Trim()))
+                if (string.IsNullOrEmpty(changePasswordRequest.NewPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -460,7 +460,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.ConfirmPassword.Trim()))
+                if (string.IsNullOrEmpty(changePasswordRequest.ConfirmPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -685,7 +685,7 @@ namespace B2P_API.Services
                 }
 
 
-                if (string.IsNullOrEmpty(request.OtpCode.Trim()))
+                if (string.IsNullOrEmpty(request.OtpCode))
                 {
                     return new ApiResponse<object>
                     {
@@ -707,7 +707,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.NewPassword.Trim()))
+                if (string.IsNullOrEmpty(request.NewPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -729,7 +729,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.ConfirmPassword.Trim()))
+                if (string.IsNullOrEmpty(request.ConfirmPassword))
                 {
                     return new ApiResponse<object>
                     {
@@ -991,7 +991,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(updateUserDto.FullName.Trim()))
+                if (string.IsNullOrEmpty(updateUserDto.FullName))
                 {
                     return new ApiResponse<object>
                     {
