@@ -133,7 +133,25 @@ namespace B2P_API.Services
                 Success = true,
                 Status = 200,
                 Message = "Đặt sân thành công",
-                Data = new { bookingId = booking.BookingId }
+                Data = new
+                {
+                    bookingId = booking.BookingId,
+                    checkInDate = request.CheckInDate.Date,
+                    user = new
+                    {
+                        userId = booking.UserId,
+                        email = user?.Email,
+                        phone = user?.Phone
+                    },
+                    slots = booking.BookingDetails.Select(d => new
+                    {
+                        timeSlotId = d.TimeSlotId,
+                        startTime = d.TimeSlot?.StartTime,
+                        endTime = d.TimeSlot?.EndTime,
+                        courtId = d.CourtId,
+                        courtName = d.Court?.CourtName
+                    })
+                }
             };
         }
 
