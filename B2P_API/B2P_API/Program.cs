@@ -75,6 +75,9 @@ builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
+builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<BookingService>();
+
 var app = builder.Build();
 
 // Middleware pipeline
