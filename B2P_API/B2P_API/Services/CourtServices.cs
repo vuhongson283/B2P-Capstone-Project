@@ -2,6 +2,7 @@
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
+using Google.Apis.Drive.v3.Data;
 
 namespace B2P_API.Services
 {
@@ -110,8 +111,19 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request)
+        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request, int userId)
         {
+            bool check = _repository.CheckCourtOwner(userId, request.CourtId);
+            if(!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Account can not update this court.",
+                    Status = 500
+                };
+            }
+
             if (request.CourtName != null && string.IsNullOrWhiteSpace(request.CourtName))
             {
                 return new ApiResponse<object>
@@ -179,8 +191,19 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<bool>> DeleteCourt(int courtId)
+        public async Task<ApiResponse<bool>> DeleteCourt(int userId, int courtId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account can not delete this court.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 if (await _repository.DeleteCourt(courtId) == false)
@@ -215,8 +238,19 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<object>> LockCourt(int courtId, int statusId)
+        public async Task<ApiResponse<object>> LockCourt(int userId, int courtId, int statusId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Account can not lock this court.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 var court = await _repository.LockCourt(courtId, statusId);

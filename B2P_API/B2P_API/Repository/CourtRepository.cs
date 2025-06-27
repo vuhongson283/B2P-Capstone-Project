@@ -2,6 +2,7 @@
 using B2P_API.Models;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Mozilla;
 using System.Data;
 using System.Globalization;
 
@@ -149,6 +150,19 @@ namespace B2P_API.Repository
 
             _context.Courts.Update(existCourt);
             await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public bool CheckCourtOwner(int userId, int courtId)
+        {
+            var court = _context.Courts
+                .Include(c => c.Facility)
+                .Where(c => c.Facility.UserId == userId)
+                .FirstOrDefault(c => c.CourtId == courtId);
+            if (court == null)
+            {
+                return false;
+            }
             return true;
         }
 
