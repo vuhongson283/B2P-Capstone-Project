@@ -33,9 +33,6 @@
 
     <Folder Include="DTOs\ImageDTO\" />
 
-
-    <Folder Include="DTOs\TimeSlotDTOs\" />
-
     <Folder Include="Map\" />
   </ItemGroup>
 
