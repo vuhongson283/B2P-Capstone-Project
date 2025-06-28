@@ -1,51 +1,75 @@
 using B2P_API.Interface;
 using B2P_API.Map;
 using B2P_API.Models;
+using B2P_API.Repositories;
 using B2P_API.Repository;
 using B2P_API.Services;
+using B2P_API.Response;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add controllers and JSON options (ignore circular references)
+builder.Services.AddControllers()
+	.AddJsonOptions(options =>
+		options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-// Register DbContext
+
+// In-memory cache
+builder.Services.AddMemoryCache();
+
+// Register DbContext (use DefaultConnection from appsettings.json)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+	options.UseSqlServer(connectionString));
+
+// AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-//Add Scoped Service
-builder.Services.AddScoped<AccountManagementService>();
-builder.Services.AddScoped<AccountService>();
+// Scoped repositories and services
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<UserService>();
 
-//Add Scoped Interface 
-builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-//Add Scoped Repo
-builder.Services.AddScoped<AccountManagementRepository>(); 
-builder.Services.AddScoped<AccountRepository>(); 
+builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
+builder.Services.AddScoped<CourtCategoryService>();
 
+builder.Services.AddScoped<IFacilityRepository, FacilityRepository>();
+builder.Services.AddScoped<IFacilityService, FacilityService>();
 
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
+builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
+builder.Services.AddScoped<IImageService, ImageService>();
 
+builder.Services.AddScoped<BlogRepository>();
+builder.Services.AddScoped<BlogService>();
+
+builder.Services.AddScoped<CommentRepository>();
+builder.Services.AddScoped<CommentService>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISMSService, eSMSService>();
+
+// Configure API behavior
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+	options.SuppressModelStateInvalidFilter = true;
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middleware pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using B2P_API.DTOs.FacilityDTO;
+using B2P_API.Models;
+using B2P_API.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace B2P_API.Controllers
@@ -7,5 +10,22 @@ namespace B2P_API.Controllers
     [ApiController]
     public class FacilitiesController : ControllerBase
     {
+        private readonly FacilityService _facilityService;
+
+        public FacilitiesController(FacilityService facilityService)
+        {
+            _facilityService = facilityService;
+        }
+        [HttpPost("get-all-facility-by-player")]
+        public async Task<IActionResult> GetAllFacilitiesByPlayer([FromBody] SearchFormRequest request, int pageNumber = 1, int pageSize = 10)
+        {
+            var response = await _facilityService.GetAllFacilitiesByPlayer(request, pageNumber, pageSize);
+            if (!response.Success)
+            {
+                return StatusCode(response.Status, response.Message);
+            }
+            return Ok(response);
+
+        }
     }
 }
