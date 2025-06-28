@@ -9,11 +9,11 @@ public partial class Rating
 
     public int? BookingId { get; set; }
 
-    public int? Rating1 { get; set; }
-
     public string? Comment { get; set; }
 
     public DateTime? CreateAt { get; set; }
+
+    public int? Stars { get; set; }
 
     public virtual Booking? Booking { get; set; }
 }
