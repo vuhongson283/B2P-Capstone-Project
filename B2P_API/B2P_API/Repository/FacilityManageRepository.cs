@@ -64,20 +64,21 @@ namespace B2P_API.Repository
         }
 
 
-        public async Task<bool> UpdateAsync(Facility facility)
+        public async Task<Facility?> UpdateAsync(Facility facility)
         {
             try
             {
                 _context.Facilities.Update(facility);
                 await _context.SaveChangesAsync();
-                return true;
+                return facility;
             }
             catch
             {
-                return false;
+                return null;
             }
         }
 
-        
+
+
     }
 }
