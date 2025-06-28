@@ -480,13 +480,11 @@ namespace B2P_API.Services
 
             try
             {
-                // Update các thuộc tính
                 data.FacilityName = request.FacilityName.Trim();
                 data.Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim();
                 data.Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim();
                 data.StatusId = request.StatusId;
 
-                // Tạo lại TimeSlots mới
                 var timeSlots = new List<TimeSlot>();
                 var startTime = new TimeOnly(request.OpenHour, 0);
                 var endTime = new TimeOnly(request.CloseHour, 0);
@@ -508,7 +506,6 @@ namespace B2P_API.Services
                     count++;
                 }
 
-                // Gán TimeSlot mới (nếu bạn muốn xóa hết slot cũ)
                 data.TimeSlots = timeSlots;
 
                 var updated = await _facilityRepository.UpdateAsync(data);
@@ -578,7 +575,7 @@ namespace B2P_API.Services
                     Success = true,
                     Status = 200,
                     Message = "Xóa cơ sở thành công",
-                    Data = data // trả lại thông tin facility đã xóa nếu cần
+                    Data = data 
                 };
             }
             catch (Exception ex)
