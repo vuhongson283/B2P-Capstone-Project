@@ -1,21 +1,29 @@
-<<<<<<< HEAD
-﻿using B2P_API.DTOs.FacilityDTOs;
+using B2P_API.DTOs.CourtCategoryDTO;
+using B2P_API.DTOs.FacilityDTO;
+using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.DTOs.ImageDTOs;
 using B2P_API.DTOs.StatuDTOs;
 using B2P_API.Interface;
+using B2P_API.Models;
 using B2P_API.Response;
+using B2P_API.Utils;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace B2P_API.Services
 {
     public class FacilityService : IFacilityService
     {
         private readonly IFacilityRepository _facilityRepository;
-        public FacilityService(IFacilityRepository facilityRepository)
+        private readonly IFacilityRepositoryForUser _facilityRepositoryForUser;
+
+        public FacilityService(IFacilityRepository facilityRepository, IFacilityRepositoryForUser facilityRepositoryForUser)
         {
             _facilityRepository = facilityRepository;
+            _facilityRepositoryForUser = facilityRepositoryForUser;
         }
+
         public async Task<ApiResponse<PagedResponse<FacilityWithCourtCountDto>>> GetFacilitiesByUserAsync(
-    int userId, string? facilityName = null, int? statusId = null)
+            int userId, string? facilityName = null, int? statusId = null)
         {
             if (userId <= 0)
             {
@@ -39,7 +47,6 @@ namespace B2P_API.Services
             {
                 var allFacilities = await _facilityRepository.GetByUserIdAsync(userId);
 
-                // Apply filters
                 var filteredFacilities = allFacilities.AsEnumerable();
 
                 if (!string.IsNullOrEmpty(facilityName))
@@ -54,7 +61,6 @@ namespace B2P_API.Services
                         .Where(f => f.Status?.StatusId == statusId.Value);
                 }
 
-                // Map to DTO
                 var mappedFacilities = filteredFacilities.Select(f => new FacilityWithCourtCountDto
                 {
                     FacilityId = f.FacilityId,
@@ -75,7 +81,6 @@ namespace B2P_API.Services
                     }).ToList()
                 }).ToList();
 
-                // Pagination (hiện tại trả page 1 mặc định)
                 int totalItems = mappedFacilities.Count;
                 int itemsPerPage = 10;
                 int totalPages = (int)Math.Ceiling((double)totalItems / itemsPerPage);
@@ -99,29 +104,33 @@ namespace B2P_API.Services
                         TotalItems = totalItems,
                         TotalPages = totalPages
                     }
-=======
-﻿using B2P_API.DTOs.FacilityDTO;
-using B2P_API.Interface;
-using B2P_API.Models;
-using B2P_API.Response;
-using B2P_API.Utils;
-using System.Linq;
-
-namespace B2P_API.Services
-{
-    public class FacilityService
-    {
-        private readonly IFacilityRepository _facilityRepo;
-
-        public FacilityService(IFacilityRepository facilityRepo)
-        {
-            _facilityRepo = facilityRepo;
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<PagedResponse<FacilityWithCourtCountDto>>
+                {
+                    Message = ex.Message,
+                    Status = 500,
+                    Success = false,
+                    Data = new PagedResponse<FacilityWithCourtCountDto>
+                    {
+                        CurrentPage = 1,
+                        ItemsPerPage = 10,
+                        Items = new List<FacilityWithCourtCountDto>(),
+                        TotalItems = 0,
+                        TotalPages = 0,
+                    }
+                };
+            }
         }
-        public async Task<ApiResponse<PagedResponse<SearchFacilityResponse>>> GetAllFacilitiesByPlayer(SearchFormRequest request, int pageNumber = 1, int pageSize = 10)
+
+        public async Task<ApiResponse<PagedResponse<SearchFacilityResponse>>> GetAllFacilitiesByPlayer(
+            SearchFormRequest request, int pageNumber = 1, int pageSize = 10)
         {
             try
             {
-                var facilities = await _facilityRepo.GetAllFacilitiesByPlayer();
+                var facilities = await _facilityRepositoryForUser.GetAllFacilitiesByPlayer();
                 var activeFacilities = facilities?.Where(f => f.StatusId == 1).ToList();
 
                 if (activeFacilities == null || activeFacilities.Count == 0)
@@ -176,7 +185,8 @@ namespace B2P_API.Services
                     };
                 }
 
-                var results = filteredList.Select(f => {
+                var results = filteredList.Select(f =>
+                {
                     var pricePerHour = GetMinPriceForSearchedCategories(f, request.Type);
 
                     var facilityTimeSlots = f.TimeSlots?
@@ -195,6 +205,7 @@ namespace B2P_API.Services
                     var minDiscount = f.TimeSlots?.Where(ts => ts.Discount.HasValue).Any() == true
                         ? f.TimeSlots.Where(ts => ts.Discount.HasValue).Min(ts => ts.Discount.Value)
                         : 0;
+
                     var maxDiscount = f.TimeSlots?.Where(ts => ts.Discount.HasValue).Any() == true
                         ? f.TimeSlots.Where(ts => ts.Discount.HasValue).Max(ts => ts.Discount.Value)
                         : 0;
@@ -206,39 +217,50 @@ namespace B2P_API.Services
                         Location = !string.IsNullOrEmpty(f.Location) && f.Location.Contains("$$")
                             ? f.Location.Substring(f.Location.IndexOf("$$") + 2)
                             : f.Location ?? string.Empty,
-
                         OpenTime = minStartTime.HasValue && maxEndTime.HasValue
-                            ? $"{minStartTime.Value.ToString("HH:mm")} - {maxEndTime.Value.ToString("HH:mm")}"
+                            ? $"{minStartTime:HH:mm} - {maxEndTime:HH:mm}"
                             : "Chưa có lịch",
-
                         FirstImage = f.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl,
-
                         AverageRating = CalculateAverageRating(f),
-
                         PricePerHour = pricePerHour,
                         MinPrice = pricePerHour * minDiscount,
                         MaxPrice = pricePerHour * maxDiscount
                     };
                 }).ToList();
 
-
+                // Sort
                 if (request.Order == 1)
-                {
                     results = results.OrderBy(r => r.PricePerHour).ToList();
-                }
-                else if (request.Order == 2) 
-                {
+                else if (request.Order == 2)
                     results = results.OrderByDescending(r => r.PricePerHour).ToList();
-                }
-                else if (request.Order == 3) 
-                {
+                else if (request.Order == 3)
                     results = results.OrderByDescending(r => r.AverageRating).ToList();
-                }
 
+                // Pagination
                 var totalItems = results.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
-                pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+                if (totalPages == 0)
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
+                    {
+                        Data = null,
+                        Message = "Không có kết quả tìm kiếm.",
+                        Success = false,
+                        Status = 404
+                    };
+                }
+
+                if (pageNumber < 1 || pageNumber > totalPages)
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
+                    {
+                        Data = null,
+                        Message = $"Số trang không hợp lệ",
+                        Success = false,
+                        Status = 400
+                    };
+                }
 
                 var pagedItems = results
                     .Skip((pageNumber - 1) * pageSize)
@@ -254,47 +276,26 @@ namespace B2P_API.Services
                     Items = pagedItems
                 };
 
-                return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
+                return new ApiResponse<PagedResponse<SearchFacilityResponse>>
                 {
                     Success = true,
                     Message = $"Found {totalItems} facilities matching search criteria.",
                     Status = 200,
                     Data = pagedResponse
->>>>>>> QuanCD
                 };
             }
             catch (Exception ex)
             {
-<<<<<<< HEAD
-                return new ApiResponse<PagedResponse<FacilityWithCourtCountDto>>
-                {
-                    Message = ex.Message,
-                    Status = 500,
-                    Success = false,
-                    Data = new PagedResponse<FacilityWithCourtCountDto>
-                    {
-                        CurrentPage = 1,
-                        ItemsPerPage = 10,
-                        Items = new List<FacilityWithCourtCountDto>(),
-                        TotalItems = 0,
-                        TotalPages = 0,
-                    }
-=======
                 return new ApiResponse<PagedResponse<SearchFacilityResponse>>
                 {
                     Data = null,
                     Message = MessagesCodes.MSG_06 + ex.Message,
                     Success = false,
                     Status = 500
->>>>>>> QuanCD
                 };
             }
         }
 
-<<<<<<< HEAD
-
-
-=======
         private double CalculateAverageRating(Facility facility)
         {
             if (facility.Courts == null || !facility.Courts.Any())
@@ -308,10 +309,7 @@ namespace B2P_API.Services
                 .Where(r => r.Stars > 0)
                 .ToList();
 
-            if (!allRatings.Any())
-                return 0;
-
-            return Math.Round((double)allRatings.Average(r => r.Stars), 1);
+            return allRatings.Any() ? Math.Round((double)allRatings.Average(r => r.Stars), 1) : 0;
         }
 
         private decimal GetMinPriceForSearchedCategories(Facility facility, List<int>? searchedTypes)
@@ -321,7 +319,6 @@ namespace B2P_API.Services
             if (courts == null || !courts.Any())
                 return 0;
 
-            // Nếu có filter theo Type, chỉ lấy giá của các sân thuộc Type đã tìm
             if (searchedTypes != null && searchedTypes.Any())
             {
                 courts = courts.Where(c => searchedTypes.Contains((int)c.CategoryId));
@@ -329,16 +326,294 @@ namespace B2P_API.Services
 
             return courts.Any() ? courts.Min(c => c.PricePerHour.Value) : 0;
         }
+
         private TimeOnly RoundTimeToMinute(TimeOnly time)
         {
             if (time.Second >= 30)
-            {
                 time = time.AddMinutes(1);
-            }
+
             return new TimeOnly(time.Hour, time.Minute);
         }
->>>>>>> QuanCD
 
+        public async Task<ApiResponse<Facility>> CreateFacility(CreateFacilityRequest request)
+        {
+            // Kiểm tra tên cơ sở
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng",
+                    Data = null
+                };
+            }
 
+            // Kiểm tra status
+            if (request.StatusId <= 0)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái không hợp lệ",
+                    Data = null
+                };
+            }
+
+            // Giờ mở < đóng
+            if (request.OpenHour >= request.CloseHour)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                    Data = null
+                };
+            }
+
+            // Kiểm tra slot duration
+            if (request.SlotDuration <= 0 || request.SlotDuration > 180)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Thời lượng mỗi lượt phải từ 1 đến 180 phút",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                var facility = new Facility
+                {
+                    FacilityName = request.FacilityName.Trim(),
+                    Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
+                    Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim(),
+                    StatusId = request.StatusId,
+                    UserId = request.UserId
+                };
+
+                var timeSlots = new List<TimeSlot>();
+                var startTime = new TimeOnly(request.OpenHour, 0);
+                var endTime = new TimeOnly(request.CloseHour, 0);
+                var duration = TimeSpan.FromMinutes(request.SlotDuration);
+
+                var current = startTime;
+                int slotLimit = 1000;
+                int count = 0;
+
+                while (current.Add(duration) <= endTime && count < slotLimit)
+                {
+                    timeSlots.Add(new TimeSlot
+                    {
+                        StartTime = current,
+                        EndTime = current.Add(duration),
+                    });
+
+                    current = current.Add(duration);
+                    count++;
+                }
+
+                facility.TimeSlots = timeSlots;
+
+                var created = await _facilityRepository.CreateFacilityAsync(facility);
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Tạo cơ sở thành công",
+                    Data = created
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Tạo cơ sở thất bại: " + ex.Message,
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<ApiResponse<Facility>> UpdateFacility(UpdateFacilityRequest request, int facilityId)
+        {
+            var data = await _facilityRepository.GetByIdAsync(facilityId);
+            if (data == null)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở hợp lệ",
+                    Data = null
+                };
+            }
+
+            // Validate input
+            if (string.IsNullOrWhiteSpace(request.FacilityName))
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng",
+                    Data = null
+                };
+            }
+
+            if (request.StatusId <= 0)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái không hợp lệ",
+                    Data = null
+                };
+            }
+
+            if (request.OpenHour >= request.CloseHour)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                    Data = null
+                };
+            }
+
+            if (request.SlotDuration <= 0 || request.SlotDuration > 180)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Thời lượng mỗi lượt phải từ 1 đến 180 phút",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                // Update các thuộc tính
+                data.FacilityName = request.FacilityName.Trim();
+                data.Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim();
+                data.Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim();
+                data.StatusId = request.StatusId;
+
+                // Tạo lại TimeSlots mới
+                var timeSlots = new List<TimeSlot>();
+                var startTime = new TimeOnly(request.OpenHour, 0);
+                var endTime = new TimeOnly(request.CloseHour, 0);
+                var duration = TimeSpan.FromMinutes(request.SlotDuration);
+
+                var current = startTime;
+                int slotLimit = 1000;
+                int count = 0;
+
+                while (current.Add(duration) <= endTime && count < slotLimit)
+                {
+                    timeSlots.Add(new TimeSlot
+                    {
+                        StartTime = current,
+                        EndTime = current.Add(duration),
+                    });
+
+                    current = current.Add(duration);
+                    count++;
+                }
+
+                // Gán TimeSlot mới (nếu bạn muốn xóa hết slot cũ)
+                data.TimeSlots = timeSlots;
+
+                var updated = await _facilityRepository.UpdateAsync(data);
+                if (updated == null)
+                {
+                    return new ApiResponse<Facility>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Cập nhật thất bại",
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Cập nhật cơ sở thành công",
+                    Data = updated
+                };
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Cập nhật cơ sở thất bại: " + ex.Message,
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<ApiResponse<Facility>> DeleteFacility(int facilityId)
+        {
+            var data = await _facilityRepository.GetByIdAsync(facilityId);
+            if (data == null)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở hợp lệ",
+                    Data = null
+                };
+            }
+
+            try
+            {
+                var deleted = await _facilityRepository.DeleteAsync(facilityId);
+
+                if (!deleted)
+                {
+                    return new ApiResponse<Facility>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Xóa cơ sở thất bại",
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<Facility>
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Xóa cơ sở thành công",
+                    Data = data // trả lại thông tin facility đã xóa nếu cần
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = $"Đã xảy ra lỗi khi xóa: {ex.Message}",
+                    Data = null
+                };
+            }
+        }
     }
 }
+
