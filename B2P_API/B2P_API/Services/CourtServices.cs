@@ -2,6 +2,7 @@
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
+using Google.Apis.Drive.v3.Data;
 
 namespace B2P_API.Services
 {
@@ -17,14 +18,25 @@ namespace B2P_API.Services
         }
 
         public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(int pageNumber, int pageSize,
-            string? search, int? status, int? categoryId)
+            int facilityId, string? search, int? status, int? categoryId)
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0 || pageSize > 10) pageSize = 10;
 
             var paginatedResult = await _repository.GetAllCourts(
-                pageNumber, pageSize, search, status, categoryId
+                pageNumber, pageSize, facilityId, search, status, categoryId
             );
+
+            if (paginatedResult.Items == null)
+            {
+                return new ApiResponse<PagedResponse<CourtDTO>>
+                {
+                    Success = false,
+                    Message = "This facility don't have any court in the system.",
+                    Status = 200,
+                    Data = null
+                };
+            }
 
             var response = new PagedResponse<CourtDTO>
             {
@@ -38,7 +50,7 @@ namespace B2P_API.Services
             return new ApiResponse<PagedResponse<CourtDTO>>
             {
                 Success = true,
-                Message = "Account retrieved with pagination successfully.",
+                Message = "Court retrieved with pagination successfully.",
                 Status = 200,
                 Data = response
             };
@@ -59,6 +71,15 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<Court>> CreateCourtAsync(CreateCourt request)
         {
+            if (request.FacilityId == null)
+                return new ApiResponse<Court> { Success = false, Message = "FacilityId is required.", Status = 400 };
+            if (string.IsNullOrWhiteSpace(request.CourtName))
+                return new ApiResponse<Court> { Success = false, Message = "CourtName is required and cannot be whitespace.", Status = 400 };
+            if (request.CategoryId == null)
+                return new ApiResponse<Court> { Success = false, Message = "CategoryId is required.", Status = 400 };
+            if (request.PricePerHour == null || request.PricePerHour <= 0)
+                return new ApiResponse<Court> { Success = false, Message = "PricePerHour must be greater than 0.", Status = 400 };
+
             try
             {
                 await _repository.CreateCourt(request);
@@ -90,8 +111,40 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request)
+        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request, int userId)
         {
+            bool check = _repository.CheckCourtOwner(userId, request.CourtId);
+            if(!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Account can not update this court.",
+                    Status = 500
+                };
+            }
+
+            if (request.CourtName != null && string.IsNullOrWhiteSpace(request.CourtName))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "CourtName cannot be only whitespace.",
+                    Status = 400
+                };
+            }
+            if (request.PricePerHour.HasValue)
+            {
+                if (request.PricePerHour <= 0)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "PricePerHour must be greater than 0.",
+                        Status = 400
+                    };
+                }
+            }
             try
             {
                 var court = await _repository.UpdateCourt(request);
@@ -138,8 +191,19 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<bool>> DeleteCourt(int courtId)
+        public async Task<ApiResponse<bool>> DeleteCourt(int userId, int courtId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Account can not delete this court.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 if (await _repository.DeleteCourt(courtId) == false)
@@ -174,8 +238,19 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<object>> LockCourt(int courtId, int statusId)
+        public async Task<ApiResponse<object>> LockCourt(int userId, int courtId, int statusId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Account can not lock this court.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 var court = await _repository.LockCourt(courtId, statusId);
