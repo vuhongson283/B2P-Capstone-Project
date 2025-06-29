@@ -31,12 +31,15 @@ namespace B2P_API.Repository
             return true;
         }
 
-        public Task<List<TimeSlot>> GetByFacilityIdAsync(int facilityId)
+        public async Task<List<TimeSlot>> GetByFacilityIdAsync(int facilityId)
         {
-            throw new NotImplementedException();
+            return await _context.TimeSlots
+                .Where(x => x.FacilityId == facilityId)
+                .Include(x => x.Status)
+                .ToListAsync();
         }
 
-        public async Task<TimeSlot> GetByIdAsync(int id)
+        public async Task<TimeSlot?> GetByIdAsync(int id)
         {
             return await _context.TimeSlots
                 .Include(x => x.Facility)
@@ -45,9 +48,18 @@ namespace B2P_API.Repository
                 .FirstOrDefaultAsync(x => x.TimeSlotId == id);
         }
 
-        public Task<TimeSlot> UpdateAsync(TimeSlot timeSlot)
+        public async Task<TimeSlot?> UpdateAsync(TimeSlot timeSlot)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _context.TimeSlots.Update(timeSlot);
+                await _context.SaveChangesAsync();
+                return timeSlot;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
 
