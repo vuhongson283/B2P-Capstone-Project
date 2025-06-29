@@ -1,6 +1,6 @@
 ﻿using B2P_API.Models;
 
-namespace B2P_API.DTOs
+namespace B2P_API.DTOs.CourtManagementDTO
 {
     public class CourtDTO
     {
