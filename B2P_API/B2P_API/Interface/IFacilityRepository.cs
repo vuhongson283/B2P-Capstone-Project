@@ -10,7 +10,7 @@
         Task<Facility> CreateFacilityAsync(Facility facility);
         Task<bool> DeleteAsync(int id);
         Task<List<Facility>> GetByUserIdAsync(int userId);
-        Task<bool> UpdateAsync(Facility facility);
+        Task<Facility> UpdateAsync(Facility facility);
        
 
 

@@ -355,3 +355,4 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.genruntimeconfig.cache
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\ref\B2P_API.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\DnsClient.dll
+C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
