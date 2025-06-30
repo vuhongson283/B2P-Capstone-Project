@@ -11,5 +11,9 @@ public partial class Slider
 
     public string? SlideUrl { get; set; }
 
+    public int? StatusId { get; set; }
+
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
+
+    public virtual Status? Status { get; set; }
 }
