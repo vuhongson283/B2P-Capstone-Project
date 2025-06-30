@@ -185,7 +185,6 @@ public partial class SportBookingDbContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Comment__UserId__5441852A");
         });
 
@@ -323,6 +322,10 @@ public partial class SportBookingDbContext : DbContext
             entity.Property(e => e.SlideId).ValueGeneratedNever();
             entity.Property(e => e.SlideDescription).HasMaxLength(500);
             entity.Property(e => e.SlideUrl).HasMaxLength(500);
+
+            entity.HasOne(d => d.Status).WithMany(p => p.Sliders)
+                .HasForeignKey(d => d.StatusId)
+                .HasConstraintName("FK_Sliders_Status");
         });
 
         modelBuilder.Entity<Status>(entity =>

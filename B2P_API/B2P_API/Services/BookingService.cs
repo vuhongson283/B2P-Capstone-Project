@@ -4,6 +4,10 @@ using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
+using DnsClient;
+using System.Net.Mail;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace B2P_API.Services
 {
@@ -39,6 +43,28 @@ namespace B2P_API.Services
             }
             else
             {
+                bool isEmailvalid = await IsRealEmailAsync(request.Email);
+                if (!isEmailvalid)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Email không hợp lệ"
+                    };
+                }
+
+                if (!IsValidPhone(request.Phone))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Số điện thoại không hợp lệ"
+                    };
+                }
+
+
                 if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
                 {
                     return new ApiResponse<object>
@@ -302,6 +328,250 @@ namespace B2P_API.Services
             return result;
         }
 
+        public async Task<bool> IsRealEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new MailAddress(email);
+                var domain = addr.Host;
+
+                var lookup = new LookupClient();
+                var result = await lookup.QueryAsync(domain, QueryType.MX);
+
+                return result.Answers.MxRecords().Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        bool IsValidPhone(string? phone)
+        {
+            return !string.IsNullOrWhiteSpace(phone) &&
+                   Regex.IsMatch(phone, @"^(03|05|07|08|09)\d{8}$");
+        }
+
+        public async Task<ApiResponse<PagedResponse<BookingResponseDto>>> GetByUserIdAsync(int? userId, BookingQueryParameters queryParams)
+        {
+            // Validate paging
+            if (queryParams.Page <= 0)
+                return new() { Success = false, Status = 400, Message = "Page phải lớn hơn 0." };
+
+            if (queryParams.PageSize <= 0)
+                return new() { Success = false, Status = 400, Message = "PageSize phải lớn hơn 0." };
+
+            var validSortBy = new[] { "checkindate", "createdate" };
+            if (!validSortBy.Contains(queryParams.SortBy?.ToLower()))
+                return new()
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = $"SortBy không hợp lệ. Chỉ chấp nhận: {string.Join(", ", validSortBy)}"
+                };
+
+            var dir = queryParams.SortDirection?.ToLower();
+            if (dir != "asc" && dir != "desc")
+                return new()
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "SortDirection không hợp lệ. Chỉ chấp nhận: asc hoặc desc."
+                };
+
+            // Get count
+            var totalItems = await _bookingRepo.CountByUserIdAsync(userId, queryParams.StatusId);
+            var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
+
+            if (totalPages > 0 && queryParams.Page > totalPages)
+                return new()
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = $"Page vượt quá số trang tối đa ({totalPages})."
+                };
+
+            // Get data
+            var bookings = await _bookingRepo.GetByUserIdAsync(userId, queryParams);
+
+            // Tải thêm court và timeslot để join tay
+            var courtDict = await _context.Courts
+                .Include(c => c.Category)
+                .ToDictionaryAsync(c => c.CourtId);
+
+            var slotDict = await _context.TimeSlots
+                .ToDictionaryAsync(s => s.TimeSlotId);
+
+            var dtoList = bookings.Select(b => new BookingResponseDto
+            {
+                BookingId = b.BookingId,
+                TotalPrice = b.TotalPrice ?? 0,
+                CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
+                Status = b.Status?.StatusName ?? "",
+                Slots = b.BookingDetails.Select(d =>
+                {
+                    var court = courtDict.GetValueOrDefault(d.CourtId);
+                    var slot = slotDict.GetValueOrDefault(d.TimeSlotId);
+
+                    return new BookingSlotDto
+                    {
+                        CourtId = d.CourtId,
+                        TimeSlotId = d.TimeSlotId,
+                        StartTime = slot?.StartTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+                        EndTime = slot?.EndTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+                        CourtName = court?.CourtName ?? "",
+                        CategoryName = court?.Category?.CategoryName ?? ""
+                    };
+                }).ToList()
+            }).ToList();
+
+            return new ApiResponse<PagedResponse<BookingResponseDto>>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy danh sách booking thành công",
+                Data = new PagedResponse<BookingResponseDto>
+                {
+                    CurrentPage = queryParams.Page,
+                    ItemsPerPage = queryParams.PageSize,
+                    TotalItems = totalItems,
+                    TotalPages = totalPages,
+                    Items = dtoList
+                }
+            };
+        }
+
+        public async Task<ApiResponse<BookingResponseDto>> GetByIdAsync(int bookingId)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Status)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.Court)
+                        .ThenInclude(c => c.Category)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.TimeSlot)
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
+
+            if (booking == null)
+            {
+                return new ApiResponse<BookingResponseDto>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = $"Không tìm thấy booking với ID = {bookingId}"
+                };
+            }
+
+            // Tạo Dict cache như bên danh sách
+            var courtDict = booking.BookingDetails
+                .Select(d => d.Court)
+                .DistinctBy(c => c.CourtId)
+                .ToDictionary(c => c.CourtId);
+
+            var slotDict = booking.BookingDetails
+                .Select(d => d.TimeSlot)
+                .DistinctBy(s => s.TimeSlotId)
+                .ToDictionary(s => s.TimeSlotId);
+
+            var dto = new BookingResponseDto
+            {
+                BookingId = booking.BookingId,
+                TotalPrice = booking.TotalPrice ?? 0,
+                CheckInDate = booking.BookingDetails.Min(d => d.CheckInDate),
+                Status = booking.Status?.StatusName ?? "",
+                Slots = booking.BookingDetails.Select(d =>
+                {
+                    var court = courtDict.GetValueOrDefault(d.CourtId);
+                    var slot = slotDict.GetValueOrDefault(d.TimeSlotId);
+
+                    return new BookingSlotDto
+                    {
+                        CourtId = d.CourtId,
+                        TimeSlotId = d.TimeSlotId,
+                        StartTime = slot?.StartTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+                        EndTime = slot?.EndTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+                        CourtName = court?.CourtName ?? "",
+                        CategoryName = court?.Category?.CategoryName ?? ""
+                    };
+                }).ToList()
+            };
+
+            return new ApiResponse<BookingResponseDto>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy chi tiết booking thành công",
+                Data = dto
+            };
+        }
+
+        public async Task<ApiResponse<string>> MarkBookingCompleteAsync(int bookingId)
+        {
+            var booking = _bookingRepo.GetById(bookingId);
+
+            if (booking == null)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy booking."
+                };
+            }
+
+            if (booking.StatusId == 10)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Booking đã hoàn thành trước đó."
+                };
+            }
+
+            var today = DateTime.Today;
+            var earliestCheckIn = booking.BookingDetails.Min(d => d.CheckInDate.Date);
+
+            if (earliestCheckIn > today)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = $"Không thể hoàn thành booking trước ngày {earliestCheckIn:dd/MM/yyyy}."
+                };
+            }
+
+            var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }; // Ví dụ 1 = Đã đặt, 2 = Đang sử dụng
+            if (!allowedStatusToComplete.Contains(booking.StatusId))
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái hiện tại không cho phép hoàn thành booking."
+                };
+            }
+
+            booking.StatusId = 10;
+
+            foreach (var detail in booking.BookingDetails)
+            {
+                detail.StatusId = 10;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new ApiResponse<string>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Đã đánh dấu booking là hoàn thành thành công."
+            };
+        }
 
 
     }

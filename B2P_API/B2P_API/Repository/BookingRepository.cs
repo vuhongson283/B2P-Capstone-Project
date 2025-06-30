@@ -1,4 +1,5 @@
-﻿using B2P_API.Models;
+﻿using B2P_API.DTOs.BookingDTOs;
+using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 
@@ -61,6 +62,74 @@ namespace B2P_API.Repository
 
             return result;
         }
+
+        public async Task<int> CountByUserIdAsync(int? userId, int? statusId)
+        {
+            var query = _context.Bookings.AsQueryable();
+
+            if (userId.HasValue)
+                query = query.Where(b => b.UserId == userId.Value);
+
+            if (statusId.HasValue)
+                query = query.Where(b => b.StatusId == statusId.Value);
+
+            return await query.CountAsync();
+        }
+
+        public async Task<List<Booking>> GetByUserIdAsync(int? userId, BookingQueryParameters query)
+        {
+            var bookings = _context.Bookings
+                .Include(b => b.Status)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.Court).ThenInclude(c => c.Category)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.TimeSlot)
+                .AsQueryable();
+            if (query.FacilityId.HasValue)
+            {
+                bookings = bookings.Where(b =>
+                    b.BookingDetails.Any(d => d.Court.FacilityId == query.FacilityId.Value));
+            }
+            if (userId.HasValue)
+                bookings = bookings.Where(b => b.UserId == userId.Value);
+
+            if (query.StatusId.HasValue)
+                bookings = bookings.Where(b => b.StatusId == query.StatusId.Value);
+
+            switch (query.SortBy?.ToLower())
+            {
+                case "checkindate":
+                    bookings = query.SortDirection == "asc"
+                        ? bookings.OrderBy(b => b.BookingDetails.Min(d => d.CheckInDate))
+                        : bookings.OrderByDescending(b => b.BookingDetails.Min(d => d.CheckInDate));
+                    break;
+                case "createdate":
+                    bookings = query.SortDirection == "asc"
+                        ? bookings.OrderBy(b => b.CreateAt)
+                        : bookings.OrderByDescending(b => b.CreateAt);
+                    break;
+            }
+
+            return await bookings
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+        }
+
+        public Booking? GetById(int id)
+        {
+            return _context.Bookings
+                .Include(b => b.Status)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.Court)
+                        .ThenInclude(c => c.Category)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.TimeSlot)
+                .FirstOrDefault(b => b.BookingId == id);
+        }
+
+
+
     }
 
     // Class trung gian để xử lý xếp sân
