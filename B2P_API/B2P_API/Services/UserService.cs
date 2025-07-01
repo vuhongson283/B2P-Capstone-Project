@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Linq;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
+using DnsClient;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace B2P_API.Services
 {
@@ -16,17 +19,23 @@ namespace B2P_API.Services
         private readonly IEmailService _emailService;
         private readonly IMemoryCache _cache;
         private readonly ISMSService _sMSService;
+        private readonly IBankAccountRepository _bankAccountRepository;
+        private readonly IImageRepository _imageRepository;
 
         public UserService(
             IUserRepository userRepository,
             IEmailService emailService,
             ISMSService sMSService,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IBankAccountRepository bankAccountRepository,
+            IImageRepository imageRepository)
         {
             _userRepository = userRepository;
             _emailService = emailService;
             _cache = cache;
             _sMSService = sMSService;
+            _bankAccountRepository = bankAccountRepository;
+            _imageRepository = imageRepository;
         }
 
         public async Task<ApiResponse<object>> SendPasswordResetOtpByEmailAsync(ForgotPasswordRequestByEmailDto? request)
@@ -56,7 +65,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!IsValidEmail(request.Email))
+                if (!await IsRealEmailAsync(request.Email))
                 {
                     return new ApiResponse<object>
                     {
@@ -159,7 +168,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!IsValidEmail(request.Email))
+                if (!await IsRealEmailAsync(request.Email))
                 {
                     return new ApiResponse<object>
                     {
@@ -335,7 +344,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!IsValidEmail(request.Email))
+                if (!await IsRealEmailAsync(request.Email))
                 {
                     return new ApiResponse<object>
                     {
@@ -1024,7 +1033,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!IsValidEmail(updateUserDto.Email))
+                if (!await IsRealEmailAsync(updateUserDto.Email))
                 {
                     return new ApiResponse<object>
                     {
@@ -1035,7 +1044,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(updateUserDto.Address))
+                if (string.IsNullOrEmpty(updateUserDto.Address?.Trim()))
                 {
                     return new ApiResponse<object>
                     {
@@ -1072,12 +1081,12 @@ namespace B2P_API.Services
                 var age = today.Year - updateUserDto.Dob.Value.Year;
                 if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
 
-                if (age < 18)
+                if (age < 15)
                 {
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "Người dùng phải từ 18 tuổi trở lên",
+                        Message = "Người dùng phải từ 15 tuổi trở lên",
                         Success = false,
                         Status = 400
                     };
@@ -1107,14 +1116,14 @@ namespace B2P_API.Services
                     };
                 }
 
-                // Check phone exists
-                var existingEmail = await _userRepository.CheckPhoneExistedByUserId(userId, updateUserDto.Email);
+                // Check email exists
+                var existingEmail = await _userRepository.CheckEmailExistedByUserId(userId, updateUserDto.Email);
                 if (existingEmail != null)
                 {
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_66,
+                        Message = "Email đã được sử dụng",
                         Success = false,
                         Status = 400
                     };
@@ -1124,35 +1133,112 @@ namespace B2P_API.Services
                 user.FullName = updateUserDto.FullName;
                 user.Email = updateUserDto.Email;
                 user.IsMale = updateUserDto.IsMale;
-                user.Address = updateUserDto.Address;
+                user.Address = updateUserDto.Address.Trim();
                 user.Dob = updateUserDto.Dob;
 
-                // Update image
-                var updatedImage = await _userRepository.GetImageByUserId(userId);
-                if (updatedImage == null)
+                updateUserDto.AccountHolder = updateUserDto.AccountHolder?.Trim();
+                updateUserDto.AccountNumber = updateUserDto.AccountNumber.Trim();
+
+                // Validate bank account
+                if (!IsValidBankAccount(updateUserDto.AccountNumber))
                 {
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "Không tìm được ảnh",
+                        Message = "Số tài khoản không hợp lệ,chỉ chứa từ 9-16 ký tự",
                         Success = false,
-                        Status = 404
+                        Status = 400
                     };
                 }
 
-                updatedImage.ImageUrl = updateUserDto.ImageUrl;
-                var updateImageResult = await _userRepository.UpdateAvatar(updatedImage);
-                if (!updateImageResult)
+                if (string.IsNullOrEmpty(updateUserDto.AccountHolder))
                 {
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_67,
+                        Message = "Tên chủ tài khoản không được để trống",
                         Success = false,
-                        Status = 500
+                        Status = 400
                     };
                 }
 
+                if (updateUserDto.AccountHolder.Length > 50)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Tên chủ tài khoản không được vượt quá 50 ký tự",
+                        Success = false,
+                        Status = 400
+                    };
+                }
+
+                //Validate bank type
+                if (updateUserDto.BankTypeId == null || updateUserDto.BankTypeId <=0)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Loại ngân hàng không hợp lệ",
+                        Success = false,
+                        Status = 400
+                    };
+                }
+                var bankType = await _bankAccountRepository.GetBankTypeByIdAsync(updateUserDto.BankTypeId);
+                if (bankType == null)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Không tìm thấy kiểu ngân hàng đã chọn",
+                        Success = false,
+                        Status = 400
+                    };
+                }
+
+                //Update bank account
+                var bankAccount = await _bankAccountRepository.GetBankAccountsByUserIdAsync(userId);
+                if (bankAccount == null)
+                {
+                    // Create new bank account if it doesn't exist
+                    bankAccount = new BankAccount
+                    {
+                        UserId = userId,
+                        AccountNumber = updateUserDto.AccountNumber,
+                        AccountHolder = updateUserDto.AccountHolder,
+                        BankTypeId = updateUserDto.BankTypeId.Value
+                    };
+                    var createResult = await _bankAccountRepository.AddBankAccountAsync(bankAccount);
+                    if (!createResult)
+                    {
+                        return new ApiResponse<object>
+                        {
+                            Data = null,
+                            Message = "Tạo tài khoản ngân hàng thất bại",
+                            Success = false,
+                            Status = 500
+                        };
+                    }
+                }
+                else
+                {
+                    // Update existing bank account
+                    bankAccount.AccountNumber = updateUserDto.AccountNumber;
+                    bankAccount.AccountHolder = updateUserDto.AccountHolder;
+                    bankAccount.BankTypeId = updateUserDto.BankTypeId.Value;
+                    var updateResult = await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
+                    if (!updateResult)
+                    {
+                        return new ApiResponse<object>
+                        {
+                            Data = null,
+                            Message = "Cập nhật tài khoản ngân hàng thất bại",
+                            Success = false,
+                            Status = 500
+                        };
+                    }
+                }
+            
                 // Update user
                 var updatedUserResult = await _userRepository.UpdateUserAsync(user);
                 if (!updatedUserResult)
@@ -1187,6 +1273,39 @@ namespace B2P_API.Services
             }
         }
 
+        public async Task<bool> IsRealEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new MailAddress(email);
+                var domain = addr.Host;
+
+                var lookup = new LookupClient();
+                var result = await lookup.QueryAsync(domain, QueryType.MX);
+
+                return result.Answers.MxRecords().Any();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public bool IsValidBankAccount(string accountNumber)
+        {
+            if (string.IsNullOrWhiteSpace(accountNumber))
+                return false;
+
+            if (!Regex.IsMatch(accountNumber, @"^[a-zA-Z0-9]+$"))
+                return false;
+
+            if (accountNumber.Length < 9 || accountNumber.Length > 16)
+                return false;
+
+            return true;
+        }
         private string GenerateSecureOtp()
         {
             using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
@@ -1197,19 +1316,6 @@ namespace B2P_API.Services
                 return (randomNumber % 900000 + 100000).ToString(); // 6 digits OTP
             }
         }
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
         private bool IsValidPhoneNumber(string phone)
         {
             return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0[3-9]\d{8}$");

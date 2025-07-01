@@ -9,6 +9,7 @@ using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +75,11 @@ builder.Services.AddScoped<CommentService>();
 
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
+builder.Services.AddScoped<BankAccountService>();
 
+builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
+ExcelPackage.License.SetNonCommercialPersonal("B2P");
 var app = builder.Build();
 
 // Middleware pipeline

@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs.CourtCategoryDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Http;
@@ -8,10 +9,10 @@ namespace B2P_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CourtController : ControllerBase
+    public class CourtCategoryController : ControllerBase
     {
         private readonly CourtCategoryService _courtCategoryService;
-        public CourtController(CourtCategoryService courtCategoryService)
+        public CourtCategoryController(CourtCategoryService courtCategoryService)
         {
             _courtCategoryService = courtCategoryService;
         }
@@ -59,6 +60,12 @@ namespace B2P_API.Controllers
             return Ok(response);
         }
 
+        [HttpDelete("delete-court-category")]
+        public async Task<IActionResult> DeleteCourtCategory(int categoryId)
+        {
+            var response = await _courtCategoryService.DeleteCourtCategoryAsync(categoryId);
+            return StatusCode(response.Status, response);
+        }
     }
 
 }
