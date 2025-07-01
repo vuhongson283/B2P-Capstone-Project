@@ -4,8 +4,10 @@ using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Utils;
 using BCrypt.Net;
+using DnsClient;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace B2P_API.Repository
@@ -48,6 +50,26 @@ namespace B2P_API.Repository
 				throw new Exception(MessagesCodes.MSG_06);
 			}
 		}
+		public async Task<bool> IsRealEmailAsync(string email)
+		{
+			if (string.IsNullOrWhiteSpace(email))
+				return false;
+
+			try
+			{
+				var addr = new MailAddress(email);
+				var domain = addr.Host;
+
+				var lookup = new LookupClient();
+				var result = await lookup.QueryAsync(domain, QueryType.MX);
+
+				return result.Answers.MxRecords().Any();
+			}
+			catch
+			{
+				return false;
+			}
+		}
 
 		public async Task<ApiResponse<string>> RegisterAccountAsync(RegisterAccountRequest request)
 		{
@@ -60,6 +82,16 @@ namespace B2P_API.Repository
 					{
 						Success = false,
 						Message = MessagesCodes.MSG_64,
+						Status = 400,
+						Data = null
+					};
+				}
+				if (await IsRealEmailAsync(request.Email))
+				{
+					return new ApiResponse<string>
+					{
+						Success = false,
+						Message = MessagesCodes.MSG_68,
 						Status = 400,
 						Data = null
 					};

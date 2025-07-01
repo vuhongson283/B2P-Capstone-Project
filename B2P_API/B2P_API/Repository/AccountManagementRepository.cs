@@ -39,6 +39,16 @@ namespace B2P_API.Repository
 						Data = null
 					};
 				}
+				if (user.StatusId == 4)
+				{
+					return new ApiResponse<string>
+					{
+						Success = false,
+						Message = "Tài khoản này đã bị cấm rồi ", 
+						Status = 404,
+						Data = null
+					};
+				}
 
 				// Giả sử StatusId = 3 là "banned"
 				user.StatusId = 4;
@@ -78,7 +88,16 @@ namespace B2P_API.Repository
 						Status = 404,
 						Data = null
 					};
-
+				if (user.StatusId == 1)
+				{
+					return new ApiResponse<string>
+					{
+						Success = false,
+						Message = "Tài khoản này đã được hoạt động rồi , không thể gỡ cấm",
+						Status = 404,
+						Data = null
+					};
+				}
 				user.StatusId = 1;
 				_context.Users.Update(user);
 				await _context.SaveChangesAsync();
@@ -202,7 +221,16 @@ namespace B2P_API.Repository
 				.ToListAsync();
 
 			// Ánh xạ sang DTO
-			var mappedData = _mapper.Map<List<GetListAccountResponse>>(data);
+			var mappedData = data.Select(u => new GetListAccountResponse
+			{
+				UserId = u.UserId,
+				FullName = u.FullName,
+				Email = u.Email,
+				Phone = u.Phone,
+				RoleName = u.Role?.RoleName,
+				StatusName = u.Status?.StatusName
+			}).ToList();
+
 
 			// Nếu không có kết quả phù hợp
 			if (mappedData == null || !mappedData.Any())
