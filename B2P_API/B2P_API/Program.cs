@@ -44,8 +44,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
-builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
-builder.Services.AddScoped<SliderManagementService>();
+//builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
+//builder.Services.AddScoped<SliderManagementService>();
 
 
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
@@ -79,6 +79,8 @@ builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
+builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
+builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 var app = builder.Build();
 
 // Middleware pipeline
