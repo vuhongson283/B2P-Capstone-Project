@@ -44,8 +44,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
-builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
-builder.Services.AddScoped<SliderManagementService>();
+//builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
+//builder.Services.AddScoped<SliderManagementService>();
 
 
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
