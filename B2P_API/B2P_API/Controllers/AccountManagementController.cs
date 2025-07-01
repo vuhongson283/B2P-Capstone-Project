@@ -12,12 +12,10 @@ namespace B2P_API.Controllers
 	public class AccountManagementController : ControllerBase
 	{
 		private readonly AccountManagementService _accountManagementService;
-        private readonly IExcelExportService _excelExportService;
 
-        public AccountManagementController(AccountManagementService accountManageService, IExcelExportService excelExportService)
+        public AccountManagementController(AccountManagementService accountManageService)
 		{
 			_accountManagementService = accountManageService;
-			_excelExportService = excelExportService;
         }
 		[HttpPost("account-list")]
 		public async Task<IActionResult> GetAccountList([FromBody] GetListAccountRequest request)
@@ -51,30 +49,5 @@ namespace B2P_API.Controllers
 			return StatusCode(resp.Status, resp);
 		}
 
-        [HttpPost("export-account-list")]
-        public async Task<IActionResult> ExportAccountToExcel([FromBody] GetListAccountRequest request)
-        {
-            var accountsResponse = await _accountManagementService.GetAllAccountsAsync(request);
-            if (!accountsResponse.Success)
-            {
-                return StatusCode(accountsResponse.Status, accountsResponse.Message);
-            }
-
-			var accounts = accountsResponse.Data.Items.ToList();
-            var excelResponse = await _excelExportService.ExportToExcelAsync<GetListAccountResponse>(
-    accounts,
-    "Accounts");
-
-            if (!excelResponse.Success)
-            {
-                return StatusCode(excelResponse.Status, excelResponse.Message);
-            }
-
-            var fileName = $"Accounts{DateTime.Now:yyyy-MM-dd}.xlsx";
-
-            return File(excelResponse.Data,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                fileName);
-        }
     }
 }

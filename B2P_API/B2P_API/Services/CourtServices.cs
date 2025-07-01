@@ -1,7 +1,8 @@
-﻿using B2P_API.DTOs;
+﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
+using Google.Apis.Drive.v3.Data;
 
 namespace B2P_API.Services
 {
@@ -17,14 +18,25 @@ namespace B2P_API.Services
         }
 
         public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(int pageNumber, int pageSize,
-            string? search, int? status, int? categoryId)
+            int facilityId, string? search, int? status, int? categoryId)
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0 || pageSize > 10) pageSize = 10;
 
             var paginatedResult = await _repository.GetAllCourts(
-                pageNumber, pageSize, search, status, categoryId
+                pageNumber, pageSize, facilityId, search, status, categoryId
             );
+
+            if (paginatedResult.Items == null)
+            {
+                return new ApiResponse<PagedResponse<CourtDTO>>
+                {
+                    Success = false,
+                    Message = "Cơ sở này không tồn tại sân nào trong hệ thống.",
+                    Status = 200,
+                    Data = null
+                };
+            }
 
             var response = new PagedResponse<CourtDTO>
             {
@@ -38,7 +50,7 @@ namespace B2P_API.Services
             return new ApiResponse<PagedResponse<CourtDTO>>
             {
                 Success = true,
-                Message = "Account retrieved with pagination successfully.",
+                Message = "Sân đã được lấy dữ liệu với phân trang thành công.",
                 Status = 200,
                 Data = response
             };
@@ -51,7 +63,7 @@ namespace B2P_API.Services
             return new ApiResponse<CourtDetailDTO>
             {
                 Success = true,
-                Message = "Get Court detail successful",
+                Message = "Lấy thông tin chi tiết sân thành công",
                 Status = 200,
                 Data = court
             };
@@ -59,6 +71,15 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<Court>> CreateCourtAsync(CreateCourt request)
         {
+            if (request.FacilityId == null)
+                return new ApiResponse<Court> { Success = false, Message = "FacilityId là bắt buộc.", Status = 400 };
+            if (string.IsNullOrWhiteSpace(request.CourtName))
+                return new ApiResponse<Court> { Success = false, Message = "CourtName là bắt buộc và không được phép là khoảng trắng.", Status = 400 };
+            if (request.CategoryId == null)
+                return new ApiResponse<Court> { Success = false, Message = "CategoryId là bắt buộc.", Status = 400 };
+            if (request.PricePerHour == null || request.PricePerHour <= 0)
+                return new ApiResponse<Court> { Success = false, Message = "PricePerHour phải lớn hơn 0.", Status = 400 };
+
             try
             {
                 await _repository.CreateCourt(request);
@@ -66,7 +87,7 @@ namespace B2P_API.Services
                 return new ApiResponse<Court>
                 {
                     Success = true,
-                    Message = "Court has been added!",
+                    Message = "Sân đã được thêm vào thành công!",
                     Status = 201,
                     Data = new Court
                     {
@@ -83,15 +104,47 @@ namespace B2P_API.Services
                 return new ApiResponse<Court>
                 {
                     Success = false,
-                    Message = "An error occurred: " + ex.Message,
+                    Message = "Đã xảy ra lỗi: " + ex.Message,
                     Status = 500,
                     Data = null
                 };
             }
         }
 
-        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request)
+        public async Task<ApiResponse<object>> UpdateCourt(UpdateCourtRequest request, int userId)
         {
+            bool check = _repository.CheckCourtOwner(userId, request.CourtId);
+            if(!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Tài khoản không thể cập nhật sân này vì không phải tài khoản chủ sân.",
+                    Status = 500
+                };
+            }
+
+            if (request.CourtName != null && string.IsNullOrWhiteSpace(request.CourtName))
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "CourtName không thể chỉ là khoảng trắng.",
+                    Status = 400
+                };
+            }
+            if (request.PricePerHour.HasValue)
+            {
+                if (request.PricePerHour <= 0)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "PricePerHour phải lớn hơn 0.",
+                        Status = 400
+                    };
+                }
+            }
             try
             {
                 var court = await _repository.UpdateCourt(request);
@@ -100,7 +153,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Court not found.",
+                        Message = "Không tìm thấy sân.",
                         Status = 404,
                         Data = null
                     };
@@ -111,7 +164,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Fail to update court.",
+                        Message = "Cập nhật sân thất bại.",
                         Status = 500,
                         Data = null
                     };
@@ -120,7 +173,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Court updated successfully",
+                    Message = "Cập nhật sân thành công.",
                     Status = 200,
                     Data = court
                 };
@@ -131,15 +184,26 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "An error occurred during update: " + ex.Message,
+                    Message = "Đã xảy ra lỗi trong quá trình cập nhật: " + ex.Message,
                     Status = 500,
                     Data = null
                 };
             }
         }
 
-        public async Task<ApiResponse<bool>> DeleteCourt(int courtId)
+        public async Task<ApiResponse<bool>> DeleteCourt(int userId, int courtId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Tài khoản không thể xóa sân này vì không phải tài khoản chủ sân.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 if (await _repository.DeleteCourt(courtId) == false)
@@ -147,7 +211,7 @@ namespace B2P_API.Services
                     return new ApiResponse<bool>
                     {
                         Success = false,
-                        Message = "Court not found.",
+                        Message = "Không tìm thấy sân.",
                         Status = 404,
                         Data = false
                     };
@@ -157,7 +221,7 @@ namespace B2P_API.Services
                 return new ApiResponse<bool>
                 {
                     Success = true,
-                    Message = "Court deleted successfully",
+                    Message = "Xóa sân thành công!",
                     Status = 201,
                     Data = true
                 };
@@ -167,15 +231,26 @@ namespace B2P_API.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "An error occurred during delete: " + ex.Message,
+                    Message = "Đã xảy ra lỗi trong quá trình xóa: " + ex.Message,
                     Status = 500,
                     Data = false
                 };
             }
         }
 
-        public async Task<ApiResponse<object>> LockCourt(int courtId, int statusId)
+        public async Task<ApiResponse<object>> LockCourt(int userId, int courtId, int statusId)
         {
+            bool check = _repository.CheckCourtOwner(userId, courtId);
+            if (!check)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Tài khoản không thể khóa sân này vì không phải tài khoản chủ sân.",
+                    Status = 500
+                };
+            }
+
             try
             {
                 var court = await _repository.LockCourt(courtId, statusId);
@@ -184,7 +259,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Court not found.",
+                        Message = "Không tìm thấy sân.",
                         Status = 404,
                         Data = null
                     };
@@ -195,7 +270,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Fail to lock court.",
+                        Message = "Khóa sân thất bại.",
                         Status = 500,
                         Data = null
                     };
@@ -204,7 +279,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Court locked successfully",
+                    Message = "Khóa sân thành công",
                     Status = 200,
                     Data = court
                 };
@@ -214,7 +289,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "An error occurred during lock: " + ex.Message,
+                    Message = "Đã xảy ra lỗi trong quá trình khóa: " + ex.Message,
                     Status = 500,
                     Data = null
                 };

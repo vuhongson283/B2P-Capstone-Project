@@ -1,8 +1,8 @@
-﻿namespace B2P_API.DTOs
+﻿namespace B2P_API.DTOs.CourtManagementDTO
 {
     public class UpdateCourtRequest
     {
-        public int CourtId {  get; set; }
+        public int CourtId { get; set; }
 
         public int? StatusId { get; set; }
 

@@ -80,6 +80,9 @@ builder.Services.AddScoped<BankAccountService>();
 builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 ExcelPackage.License.SetNonCommercialPersonal("B2P");
+builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<ReportService>();
+
 var app = builder.Build();
 
 // Middleware pipeline

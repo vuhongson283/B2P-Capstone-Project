@@ -71,6 +71,9 @@ namespace B2P_API.Services
                     }
                 }
 
+                // Định dạng các cột DateTime
+                ApplyDateTimeFormatting<T>(worksheet, headers, data.Count);
+
                 // Auto-fit columns
                 worksheet.Cells.AutoFitColumns();
 
@@ -101,6 +104,57 @@ namespace B2P_API.Services
             }
         }
 
+        private void ApplyDateTimeFormatting<T>(ExcelWorksheet worksheet, List<string> headers, int dataRowCount)
+        {
+            var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            for (int j = 0; j < headers.Count; j++)
+            {
+                var header = headers[j];
+                var property = properties.FirstOrDefault(p => p.Name == header);
+
+                if (property != null)
+                {
+                    var propertyType = property.PropertyType;
+                    var columnRange = worksheet.Cells[2, j + 1, dataRowCount + 1, j + 1];
+
+                    // DateTime fields
+                    if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
+                    {
+                        columnRange.Style.Numberformat.Format = "dd/mm/yyyy hh:mm:ss";
+                    }
+                    // TimeSpan fields
+                    else if (propertyType == typeof(TimeSpan) || propertyType == typeof(TimeSpan?))
+                    {
+                        columnRange.Style.Numberformat.Format = "hh:mm:ss";
+                    }
+                    // **THÊM XỬ LÝ CHO TIMEONLY**
+                    else if (propertyType == typeof(TimeOnly) || propertyType == typeof(TimeOnly?))
+                    {
+                        columnRange.Style.Numberformat.Format = "hh:mm:ss";
+                    }
+                    // String time fields (startTime, endTime, etc.)
+                    else if (propertyType == typeof(string) && IsTimeField(header))
+                    {
+                        columnRange.Style.Numberformat.Format = "hh:mm:ss";
+                    }
+                }
+            }
+        }
+
+        private bool IsTimeField(string fieldName)
+        {
+            var timeFieldNames = new[] {
+                "startTime", "endTime", "time", "hour",
+                "StartTime", "EndTime", "Time", "Hour"
+            };
+
+            return timeFieldNames.Any(pattern =>
+                fieldName.Equals(pattern, StringComparison.OrdinalIgnoreCase) ||
+                fieldName.Contains("Time", StringComparison.OrdinalIgnoreCase) ||
+                fieldName.Contains("Hour", StringComparison.OrdinalIgnoreCase));
+        }
+
         private Dictionary<string, Func<T, object>> GetDefaultColumnMappings<T>()
         {
             var mappings = new Dictionary<string, Func<T, object>>();
@@ -115,10 +169,70 @@ namespace B2P_API.Services
                     prop.PropertyType != typeof(DateTime?))
                     continue;
 
-                mappings[prop.Name] = item => prop.GetValue(item) ?? "";
+                // Xử lý DateTime
+                if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(DateTime?))
+                {
+                    mappings[prop.Name] = item =>
+                    {
+                        var value = prop.GetValue(item);
+                        return value ?? DateTime.MinValue;
+                    };
+                }
+                // Xử lý TimeSpan
+                else if (prop.PropertyType == typeof(TimeSpan) || prop.PropertyType == typeof(TimeSpan?))
+                {
+                    mappings[prop.Name] = item =>
+                    {
+                        var value = prop.GetValue(item);
+                        return value ?? TimeSpan.Zero;
+                    };
+                }
+                // Xử lý TimeOnly - PHẦN ĐÃ SỬA
+                else if (prop.PropertyType == typeof(TimeOnly) || prop.PropertyType == typeof(TimeOnly?))
+                {
+                    mappings[prop.Name] = item =>
+                    {
+                        var value = prop.GetValue(item);
+                        if (value is TimeOnly timeOnly)
+                        {
+                            return timeOnly.ToTimeSpan();
+                        }
+                        else if (value != null && value is TimeOnly?)
+                        {
+                            var nullableTimeOnly = (TimeOnly?)value;
+                            if (nullableTimeOnly.HasValue)
+                            {
+                                return nullableTimeOnly.Value.ToTimeSpan();
+                            }
+                        }
+                        return TimeSpan.Zero;
+                    };
+                }
+                // Xử lý string time fields
+                else if (prop.PropertyType == typeof(string) && IsTimeField(prop.Name))
+                {
+                    mappings[prop.Name] = item =>
+                    {
+                        var value = prop.GetValue(item)?.ToString();
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            if (TimeSpan.TryParse(value, out TimeSpan timeValue))
+                            {
+                                return timeValue;
+                            }
+                            return value;
+                        }
+                        return "";
+                    };
+                }
+                else
+                {
+                    mappings[prop.Name] = item => prop.GetValue(item) ?? "";
+                }
             }
 
             return mappings;
         }
     }
 }
+
