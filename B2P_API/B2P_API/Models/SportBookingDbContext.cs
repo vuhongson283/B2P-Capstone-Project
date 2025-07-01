@@ -317,9 +317,13 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("Slider");
 
-            entity.Property(e => e.SlideId).ValueGeneratedNever();
+            entity.Property(e => e.SlideId).ValueGeneratedOnAdd();
             entity.Property(e => e.SlideDescription).HasMaxLength(500);
             entity.Property(e => e.SlideUrl).HasMaxLength(500);
+
+            entity.HasOne(d => d.Status).WithMany(p => p.Sliders)
+                .HasForeignKey(d => d.StatusId)
+                .HasConstraintName("FK_Slider_Status");
         });
 
         modelBuilder.Entity<Status>(entity =>
