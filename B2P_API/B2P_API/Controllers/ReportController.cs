@@ -23,5 +23,13 @@ namespace B2P_API.Controllers
             var response = await _reportService.GetReport(userId, startDate, endDate, facilityId);
             return StatusCode(response.Status, response);
         }
+
+        [HttpGet("TotalReport")]
+        public async Task<IActionResult> GetTotal([FromQuery, BindRequired] int userId,
+            DateTime? startDate, DateTime? endDate)
+        {
+            var response = await _reportService.GetTotalReport(userId, startDate, endDate);
+            return StatusCode(response.Status, response);
+        }
     }
 }
