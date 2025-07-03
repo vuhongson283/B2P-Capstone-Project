@@ -6,7 +6,7 @@ const Layout = (props) => {
   return (
     <>
       <Routes>
-        <Route path="/" element={<App />}>
+        <Route path="/homepage" element={<App />}>
           {/* You can add nested routes here if needed */}
         </Route>
       </Routes>
