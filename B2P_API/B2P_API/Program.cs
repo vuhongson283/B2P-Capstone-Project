@@ -79,6 +79,9 @@ builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
+builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<BookingService>();
+
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 var app = builder.Build();
