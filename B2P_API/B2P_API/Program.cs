@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using static B2P_API.Services.TwilioSMSService;
+using B2P_API.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,17 @@ builder.Services.AddDbContext<SportBookingDbContext>(options =>
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// **THÊM CORS - Cho phép tất cả (Development)**
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
@@ -60,7 +73,7 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISMSService, eSMSService>();
+builder.Services.AddScoped<ISMSService, TwilioSMSService>();
 
 builder.Services.AddScoped<AccountManagementRepository>();
 builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
@@ -98,7 +111,9 @@ ExcelPackage.License.SetNonCommercialPersonal("B2P");
 // Report services
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<ReportService>();
-
+// Đăng ký TwilioSettings
+builder.Services.Configure<TwilioSettings>(
+    builder.Configuration.GetSection("Twilio"));
 var app = builder.Build();
 
 // Middleware pipeline
@@ -109,6 +124,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

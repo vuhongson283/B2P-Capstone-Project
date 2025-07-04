@@ -641,8 +641,21 @@ namespace B2P_API.Services
 
                 _cache.Set(cacheKey, otpData, TimeSpan.FromMinutes(5));
 
-                // Send OTP SMS
-                await _sMSService.SendOTPAsync(request.PhoneNumber, otp);
+                // Send OTP SMS - Thêm error handling
+                var smsResult = await _sMSService.SendOTPAsync(request.PhoneNumber, otp);
+
+                // Kiểm tra kết quả gửi SMS
+                if (!smsResult.Success)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Không thể gửi OTP: " + smsResult.Message,
+                        Success = false,
+                        Status = 500
+                    };
+                }
+
 
                 return new ApiResponse<object>
                 {
