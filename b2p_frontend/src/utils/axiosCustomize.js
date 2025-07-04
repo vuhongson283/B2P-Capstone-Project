@@ -6,7 +6,7 @@ NProgress.configure({
   trickleSpeed: 100,
 });
 const instance = axios.create({
-  baseURL: "http://localhost:8081/",
+  baseURL: "http://localhost:7227/",
   timeout: 1000,
 });
 // Add a request interceptor
@@ -26,7 +26,7 @@ instance.interceptors.response.use(
   function (response) {
     NProgress.done();
 
-    return response && response.data ? response.data : response;
+    return response;
   },
   function (error) {
     NProgress.done();

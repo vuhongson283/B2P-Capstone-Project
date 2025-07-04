@@ -9,6 +9,7 @@ using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +48,6 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
 
-
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
 
@@ -79,11 +79,26 @@ builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
+// Booking services
 builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<BookingService>();
 
+// TimeSlot services
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
+
+// Bank Account services
+builder.Services.AddScoped<BankAccountService>();
+builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
+
+// Excel Export services
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
+ExcelPackage.License.SetNonCommercialPersonal("B2P");
+
+// Report services
+builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<ReportService>();
+
 var app = builder.Build();
 
 // Middleware pipeline

@@ -1,23 +1,36 @@
 import logo from "./logo.svg";
 import "./App.scss";
 import { Outlet } from "react-router-dom";
-function App() {
+import CommonHeader from "./components/Header/CommonHeader";
+import { useLocation } from "react-router-dom";
+import SliderField from "./components/HomePage/SliderField";
+
+const App = (props) => {
+  const location = useLocation();
+  const showSliderAndSearch =
+    location.pathname === "/" || location.pathname === "/homepage";
   return (
     <div className="app-container">
-      <div className="header-container"></div>
-
+      <div className="header-container">
+        <CommonHeader />
+      </div>
       <div className="main-container">
-        <div className="sidenav-container"></div>
         <div className="app-content">
-                  <img src={logo} className="App-logo" alt="logo" />
-                  <p>
-                      Edit <code>src/App.js</code> and save to reload.
-                  </p>
+          {showSliderAndSearch && (
+            <>
+              <div className="slider-container">
+                <SliderField />
+              </div>
+              <div className="search-container"></div>
+            </>
+          )}
+
+          <Outlet />
         </div>
       </div>
-      <div></div>
+      <div className="footer-container"></div>
     </div>
   );
-}
+};
 
 export default App;
