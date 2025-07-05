@@ -1,0 +1,221 @@
+.search-field {
+    width        : 80%; // Giảm từ 90% xuống 80%
+    max-width    : 900px; // Giảm từ 1200px xuống 900px
+    margin       : 20px auto;
+    padding      : 25px; // Giảm từ 30px xuống 25px
+    border       : 1px solid #e0e0e0; // Giảm từ 2px xuống 1px
+    border-radius: 15px; // Giảm từ 20px xuống 15px
+    background   : #fff;
+    box-shadow   : 0 2px 4px rgba(0, 0, 0, 0.08); // Giảm shadow
+
+    .title {
+        font-size    : clamp(1.2rem, 3vw, 1.8rem); // Giảm kích thước
+        font-weight  : 600; // Giảm từ 700 xuống 600
+        color        : #28a745;
+        text-align   : center;
+        margin-bottom: 20px; // Giảm từ 25px xuống 20px
+        text-shadow  : none; // Bỏ text-shadow
+    }
+
+    .search-input {
+        margin-bottom: 20px; // Giảm từ 25px xuống 20px
+
+        .form-control {
+            height       : 42px; // Giảm từ 50px xuống 42px
+            border-radius: 20px; // Giảm từ 25px xuống 20px
+            border       : 1px solid #ddd; // Giảm từ 2px xuống 1px
+            padding      : 0 16px; // Giảm từ 20px xuống 16px
+            font-size    : 14px; // Giảm từ 16px xuống 14px
+            transition   : all 0.3s ease;
+
+            &:focus {
+                border-color: #28a745;
+                box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2); // Giảm shadow
+            }
+
+            &::placeholder {
+                color     : #999;
+                font-style: italic;
+            }
+        }
+    }
+
+    .search-category {
+        display        : flex;
+        flex-direction : row;
+        justify-content: space-between;
+        align-items    : center;
+        gap            : 12px; // Giảm từ 15px xuống 12px
+        margin-bottom  : 20px; // Giảm từ 25px xuống 20px
+        flex-wrap      : wrap;
+
+        >div {
+            flex       : 1;
+            min-width  : 180px; // Giảm từ 200px xuống 180px
+            align-items: center;
+
+            i {
+                font-size   : 1rem; // Giảm từ 1.2rem xuống 1rem
+                color       : #28a745;
+                margin-right: 6px; // Giảm từ 8px xuống 6px
+                width       : 18px; // Giảm từ 20px xuống 18px
+                text-align  : center;
+            }
+
+            .form-select {
+                flex         : 1;
+                height       : 38px; // Giảm từ 45px xuống 38px
+                border-radius: 8px; // Giảm từ 10px xuống 8px
+                border       : 1px solid #ddd; // Giảm từ 2px xuống 1px
+                padding      : 0 12px; // Giảm từ 15px xuống 12px
+                font-size    : 13px; // Giảm từ 14px xuống 13px
+                transition   : all 0.3s ease;
+
+                &:focus {
+                    border-color: #28a745;
+                    box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2);
+                }
+            }
+        }
+    }
+
+    .btn-search {
+        width         : 150px; // Giảm từ 200px xuống 150px
+        height        : 42px; // Giảm từ 50px xuống 42px
+        border-radius : 20px; // Giảm từ 25px xuống 20px
+        font-size     : 14px; // Giảm từ 16px xuống 14px
+        font-weight   : 500; // Giảm từ 600 xuống 500
+        display       : block;
+        margin        : 0 auto;
+        transition    : all 0.3s ease;
+        text-transform: none; // Bỏ uppercase
+        letter-spacing: 0.5px; // Giảm từ 1px xuống 0.5px
+
+        &:hover {
+            background-color: #218838;
+            transform       : translateY(-1px); // Giảm từ -2px xuống -1px
+            box-shadow      : 0 2px 4px rgba(0, 0, 0, 0.15); // Giảm shadow
+        }
+    }
+}
+
+// Desktop lớn - thêm breakpoint mới
+@media (min-width: 1200px) {
+    .search-field {
+        width    : 70%; // Còn nhỏ hơn nữa trên màn hình lớn
+        max-width: 800px;
+        padding  : 20px;
+    }
+}
+
+// Tablet responsive
+@media (max-width: 992px) {
+    .search-field {
+        width  : 85%; // Tăng lên một chút cho tablet
+        padding: 20px;
+
+        .search-category {
+            gap: 10px;
+
+            >div {
+                min-width: 160px;
+            }
+        }
+    }
+}
+
+// Mobile responsive (giữ nguyên)
+@media (max-width: 768px) {
+    .search-field {
+        width        : 95%;
+        padding      : 18px;
+        border-radius: 12px;
+
+        .title {
+            font-size    : 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            margin-bottom: 16px;
+
+            .form-control {
+                height   : 40px;
+                font-size: 14px;
+            }
+        }
+
+        .search-category {
+            flex-direction: column;
+            gap           : 12px;
+
+            >div {
+                width    : 100%;
+                min-width: unset;
+
+                i {
+                    font-size: 0.9rem;
+                }
+
+                .form-select {
+                    height   : 36px;
+                    font-size: 12px;
+                }
+            }
+        }
+
+        .btn-search {
+            width    : 100%;
+            height   : 40px;
+            font-size: 14px;
+        }
+    }
+}
+
+// Small mobile responsive
+@media (max-width: 480px) {
+    .search-field {
+        width        : 98%;
+        margin       : 10px auto;
+        padding      : 15px;
+        border-radius: 10px;
+
+        .title {
+            font-size    : 1.3rem;
+            margin-bottom: 12px;
+        }
+
+        .search-input {
+            margin-bottom: 12px;
+
+            .form-control {
+                height   : 38px;
+                font-size: 13px;
+                padding  : 0 12px;
+            }
+        }
+
+        .search-category {
+            gap: 10px;
+
+            >div {
+                i {
+                    font-size   : 0.85rem;
+                    margin-right: 4px;
+                }
+
+                .form-select {
+                    height   : 34px;
+                    font-size: 11px;
+                    padding  : 0 8px;
+                }
+            }
+        }
+
+        .btn-search {
+            height        : 36px;
+            font-size     : 13px;
+            letter-spacing: 0.3px;
+        }
+    }
+}

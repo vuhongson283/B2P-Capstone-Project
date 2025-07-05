@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import CommonHeader from "./components/Header/CommonHeader";
 import { useLocation } from "react-router-dom";
 import SliderField from "./components/HomePage/SliderField";
+import SearchField from "./components/HomePage/SearchField";
 
 const App = (props) => {
   const location = useLocation();
@@ -21,7 +22,9 @@ const App = (props) => {
               <div className="slider-container">
                 <SliderField />
               </div>
-              <div className="search-container"></div>
+              <div className="search-container">
+                <SearchField />
+              </div>
             </>
           )}
 
