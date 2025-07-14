@@ -23,8 +23,16 @@ namespace B2P_API.Controllers
             [FromQuery, BindRequired] int facilityId,
             string? search, int? status, int? categoryId)
         {
-            var response = await _courseService.GetAllCourts(pageNumber, pageSize,
-            facilityId, search,  status, categoryId);
+            CourtRequestDTO req = new CourtRequestDTO
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                FacilityId = facilityId,
+                Search = search,
+                Status = status,
+                CategoryId = categoryId
+            };
+            var response = await _courseService.GetAllCourts(req);
             return StatusCode(response.Status, response);
         }
         

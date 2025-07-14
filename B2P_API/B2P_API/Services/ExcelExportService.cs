@@ -11,7 +11,7 @@ namespace B2P_API.Services
     public class ExcelExportService : IExcelExportService
     {
         public async Task<ApiResponse<byte[]>> ExportToExcelAsync<T>(
-            List<T> data,
+            PagedResponse<T> pagedData,
             string sheetName = "Data",
             Dictionary<string, Func<T, object>>? columnMappings = null)
         {
@@ -20,7 +20,7 @@ namespace B2P_API.Services
                 using var package = new ExcelPackage();
                 var worksheet = package.Workbook.Worksheets.Add(sheetName);
 
-                if (data == null || data.Count == 0)
+                if (pagedData == null || pagedData.Items == null || !pagedData.Items.Any())
                 {
                     return new ApiResponse<byte[]>
                     {
@@ -30,6 +30,9 @@ namespace B2P_API.Services
                         Data = null
                     };
                 }
+
+                var data = pagedData.Items.ToList();
+                int totalRecords = pagedData.TotalItems;
 
                 // Nếu không có columnMappings, sử dụng reflection để lấy tất cả properties
                 if (columnMappings == null)
@@ -89,10 +92,15 @@ namespace B2P_API.Services
                 dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                 dataRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
 
+                // Thêm thông tin phân trang vào footer (tùy chọn)
+                worksheet.Cells[data.Count + 3, 1].Value = $"Tổng số bản ghi: {totalRecords}";
+                worksheet.Cells[data.Count + 4, 1].Value = $"Trang hiện tại: {pagedData.CurrentPage}/{pagedData.TotalPages}";
+                worksheet.Cells[data.Count + 5, 1].Value = $"Số bản ghi mỗi trang: {pagedData.ItemsPerPage}";
+
                 return new ApiResponse<byte[]>
                 {
                     Success = true,
-                    Message = $"Xuất file Excel thành công với {data.Count} bản ghi.",
+                    Message = $"Xuất file Excel thành công với {data.Count} bản ghi (tổng cộng {totalRecords} bản ghi).",
                     Status = 200,
                     Data = package.GetAsByteArray()
                 };

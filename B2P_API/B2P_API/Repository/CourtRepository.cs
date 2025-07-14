@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ using System.Globalization;
 
 namespace B2P_API.Repository
 {
-    public class CourtRepository
+    public class CourtRepository : ICourtRepository
     {
         private readonly SportBookingDbContext _context;
 
@@ -17,34 +18,33 @@ namespace B2P_API.Repository
             _context = context;
         }
 
-        public async Task<PagedResponse<CourtDTO>> GetAllCourts(int pageNumber, int pageSize, 
-             int facilityId, string? search, int? status, int? categoryId)
+        public async Task<PagedResponse<CourtDTO>> GetAllCourts(CourtRequestDTO req)
         {
             var query = _context.Courts.AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(search))
+            if (!string.IsNullOrWhiteSpace(req.Search))
             {
-                query = query.Where(c => c.CourtName.Contains(search));
+                query = query.Where(c => c.CourtName.Contains(req.Search));
             }
 
-            if (status.HasValue)
+            if (req.Status.HasValue)
             {
-                query = query.Where(c => c.StatusId == status.Value);
+                query = query.Where(c => c.StatusId == req.Status.Value);
             }
 
-            if (categoryId.HasValue)
+            if (req.CategoryId.HasValue)
             {
-                query = query.Where(c => c.CategoryId == categoryId.Value);
+                query = query.Where(c => c.CategoryId == req.CategoryId.Value);
             }
 
-            query = query.Where(c => c.FacilityId == facilityId);
+            query = query.Where(c => c.FacilityId == req.FacilityId);
 
             var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var totalPages = (int)Math.Ceiling(totalItems / (double)req.PageSize);
 
             var data = await query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
+                .Skip((req.PageNumber - 1) * req.PageSize)
+                .Take(req.PageSize)
                 .Select(c => new CourtDTO
                 {
                     CourtId = c.CourtId,
@@ -56,8 +56,8 @@ namespace B2P_API.Repository
 
             return new PagedResponse<CourtDTO>
             {
-                CurrentPage = pageNumber,
-                ItemsPerPage = pageSize,
+                CurrentPage = req.PageNumber,
+                ItemsPerPage = req.PageSize,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
                 Items = data.Any() ? data : null

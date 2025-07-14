@@ -17,15 +17,12 @@ namespace B2P_API.Services
             _repository = repository;
         }
 
-        public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(int pageNumber, int pageSize,
-            int facilityId, string? search, int? status, int? categoryId)
+        public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(CourtRequestDTO req)
         {
-            if (pageNumber <= 0) pageNumber = 1;
-            if (pageSize <= 0 || pageSize > 10) pageSize = 10;
+            if (req.PageNumber <= 0) req.PageNumber = 1;
+            if (req.PageSize <= 0 || req.PageSize > 10) req.PageSize = 10;
 
-            var paginatedResult = await _repository.GetAllCourts(
-                pageNumber, pageSize, facilityId, search, status, categoryId
-            );
+            var paginatedResult = await _repository.GetAllCourts(req);
 
             if (paginatedResult.Items == null)
             {

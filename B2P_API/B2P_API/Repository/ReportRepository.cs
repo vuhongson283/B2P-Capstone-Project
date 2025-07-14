@@ -14,14 +14,23 @@ namespace B2P_API.Repository
             _context = context;
         }
 
-        public async Task<List<ReportDTO>> GetReport(int userId, DateTime? startDate, DateTime? endDate, int? facilityId)
+        public async Task<PagedResponse<ReportDTO>> GetReport(int pageNumber, int pageSize,
+            int userId, DateTime? startDate, DateTime? endDate, int? facilityId)
         {
-            return await _context.Bookings
+            var query = _context.Bookings
                 .Where(b => b.BookingDetails.Any(bd =>
                     bd.Court.Facility.UserId == userId &&
                     (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value) &&
                     (!startDate.HasValue || b.CreateAt.Date >= startDate.Value.Date) &&
                     (!endDate.HasValue || b.CreateAt.Date <= endDate.Value.Date)))
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var data = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(b => new ReportDTO
                 {
                     BookingId = b.BookingId,
@@ -37,7 +46,6 @@ namespace B2P_API.Repository
                     PaymentStatus = b.Payments.FirstOrDefault() != null &&
                                   b.Payments.FirstOrDefault().Status != null ?
                                   b.Payments.FirstOrDefault().Status.StatusDescription : null,
-                    // Thông tin tổng hợp về các sân được đặt trong booking này
                     CourtCount = b.BookingDetails.Count,
                     CourtCategories = string.Join(", ", b.BookingDetails.Select(bd => bd.Court.Category.CategoryName)),
                     TimeSlotCount = b.BookingDetails.Count,
@@ -46,6 +54,15 @@ namespace B2P_API.Repository
                              .FirstOrDefault()
                 })
                 .ToListAsync();
+
+            return new PagedResponse<ReportDTO>
+            {
+                CurrentPage = pageNumber,
+                ItemsPerPage = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = data.Any() ? data : null
+            };
         }
 
         public async Task<TotalReportDTO> GetTotalReport(int userId, DateTime? startDate, DateTime? endDate)
