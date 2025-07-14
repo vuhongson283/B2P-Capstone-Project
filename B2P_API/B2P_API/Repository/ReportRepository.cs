@@ -1,11 +1,12 @@
 ﻿using B2P_API.DTOs.ReportDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace B2P_API.Repository
 {
-    public class ReportRepository
+    public class ReportRepository : IReportRepository
     {
         private readonly SportBookingDbContext _context;
 

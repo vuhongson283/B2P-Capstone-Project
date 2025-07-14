@@ -12,5 +12,6 @@ namespace B2P_API.Interface
         Task<bool> UpdateCourt(UpdateCourtRequest court);
         Task<bool> DeleteCourt(int courtId);
         Task<bool> LockCourt(int courtId, int statusId);
+        bool CheckCourtOwner(int userId, int courtId);
     }
 }

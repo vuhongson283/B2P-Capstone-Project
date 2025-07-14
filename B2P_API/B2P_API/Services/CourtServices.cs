@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
@@ -8,12 +9,10 @@ namespace B2P_API.Services
 {
     public class CourtServices
     {
-        private readonly SportBookingDbContext _context;
-        private readonly CourtRepository _repository;
+        private readonly ICourtRepository _repository;
 
-        public CourtServices(SportBookingDbContext context, CourtRepository repository)
+        public CourtServices(ICourtRepository repository)
         {
-            _context = context;
             _repository = repository;
         }
 
