@@ -9,6 +9,9 @@ using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using static B2P_API.Services.TwilioSMSService;
+using B2P_API.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,17 @@ builder.Services.AddDbContext<SportBookingDbContext>(options =>
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// **THÊM CORS - Cho phép tất cả (Development)**
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
@@ -46,7 +60,10 @@ builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
+<<<<<<< HEAD
 
+=======
+>>>>>>> Test
 
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
@@ -60,7 +77,7 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISMSService, eSMSService>();
+builder.Services.AddScoped<ISMSService, TwilioSMSService>();
 
 builder.Services.AddScoped<AccountManagementRepository>();
 builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
@@ -79,8 +96,28 @@ builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
+// Booking services
+builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<BookingService>();
+
+// TimeSlot services
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
+
+// Bank Account services
+builder.Services.AddScoped<BankAccountService>();
+builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
+
+// Excel Export services
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
+ExcelPackage.License.SetNonCommercialPersonal("B2P");
+
+// Report services
+builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<ReportService>();
+// Đăng ký TwilioSettings
+builder.Services.Configure<TwilioSettings>(
+    builder.Configuration.GetSection("Twilio"));
 var app = builder.Build();
 
 // Middleware pipeline
@@ -91,6 +128,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

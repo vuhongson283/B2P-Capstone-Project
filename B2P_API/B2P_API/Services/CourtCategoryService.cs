@@ -247,7 +247,43 @@ namespace B2P_API.Services
             }
         }
 
+        public async Task<ApiResponse<object>> DeleteCourtCategoryAsync(int? id)
+        {
+            try
+            {
+                if (id == null || id <= 0)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "ID kiểu sân không hợp lệ",
+                        Success = false,
+                        Status = 400
+                    };
+                }
 
+                 await _categoryRepo.DeleteCourtCategoryAsync(id);
+
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Xóa kiểu sân thành công",
+                        Success = true,
+                        Status = 200
+                    };
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>
+                {
+                    Data = null,
+                    Message = MessagesCodes.MSG_06 + ex.Message,
+                    Success = false,
+                    Status = 500
+                };
+            }
+        }
         public async Task<ApiResponse<CourtCategoryResponse?>> GetCourtCategoryByIdAsync(int id)
         {
             try

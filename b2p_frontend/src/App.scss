@@ -7,6 +7,54 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.app-container {
+  .header-container {
+
+    .btn-login {
+      border-radius: 5px;
+      padding      : 0 15px;
+      border       : 1px solid #535353;
+      height       : 40px;
+
+      &:hover {
+        background: rgb(97, 209, 229);
+      }
+    }
+
+    .btn-signup {
+      border-radius: 5px;
+      padding      : 0 15px;
+      background   : #303030;
+      color        : white;
+      height       : 40px;
+
+      &:hover {
+        background: black;
+      }
+    }
+
+    .navbar {
+      background-image: url("./assets/images/white-cloud-blue-sky-sea.jpg");
+      padding         : 8px 0;
+
+      .nav-link {
+        color      : #eee5ee;
+        padding    : 0.5rem 1rem;
+        font-weight: bold;
+
+        &:hover {
+          color: red !important;
+        }
+      }
+
+      .nav-link.active {
+        color: red !important;
+      }
+    }
+
+  }
+}
+
 .App {
   text-align: center;
 }

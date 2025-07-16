@@ -1,4 +1,4 @@
-﻿using B2P_API.DTOs;
+﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Models;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
