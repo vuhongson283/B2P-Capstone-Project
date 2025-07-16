@@ -8,5 +8,6 @@ namespace B2P_API.Interface
         Task<PagedResponse<ReportDTO>> GetReport(int pageNumber, int pageSize,
             int userId, DateTime? startDate, DateTime? endDate, int? facilityId);
         Task<TotalReportDTO> GetTotalReport(int userId, DateTime? startDate, DateTime? endDate);
+        Task<bool> HasAnyBookings(int userId, int? facilityId);
     }
 }

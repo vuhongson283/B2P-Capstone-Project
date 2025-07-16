@@ -12,12 +12,10 @@ namespace B2P_API.Services
 
     public class ReportService
     {
-        private readonly SportBookingDbContext _context;
         private readonly IReportRepository _repository;
 
-        public ReportService(SportBookingDbContext context, IReportRepository repository)
+        public ReportService( IReportRepository repository)
         {
-            _context = context;
             _repository = repository;
         }
 
@@ -28,9 +26,7 @@ namespace B2P_API.Services
             if (pageSize <= 0 || pageSize > 10) pageSize = 10;
 
             // Kiểm tra xem user có booking nào không
-            var hasAnyBookings = await _context.BookingDetails
-                .AnyAsync(bd => bd.Court.Facility.UserId == userId &&
-                               (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value));
+            var hasAnyBookings = await _repository.HasAnyBookings(userId, facilityId);
 
             if (!hasAnyBookings)
             {

@@ -100,5 +100,12 @@ namespace B2P_API.Repository
                 TotalCost = totalCost
             };
         }
+
+        public async Task<bool> HasAnyBookings(int userId, int? facilityId)
+        {
+            return await _context.BookingDetails
+                .AnyAsync(bd => bd.Court.Facility.UserId == userId &&
+                                (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value));
+        }
     }
 }
