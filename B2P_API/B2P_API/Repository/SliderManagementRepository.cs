@@ -1,11 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using B2P_API.DTOs.SliderDTOs;
-using B2P_API.Interface;
+﻿using B2P_API.Interface;
 using B2P_API.Models;
-using B2P_API.Response;
-using Google.Apis.Drive.v3.Data;
+using B2P_API.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace B2P_API.Repository
@@ -19,7 +14,7 @@ namespace B2P_API.Repository
 			_context = context;
 		}
 
-		public async Task<PagedResponse<GetListSliderResponse>> GetAllSlidersAsync(
+		public async Task<List<Slider>> GetAllSlidersAsync(
 			int pageNumber,
 			int pageSize,
 			string? search,
@@ -33,10 +28,8 @@ namespace B2P_API.Repository
 			if (!string.IsNullOrWhiteSpace(search))
 			{
 				query = query.Where(s =>
-					(s.SlideDescription ?? string.Empty)
-						.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					(s.SlideUrl ?? string.Empty)
-						.Contains(search, StringComparison.OrdinalIgnoreCase));
+					(s.SlideDescription ?? "").Contains(search) ||
+					(s.SlideUrl ?? "").Contains(search));
 			}
 
 			if (statusId.HasValue)
@@ -44,144 +37,111 @@ namespace B2P_API.Repository
 				query = query.Where(s => s.StatusId == statusId.Value);
 			}
 
-			var totalItems = await query.CountAsync();
-			var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
-			var sliders = await query
+			return await query
 				.OrderBy(s => s.SlideId)
 				.Skip((pageNumber - 1) * pageSize)
 				.Take(pageSize)
 				.ToListAsync();
-
-			var items = sliders.Select(s => new GetListSliderResponse
-			{
-				SlideId = s.SlideId,
-				SlideDescription = s.SlideDescription,
-				SlideUrl = s.SlideUrl,
-				StatusName = s.Status?.StatusName,
-				ImageUrl = s.Images
-					.OrderBy(img => img.Order)
-					.FirstOrDefault()?.ImageUrl
-			}).ToList();
-
-			return new PagedResponse<GetListSliderResponse>
-			{
-				CurrentPage = pageNumber,
-				ItemsPerPage = pageSize,
-				TotalItems = totalItems,
-				TotalPages = totalPages,
-				Items = items
-			};
 		}
 
-		public async Task<ApiResponse<GetSliderByIdResponse>> GetSliderByIdAsync(int slideId)
+		public async Task<int> GetTotalSlidersAsync(string? search, int? statusId)
 		{
-			var slider = await _context.Sliders
-				.Include(s => s.Status)
-				.Include(s => s.Images)
-				.AsNoTracking()
-				.FirstOrDefaultAsync(s => s.SlideId == slideId);
+			var query = _context.Sliders.AsQueryable();
 
-			if (slider == null)
+			if (!string.IsNullOrWhiteSpace(search))
 			{
-				return new ApiResponse<GetSliderByIdResponse>
-				{
-					Success = false,
-					Message = "Không tìm thấy slider.",
-					Status = 404,
-					Data = null
-				};
+				query = query.Where(s =>
+					(s.SlideDescription ?? "").Contains(search) ||
+					(s.SlideUrl ?? "").Contains(search));
 			}
 
-			var imageUrl = slider.Images
-				.OrderBy(img => img.Order)
-				.FirstOrDefault()?.ImageUrl;
-
-			var dto = new GetSliderByIdResponse
+			if (statusId.HasValue)
 			{
-				SlideId = slider.SlideId,
-				SlideUrl = slider.SlideUrl,
-				SlideDescription = slider.SlideDescription,
-				StatusId = slider.StatusId,
-				StatusName = slider.Status?.StatusName,
-				ImageUrl = imageUrl
-			};
+				query = query.Where(s => s.StatusId == statusId.Value);
+			}
 
-			return new ApiResponse<GetSliderByIdResponse>
-			{
-				Success = true,
-				Message = "Lấy chi tiết slider thành công.",
-				Status = 200,
-				Data = dto
-			};
+			return await query.CountAsync();
 		}
 
-		public async Task<ApiResponse<string>> CreateSliderAsync(CreateSliderRequest request)
+		public async Task<Slider?> GetSliderByIdAsync(int slideId)
 		{
-			var slider = new Slider
-			{
-				SlideUrl = request.SlideUrl,
-				SlideDescription = request.SlideDescription,
-				StatusId = 1
-			};
+			return await _context.Sliders
+				.Include(s => s.Status)
+				.Include(s => s.Images)
+				.FirstOrDefaultAsync(s => s.SlideId == slideId);
+		}
 
+		public async Task<Slider> CreateSliderAsync(Slider slider)
+		{
 			_context.Sliders.Add(slider);
 			await _context.SaveChangesAsync();
-
-			return new ApiResponse<string>
-			{
-				Success = true,
-				Message = "Tạo slider thành công.",
-				Status = 201,
-				Data = slider.SlideId.ToString()
-			};
+			return slider;
 		}
 
-		public async Task<ApiResponse<string>> UpdateSliderAsync(int slideId, UpdateSliderRequest request)
+		public async Task<Slider?> UpdateSliderAsync(int slideId, Slider slider)
+		{
+			var existing = await _context.Sliders.FindAsync(slideId);
+			if (existing == null)
+				return null;
+
+			existing.SlideUrl = slider.SlideUrl;
+			existing.SlideDescription = slider.SlideDescription;
+			_context.Sliders.Update(existing);
+			await _context.SaveChangesAsync();
+
+			return existing;
+		}
+
+		public async Task<bool> ActiveSliderAsync(int slideId)
 		{
 			var slider = await _context.Sliders.FindAsync(slideId);
 			if (slider == null)
-			{
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Không tìm thấy slider.",
-					Status = 404,
-					Data = null
-				};
-			}
+				return false;
 
-			slider.SlideUrl = request.SlideUrl;
-			slider.SlideDescription = request.SlideDescription;
+			if (slider.StatusId == 1)
+				return false;
 
+			slider.StatusId = 1;
 			_context.Sliders.Update(slider);
 			await _context.SaveChangesAsync();
 
-			return new ApiResponse<string>
-			{
-				Success = true,
-				Message = "Cập nhật slider thành công.",
-				Status = 200,
-				Data = slider.SlideId.ToString()
-			};
+			return true;
 		}
 
-		public async Task<ApiResponse<string>> DeleteSliderAsync(int slideId)
+		public async Task<bool> UnActiveSliderAsync(int slideId)
+		{
+			var slider = await _context.Sliders.FindAsync(slideId);
+			if (slider == null)
+				return false;
+
+			if (slider.StatusId == 2)
+				return false;
+
+			slider.StatusId = 2;
+			_context.Sliders.Update(slider);
+			await _context.SaveChangesAsync();
+
+			return true;
+		}
+
+		public async Task<List<Slider>> GetAllSlidersByStatusAsync(int pageNumber, int pageSize, int statusId)
+		{
+			return await _context.Sliders
+				.Include(s => s.Images)
+				.Where(s => s.StatusId == statusId)
+				.Skip((pageNumber - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+		}
+
+		public async Task<bool> DeleteSliderAsync(int slideId)
 		{
 			var slider = await _context.Sliders
 				.Include(s => s.Images)
 				.FirstOrDefaultAsync(s => s.SlideId == slideId);
 
 			if (slider == null)
-			{
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Không tìm thấy slider.",
-					Status = 404,
-					Data = null
-				};
-			}
+				return false;
 
 			if (slider.Images.Any())
 				_context.Images.RemoveRange(slider.Images);
@@ -189,116 +149,7 @@ namespace B2P_API.Repository
 			_context.Sliders.Remove(slider);
 			await _context.SaveChangesAsync();
 
-			return new ApiResponse<string>
-			{
-				Success = true,
-				Message = "Xóa slider thành công.",
-				Status = 200,
-				Data = slideId.ToString()
-			};
+			return true;
 		}
-
-		public async Task<ApiResponse<string>> ActiveSliderAsync(int slideId)
-		{
-			var slider = await _context.Sliders.FindAsync(slideId);
-			if (slider == null)
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Không tìm thấy slider.",
-					Status = 404,
-					Data = null
-				};
-			if (slider.StatusId == 1)
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Slider đang được bật rồi.",
-					Status = 404,
-					Data = null
-				};
-
-			slider.StatusId = 1;
-			_context.Sliders.Update(slider);
-			await _context.SaveChangesAsync();
-
-			return new ApiResponse<string>
-			{
-				Success = true,
-				Message = "Bật Slider thành công",
-				Status = 200,
-				Data = slideId.ToString()
-			};
-		}
-
-		public async Task<ApiResponse<string>> UnActiveSliderAsync(int slideId)
-		{
-			var slider = await _context.Sliders.FindAsync(slideId);
-			if (slider == null)
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Không tìm thấy slider.",
-					Status = 404,
-					Data = null
-				};
-			if (slider.StatusId == 2)
-				return new ApiResponse<string>
-				{
-					Success = false,
-					Message = "Slider đang được tắt rồi.",
-					Status = 404,
-					Data = null
-				};
-
-			slider.StatusId = 2;
-			_context.Sliders.Update(slider);
-			await _context.SaveChangesAsync();
-
-			return new ApiResponse<string>
-			{
-				Success = true,
-				Message = "Tắt Slider thành công",
-				Status = 200,
-				Data = slideId.ToString()
-			};
-		}
-
-		public async Task<PagedResponse<GetActiveSliderResponse>> GetAllSlidersByStatusAsync(int pageNumber, int pageSize)
-		{
-			// Lấy sliders có status = 1
-			var query = _context.Sliders
-				.Include(s => s.Images)
-				.Where(s => s.StatusId == 1)
-				.AsQueryable();
-
-			// Tổng số bản ghi
-			var totalItems = await query.CountAsync();
-			var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
-			// Phân trang và lấy dữ liệu
-			var sliders = await query
-				.Skip((pageNumber - 1) * pageSize)
-				.Take(pageSize)
-				.ToListAsync();
-
-			// Map sang DTO chỉ lấy SlideUrl và ImageUrl
-			var items = sliders.Select(s => new GetActiveSliderResponse
-			{
-				SlideUrl = s.SlideUrl,
-				ImageUrl = s.Images.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl
-			}).ToList();
-
-			return new PagedResponse<GetActiveSliderResponse>
-			{
-				CurrentPage = pageNumber,
-				ItemsPerPage = pageSize,
-				TotalItems = totalItems,
-				TotalPages = totalPages,
-				Items = items
-			};
-		}
-
 	}
 }
-
