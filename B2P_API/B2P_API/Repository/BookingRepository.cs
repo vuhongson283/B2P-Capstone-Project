@@ -131,7 +131,6 @@ namespace B2P_API.Repository
 
 
     }
-
     // Class trung gian để xử lý xếp sân
     public class CourtAvailability
     {
