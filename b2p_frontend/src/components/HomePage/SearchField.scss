@@ -1,36 +1,41 @@
 .search-field {
-    width        : 80%; // Giảm từ 90% xuống 80%
-    max-width    : 900px; // Giảm từ 1200px xuống 900px
-    margin       : 20px auto;
-    padding      : 25px; // Giảm từ 30px xuống 25px
-    border       : 1px solid #e0e0e0; // Giảm từ 2px xuống 1px
-    border-radius: 15px; // Giảm từ 20px xuống 15px
-    background   : #fff;
-    box-shadow   : 0 2px 4px rgba(0, 0, 0, 0.08); // Giảm shadow
+    position       : absolute;
+    bottom         : 10px;
+    left           : 50%;
+    transform      : translateX(-50%);
+    width          : 80%;
+    max-width      : 900px;
+    padding        : 25px;
+    border         : 1px solid #e0e0e0;
+    border-radius  : 15px;
+    background     : rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow     : 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index        : 20;
 
     .title {
-        font-size    : clamp(1.2rem, 3vw, 1.8rem); // Giảm kích thước
-        font-weight  : 600; // Giảm từ 700 xuống 600
+        font-size    : clamp(1.2rem, 3vw, 1.8rem);
+        font-weight  : 600;
         color        : #28a745;
         text-align   : center;
-        margin-bottom: 20px; // Giảm từ 25px xuống 20px
-        text-shadow  : none; // Bỏ text-shadow
+        margin-bottom: 20px;
+        text-shadow  : none;
     }
 
     .search-input {
-        margin-bottom: 20px; // Giảm từ 25px xuống 20px
+        margin-bottom: 20px;
 
         .form-control {
-            height       : 42px; // Giảm từ 50px xuống 42px
-            border-radius: 20px; // Giảm từ 25px xuống 20px
-            border       : 1px solid #ddd; // Giảm từ 2px xuống 1px
-            padding      : 0 16px; // Giảm từ 20px xuống 16px
-            font-size    : 14px; // Giảm từ 16px xuống 14px
+            height       : 42px;
+            border-radius: 20px;
+            border       : 1px solid #ddd;
+            padding      : 0 16px;
+            font-size    : 14px;
             transition   : all 0.3s ease;
 
             &:focus {
                 border-color: #28a745;
-                box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2); // Giảm shadow
+                box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2);
             }
 
             &::placeholder {
@@ -45,30 +50,30 @@
         flex-direction : row;
         justify-content: space-between;
         align-items    : center;
-        gap            : 12px; // Giảm từ 15px xuống 12px
-        margin-bottom  : 20px; // Giảm từ 25px xuống 20px
+        gap            : 12px;
+        margin-bottom  : 20px;
         flex-wrap      : wrap;
 
         >div {
             flex       : 1;
-            min-width  : 180px; // Giảm từ 200px xuống 180px
+            min-width  : 180px;
             align-items: center;
 
             i {
-                font-size   : 1rem; // Giảm từ 1.2rem xuống 1rem
+                font-size   : 1rem;
                 color       : #28a745;
-                margin-right: 6px; // Giảm từ 8px xuống 6px
-                width       : 18px; // Giảm từ 20px xuống 18px
+                margin-right: 6px;
+                width       : 18px;
                 text-align  : center;
             }
 
             .form-select {
                 flex         : 1;
-                height       : 38px; // Giảm từ 45px xuống 38px
-                border-radius: 8px; // Giảm từ 10px xuống 8px
-                border       : 1px solid #ddd; // Giảm từ 2px xuống 1px
-                padding      : 0 12px; // Giảm từ 15px xuống 12px
-                font-size    : 13px; // Giảm từ 14px xuống 13px
+                height       : 38px;
+                border-radius: 8px;
+                border       : 1px solid #ddd;
+                padding      : 0 12px;
+                font-size    : 13px;
                 transition   : all 0.3s ease;
 
                 &:focus {
@@ -80,69 +85,42 @@
     }
 
     .btn-search {
-        width         : 150px; // Giảm từ 200px xuống 150px
-        height        : 42px; // Giảm từ 50px xuống 42px
-        border-radius : 20px; // Giảm từ 25px xuống 20px
-        font-size     : 14px; // Giảm từ 16px xuống 14px
-        font-weight   : 500; // Giảm từ 600 xuống 500
+        width         : 150px;
+        height        : 42px;
+        border-radius : 20px;
+        font-size     : 14px;
+        font-weight   : 500;
         display       : block;
         margin        : 0 auto;
         transition    : all 0.3s ease;
-        text-transform: none; // Bỏ uppercase
-        letter-spacing: 0.5px; // Giảm từ 1px xuống 0.5px
+        text-transform: none;
+        letter-spacing: 0.5px;
 
         &:hover {
             background-color: #218838;
-            transform       : translateY(-1px); // Giảm từ -2px xuống -1px
-            box-shadow      : 0 2px 4px rgba(0, 0, 0, 0.15); // Giảm shadow
+            transform       : translateY(-1px);
+            box-shadow      : 0 2px 4px rgba(0, 0, 0, 0.15);
         }
     }
 }
 
-// Desktop lớn - thêm breakpoint mới
-@media (min-width: 1200px) {
+// Responsive
+@media (max-width: 991px) {
     .search-field {
-        width    : 70%; // Còn nhỏ hơn nữa trên màn hình lớn
-        max-width: 800px;
-        padding  : 20px;
-    }
-}
-
-// Tablet responsive
-@media (max-width: 992px) {
-    .search-field {
-        width  : 85%; // Tăng lên một chút cho tablet
-        padding: 20px;
-
-        .search-category {
-            gap: 10px;
-
-            >div {
-                min-width: 160px;
-            }
-        }
-    }
-}
-
-// Mobile responsive (giữ nguyên)
-@media (max-width: 768px) {
-    .search-field {
-        width        : 95%;
+        // Chuyển về static và đặt sau slider
+        position     : static !important;
+        left         : unset;
+        bottom       : unset;
+        transform    : none;
+        margin       : 16px auto 0 auto;
+        z-index      : 1;
+        width        : 90%;
         padding      : 18px;
         border-radius: 12px;
 
         .title {
             font-size    : 1.5rem;
             margin-bottom: 16px;
-        }
-
-        .search-input {
-            margin-bottom: 16px;
-
-            .form-control {
-                height   : 40px;
-                font-size: 14px;
-            }
         }
 
         .search-category {
@@ -152,70 +130,72 @@
             >div {
                 width    : 100%;
                 min-width: unset;
-
-                i {
-                    font-size: 0.9rem;
-                }
-
-                .form-select {
-                    height   : 36px;
-                    font-size: 12px;
-                }
             }
         }
 
         .btn-search {
-            width    : 100%;
-            height   : 40px;
-            font-size: 14px;
+            width : 100%;
+            height: 40px;
         }
     }
 }
 
-// Small mobile responsive
-@media (max-width: 480px) {
+@media (max-width: 768px) {
     .search-field {
-        width        : 98%;
-        margin       : 10px auto;
-        padding      : 15px;
-        border-radius: 10px;
+        width  : 95%;
+        padding: 15px;
+        margin : 12px auto 0 auto;
 
         .title {
             font-size    : 1.3rem;
             margin-bottom: 12px;
         }
+    }
+}
 
-        .search-input {
-            margin-bottom: 12px;
+@media (max-width: 480px) {
+    .search-field {
+        width  : 98%;
+        padding: 12px;
+        margin : 8px auto 0 auto;
+    }
+}
 
-            .form-control {
-                height   : 38px;
-                font-size: 13px;
-                padding  : 0 12px;
-            }
-        }
+.loading-container {
+    background   : #fff;
+    border-radius: 12px;
+    padding      : 2rem;
+    box-shadow   : 0 2px 10px rgba(0, 0, 0, 0.05);
 
-        .search-category {
-            gap: 10px;
+    .spinner-border {
+        width : 3rem;
+        height: 3rem;
+    }
+}
 
-            >div {
-                i {
-                    font-size   : 0.85rem;
-                    margin-right: 4px;
-                }
+.no-results {
+    background   : #fff;
+    border-radius: 12px;
+    padding      : 2rem;
+    box-shadow   : 0 2px 10px rgba(0, 0, 0, 0.05);
+    grid-column  : 1 / -1; // Chiếm toàn bộ grid
 
-                .form-select {
-                    height   : 34px;
-                    font-size: 11px;
-                    padding  : 0 8px;
-                }
-            }
-        }
+    .fa-search {
+        opacity: 0.3;
+    }
 
-        .btn-search {
-            height        : 36px;
-            font-size     : 13px;
-            letter-spacing: 0.3px;
-        }
+    h5 {
+        color        : #6c757d;
+        margin-bottom: 0.5rem;
+    }
+}
+
+// Responsive cho loading và no-results
+@media (max-width: 768px) {
+
+    .loading-container,
+    .no-results {
+        padding: 1.5rem;
+        margin : 0 0.5rem;
     }
 }

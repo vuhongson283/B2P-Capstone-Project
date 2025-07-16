@@ -15,7 +15,7 @@ const CommonHeader = (props) => {
       className="custom-navbar bg-body-tertiary border-bottom border-success"
     >
       <Container fluid>
-        <Navbar.Brand as={NavLink} to="/homepage" className="me-4">
+        <Navbar.Brand as={NavLink} to="/" className="me-4">
           <img
             src={logo}
             width="80"
@@ -30,7 +30,7 @@ const CommonHeader = (props) => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto d-flex align-items-center">
             <NavLink
-              to="/homepage"
+              to="/"
               className={({ isActive }) =>
                 `nav-link px-3 ${isActive ? "active fw-bold" : ""}`
               }

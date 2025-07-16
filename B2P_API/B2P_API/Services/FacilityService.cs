@@ -151,12 +151,12 @@ namespace B2P_API.Services
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.FacilityName.Contains(request.Name, StringComparison.OrdinalIgnoreCase));
                 }
-
                 if (request.Type != null && request.Type.Any())
                 {
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.Courts.Any(court => request.Type.Contains((int)court.CategoryId)));
                 }
+
 
                 if (!string.IsNullOrEmpty(request.City))
                 {

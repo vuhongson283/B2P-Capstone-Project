@@ -4,12 +4,14 @@ import { Outlet } from "react-router-dom";
 import CommonHeader from "./components/Header/CommonHeader";
 import { useLocation } from "react-router-dom";
 import SliderField from "./components/HomePage/SliderField";
-import SearchField from "./components/HomePage/SearchField";
+import CommonFooter from "./components/Footer/CommonFooter";
+import FacilitiesRecommend from "./components/HomePage/FacilitiesRecommend";
 
 const App = (props) => {
   const location = useLocation();
   const showSliderAndSearch =
     location.pathname === "/" || location.pathname === "/homepage";
+
   return (
     <div className="app-container">
       <div className="header-container">
@@ -22,8 +24,9 @@ const App = (props) => {
               <div className="slider-container">
                 <SliderField />
               </div>
-              <div className="search-container">
-                <SearchField />
+
+              <div className="facilities-container">
+                <FacilitiesRecommend />
               </div>
             </>
           )}
@@ -31,7 +34,9 @@ const App = (props) => {
           <Outlet />
         </div>
       </div>
-      <div className="footer-container"></div>
+      <div className="footer-container">
+        <CommonFooter />
+      </div>
     </div>
   );
 };
