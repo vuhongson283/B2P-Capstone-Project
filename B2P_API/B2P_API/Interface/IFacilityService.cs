@@ -10,5 +10,6 @@ namespace B2P_API.Interface
         Task<ApiResponse<Facility>> CreateFacility(CreateFacilityRequest request);
         Task<ApiResponse<Facility>> UpdateFacility(UpdateFacilityRequest request, int facilityId);
         Task<ApiResponse<Facility>> DeleteFacility( int facilityId);
+        Task<ApiResponse<Facility>> GetFacilityById(int facilityId);
     }
 }

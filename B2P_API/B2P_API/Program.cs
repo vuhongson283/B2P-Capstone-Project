@@ -65,7 +65,7 @@ builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
 
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // Nếu dùng
-builder.Services.AddScoped<IFacilityRepository, FacilityManageRepository>();
+builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();

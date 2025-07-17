@@ -13,10 +13,10 @@ namespace B2P_API.Services
 {
     public class FacilityService : IFacilityService
     {
-        private readonly IFacilityRepository _facilityRepository;
+        private readonly IFacilityManageRepository _facilityRepository;
         private readonly IFacilityRepositoryForUser _facilityRepositoryForUser;
 
-        public FacilityService(IFacilityRepository facilityRepository, IFacilityRepositoryForUser facilityRepositoryForUser)
+        public FacilityService(IFacilityManageRepository facilityRepository, IFacilityRepositoryForUser facilityRepositoryForUser)
         {
             _facilityRepository = facilityRepository;
             _facilityRepositoryForUser = facilityRepositoryForUser;
@@ -615,7 +615,10 @@ namespace B2P_API.Services
             }
         }
 
-
+        public Task<ApiResponse<Facility>> GetFacilityById(int facilityId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

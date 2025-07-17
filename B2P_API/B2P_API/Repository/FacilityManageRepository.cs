@@ -6,7 +6,7 @@ using System.Reflection.Metadata;
 
 namespace B2P_API.Repository
 {
-    public class FacilityManageRepository : IFacilityRepository
+    public class FacilityManageRepository : IFacilityManageRepository
     {
         private readonly SportBookingDbContext _context;
 

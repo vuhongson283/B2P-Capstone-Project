@@ -7,11 +7,11 @@ namespace B2P_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FacilitiesForCourtOwnerController : ControllerBase
+    public class FacilitiesManageController : ControllerBase
     {
         private readonly IFacilityService _facilityService;
 
-        public FacilitiesForCourtOwnerController(IFacilityService facilityService)
+        public FacilitiesManageController(IFacilityService facilityService)
         {
             _facilityService = facilityService;
         }

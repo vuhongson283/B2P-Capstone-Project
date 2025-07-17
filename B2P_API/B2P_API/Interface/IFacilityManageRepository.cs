@@ -3,7 +3,7 @@
 {
     using B2P_API.DTOs.FacilityDTOs;
     using B2P_API.Models;
-    public interface IFacilityRepository
+    public interface IFacilityManageRepository
     {
         Task<List<Facility>> GetAllAsync();
         Task<Facility?> GetByIdAsync(int id);
