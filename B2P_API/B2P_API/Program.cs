@@ -60,6 +60,10 @@ builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
+<<<<<<< HEAD
+
+=======
+>>>>>>> Test
 
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
