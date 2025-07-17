@@ -22,7 +22,7 @@ const SearchField = (props) => {
         Number.MAX_SAFE_INTEGER
       );
       console.log("Court Categories:", response.data);
-      const categories = response.data.data.items;
+      const categories = response.data.items;
       setListCourtCategories(categories);
 
       // Set giá trị mặc định là phần tử đầu tiên

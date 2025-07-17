@@ -43,8 +43,8 @@ const FacilitiesRecommend = (props) => {
   const fetchRecommendedFacilities = async () => {
     try {
       const response = await getAllFacilitiesByPlayer(1, 12, requestBody);
-      if (response.data && response.data.data.items.length > 0) {
-        setFacilities(response.data.data.items);
+      if (response && response.data.items.length > 0) {
+        setFacilities(response.data.items);
       }
     } catch (error) {
       console.error("Error fetching recommended facilities:", error);

@@ -60,7 +60,7 @@ const FacilitiesWithCondition = (props) => {
         Number.MAX_SAFE_INTEGER
       );
       console.log("Court Categories:", response.data);
-      const categories = response.data.data.items;
+      const categories = response.data.items;
       setListCourtCategories(categories);
     } catch (error) {
       console.error("Error fetching court categories:", error);
@@ -100,10 +100,10 @@ const FacilitiesWithCondition = (props) => {
 
       if (status === 200) {
         // Status 200 - hiển thị kết quả
-        if (response.data && response.data.data) {
-          setFacilities(response.data.data.items || []);
-          setTotalPages(response.data.data.totalPages || 1);
-          setTotalItems(response.data.data.totalItems || 0);
+        if (response && response.data) {
+          setFacilities(response.data.items || []);
+          setTotalPages(response.data.totalPages || 1);
+          setTotalItems(response.data.totalItems || 0);
           setCurrentPage(page);
         }
       } else if (status === 404) {

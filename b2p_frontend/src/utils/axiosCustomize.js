@@ -26,7 +26,9 @@ instance.interceptors.response.use(
   function (response) {
     NProgress.done();
 
-    return response;
+    return response.data
+      ? response.data // If the response has data, return it directly
+      : response; // Otherwise, return the full response
   },
   function (error) {
     NProgress.done();
