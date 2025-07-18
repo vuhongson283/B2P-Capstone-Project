@@ -20,9 +20,21 @@ namespace B2P_API.Controllers
 		[HttpPost("account-list")]
 		public async Task<IActionResult> GetAccountList([FromBody] GetListAccountRequest request)
 		{
+			if (request == null)
+			{
+				return BadRequest(new
+				{
+					Success = false,
+					Message = "Request không được để trống.",
+					Status = 400,
+					Data = (object)null
+				});
+			}
+
 			var response = await _accountManagementService.GetAllAccountsAsync(request);
 			return StatusCode(response.Status, response);
 		}
+
 		[HttpGet("get-user/{userId}")]
 		public async Task<IActionResult> GetAccountById([FromRoute] int userId)
 		{

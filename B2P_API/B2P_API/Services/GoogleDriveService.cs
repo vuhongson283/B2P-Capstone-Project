@@ -36,13 +36,15 @@
         {
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
             {
-                Name = fileName
+                Name = fileName,
+                Parents = new List<string> { "0ABjfDp9o6-bOUk9PVA" }
             };
 
             using var stream = new MemoryStream(imageBytes);
             var request = _driveService.Files.Create(fileMetadata, stream, "image/jpeg");
             request.Fields = "id";
-
+            request.SupportsAllDrives = true;
+            
             var progress = await request.UploadAsync();
 
             if (progress.Status == Google.Apis.Upload.UploadStatus.Completed)
@@ -61,8 +63,10 @@
                 Role = "reader"
             };
 
-            // Sử dụng Create().ExecuteAsync() thay vì CreateAsync
-            await _driveService.Permissions.Create(permission, fileId).ExecuteAsync();
+            var request = _driveService.Permissions.Create(permission, fileId);
+            request.SupportsAllDrives = true; 
+            await request.ExecuteAsync();     
+
             return $"https://drive.google.com/uc?id={fileId}";
         }
 
