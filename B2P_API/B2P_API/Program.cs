@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
-using static B2P_API.Services.TwilioSMSService;
 using B2P_API.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -75,7 +74,7 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISMSService, TwilioSMSService>();
+builder.Services.AddScoped<ISMSService, eSmsService>();
 
 builder.Services.AddScoped<AccountManagementRepository>();
 builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
@@ -116,8 +115,8 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 // Đăng ký TwilioSettings
-builder.Services.Configure<TwilioSettings>(
-    builder.Configuration.GetSection("Twilio"));
+builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
+
 var app = builder.Build();
 
 // Middleware pipeline
