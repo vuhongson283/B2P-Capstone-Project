@@ -19,11 +19,10 @@ namespace B2P_API.Services
             _repository = repository;
         }
 
-        public async Task<ApiResponse<PagedResponse<ReportDTO>>> GetReport(int pageNumber, int pageSize, 
-            int userId, DateTime? startDate, DateTime? endDate, int? facilityId)
+        public async Task<ApiResponse<PagedResponse<ReportDTO>>> GetReport(
+            int userId, DateTime? startDate, DateTime? endDate, int? facilityId, int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber <= 0) pageNumber = 1;
-            if (pageSize <= 0 || pageSize > 10) pageSize = 10;
 
             // Kiểm tra xem user có booking nào không
             var hasAnyBookings = await _repository.HasAnyBookings(userId, facilityId);
