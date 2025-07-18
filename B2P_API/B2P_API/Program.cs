@@ -92,6 +92,7 @@ builder.Services.AddScoped<CommentRepository>();
 builder.Services.AddScoped<CommentService>();
 
 builder.Services.AddScoped<CourtRepository>();
+builder.Services.AddScoped<ICourtRepository, CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
 // Booking services
@@ -112,6 +113,7 @@ ExcelPackage.License.SetNonCommercialPersonal("B2P");
 
 // Report services
 builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 // Đăng ký TwilioSettings
 builder.Services.Configure<TwilioSettings>(

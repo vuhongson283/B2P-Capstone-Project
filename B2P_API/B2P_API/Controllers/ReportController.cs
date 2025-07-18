@@ -22,18 +22,20 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("ReportList")]
-        public async Task<IActionResult> Get([FromQuery, BindRequired] int userId,
+        public async Task<IActionResult> Get(int pageNumber, int pageSize, 
+            [FromQuery, BindRequired] int userId,
             DateTime? startDate, DateTime? endDate, int? facilityId)
         {
-            var response = await _reportService.GetReport(userId, startDate, endDate, facilityId);
+            var response = await _reportService.GetReport(pageNumber, pageSize, userId, startDate, endDate, facilityId);
             return StatusCode(response.Status, response);
         }
 
         [HttpGet("export-report-to-excel")]
-        public async Task<IActionResult> ExportReportToExcel([FromQuery, BindRequired] int userId,
+        public async Task<IActionResult> ExportReportToExcel(int pageNumber, int pageSize,
+            [FromQuery, BindRequired] int userId,
             DateTime? startDate, DateTime? endDate, int? facilityId)
         {
-            var reportResponse = await _reportService.GetReport(userId, startDate, endDate, facilityId);
+            var reportResponse = await _reportService.GetReport(pageNumber, pageSize, userId, startDate, endDate, facilityId);
             if (!reportResponse.Success)
             {
                 return StatusCode(reportResponse.Status, reportResponse.Message);
