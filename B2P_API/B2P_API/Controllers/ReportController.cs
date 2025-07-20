@@ -86,5 +86,12 @@ namespace B2P_API.Controllers
             var response = await _reportService.GetTotalReport(userId, startDate, endDate);
             return StatusCode(response.Status, response);
         }
+
+        [HttpGet("AdminReport")]
+        public async Task<IActionResult> GetAdminReport(int? year, int? month)
+        {
+            var response = await _reportService.GetAdminReportPaged(year, month);
+            return StatusCode(response.Status, response);
+        }
     }
 }
