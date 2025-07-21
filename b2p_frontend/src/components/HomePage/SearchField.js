@@ -2,8 +2,14 @@ import Form from "react-bootstrap/Form";
 import "./SearchField.scss";
 import { getAllCourtCategories } from "../../services/apiService";
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setSearchFacility } from "../../store/action/searchFacilityAction";
+import { useNavigate } from "react-router-dom";
 
 const SearchField = (props) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  // State cho danh sách loại sân, loại sân được chọn, và ô tìm kiếm
   const [listCourtCategories, setListCourtCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchText, setSearchText] = useState("");
@@ -40,11 +46,6 @@ const SearchField = (props) => {
       const response = await fetch("https://provinces.open-api.vn/api/p/");
       const data = await response.json();
       setProvinces(data);
-
-      // Set giá trị mặc định là tỉnh đầu tiên - sử dụng name thay vì code
-      if (data && data.length > 0) {
-        setSelectedProvince(data[0].name);
-      }
     } catch (error) {
       console.error("Error fetching provinces:", error);
     }
@@ -119,12 +120,10 @@ const SearchField = (props) => {
       district: selectedDistrict,
     };
 
-    console.log("Search params:", searchParams);
+    dispatch(setSearchFacility(searchParams));
 
     // Gọi API tìm kiếm hoặc truyền data lên component cha
-    if (props.onSearch) {
-      props.onSearch(searchParams);
-    }
+    navigate("/search");
   };
 
   return (
@@ -166,6 +165,7 @@ const SearchField = (props) => {
             value={selectedProvince}
             onChange={handleProvinceChange}
           >
+            <option value="">Chọn tỉnh/thành phố</option>
             {provinces.map((province) => (
               <option key={province.code} value={province.name}>
                 {province.name}
@@ -182,6 +182,7 @@ const SearchField = (props) => {
             onChange={handleDistrictChange}
             disabled={!selectedProvince || districts.length === 0}
           >
+            <option value="">Chọn quận/huyện</option>
             {districts.map((district) => (
               <option key={district.code} value={district.name}>
                 {district.name}
