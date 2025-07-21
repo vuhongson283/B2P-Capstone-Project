@@ -9,5 +9,6 @@ namespace B2P_API.Interface
             int userId, DateTime? startDate, DateTime? endDate, int? facilityId);
         Task<TotalReportDTO> GetTotalReport(int userId, DateTime? startDate, DateTime? endDate);
         Task<bool> HasAnyBookings(int userId, int? facilityId);
+        Task<AdminReportDTO> GetAdminReport(int? year, int? month);
     }
 }

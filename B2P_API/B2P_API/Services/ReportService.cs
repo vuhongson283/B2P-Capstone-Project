@@ -1,4 +1,5 @@
 ﻿
+using B2P_API.DTOs.BookingDTOs;
 using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.DTOs.ReportDTO;
 using B2P_API.Interface;
@@ -80,6 +81,44 @@ namespace B2P_API.Services
                 Status = 200,
                 Data = report
             };
+        }
+
+        public async Task<ApiResponse<AdminReportDTO>> GetAdminReportPaged(int? year = null, int? month = null)
+        {
+            try
+            {
+                var report = await _repository.GetAdminReport(year, month);
+
+                if (report == null)
+                {
+                    return new ApiResponse<AdminReportDTO>
+                    {
+                        Success = false,
+                        Message = "Không có dữ liệu trong khoảng thời gian đã chọn",
+                        Status = 200,
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<AdminReportDTO>
+                {
+                    Success = true,
+                    Message = "Lấy dữ liệu báo cáo thành công!",
+                    Status = 200,
+                    Data = report
+                };
+            }
+
+            catch (Exception ex)
+            {
+                return new ApiResponse<AdminReportDTO>
+                {
+                    Success = false,
+                    Message = $"Đã xảy ra lỗi: {ex.Message}",
+                    Status = 500,
+                    Data = null
+                };
+            }
         }
     }
 }
