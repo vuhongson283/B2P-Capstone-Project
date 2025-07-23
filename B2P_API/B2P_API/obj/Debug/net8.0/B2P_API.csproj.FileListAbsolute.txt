@@ -191,6 +191,7 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Azure.Co
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Azure.Identity.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\BCrypt.Net-Next.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\BouncyCastle.Cryptography.dll
+C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\DnsClient.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Google.Apis.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Google.Apis.Auth.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Google.Apis.Core.dll
@@ -235,10 +236,10 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Microsof
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.SqlServer.Server.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Microsoft.Win32.SystemEvents.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\MimeKit.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Mono.TextTemplating.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Stripe.net.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -250,7 +251,6 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.C
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Composition.Runtime.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Composition.TypedParts.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Drawing.Common.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.IO.Pipelines.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Management.dll
@@ -258,10 +258,8 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.M
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Runtime.Caching.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Security.Permissions.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Text.Encodings.Web.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Text.Json.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\System.Windows.Extensions.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\Twilio.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\cs\Microsoft.CodeAnalysis.resources.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\de\Microsoft.CodeAnalysis.resources.dll
@@ -321,15 +319,10 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Management.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.csproj.AssemblyReference.cache
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.AssemblyInfoInputs.cache
@@ -348,11 +341,10 @@ C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwe
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.B2P_API.props
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.B2P_API.props
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets.pack.json
+C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.csproj.Up2Date
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\refint\B2P_API.dll
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.pdb
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\B2P_API.genruntimeconfig.cache
 C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\ref\B2P_API.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\bin\Debug\net8.0\DnsClient.dll
-C:\Users\nguye\OneDrive\Máy tính\B2P\B2P_API\B2P_API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

@@ -64,7 +64,7 @@ builder.Services.AddScoped<AccountManagementService>();
 
 builder.Services.AddScoped<AccountRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<B2P_API.Services.AccountService>();
 
 builder.Services.AddScoped<BlogRepository>();
 builder.Services.AddScoped<BlogService>();
@@ -74,6 +74,9 @@ builder.Services.AddScoped<CommentService>();
 
 builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
+
+builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<BookingService>();
 
 var app = builder.Build();
 
