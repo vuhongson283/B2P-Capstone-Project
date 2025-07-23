@@ -1,0 +1,50 @@
+.court-owner-container {
+    display   : flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d5e8d4 100%);
+
+    .court-owner-sidebar {
+        flex-shrink: 0;
+    }
+
+    .court-owner-main {
+        flex       : 1;
+        margin-left: 280px; // Width của sidebar
+        transition : margin-left 0.3s ease;
+
+        .court-owner-content {
+            padding        : 30px;
+            min-height     : 100vh;
+            background     : rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-left    : 1px solid rgba(46, 204, 113, 0.1);
+
+            h1 {
+                color        : #1e8449;
+                margin-bottom: 20px;
+                text-shadow  : 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            p {
+                color    : #5d6d5d;
+                font-size: 16px;
+            }
+        }
+    }
+
+    // When sidebar is collapsed
+    &:has(.court-owner-sidebar.collapsed) {
+        .court-owner-main {
+            margin-left: 70px;
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+    .court-owner-container {
+        .court-owner-main {
+            margin-left: 0;
+        }
+    }
+}

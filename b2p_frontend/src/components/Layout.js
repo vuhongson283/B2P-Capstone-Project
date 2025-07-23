@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
+import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner component
 const Layout = (props) => {
   return (
     <>
@@ -13,6 +14,13 @@ const Layout = (props) => {
           <Route path="/search" element={<FacilitiesWithCondition />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
+
+        <Route path="/court-owner" element={<CourtOwner />}>
+          <Route
+            path="/court-owner/search"
+            element={<FacilitiesWithCondition />}
+          />
         </Route>
       </Routes>
 
