@@ -134,14 +134,16 @@ namespace B2P_API.Repository
             // 1. Thống kê tổng quan tháng
             var monthlyStats = await _context.Bookings
                 .Where(b => b.CreateAt >= startDate && b.CreateAt <= endDate)
-                .GroupBy(b => 1) // Group all records
+                .GroupBy(b => 1)
                 .Select(g => new MonthlyStatsDTO
                 {
                     TotalBooking = g.Count(),
-                    TotalRevenue = g.Sum(b => b.TotalPrice),
-                    AverageRevenuePerBooking = g.Average(b => b.TotalPrice),
-                    CompletedBookings = g.Count(b => b.StatusId == 3), // StatusId 3 = Completed
-                    CancelledBookings = g.Count(b => b.StatusId == 4), // StatusId 4 = Cancelled
+                    TotalRevenue = g.Where(b => b.StatusId == 10) // Completed
+                      .Sum(b => b.TotalPrice),
+                    AverageRevenuePerBooking = g.Where(b => b.StatusId == 10)
+                      .Average(b => b.TotalPrice),
+                    CompletedBookings = g.Count(b => b.StatusId == 10),
+                    CancelledBookings = g.Count(b => b.StatusId == 9),
                     TotalFacilities = _context.Facilities.Count(),
                     TotalCourts = _context.Courts.Count(),
                     ActiveUsers = _context.Users.Count(u => u.StatusId == 1)
@@ -156,15 +158,21 @@ namespace B2P_API.Repository
                     FacilityName = f.FacilityName,
                     TotalBooking = f.Courts
                         .SelectMany(c => c.BookingDetails)
-                        .Count(bd => bd.Booking.CreateAt >= startDate && bd.Booking.CreateAt <= endDate),
+                        .Count(bd => bd.Booking.CreateAt >= startDate
+                                  && bd.Booking.CreateAt <= endDate
+                                  && bd.Booking.StatusId == 10), // Completed
                     TotalRevenue = f.Courts
                         .SelectMany(c => c.BookingDetails)
-                        .Where(bd => bd.Booking.CreateAt >= startDate && bd.Booking.CreateAt <= endDate)
-                        .Sum(bd => bd.Booking.TotalPrice)
+                        .Where(bd => bd.Booking != null
+                                  && bd.Booking.CreateAt >= startDate
+                                  && bd.Booking.CreateAt <= endDate
+                                  && bd.Booking.StatusId == 10) // Completed
+                        .GroupBy(bd => bd.BookingId)
+                        .Select(g => g.First().Booking.TotalPrice)
+                        .Sum()
                 })
                 .Where(f => f.TotalBooking > 0)
-                .OrderByDescending(f => f.TotalBooking)
-                .Take(5)
+                .OrderByDescending(f => f.TotalRevenue)
                 .ToListAsync();
 
             // 3. Thống kê loại sân phổ biến
