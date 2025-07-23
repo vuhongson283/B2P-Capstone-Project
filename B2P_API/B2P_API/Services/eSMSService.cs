@@ -1,114 +1,105 @@
 ﻿using B2P_API.Interface;
-using B2P_API.Repository;
 using B2P_API.Response;
 using B2P_API.Utils;
-using Microsoft.Extensions.Caching.Memory;
-using Twilio;
-using Twilio.Rest.Api.V2010.Account;
-using Twilio.Rest.Verify.V2.Service;
-using Twilio.Types;
+using Microsoft.Extensions.Options;
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
 namespace B2P_API.Services
 {
-    public class eSMSService : ISMSService
+    public class eSmsService : ISMSService
     {
-        
-            private static readonly HttpClient client = new HttpClient();
-            private const string ApiKey = "3D7D79DECD4B5C70EA0C4EAFC0B376";
-            private const string SecretKey = "5B4405CC7D3FD6705B8DCDB56D53DD";
-            private const string CampaignId = "Cảm ơn đã sử dụng dịch vụ của B2P";
+        private readonly ESMSSettings _settings;
+        private readonly HttpClient _httpClient;
+        private const string EsmsSendUrl = "https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/";
 
-            // Gửi OTP
-            public async Task<ApiResponse<object>> SendOTPAsync(string phoneNumber, string otp)
+        public eSmsService(IOptions<ESMSSettings> options)
+        {
+            _settings = options.Value;
+            _httpClient = new HttpClient();
+        }
+
+        public async Task<ApiResponse<object>> SendOTPAsync(string phoneNumber, string otp)
+        {
+            string content = $"{otp} la ma xac minh dang ky Baotrixemay cua ban";
+            return await SendSMSInternal(phoneNumber, content);
+        }
+
+        public async Task<ApiResponse<object>> SendSMSAsync(string phoneNumber, string message)
+        {
+            string content = message;
+            return await SendSMSInternal(phoneNumber, content);
+        }
+
+        private async Task<ApiResponse<object>> SendSMSInternal(string phone, string content)
+        {
+            var requestId = Guid.NewGuid().ToString();
+
+            var requestBody = new
             {
+                ApiKey = _settings.ApiKey,
+                SecretKey = _settings.SecretKey,
+                Phone = phone,
+                Brandname = "Baotrixemay",
+                Content = content,
+                SmsType = "2",
+                IsUnicode = "0",
+                RequestId = requestId,
+                CallbackUrl = "https://esms.vn/webhook/"
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+
             try
             {
-                var url = "https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/";
-
-                var requestBody = new
-                {
-                    ApiKey = ApiKey,
-                    Content = $"{otp} la ma xac minh dang ky cua ban",
-                    Phone = phoneNumber,
-                    SecretKey = SecretKey,
-                    SmsType = "2",
-                    IsUnicode = "1",
-                    campaignid = CampaignId,
-                    RequestId = Guid.NewGuid().ToString(),
-                    CallbackUrl = "https://esms.vn/webhook/"
-                };
-
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-                var httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync(url, httpContent);
+                var response = await _httpClient.PostAsync(EsmsSendUrl, httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                return new ApiResponse<object>
+                var esmsResponse = JsonSerializer.Deserialize<ESMSResponse>(responseContent);
+
+                if (esmsResponse != null && esmsResponse.CodeResult == "100")
                 {
-                    Success = true,
-                    Message = responseContent,
-                    Status = 200,
-                    Data = null
-                };
+                    return new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = $"SMS đã được gửi đến {phone}",
+                        Status = 200,
+                        Data = new { SMSID = esmsResponse.SMSID, Phone = phone, Content = content }
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Gửi SMS thất bại: " + (esmsResponse?.ErrorMessage ?? "Không rõ lỗi"),
+                        Status = 500,
+                        Data = null
+                    };
+                }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new ApiResponse<object>
                 {
                     Success = false,
-                    Message = MessagesCodes.MSG_06 + ex.Message,
-                    Status = 200,
+                    Message = "Lỗi gửi SMS: " + ex.Message,
+                    Status = 500,
                     Data = null
                 };
             }
-            }
+        }
 
-            // Gửi SMS tùy ý
-            public async Task<ApiResponse<object>> SendSMSAsync(string phoneNumber, string message)
-            {
-            try
-            {
-                var url = "https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/";
-
-                var requestBody = new
-                {
-                    ApiKey = ApiKey,
-                    Content = message,
-                    Phone = phoneNumber,
-                    SecretKey = SecretKey,
-                    SmsType = "2",
-                    IsUnicode = "1",
-                    campaignid = CampaignId,
-                    RequestId = Guid.NewGuid().ToString(),
-                    CallbackUrl = "https://esms.vn/webhook/"
-                };
-
-                var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-                var httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync(url, httpContent);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                return new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = responseContent,
-                    Status = 200,
-                    Data = null
-                };
-            }
-            catch(Exception ex)
-            {
-                return new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = MessagesCodes.MSG_06 + ex.Message,
-                    Status = 200,
-                    Data = null
-                };
-            }
-            }
-
+        private class ESMSResponse
+        {
+            public string CodeResult { get; set; }
+            public int CountRegenerate { get; set; }
+            public string SMSID { get; set; }
+            public string ErrorMessage { get; set; }
+        }
     }
-    
 }

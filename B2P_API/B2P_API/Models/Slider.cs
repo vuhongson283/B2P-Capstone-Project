@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace B2P_API.Models;
 
 public partial class Slider
 {
-    public int SlideId { get; set; }
+
+	public int SlideId { get; set; }
 
     public string? SlideDescription { get; set; }
 

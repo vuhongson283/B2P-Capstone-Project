@@ -151,12 +151,22 @@ namespace B2P_API.Services
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.FacilityName.Contains(request.Name, StringComparison.OrdinalIgnoreCase));
                 }
-
                 if (request.Type != null && request.Type.Any())
                 {
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.Courts.Any(court => request.Type.Contains((int)court.CategoryId)));
                 }
+                else
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
+                    {
+                        Success = false,
+                        Message = "No facilities found matching the search criteria.",
+                        Status = 404,
+                        Data = null
+                    };
+                }
+
 
                 if (!string.IsNullOrEmpty(request.City))
                 {
@@ -614,6 +624,8 @@ namespace B2P_API.Services
                 };
             }
         }
+
+
     }
 }
 

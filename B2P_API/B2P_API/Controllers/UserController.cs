@@ -25,12 +25,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.SendPasswordResetOtpByEmailAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
         [HttpPost("reset-password-by-email")]
@@ -38,12 +34,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.VerifyOtpAndResetPasswordByEmailAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
         [HttpPost("resend-otp-by-email")]
@@ -51,12 +43,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.ResendPasswordResetOtpByEmailAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
         [HttpPost("forgot-password-by-sms")]
@@ -64,12 +52,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.SendPasswordResetOtpBySMSAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
         [HttpPost("reset-password-by-sms")]
@@ -77,12 +61,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.VerifyOtpAndResetPasswordBySMSAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
         [HttpPost("resend-otp-by-sms")]
@@ -90,12 +70,8 @@ namespace B2P_API.Controllers
         {
             var response = await _userService.ResendPasswordResetOtpBySMSAsync(request);
 
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
+            return StatusCode(response.Status, response);
 
-            return Ok(response);
         }
 
 
@@ -103,34 +79,22 @@ namespace B2P_API.Controllers
         public async Task<IActionResult> GetUserById(int userId)
         {
             var response = await _userService.GetUserByIdAsync(userId);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-
-            return Ok(response);
+            return StatusCode(response.Status, response);
         }
 
         [HttpPut("update-user")]
         public async Task<IActionResult> UpdateUser(int userId,[FromBody] UpdateUserRequest request)
         {
             var response = await _userService.UpdateUserAsync(userId,request);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
+
         }
 
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var response = await _userService.ChangePasswordAsync(request);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
         }
 
 

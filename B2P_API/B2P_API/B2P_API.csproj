@@ -12,6 +12,8 @@
 
     <PackageReference Include="DnsClient" Version="1.8.0" />
 
+    <PackageReference Include="EPPlus" Version="8.0.6" />
+
     <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.69.0.3783" />
 
@@ -31,9 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-
-
-    <Folder Include="DTOs\ImageDTO\" />
 
     <Folder Include="Map\" />
   </ItemGroup>

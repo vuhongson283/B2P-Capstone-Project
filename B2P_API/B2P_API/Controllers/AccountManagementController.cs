@@ -1,4 +1,6 @@
 ﻿using B2P_API.DTOs.Account;
+using B2P_API.DTOs.CourtCategoryDTO;
+using B2P_API.Interface;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,16 +12,29 @@ namespace B2P_API.Controllers
 	public class AccountManagementController : ControllerBase
 	{
 		private readonly AccountManagementService _accountManagementService;
-		public AccountManagementController(AccountManagementService accountManageService)
+
+        public AccountManagementController(AccountManagementService accountManageService)
 		{
 			_accountManagementService = accountManageService;
-		}
+        }
 		[HttpPost("account-list")]
 		public async Task<IActionResult> GetAccountList([FromBody] GetListAccountRequest request)
 		{
+			if (request == null)
+			{
+				return BadRequest(new
+				{
+					Success = false,
+					Message = "Request không được để trống.",
+					Status = 400,
+					Data = (object)null
+				});
+			}
+
 			var response = await _accountManagementService.GetAllAccountsAsync(request);
 			return StatusCode(response.Status, response);
 		}
+
 		[HttpGet("get-user/{userId}")]
 		public async Task<IActionResult> GetAccountById([FromRoute] int userId)
 		{
@@ -45,5 +60,6 @@ namespace B2P_API.Controllers
 			var resp = await _accountManagementService.DeleteUserAsync(userId);
 			return StatusCode(resp.Status, resp);
 		}
-	}
+
+    }
 }
