@@ -1,3 +1,37 @@
+.pagination-container {
+    margin-top     : 2rem;
+    display        : flex;
+    justify-content: center;
+
+    .pagination {
+        margin: 0;
+
+        .page-item {
+            &.active .page-link {
+                background-color: #28a745;
+                border-color    : #28a745;
+            }
+
+            .page-link {
+                color: #28a745;
+
+                &:hover {
+                    background-color: #e9ecef;
+                    border-color    : #dee2e6;
+                }
+
+                &:focus {
+                    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+                }
+            }
+
+            &.disabled .page-link {
+                color: #6c757d;
+            }
+        }
+    }
+}
+
 .error-container {
     background   : #fff;
     border-radius: 12px;
@@ -49,7 +83,7 @@
 
 .facilities-with-condition {
     padding    : 2rem 0;
-    padding-top: 6rem; // Thêm padding-top để tránh bị che bởi header (80px + 2rem)
+    padding-top: 5rem; // Thêm padding-top để tránh bị che bởi header (80px + 2rem)
     background : #f8f9fa;
     min-height : calc(100vh - 80px); // Trừ đi chiều cao header
 
@@ -435,7 +469,7 @@
 @media (max-width: 992px) {
     .facilities-with-condition {
         padding    : 1rem 0;
-        padding-top: 5rem; // Điều chỉnh cho tablet
+        padding-top: 2rem; // Điều chỉnh cho tablet
 
         .search-sidebar {
             position     : static;
@@ -465,7 +499,7 @@
 
 @media (max-width: 768px) {
     .facilities-with-condition {
-        padding-top: 4.5rem; // Điều chỉnh cho mobile
+        padding-top: 2rem; // Điều chỉnh cho mobile
 
         .container-fluid {
             padding: 0 0.5rem;
@@ -542,7 +576,7 @@
 
 @media (max-width: 480px) {
     .facilities-with-condition {
-        padding-top: 4rem; // Điều chỉnh cho mobile nhỏ
+        padding-top: 2rem; // Điều chỉnh cho mobile nhỏ
 
         .search-sidebar {
             .filter-section .checkbox-group {

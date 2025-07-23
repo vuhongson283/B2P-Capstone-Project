@@ -10,7 +10,7 @@
         public const string MSG_06 = "Có lỗi đã xảy ra: ";
         public const string MSG_07 = "Vui lòng không bỏ trống mục này.";
         public const string MSG_08 = "Nhập sai tài khoản hoặc mật khẩu. Vui lòng thử lại.";
-        public const string MSG_09 = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ câu lạc bộ.";
+        public const string MSG_09 = "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ Admin.";
         public const string MSG_10 = "Đổi mật khẩu thành công.";
         public const string MSG_11 = "Email đã nhập không thuộc về bất kỳ tài khoản người dùng nào trong hệ thống.";
         public const string MSG_12 = "Mật khẩu OTP đã hết hạn hoặc không chính xác.";

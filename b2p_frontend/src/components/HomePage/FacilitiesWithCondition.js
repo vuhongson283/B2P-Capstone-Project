@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { setSearchFacility } from "../../store/action/searchFacilityAction"; // Import action
 import "./FacilitiesWithCondition.scss"; // Import your CSS file
 import altImg from "../../assets/images/sports-tools.jpg";
-// Function to convert Google Drive URLs to thumbnails
+
 const convertGoogleDriveUrl = (url) => {
   if (!url) return "";
   if (url.includes("drive.google.com")) {
@@ -64,7 +64,7 @@ const FacilitiesWithCondition = () => {
   const [provinces, setProvinces] = useState([]); // Add state for provinces
   const [districts, setDistricts] = useState([]); // Add state for districts
 
-  const pageSize = 6;
+  const pageSize = 1;
 
   // Ref to track initial search
   const initialSearchDone = useRef(false);
@@ -414,9 +414,7 @@ const FacilitiesWithCondition = () => {
                 </h4>
                 <div className="results-info">
                   <span className="results-count">
-                    {apiStatus === 200
-                      ? `Tìm thấy ${totalItems} cơ sở`
-                      : "Hãy thử tìm kiếm lại"}
+                    {apiStatus === 200 ? `Tìm thấy ${totalItems} cơ sở` : ""}
                   </span>
                 </div>
               </div>
@@ -429,6 +427,15 @@ const FacilitiesWithCondition = () => {
                     </div>
                     <p className="mt-2">Đang tải dữ liệu...</p>
                   </div>
+                </div>
+              ) : facilities.length === 0 ? (
+                <div className="error-container text-center">
+                  <i className="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                  <h5>Không tìm thấy kết quả</h5>
+                  <p className="text-muted">
+                    Không tìm thấy cơ sở nào phù hợp với tiêu chí tìm kiếm của
+                    bạn. Vui lòng thử lại với các tiêu chí khác.
+                  </p>
                 </div>
               ) : (
                 <div className="facilities-grid">
@@ -445,6 +452,10 @@ const FacilitiesWithCondition = () => {
                             }
                             alt={facility.facilityName}
                             className="facility-image"
+                            onError={(e) => {
+                              e.target.onerror = null; // Prevents infinite loop
+                              e.target.src = altImg;
+                            }}
                           />
                           <div className="image-overlay">
                             <div className="rating-badge">
@@ -487,6 +498,32 @@ const FacilitiesWithCondition = () => {
                       </Card>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {facilities.length > 0 && totalPages > 1 && (
+                <div className="pagination-container">
+                  <ReactPaginate
+                    nextLabel="Tiếp >"
+                    onPageChange={handlePageChange}
+                    pageRangeDisplayed={3}
+                    marginPagesDisplayed={2}
+                    pageCount={totalPages}
+                    previousLabel="< Trước"
+                    pageClassName="page-item"
+                    pageLinkClassName="page-link"
+                    previousClassName="page-item"
+                    previousLinkClassName="page-link"
+                    nextClassName="page-item"
+                    nextLinkClassName="page-link"
+                    breakLabel="..."
+                    breakClassName="page-item"
+                    breakLinkClassName="page-link"
+                    containerClassName="pagination"
+                    activeClassName="active"
+                    forcePage={currentPage - 1}
+                    renderOnZeroPageCount={null}
+                  />
                 </div>
               )}
             </div>
