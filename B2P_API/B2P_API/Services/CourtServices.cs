@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
@@ -8,24 +9,19 @@ namespace B2P_API.Services
 {
     public class CourtServices
     {
-        private readonly SportBookingDbContext _context;
-        private readonly CourtRepository _repository;
+        private readonly ICourtRepository _repository;
 
-        public CourtServices(SportBookingDbContext context, CourtRepository repository)
+        public CourtServices(ICourtRepository repository)
         {
-            _context = context;
             _repository = repository;
         }
 
-        public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(int pageNumber, int pageSize,
-            int facilityId, string? search, int? status, int? categoryId)
+        public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(CourtRequestDTO req)
         {
-            if (pageNumber <= 0) pageNumber = 1;
-            if (pageSize <= 0 || pageSize > 10) pageSize = 10;
+            if (req.PageNumber <= 0) req.PageNumber = 1;
+            if (req.PageSize <= 0 || req.PageSize > 10) req.PageSize = 10;
 
-            var paginatedResult = await _repository.GetAllCourts(
-                pageNumber, pageSize, facilityId, search, status, categoryId
-            );
+            var paginatedResult = await _repository.GetAllCourts(req);
 
             if (paginatedResult.Items == null)
             {

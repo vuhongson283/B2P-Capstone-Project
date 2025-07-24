@@ -491,17 +491,6 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (changePasswordRequest.OldPassword == changePasswordRequest.NewPassword)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Mật khẩu mới phải khác mật khẩu cũ",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
                 if (changePasswordRequest.NewPassword != changePasswordRequest.ConfirmPassword)
                 {
                     return new ApiResponse<object>

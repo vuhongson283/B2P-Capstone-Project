@@ -11,7 +11,7 @@ namespace B2P_API.Services
     public class ExcelExportService : IExcelExportService
     {
         public async Task<ApiResponse<byte[]>> ExportToExcelAsync<T>(
-            List<T> data,
+            PagedResponse<T> pagedData,
             string sheetName = "Data",
             Dictionary<string, Func<T, object>>? columnMappings = null)
         {
@@ -20,7 +20,7 @@ namespace B2P_API.Services
                 using var package = new ExcelPackage();
                 var worksheet = package.Workbook.Worksheets.Add(sheetName);
 
-                if (data == null || data.Count == 0)
+                if (pagedData == null || pagedData.Items == null || !pagedData.Items.Any())
                 {
                     return new ApiResponse<byte[]>
                     {
@@ -30,6 +30,9 @@ namespace B2P_API.Services
                         Data = null
                     };
                 }
+
+                var data = pagedData.Items.ToList();
+                int totalRecords = pagedData.TotalItems;
 
                 // Nếu không có columnMappings, sử dụng reflection để lấy tất cả properties
                 if (columnMappings == null)
@@ -89,10 +92,15 @@ namespace B2P_API.Services
                 dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                 dataRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
 
+                // Thêm thông tin phân trang vào footer (tùy chọn)
+                worksheet.Cells[data.Count + 3, 1].Value = $"Tổng số bản ghi: {totalRecords}";
+                worksheet.Cells[data.Count + 4, 1].Value = $"Trang hiện tại: {pagedData.CurrentPage}/{pagedData.TotalPages}";
+                worksheet.Cells[data.Count + 5, 1].Value = $"Số bản ghi mỗi trang: {pagedData.ItemsPerPage}";
+
                 return new ApiResponse<byte[]>
                 {
                     Success = true,
-                    Message = $"Xuất file Excel thành công với {data.Count} bản ghi.",
+                    Message = $"Xuất file Excel thành công với {data.Count} bản ghi (tổng cộng {totalRecords} bản ghi).",
                     Status = 200,
                     Data = package.GetAsByteArray()
                 };
@@ -206,17 +214,23 @@ namespace B2P_API.Services
 
         private bool IsPriceField(string fieldName)
         {
-            var priceFieldNames = new[] {
-                "TotalPrice", "PaymentAmount", "Price", "Amount",
-                "Tổng giá tiền", "Số tiền thanh toán", "Giá tiền", "Thành tiền"
-            };
+            var priceFieldNames = new[]
+            {
+        "TotalPrice", "PaymentAmount", "Price", "Amount",
+        "Tổng giá tiền", "Số tiền thanh toán", "Giá tiền", "Thành tiền",
+        // Admin report
+        "TotalRevenue", "AverageRevenuePerBooking",
+        "Tổng doanh thu", "Doanh thu trung bình/Đơn"
+    };
 
             return priceFieldNames.Any(pattern =>
                 fieldName.Equals(pattern, StringComparison.OrdinalIgnoreCase) ||
                 fieldName.Contains("Price", StringComparison.OrdinalIgnoreCase) ||
                 fieldName.Contains("Amount", StringComparison.OrdinalIgnoreCase) ||
+                fieldName.Contains("Revenue", StringComparison.OrdinalIgnoreCase) ||
                 fieldName.Contains("tiền", StringComparison.OrdinalIgnoreCase) ||
-                fieldName.Contains("Giá", StringComparison.OrdinalIgnoreCase));
+                fieldName.Contains("Giá", StringComparison.OrdinalIgnoreCase) ||
+                fieldName.Contains("Doanh thu", StringComparison.OrdinalIgnoreCase));
         }
 
         private bool IsCountField(string fieldName)
@@ -319,7 +333,7 @@ namespace B2P_API.Services
         {
             var propertyMappings = new Dictionary<string, string>
             {
-                // Booking properties
+                // Booking
                 ["BookingId"] = "Mã đặt sân",
                 ["CustomerName"] = "Tên khách hàng",
                 ["CustomerEmail"] = "Email khách hàng",
@@ -332,13 +346,13 @@ namespace B2P_API.Services
                 ["BookingTime"] = "Thời gian đặt sân",
                 ["BookingStatus"] = "Trạng thái đặt sân",
 
-                // Payment properties
+                // Payment
                 ["PaymentId"] = "Mã thanh toán",
                 ["PaymentAmount"] = "Số tiền thanh toán",
                 ["PaymentTime"] = "Thời gian thanh toán",
                 ["PaymentStatus"] = "Trạng thái thanh toán",
 
-                // Common properties
+                // Common
                 ["Id"] = "Mã",
                 ["Name"] = "Tên",
                 ["Description"] = "Mô tả",
@@ -348,7 +362,20 @@ namespace B2P_API.Services
                 ["IsActive"] = "Hoạt động",
                 ["Phone"] = "Số điện thoại",
                 ["Email"] = "Email",
-                ["Address"] = "Địa chỉ"
+                ["Address"] = "Địa chỉ",
+
+                // Admin report
+                ["TotalBooking"] = "Tổng lượt đặt sân",
+                ["TotalRevenue"] = "Tổng doanh thu",
+                ["AverageRevenuePerBooking"] = "Doanh thu trung bình/Đơn",
+                ["CompletedBookings"] = "Đơn hoàn thành",
+                ["CancelledBookings"] = "Đơn huỷ",
+                ["TotalFacilities"] = "Tổng số cơ sở",
+                ["TotalCourts"] = "Tổng số sân",
+                ["ActiveUsers"] = "Người dùng hoạt động",
+                ["FacilityId"] = "Mã cơ sở",
+                ["FacilityName"] = "Tên cơ sở",
+                ["CategoryName"] = "Tên loại sân"
             };
 
             return propertyMappings.ContainsKey(propertyName) ? propertyMappings[propertyName] : propertyName;

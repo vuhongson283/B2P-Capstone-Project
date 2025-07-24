@@ -21,43 +21,30 @@ namespace B2P_API.Controllers
         public async Task<IActionResult> GetAllCourtCategories(string? search, int pageNumber = 1, int pageSize = 10)
         {
             var response = await _courtCategoryService.GetAllCourtCategoriesAsync(search, pageNumber, pageSize);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
         }
 
         [HttpPost("add-court-category")]
         public async Task<IActionResult> AddCourtCategory([FromBody] CourtCategoryAddRequest request)
         {
             var response = await _courtCategoryService.AddCourtCategoryAsync(request);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
+
         }
         [HttpPut("update-court-category")]
         public async Task<IActionResult> UpdateCourtCategory([FromBody] CourtCategoryUpdateRequest request)
         {
             var response = await _courtCategoryService.UpdateCourtCategoryAsync(request);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
+
         }
 
         [HttpGet("get-court-category-by-id")]
         public async Task<IActionResult> GetCourtCategoryById(int categoryId)
         {
             var response = await _courtCategoryService.GetCourtCategoryByIdAsync(categoryId);
-            if (!response.Success)
-            {
-                return StatusCode(response.Status, response.Message);
-            }
-            return Ok(response);
+            return StatusCode(response.Status, response);
+
         }
 
         [HttpDelete("delete-court-category")]

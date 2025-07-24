@@ -1,96 +1,62 @@
+html,
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing : antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  height    : 100%;
+  margin    : 0;
+  padding   : 0;
+  overflow-x: hidden;
+  max-width : 100%;
+  box-sizing: border-box;
 }
 
 .app-container {
-  .header-container {
+  min-height    : 100vh;
+  display       : flex;
+  flex-direction: column;
 
-    .btn-login {
-      border-radius: 5px;
-      padding      : 0 15px;
-      border       : 1px solid #535353;
-      height       : 40px;
+  .main-container {
+    flex          : 1;
+    display       : flex;
+    flex-direction: column;
 
-      &:hover {
-        background: rgb(97, 209, 229);
+    .app-content {
+      flex          : 1;
+      display       : flex;
+      flex-direction: column;
+      gap           : 24px;
+
+      .slider-container {
+        padding : 0 !important;
+        margin  : 0 !important;
+        width   : 100%;
+        position: relative; // Quan trọng cho SearchField absolute
+      }
+
+      .facilities-container {
+        width: 100%;
       }
     }
+  }
 
-    .btn-signup {
-      border-radius: 5px;
-      padding      : 0 15px;
-      background   : #303030;
-      color        : white;
-      height       : 40px;
-
-      &:hover {
-        background: black;
-      }
-    }
-
-    .navbar {
-      background-image: url("./assets/images/white-cloud-blue-sky-sea.jpg");
-      padding         : 8px 0;
-
-      .nav-link {
-        color      : #eee5ee;
-        padding    : 0.5rem 1rem;
-        font-weight: bold;
-
-        &:hover {
-          color: red !important;
-        }
-      }
-
-      .nav-link.active {
-        color: red !important;
-      }
-    }
-
+  .footer-container {
+    margin-top: auto;
   }
 }
 
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height        : 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+// Responsive
+@media (max-width: 992px) {
+  .app-container {
+    padding-top: 70px;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height      : 100vh;
-  display         : flex;
-  flex-direction  : column;
-  align-items     : center;
-  justify-content : center;
-  font-size       : calc(10px + 2vmin);
-  color           : white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+@media (max-width: 768px) {
+  .app-container {
+    padding-top: 65px;
   }
+}
 
-  to {
-    transform: rotate(360deg);
+@media (max-width: 480px) {
+  .app-container {
+    padding-top: 60px;
   }
 }

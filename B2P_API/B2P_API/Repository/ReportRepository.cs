@@ -1,11 +1,13 @@
-﻿using B2P_API.DTOs.ReportDTO;
+﻿using B2P_API.DTOs.BookingDTOs;
+using B2P_API.DTOs.ReportDTO;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace B2P_API.Repository
 {
-    public class ReportRepository
+    public class ReportRepository : IReportRepository
     {
         private readonly SportBookingDbContext _context;
 
@@ -14,14 +16,23 @@ namespace B2P_API.Repository
             _context = context;
         }
 
-        public async Task<List<ReportDTO>> GetReport(int userId, DateTime? startDate, DateTime? endDate, int? facilityId)
+        public async Task<PagedResponse<ReportDTO>> GetReport(int pageNumber, int pageSize,
+            int userId, DateTime? startDate, DateTime? endDate, int? facilityId)
         {
-            return await _context.Bookings
+            var query = _context.Bookings
                 .Where(b => b.BookingDetails.Any(bd =>
                     bd.Court.Facility.UserId == userId &&
                     (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value) &&
                     (!startDate.HasValue || b.CreateAt.Date >= startDate.Value.Date) &&
                     (!endDate.HasValue || b.CreateAt.Date <= endDate.Value.Date)))
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var data = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(b => new ReportDTO
                 {
                     BookingId = b.BookingId,
@@ -37,7 +48,6 @@ namespace B2P_API.Repository
                     PaymentStatus = b.Payments.FirstOrDefault() != null &&
                                   b.Payments.FirstOrDefault().Status != null ?
                                   b.Payments.FirstOrDefault().Status.StatusDescription : null,
-                    // Thông tin tổng hợp về các sân được đặt trong booking này
                     CourtCount = b.BookingDetails.Count,
                     CourtCategories = string.Join(", ", b.BookingDetails.Select(bd => bd.Court.Category.CategoryName)),
                     TimeSlotCount = b.BookingDetails.Count,
@@ -46,6 +56,15 @@ namespace B2P_API.Repository
                              .FirstOrDefault()
                 })
                 .ToListAsync();
+
+            return new PagedResponse<ReportDTO>
+            {
+                CurrentPage = pageNumber,
+                ItemsPerPage = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = data.Any() ? data : null
+            };
         }
 
         public async Task<TotalReportDTO> GetTotalReport(int userId, DateTime? startDate, DateTime? endDate)
@@ -81,6 +100,107 @@ namespace B2P_API.Repository
                 TotalCourt = totalCourt,
                 TotalCost = totalCost
             };
+        }
+
+        public async Task<bool> HasAnyBookings(int userId, int? facilityId)
+        {
+            return await _context.BookingDetails
+                .AnyAsync(bd => bd.Court.Facility.UserId == userId &&
+                                (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value));
+        }
+
+        public async Task<AdminReportDTO> GetAdminReport(int? year, int? month)
+        {
+            // Xác định tháng cần lấy (mặc định là tháng gần nhất)
+            DateTime reportDate;
+            if (year.HasValue && month.HasValue)
+            {
+                reportDate = new DateTime(year.Value, month.Value, 1);
+            }
+            else
+            {
+                // Lấy tháng gần nhất có dữ liệu
+                var latestBooking = await _context.Bookings
+                    .OrderByDescending(b => b.CreateAt)
+                    .FirstOrDefaultAsync();
+
+                reportDate = latestBooking?.CreateAt.Date ?? DateTime.Now;
+                reportDate = new DateTime(reportDate.Year, reportDate.Month, 1);
+            }
+
+            DateTime startDate = reportDate;
+            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+
+            // 1. Thống kê tổng quan tháng
+            var monthlyStats = await _context.Bookings
+                .Where(b => b.CreateAt >= startDate && b.CreateAt <= endDate)
+                .GroupBy(b => 1)
+                .Select(g => new MonthlyStatsDTO
+                {
+                    TotalBooking = g.Count(),
+                    TotalRevenue = g.Where(b => b.StatusId == 10) // Completed
+                      .Sum(b => b.TotalPrice),
+                    AverageRevenuePerBooking = g.Where(b => b.StatusId == 10)
+                      .Average(b => b.TotalPrice),
+                    CompletedBookings = g.Count(b => b.StatusId == 10),
+                    CancelledBookings = g.Count(b => b.StatusId == 9),
+                    TotalFacilities = _context.Facilities.Count(),
+                    TotalCourts = _context.Courts.Count(),
+                    ActiveUsers = _context.Users.Count(u => u.StatusId == 1)
+                })
+                .FirstOrDefaultAsync() ?? new MonthlyStatsDTO();
+
+            // 2. Top facility trong tháng
+            var topFacilities = await _context.Facilities
+                .Select(f => new FacilityStatDTO
+                {
+                    FacilityId = f.FacilityId,
+                    FacilityName = f.FacilityName,
+                    TotalBooking = f.Courts
+                        .SelectMany(c => c.BookingDetails)
+                        .Count(bd => bd.Booking.CreateAt >= startDate
+                                  && bd.Booking.CreateAt <= endDate
+                                  && bd.Booking.StatusId == 10), // Completed
+                    TotalRevenue = f.Courts
+                        .SelectMany(c => c.BookingDetails)
+                        .Where(bd => bd.Booking != null
+                                  && bd.Booking.CreateAt >= startDate
+                                  && bd.Booking.CreateAt <= endDate
+                                  && bd.Booking.StatusId == 10) // Completed
+                        .GroupBy(bd => bd.BookingId)
+                        .Select(g => g.First().Booking.TotalPrice)
+                        .Sum()
+                })
+                .Where(f => f.TotalBooking > 0)
+                .OrderByDescending(f => f.TotalRevenue)
+                .ToListAsync();
+
+            // 3. Thống kê loại sân phổ biến
+            var popularCourtCategories = await _context.Courts
+                .Select(c => new CourtCategoryStatDTO
+                {
+                    CategoryName = c.Category.CategoryName,
+                    TotalBooking = c.BookingDetails
+                        .Count(bd => bd.Booking.CreateAt >= startDate && bd.Booking.CreateAt <= endDate)
+                })
+                .Where(c => c.TotalBooking > 0)
+                .OrderByDescending(c => c.TotalBooking)
+                .Take(3)
+                .ToListAsync();
+
+            // 4. Tổng hợp dữ liệu
+            var report = new AdminReportDTO
+            {
+                Year = reportDate.Year,
+                Month = reportDate.Month,
+                StartDate = startDate,
+                EndDate = endDate,
+                MonthlyStats = monthlyStats,
+                TopFacilities = topFacilities,
+                PopularCourtCategories = popularCourtCategories
+            };
+
+            return report;
         }
     }
 }

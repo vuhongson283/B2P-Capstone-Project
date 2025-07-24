@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
-using static B2P_API.Services.TwilioSMSService;
 using B2P_API.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,10 +59,6 @@ builder.Services.AddScoped<UserService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
-<<<<<<< HEAD
-
-=======
->>>>>>> Test
 
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
@@ -71,13 +66,15 @@ builder.Services.AddScoped<CourtCategoryService>();
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // Nếu dùng
 builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
+// Đăng ký trực tiếp class
+builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISMSService, TwilioSMSService>();
+builder.Services.AddScoped<ISMSService, eSmsService>();
 
 builder.Services.AddScoped<AccountManagementRepository>();
 builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
@@ -94,6 +91,7 @@ builder.Services.AddScoped<CommentRepository>();
 builder.Services.AddScoped<CommentService>();
 
 builder.Services.AddScoped<CourtRepository>();
+builder.Services.AddScoped<ICourtRepository, CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
 // Booking services
@@ -114,10 +112,11 @@ ExcelPackage.License.SetNonCommercialPersonal("B2P");
 
 // Report services
 builder.Services.AddScoped<ReportRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 // Đăng ký TwilioSettings
-builder.Services.Configure<TwilioSettings>(
-    builder.Configuration.GetSection("Twilio"));
+builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
+
 var app = builder.Build();
 
 // Middleware pipeline

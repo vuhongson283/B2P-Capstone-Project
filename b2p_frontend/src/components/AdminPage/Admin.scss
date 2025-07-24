@@ -1,0 +1,62 @@
+.admin-container {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d5e8d4 100%);
+
+    .admin-sidebar {
+        flex-shrink: 0;
+        position: fixed; // Thêm position fixed
+        height: 100vh; // Thêm chiều cao cố định
+        z-index: 100; // Thêm z-index để sidebar luôn hiện trên cùng
+    }
+
+    .admin-main {
+        flex: 1;
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
+        width: calc(100% - 280px); // Thêm width để tính toán chính xác không gian còn lại
+
+        .court-owner-content {
+            padding: 30px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(46, 204, 113, 0.1);
+            overflow-x: hidden; // Thêm overflow-x: hidden để ngăn scroll ngang
+            
+            h1 {
+                color: #1e8449;
+                margin-bottom: 20px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                text-align: center; // Thêm dòng này để căn giữa
+        font-weight: bold;
+            }
+
+            p {
+                color: #5d6d5d;
+                font-size: 16px;
+            }
+        }
+    }
+
+    // When sidebar is collapsed
+    &:has(.admin-sidebar.collapsed) {
+        .admin-main {
+            margin-left: 70px;
+            width: calc(100% - 70px); // Cập nhật width khi sidebar thu gọn
+        }
+    }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+    .admin-container {
+        .admin-main {
+            margin-left: 0;
+            width: 100%; // Cập nhật width cho responsive
+        }
+    }
+}
+
+
+
