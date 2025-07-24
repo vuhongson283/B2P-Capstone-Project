@@ -5,7 +5,7 @@ import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
-import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner component
+import CourtOwner from "./CourtOwnerPage/CourtOwner"; // Assuming you have a CourtOwner component
 import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 const Layout = (props) => {

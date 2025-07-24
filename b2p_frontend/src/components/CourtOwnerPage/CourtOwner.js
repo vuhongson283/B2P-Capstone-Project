@@ -1,5 +1,5 @@
 import React from "react";
-import CourtOwnerSideBar from "./SideBar/CourtOwnerSideBar";
+import CourtOwnerSideBar from "../SideBar/CourtOwnerSideBar";
 import "./CourtOwner.scss";
 import { Outlet } from "react-router-dom";
 
