@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from "react";
 import "./AccountTable.scss";
-import { Table, Input, Select, Modal, message } from "antd";
+import {
+    Table,
+    Input,
+    Select,
+    Modal,
+    message,
+    Tooltip,
+    Typography,
+} from "antd";
 import {
     SearchOutlined,
     LockOutlined,
     UnlockOutlined,
     DeleteOutlined,
     SettingOutlined,
+    ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import {
     getAccountList,
@@ -16,6 +25,41 @@ import {
 } from "../../services/apiService";
 
 const { Option } = Select;
+const { Text } = Typography;
+
+const ROLE_MAP = {
+    Owner: 3,
+    Player: 2,
+};
+
+const STATUS_MAP = {
+    Active: 1,
+    Banned: 4,
+};
+
+const ModalContent = ({ title, content, type, tagLabel }) => (
+    <div className="custom-modal-content">
+        <div className="modal-title-row">
+            <ExclamationCircleOutlined className="modal-icon" />
+            <span className="modal-title">{title}</span>
+        </div>
+        <div className="modal-body">
+            <p>{content}</p>
+            {tagLabel && (
+                <div className={`modal-tag-box ${type}`}>
+                    {type === "ban" && <LockOutlined />}
+                    {type === "unban" && <UnlockOutlined />}
+                    {type === "delete" && <DeleteOutlined />}
+                    <span>{tagLabel}</span>
+                </div>
+            )}
+            <div className="modal-warning-box">
+                <ExclamationCircleOutlined />
+                <span>Hành động này không thể hoàn tác!</span>
+            </div>
+        </div>
+    </div>
+);
 
 const AccountTable = () => {
     const [accounts, setAccounts] = useState([]);
@@ -25,7 +69,7 @@ const AccountTable = () => {
     const [statusFilter, setStatusFilter] = useState(null);
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 10,
+        pageSize: 5,
         total: 0,
         showSizeChanger: true,
     });
@@ -35,8 +79,8 @@ const AccountTable = () => {
             setLoading(true);
             const requestData = {
                 search: searchText || "",
-                roleType: roleFilter || "",
-                status: statusFilter || "",
+                roleId: ROLE_MAP[roleFilter] || null,
+                statusId: STATUS_MAP[statusFilter] || null,
                 pageNumber: pagination.current,
                 pageSize: pagination.pageSize,
             };
@@ -51,7 +95,6 @@ const AccountTable = () => {
             }
         } catch (error) {
             message.error("Có lỗi xảy ra khi tải danh sách tài khoản");
-            console.error("Error:", error);
         } finally {
             setLoading(false);
         }
@@ -61,17 +104,17 @@ const AccountTable = () => {
         fetchAccounts();
     }, [searchText, roleFilter, statusFilter, pagination.current, pagination.pageSize]);
 
-    const handleTableChange = (newPagination) => {
-        setPagination((prev) => ({
-            ...prev,
-            current: newPagination.current,
-            pageSize: newPagination.pageSize,
-        }));
-    };
-
     const handleSearch = (value) => {
         setSearchText(value);
         setPagination((prev) => ({ ...prev, current: 1 }));
+    };
+
+    const handleTableChange = (newPagination) => {
+        setPagination({
+            ...pagination,
+            current: newPagination.current,
+            pageSize: newPagination.pageSize,
+        });
     };
 
     const handleRoleFilter = (value) => {
@@ -85,108 +128,145 @@ const AccountTable = () => {
     };
 
     const handleToggleStatus = async (record) => {
-        try {
-            setLoading(true);
-            if (record.statusName === "Banned") {
-                const response = await unbanUser(record.userId);
-                if (response?.status === 200) {
-                    message.success("Mở khóa tài khoản thành công");
-                    await fetchAccounts();
-                }
-            } else {
-                const response = await banUser(record.userId);
-                if (response?.status === 200) {
-                    message.success("Khóa tài khoản thành công");
-                    await fetchAccounts();
-                }
-            }
-        } catch (error) {
-            message.error("Có lỗi xảy ra khi thay đổi trạng thái tài khoản");
-            console.error("Error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDelete = async (record) => {
+        const isBanned = record.statusName === "Banned";
         Modal.confirm({
-            title: "Xác nhận xóa tài khoản",
-            content: `Bạn có chắc chắn muốn xóa tài khoản "${record.fullName}"?`,
-            okText: "Xóa",
-            okType: "danger",
-            cancelText: "Hủy",
+            icon: null,
+            centered: true,
+            content: (
+                <ModalContent
+                    title={`Xác nhận ${isBanned ? "mở khóa" : "khóa"} tài khoản`}
+                    content={`Bạn có chắc chắn muốn ${isBanned ? "mở khóa" : "khóa"} tài khoản này không?`}
+                    type={isBanned ? "unban" : "ban"}
+                    tagLabel={record.fullName}
+                />
+            ),
+            okText: isBanned ? "Xác nhận mở khóa" : "Xác nhận khóa",
+            cancelText: "Hủy bỏ",
+            okButtonProps: { className: "confirm-ok-btn" },
+            cancelButtonProps: { className: "confirm-cancel-btn" },
             onOk: async () => {
                 try {
-                    const response = await deleteUser(record.userId);
-                    if (response?.status === 200) {
-                        message.success("Xóa tài khoản thành công");
-                        await fetchAccounts();
+                    setLoading(true);
+                    const res = isBanned
+                        ? await unbanUser(record.userId)
+                        : await banUser(record.userId);
+                    if (res?.status === 200) {
+                        message.success(`${isBanned ? "Mở khóa" : "Khóa"} thành công`);
+                        fetchAccounts();
                     }
-                } catch (error) {
-                    message.error("Có lỗi xảy ra khi xóa tài khoản");
-                    console.error("Error:", error);
+                } catch (e) {
+                    message.error("Lỗi khi cập nhật trạng thái");
+                } finally {
+                    setLoading(false);
                 }
             },
         });
     };
 
+    const handleDelete = (record) => {
+        if (record.statusName === "Active") {
+            Modal.warning({
+                centered: true,
+                title: "Không thể xóa tài khoản",
+                content: (
+                    <>
+                        <p>
+                            Tài khoản <strong>{record.fullName}</strong> hiện đang hoạt động.
+                        </p>
+                        <p>Vui lòng khóa tài khoản trước khi thực hiện thao tác xóa.</p>
+                    </>
+                ),
+                okText: "Đã hiểu",
+            });
+            return;
+        }
+
+        Modal.confirm({
+            icon: null,
+            centered: true,
+            content: (
+                <ModalContent
+                    title="Xác nhận xóa tài khoản"
+                    content="Bạn có chắc chắn muốn xóa tài khoản này không?"
+                    type="delete"
+                    tagLabel={record.fullName}
+                />
+            ),
+            okText: "Xác nhận xóa",
+            cancelText: "Hủy bỏ",
+            okButtonProps: { className: "confirm-ok-btn" },
+            cancelButtonProps: { className: "confirm-cancel-btn" },
+            onOk: async () => {
+                try {
+                    const res = await deleteUser(record.userId);
+                    if (res?.status === 200) {
+                        message.success("Xóa thành công");
+                        fetchAccounts();
+                    }
+                } catch (e) {
+                    message.error("Lỗi khi xóa tài khoản");
+                }
+            },
+        });
+    };
+
+
+
     const columns = [
         {
-            title: "ID",
+            title: "STT",
+            key: "index",
+            render: (_, __, index) => (
+                <strong style={{ color: "#52c41a" }}>
+                    {(pagination.current - 1) * pagination.pageSize + index + 1}
+                </strong>
+            ),
+            align: "center",
+        },
+        {
+            title: "UserID",
             dataIndex: "userId",
             key: "userId",
-            width: "5%",
             align: "center",
         },
         {
             title: "Họ và tên",
             dataIndex: "fullName",
             key: "fullName",
-            width: "20%",
             align: "center",
         },
         {
             title: "Email",
             dataIndex: "email",
             key: "email",
-            width: "20%",
             align: "center",
         },
         {
             title: "Số điện thoại",
             dataIndex: "phone",
             key: "phone",
-            width: "15%",
             align: "center",
         },
         {
             title: "Loại tài khoản",
             dataIndex: "roleName",
             key: "roleName",
-            width: "15%",
             align: "center",
         },
         {
             title: "Trạng thái",
             key: "status",
-            width: "10%",
             align: "center",
             render: (_, record) => (
-                <div
-                    className="status-icon"
-                    onClick={() => handleToggleStatus(record)}
-                    style={{ cursor: "pointer" }}
-                >
+                <div className="status-icon" onClick={() => handleToggleStatus(record)}>
                     {record.statusName === "Banned" ? (
-                        <LockOutlined
-                            className="anticon-lock"
-                            style={{ color: "#ff4d4f", fontSize: "18px" }}
-                        />
+                        <Tooltip title="Bị khóa">
+                            <LockOutlined className="anticon-lock" />
+                        </Tooltip>
                     ) : (
-                        <UnlockOutlined
-                            className="anticon-unlock"
-                            style={{ color: "#52c41a", fontSize: "18px" }}
-                        />
+                        <Tooltip title="Hoạt động">
+                            <UnlockOutlined className="anticon-unlock" />
+                        </Tooltip>
                     )}
                 </div>
             ),
@@ -194,73 +274,92 @@ const AccountTable = () => {
         {
             title: "Hành động",
             key: "actions",
-            width: "15%",
             align: "center",
             render: (_, record) => (
                 <div className="action-buttons">
-                    <DeleteOutlined
-                        className="delete-icon"
-                        onClick={() => handleDelete(record)}
-                    />
-                    <SettingOutlined
-                        className="setting-icon"
-                        onClick={() => {
-                            // xử lý setting nếu cần
-                        }}
-                    />
+                    <Tooltip title="Xóa">
+                        <DeleteOutlined className="delete-icon" onClick={() => handleDelete(record)} />
+                    </Tooltip>
+                    <Tooltip title="Cài đặt">
+                        <SettingOutlined className="setting-icon" />
+                    </Tooltip>
                 </div>
             ),
         },
     ];
 
     return (
-        <div className="account-table">
-            <h1>Quản lý tài khoản</h1>
+        <div className="account-table-wrapper">
+            <div className="account-table-card">
+                <div className="page-header">
+                    <h1>Quản lý tài khoản</h1>
+                    <Text type="secondary">
+                        {searchText ? (
+                            <>
+                                Tìm thấy <Text strong>{pagination.total}</Text> kết quả cho "{searchText}"
+                            </>
+                        ) : (
+                            <>
+                                Tổng cộng <Text strong>{pagination.total}</Text> tài khoản
+                            </>
+                        )}
+                    </Text>
+                </div>
 
-            <div className="table-filters">
-                <div className="search-section">
-                    <Input
+                <div className="table-filters">
+                    <Input.Search
                         placeholder="Tìm kiếm theo tên, id, email"
                         prefix={<SearchOutlined />}
                         className="search-input"
+                        allowClear
+                        enterButton={<SearchOutlined />}
+                        value={searchText}
                         onChange={(e) => handleSearch(e.target.value)}
-                        allowClear
+                        onSearch={handleSearch}
                     />
+
+                    <div className="filter-section">
+                        <Select
+                            placeholder="Loại tài khoản"
+                            style={{ width: 160 }}
+                            allowClear
+                            onChange={handleRoleFilter}
+                            value={roleFilter}
+                        >
+                            <Option value={null}>Tất cả</Option>
+                            <Option value="Owner">Chủ sân</Option>
+                            <Option value="Player">Người chơi</Option>
+                        </Select>
+
+                        <Select
+                            placeholder="Trạng thái"
+                            style={{ width: 160 }}
+                            allowClear
+                            onChange={handleStatusFilter}
+                            value={statusFilter}
+                        >
+                            <Option value={null}>Tất cả</Option>
+                            <Option value="Active">Hoạt động</Option>
+                            <Option value="Banned">Bị khóa</Option>
+                        </Select>
+                    </div>
                 </div>
 
-                <div className="filter-section">
-                    <Select
-                        placeholder="Loại tài khoản"
-                        style={{ width: 160 }}
-                        allowClear
-                        onChange={handleRoleFilter}
-                        value={roleFilter}
-                    >
-                        <Option value="Owner">Chủ sân</Option>
-                        <Option value="Player">Người chơi</Option>
-                    </Select>
-
-                    <Select
-                        placeholder="Trạng thái"
-                        style={{ width: 160 }}
-                        allowClear
-                        onChange={handleStatusFilter}
-                        value={statusFilter}
-                    >
-                        <Option value="Active">Hoạt động</Option>
-                        <Option value="Banned">Bị khóa</Option>
-                    </Select>
-                </div>
-            </div>
-
-            <div className="table-container">
                 <Table
                     columns={columns}
                     dataSource={accounts}
                     loading={loading}
-                    pagination={pagination}
+                    pagination={{
+                        ...pagination,
+                        pageSizeOptions: ["5", "10", "20"],
+                    }}
                     onChange={handleTableChange}
                     rowKey="userId"
+                    locale={{
+                        emptyText: searchText
+                            ? "Không tìm thấy kết quả phù hợp"
+                            : "Không có dữ liệu tài khoản",
+                    }}
                 />
             </div>
         </div>

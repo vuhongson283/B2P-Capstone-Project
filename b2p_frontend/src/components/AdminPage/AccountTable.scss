@@ -1,121 +1,332 @@
-.account-table {
-    width: 100%;
-    padding: 24px;
-    
-    h1 {
-        margin-bottom: 24px;
+// ❗ Những phần này phải để ngoài .account-table-wrapper để không bị lỗi do portal của Ant Design
+.custom-modal-content {
+  .modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+
+    .modal-icon {
+      font-size: 20px;
+      color: #52c41a;
+    }
+
+    .modal-title {
+      color: #333;
+    }
+  }
+
+  .modal-body {
+    font-size: 15px;
+    color: #333;
+
+    p {
+      margin-bottom: 12px;
+    }
+
+    .modal-tag-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+
+      &.ban,
+      &.unban {
+        background-color: #e8f5e9;
         color: #1e8449;
-        text-align: center;
-        font-weight: bold;
+        border: 1px solid #a5d6a7;
+
+        svg {
+          color: #1e8449;
+        }
+      }
+
+      &.delete {
+        background-color: #e8f5e9;
+        color: #1e8449;
+        border: 1px solid #a5d6a7;
+
+        svg {
+          color: #1e8449;
+        }
+      }
+    }
+
+    .modal-warning-box {
+      background: #fff7e6;
+      border: 1px solid #ffc069;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fa8c16;
+
+      svg {
+        font-size: 16px;
+        color: #fa8c16;
+      }
+    }
+  }
+}
+
+.ant-modal-confirm,
+.ant-modal-confirm-warning {
+  .ant-modal-content {
+    border-radius: 12px;
+    padding: 24px;
+    font-family: 'Segoe UI', sans-serif;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .ant-modal-body {
+    padding: 0;
+
+    .anticon {
+      display: none !important;
+    }
+
+    p {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    strong {
+      color: #fa541c;
+    }
+  }
+
+  .ant-modal-confirm-btns {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    gap: 12px;
+  }
+
+  .ant-btn-primary {
+    background-color: #fa8c16 !important;
+    border-color: #ffc069 !important;
+    color: white !important;
+    font-weight: 600;
+    height: 38px;
+    border-radius: 8px;
+
+    &:hover {
+      background-color: #ffa940 !important;
+      border-color: #fa8c16 !important;
+    }
+  }
+}
+
+.confirm-ok-btn {
+  background-color: #ff4d4f !important;
+  border-color: #ffa39e !important;
+  color: #fff !important;
+  font-weight: 600;
+  height: 38px;
+  border-radius: 8px;
+  padding: 0 20px;
+
+  &:hover {
+    background-color: #ff7875 !important;
+    border-color: #ff4d4f !important;
+    color: white !important;
+  }
+}
+
+.confirm-cancel-btn {
+  color: #52c41a !important;
+  border: 1px solid #b7eb8f !important;
+  background: #ffffff !important;
+  height: 38px;
+  border-radius: 8px;
+  padding: 0 20px;
+
+  &:hover {
+    border-color: #52c41a !important;
+    background: #f6ffed !important;
+    color: #52c41a !important;
+  }
+}
+
+// ✅ Giao diện chính
+.account-table-wrapper {
+  width: 100%;
+  padding: 24px;
+  background: linear-gradient(to bottom right, #e6f4ea, #f5fffa);
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+
+  .account-table-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(90deg, #28a745, #ffc107);
+      padding: 32px 40px;
+      color: white;
+      min-height: 100px;
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+      }
+
+      .ant-btn-primary {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        font-weight: 600;
+        font-size: 15px;
+        height: 40px;
+        padding: 0 18px;
+        border-radius: 8px;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.25);
+          border-color: rgba(255, 255, 255, 0.5);
+          color: white;
+        }
+      }
     }
 
     .table-filters {
-        background: #f5f5f5;
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
+      padding: 20px 28px;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
 
-        .search-section {
-            margin-bottom: 15px;
-            
-            .search-input {
-                width: 100%;
-                height: 40px;
-                border-radius: 4px;
+      .search-input {
+        height: 40px;
+        border-radius: 6px;
 
-                .ant-input-prefix {
-                    color: rgba(0, 0, 0, 0.25);
-                    margin-right: 8px;
-                }
-            }
+        &:hover {
+          border-color: #40a9ff;
         }
 
-        .filter-section {
-            display: flex;
-            gap: 15px;
-
-            .ant-select {
-                .ant-select-selector {
-                    height: 40px;
-                    display: flex;
-                    align-items: center;
-                }
-            }
+        &:focus {
+          border-color: #1890ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
         }
+      }
+
+      .filter-section {
+        display: flex;
+        gap: 12px;
+
+        .ant-select-selector {
+          height: 40px;
+          display: flex;
+          align-items: center;
+          border-radius: 6px;
+        }
+
+        .ant-select:hover .ant-select-selector {
+          border-color: #40a9ff;
+        }
+      }
     }
 
-    .table-container {
+    .ant-table-wrapper {
+      padding: 0 28px 28px;
+
+      .ant-table {
         background: white;
-        padding: 24px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        
-        .ant-table-wrapper {
-            .ant-table {
-                background: white;
 
-                .ant-table-thead > tr > th {
-                    background: #f0f7f0;
-                    color: #1e8449;
-                    font-weight: 600;
-                }
-
-                .ant-table-tbody > tr:hover > td {
-                    background: #e8f5e8;
-                }
-            }
+        .ant-table-thead > tr > th {
+          background: #e6ffed;
+          color: #1e8449;
+          font-weight: 600;
+          padding: 16px;
+          border-bottom: 1px solid #d9f7be;
+          text-align: center;
         }
 
-        .status-icon {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            
-            .anticon-lock {
-                color: #ff4d4f;
-                font-size: 18px;
-                cursor: pointer;
-                
-                &:hover {
-                    opacity: 0.8;
-                }
-            }
-            
-            .anticon-unlock {
-                color: #52c41a;
-                font-size: 18px;
-                cursor: pointer;
-                
-                &:hover {
-                    opacity: 0.8;
-                }
-            }
+        .ant-table-tbody > tr > td {
+          padding: 16px;
+          text-align: center;
         }
 
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-
-            .delete-icon {
-                color: #ff4d4f;
-                font-size: 18px;
-                cursor: pointer;
-
-                &:hover {
-                    opacity: 0.8;
-                }
-            }
-
-            .setting-icon {
-                color: #595959;
-                font-size: 18px;
-                cursor: pointer;
-
-                &:hover {
-                    opacity: 0.8;
-                }
-            }
+        .ant-table-tbody > tr:hover > td {
+          background: #f6ffed;
         }
+      }
+
+      .ant-pagination {
+        margin-top: 16px;
+      }
     }
+
+    .status-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .anticon-lock,
+      .anticon-unlock {
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s;
+
+        &:hover {
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+
+      .anticon-lock {
+        color: #ff4d4f;
+      }
+
+      .anticon-unlock {
+        color: #52c41a;
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+
+      .delete-icon {
+        color: #ff4d4f;
+        font-size: 18px;
+        cursor: pointer;
+
+        &:hover {
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+
+      .setting-icon {
+        color: #595959;
+        font-size: 18px;
+        cursor: pointer;
+
+        &:hover {
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+    }
+  }
 }
