@@ -2,19 +2,25 @@ import React, { useState, useEffect } from "react";
 import "./AdminSideBar.scss";
 import { useNavigate } from "react-router-dom";
 
-const CourtOwnerSideBar = (props) => {
+const AdminSideBar = ({
+  onClose,
+  isMobile,
+  isTablet,
+  isOpen,
+  collapsed,
+  onToggleCollapse,
+}) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [userInfo, setUserInfo] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "owner@example.com",
+    fullName: "Admin System",
+    email: "admin@book2play.com",
     phone: "0987654321",
-    avatar: "", // URL to avatar image
+    avatar: "",
   });
   const navigate = useNavigate();
 
-  // Mock facilities data - replace with real data
+  // Mock facilities data
   const [facilities, setFacilities] = useState([
     { id: 1, name: "Cơ sở Quận 1", courts: 5 },
     { id: 2, name: "Cơ sở Quận 7", courts: 8 },
@@ -25,25 +31,27 @@ const CourtOwnerSideBar = (props) => {
   const menuItems = [
     {
       id: "statistics",
-      title: "Thống kê",
-      icon: "fas fa-chart-bar",
-      path: "/court-owner/statistics",
+      title: "Thống kê tổng quan",
+      icon: "fas fa-chart-line",
+      path: "/admin/statistics",
     },
     {
       id: "account-management",
       title: "Quản lý tài khoản",
-      icon: "fas fa-clipboard-list",
+      icon: "fas fa-users-cog",
       path: "/admin/accounts",
     },
     {
-      id: "facility-management",
-      title: "Quản lý slider",
-      icon: "fas fa-building",
+      id: "slider-management",
+      title: "Quản lý Slider",
+      icon: "fas fa-images",
+      path: "/admin/sliders",
     },
     {
-      id: "court-management",
+      id: "court-categories",
       title: "Quản lý thể loại sân",
-      icon: "fas fa-futbol",
+      icon: "fas fa-list-ul",
+      path: "/admin/manage-court-categories",
     },
   ];
 
@@ -61,22 +69,30 @@ const CourtOwnerSideBar = (props) => {
     if (path) {
       navigate(path);
     }
-  };
-
-  // Toggle sidebar collapse
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+    // Close mobile sidebar after navigation
+    if (isMobile && onClose) {
+      onClose();
+    }
   };
 
   // Generate avatar initials
   const getAvatarInitials = (fullName) => {
-    if (!fullName) return "U";
+    if (!fullName) return "AD";
     return fullName
       .split(" ")
       .map((name) => name.charAt(0))
       .join("")
       .substring(0, 2)
       .toUpperCase();
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    // Add logout logic here
+    navigate("/login");
+    if (isMobile && onClose) {
+      onClose();
+    }
   };
 
   // Render user info section
@@ -90,11 +106,16 @@ const CourtOwnerSideBar = (props) => {
             {getAvatarInitials(userInfo.fullName)}
           </div>
         )}
+        <div className="online-indicator"></div>
       </div>
 
-      {!isCollapsed && (
+      {(!collapsed || isMobile) && (
         <div className="user-details">
           <h3 className="user-name">{userInfo.fullName}</h3>
+          <div className="user-role">
+            <i className="fas fa-shield-alt"></i>
+            <span>Administrator</span>
+          </div>
           <div className="user-contact">
             <div className="contact-item">
               <i className="fas fa-envelope"></i>
@@ -118,8 +139,9 @@ const CourtOwnerSideBar = (props) => {
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
-            }`}
+          className={`menu-link ${isActive ? "active" : ""} ${
+            item.hasSubmenu ? "has-submenu" : ""
+          }`}
           onClick={() => {
             if (item.hasSubmenu) {
               toggleMenu(item.id);
@@ -129,20 +151,25 @@ const CourtOwnerSideBar = (props) => {
           }}
         >
           <div className="menu-content">
-            <i className={item.icon}></i>
-            {!isCollapsed && <span className="menu-title">{item.title}</span>}
+            <div className="menu-icon-wrapper">
+              <i className={item.icon}></i>
+            </div>
+            {(!collapsed || isMobile) && (
+              <span className="menu-title">{item.title}</span>
+            )}
           </div>
 
-          {item.hasSubmenu && !isCollapsed && (
+          {item.hasSubmenu && (!collapsed || isMobile) && (
             <i
-              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
-                }`}
+              className={`fas fa-chevron-down submenu-arrow ${
+                isExpanded ? "expanded" : ""
+              }`}
             ></i>
           )}
         </div>
 
         {/* Render submenu */}
-        {item.hasSubmenu && isExpanded && !isCollapsed && (
+        {item.hasSubmenu && isExpanded && (!collapsed || isMobile) && (
           <div className="submenu">
             {item.isDynamic
               ? renderDynamicSubmenu()
@@ -153,7 +180,7 @@ const CourtOwnerSideBar = (props) => {
     );
   };
 
-  // Render static submenu (for facility management)
+  // Render static submenu
   const renderStaticSubmenu = (submenuItems) => {
     return submenuItems.map((subItem) => (
       <div
@@ -161,27 +188,32 @@ const CourtOwnerSideBar = (props) => {
         className={`submenu-item ${activeMenu === subItem.id ? "active" : ""}`}
         onClick={() => handleMenuClick(subItem.id, subItem.path)}
       >
-        <i className={subItem.icon}></i>
+        <div className="submenu-icon-wrapper">
+          <i className={subItem.icon}></i>
+        </div>
         <span>{subItem.title}</span>
       </div>
     ));
   };
 
-  // Render dynamic submenu (for court management - list of facilities)
+  // Render dynamic submenu
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (
       <div
         key={`facility-${facility.id}`}
-        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
-          }`}
+        className={`submenu-item ${
+          activeMenu === `facility-${facility.id}` ? "active" : ""
+        }`}
         onClick={() =>
           handleMenuClick(
             `facility-${facility.id}`,
-            `/court-owner/courts/${facility.id}`
+            `/admin/courts/${facility.id}`
           )
         }
       >
-        <i className="fas fa-map-marker-alt"></i>
+        <div className="submenu-icon-wrapper">
+          <i className="fas fa-map-marker-alt"></i>
+        </div>
         <div className="facility-info">
           <span className="facility-name">{facility.name}</span>
           <span className="court-count">{facility.courts} sân</span>
@@ -190,13 +222,64 @@ const CourtOwnerSideBar = (props) => {
     ));
   };
 
+  // Generate sidebar classes
+  const getSidebarClasses = () => {
+    const classes = ["court-owner-sidebar"];
+
+    if (collapsed && !isMobile) {
+      classes.push("collapsed");
+    }
+
+    if (isMobile && isOpen) {
+      classes.push("mobile-open");
+    }
+
+    return classes.join(" ");
+  };
+
   return (
-    <div className={`court-owner-sidebar ${isCollapsed ? "collapsed" : ""}`}>
-      {/* Header */}
+    <div className={getSidebarClasses()}>
+      {/* Header with Toggle Button */}
       <div className="sidebar__header">
         <div className="logo-section">
-          <i className="fas fa-crown logo-icon"></i>
-          {!isCollapsed && <span className="logo-text">Court Owner</span>}
+          <div className="logo-icon-wrapper">
+            <i className="fas fa-tools logo-icon"></i>
+          </div>
+          {(!collapsed || isMobile) && (
+            <div className="logo-text-wrapper">
+              <span className="logo-text">Admin Panel</span>
+              <span className="logo-subtitle">Book2Play</span>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle/Close Button */}
+        <div className="header-controls">
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              className="collapse-btn mobile-close"
+              onClick={onClose}
+              title="Đóng menu"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+
+          {/* Toggle button for desktop/tablet */}
+          {!isMobile && onToggleCollapse && (
+            <button
+              className="collapse-btn desktop-toggle"
+              onClick={onToggleCollapse}
+              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            >
+              <i
+                className={`fas ${
+                  collapsed ? "fa-angle-right" : "fa-angle-left"
+                }`}
+              ></i>
+            </button>
+          )}
         </div>
       </div>
 
@@ -210,13 +293,21 @@ const CourtOwnerSideBar = (props) => {
 
       {/* Footer */}
       <div className="sidebar__footer">
-        <div className="footer-item logout-btn">
-          <i className="fas fa-sign-out-alt"></i>
-          {!isCollapsed && <span>Đăng xuất</span>}
+        <div className="footer-item logout-btn" onClick={handleLogout}>
+          <div className="footer-icon-wrapper">
+            <i className="fas fa-sign-out-alt"></i>
+          </div>
+          {(!collapsed || isMobile) && <span>Đăng xuất</span>}
         </div>
+
+        {(!collapsed || isMobile) && (
+          <div className="sidebar-version">
+            <span>v2.1.0</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default CourtOwnerSideBar;
+export default AdminSideBar;
