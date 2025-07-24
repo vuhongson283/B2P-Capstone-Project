@@ -32,6 +32,11 @@ const changePassword = (body) => {
   return axios.put(`User/change-password`, body);
 };
 
+// 🎯 NEW FUNCTION - Check Password Status
+const checkPasswordStatus = (userId) => {
+  return axios.get(`User/check-password-status/${userId}`);
+};
+
 const getAllBankType = (search, pageNumber, pageSize) => {
   return axios.get(
     `BankType/get-all-bank-type?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`
@@ -131,6 +136,7 @@ export {
   getUserById,
   updateUserProfile,
   changePassword,
+  checkPasswordStatus, // 🎯 NEW EXPORT
   getAllBankType,
   getUserImage,
   uploadUserImage,
