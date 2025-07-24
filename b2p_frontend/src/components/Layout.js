@@ -8,6 +8,7 @@ import ForgotPassword from "./Common/ForgotPassword";
 import CourtOwner from "./CourtOwnerPage/CourtOwner"; // Assuming you have a CourtOwner component
 import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
+import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 const Layout = (props) => {
   return (
     <>
@@ -23,15 +24,18 @@ const Layout = (props) => {
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
           />
-
         </Route>
 
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
+          <Route
+            path="manage-court-categories"
+            element={<ManageCourtCategories />}
+          />
         </Route>
-
       </Routes>
 
+      
       <ToastContainer
         position="top-right"
         autoClose={5000}

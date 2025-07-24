@@ -1,62 +1,684 @@
 .admin-container {
-    display: flex;
+    display   : flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #e8f5e8 0%, #d5e8d4 100%);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #e8f5e8 70%, #d5e8d4 100%);
+    position  : relative;
+    overflow  : hidden;
+
+    // Background pattern overlay
+    &::before {
+        content : '';
+        position: fixed;
+        top     : 0;
+        left    : 0;
+        right   : 0;
+        bottom  : 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(46, 204, 113, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(129, 236, 236, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 40% 60%, rgba(243, 156, 18, 0.03) 0%, transparent 50%);
+        pointer-events: none;
+        z-index       : 0;
+    }
 
     .admin-sidebar {
         flex-shrink: 0;
-        position: fixed; // Thêm position fixed
-        height: 100vh; // Thêm chiều cao cố định
-        z-index: 100; // Thêm z-index để sidebar luôn hiện trên cùng
+        position   : fixed;
+        height     : 100vh;
+        z-index    : 1000;
+        top        : 0;
+        left       : 0;
+        transition : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow : 4px 0 20px rgba(46, 204, 113, 0.1);
+        width      : 280px; // Default width
+
+        // Enhanced border effect
+        &::after {
+            content : '';
+            position: absolute;
+            top     : 0;
+            right   : -1px;
+            width   : 1px;
+            height  : 100%;
+            background: linear-gradient(to bottom,
+                    rgba(46, 204, 113, 0.3),
+                    rgba(39, 174, 96, 0.2),
+                    rgba(46, 204, 113, 0.3));
+        }
+
+        // Collapsed state
+        &.collapsed {
+            width: 70px;
+        }
     }
 
     .admin-main {
-        flex: 1;
-        margin-left: 280px;
-        transition: margin-left 0.3s ease;
-        width: calc(100% - 280px); // Thêm width để tính toán chính xác không gian còn lại
+        flex          : 1;
+        margin-left   : 280px; // Default margin equal to sidebar width
+        transition    : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width         : calc(100% - 280px); // Default width
+        position      : relative;
+        z-index       : 1;
+        min-height    : 100vh;
+        display       : flex;
+        flex-direction: column;
 
-        .court-owner-content {
-            padding: 30px;
-            min-height: 100vh;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-left: 1px solid rgba(46, 204, 113, 0.1);
-            overflow-x: hidden; // Thêm overflow-x: hidden để ngăn scroll ngang
-            
+        .admin-content {
+            flex      : 1;
+            padding   : 0px 20px 0px 20px;
+            background: transparent;
+            position  : relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+
+            // Global content styling for child components
+            >* {
+                animation       : fadeInUp 0.6s ease-out;
+                transform-origin: center bottom;
+            }
+
+            // Enhanced card styling for all cards
+            .main-card,
+            .ant-card {
+                background             : rgba(255, 255, 255, 0.95);
+                backdrop-filter        : blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border                 : 1px solid rgba(255, 255, 255, 0.2);
+                border-radius          : 20px;
+                box-shadow             :
+                    0 20px 60px rgba(46, 204, 113, 0.1),
+                    0 8px 32px rgba(39, 174, 96, 0.05),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                transition   : all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                position     : relative;
+                overflow     : hidden;
+                margin-bottom: 24px;
+
+                // Glass morphism effect
+                &::before {
+                    content : '';
+                    position: absolute;
+                    top     : 0;
+                    left    : 0;
+                    right   : 0;
+                    bottom  : 0;
+                    background: linear-gradient(135deg,
+                            rgba(255, 255, 255, 0.15) 0%,
+                            rgba(255, 255, 255, 0.05) 50%,
+                            rgba(46, 204, 113, 0.05) 100%);
+                    pointer-events: none;
+                    z-index       : 0;
+                }
+
+                // Content layer
+                >* {
+                    position: relative;
+                    z-index : 1;
+                }
+
+                &:hover {
+                    transform: translateY(-4px);
+                    box-shadow:
+                        0 30px 80px rgba(46, 204, 113, 0.15),
+                        0 12px 40px rgba(39, 174, 96, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                }
+
+                // Header with gradient
+                .page-header {
+                    border-radius: 20px 20px 0 0;
+                    background   : linear-gradient(135deg, #1e8449 0%, #27ae60 30%, #2ecc71 60%, #f39c12 100%);
+                    margin       : -1px -1px 0 -1px;
+                    position     : relative;
+                    overflow     : hidden;
+
+                    &::before {
+                        content   : '';
+                        position  : absolute;
+                        top       : 0;
+                        left      : -100%;
+                        width     : 100%;
+                        height    : 100%;
+                        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                        animation : shimmer 3s infinite;
+                    }
+                }
+            }
+
+            // Typography enhancements
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                color        : #1e8449;
+                font-weight  : 700;
+                text-shadow  : 0 2px 4px rgba(0, 0, 0, 0.1);
+                position     : relative;
+                margin-bottom: 24px;
+
+                &::after {
+                    content      : '';
+                    position     : absolute;
+                    bottom       : -8px;
+                    left         : 50%;
+                    transform    : translateX(-50%);
+                    width        : 60px;
+                    height       : 3px;
+                    background   : linear-gradient(90deg, #27ae60, #2ecc71, #f39c12);
+                    border-radius: 2px;
+                }
+            }
+
             h1 {
-                color: #1e8449;
-                margin-bottom: 20px;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-                text-align: center; // Thêm dòng này để căn giữa
-        font-weight: bold;
+                font-size : clamp(1.8rem, 4vw, 2.5rem);
+                text-align: center;
+                margin    : 0 0 32px 0;
+            }
+
+            h2 {
+                font-size: clamp(1.5rem, 3vw, 2rem);
+            }
+
+            h3 {
+                font-size: clamp(1.3rem, 2.5vw, 1.75rem);
             }
 
             p {
-                color: #5d6d5d;
-                font-size: 16px;
+                color        : #2c3e50;
+                font-size    : 16px;
+                line-height  : 1.6;
+                margin-bottom: 16px;
+            }
+
+            // Enhanced table styling
+            .ant-table-wrapper,
+            .categories-table {
+                .ant-table {
+                    background   : rgba(255, 255, 255, 0.9);
+                    border-radius: 16px;
+                    overflow     : hidden;
+                    box-shadow   : 0 8px 32px rgba(46, 204, 113, 0.08);
+                    border       : 1px solid rgba(46, 204, 113, 0.1);
+
+                    .ant-table-thead>tr>th {
+                        background   : linear-gradient(135deg, #f8fcff 0%, #e8f5e8 100%);
+                        border-bottom: 2px solid rgba(46, 204, 113, 0.2);
+                        font-weight  : 600;
+                        color        : #2c3e50;
+                    }
+
+                    .ant-table-tbody>tr {
+                        transition: all 0.3s ease;
+
+                        &:hover {
+                            background: linear-gradient(135deg, #f0fff4 0%, #f8fcff 100%);
+                            transform : translateX(4px);
+                        }
+                    }
+                }
+            }
+
+            // Enhanced form styling
+            .ant-form,
+            .category-form {
+                .ant-form-item {
+                    margin-bottom: 24px;
+
+                    .ant-form-item-label>label {
+                        font-weight: 600;
+                        color      : #2c3e50;
+                    }
+                }
+
+                .ant-input,
+                .ant-select-selector,
+                .ant-input-search {
+                    border-radius: 12px;
+                    border-color : rgba(46, 204, 113, 0.2);
+                    transition   : all 0.3s ease;
+                    background   : rgba(255, 255, 255, 0.8);
+
+                    &:hover,
+                    &:focus {
+                        border-color: #27ae60;
+                        box-shadow  : 0 0 0 2px rgba(39, 174, 96, 0.15);
+                        background  : rgba(255, 255, 255, 1);
+                    }
+                }
+            }
+
+            // Enhanced button styling
+            .ant-btn {
+                border-radius  : 12px;
+                font-weight    : 600;
+                transition     : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position       : relative;
+                overflow       : hidden;
+                backdrop-filter: blur(10px);
+
+                &::before {
+                    content   : '';
+                    position  : absolute;
+                    top       : 0;
+                    left      : -100%;
+                    width     : 100%;
+                    height    : 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                    transition: left 0.5s;
+                }
+
+                &:hover {
+                    transform: translateY(-2px);
+
+                    &::before {
+                        left: 100%;
+                    }
+                }
+
+                &.ant-btn-primary {
+                    background: linear-gradient(135deg, #27ae60, #2ecc71);
+                    border    : none;
+                    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+
+                    &:hover {
+                        background: linear-gradient(135deg, #1e8449, #27ae60);
+                        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+                    }
+                }
+
+                &.ant-btn-default {
+                    background  : rgba(255, 255, 255, 0.8);
+                    border-color: rgba(46, 204, 113, 0.3);
+                    color       : #27ae60;
+
+                    &:hover {
+                        background  : rgba(255, 255, 255, 1);
+                        border-color: #27ae60;
+                        color       : #1e8449;
+                    }
+                }
+
+                &.ant-btn-dangerous {
+                    background: linear-gradient(135deg, #e74c3c, #c0392b);
+                    border    : none;
+                    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+
+                    &:hover {
+                        background: linear-gradient(135deg, #c0392b, #a93226);
+                        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+                    }
+                }
+            }
+
+            // Search section styling
+            .search-section {
+                background     : rgba(255, 255, 255, 0.6);
+                backdrop-filter: blur(15px);
+                border-radius  : 16px;
+                padding        : 24px;
+                margin-bottom  : 24px;
+                border         : 1px solid rgba(46, 204, 113, 0.1);
+
+                .search-input {
+                    .ant-input-search-button {
+                        background  : linear-gradient(135deg, #27ae60, #2ecc71);
+                        border-color: #27ae60;
+
+                        &:hover {
+                            background: linear-gradient(135deg, #1e8449, #27ae60);
+                        }
+                    }
+                }
+            }
+
+            // Modal enhancements
+            .ant-modal {
+                .ant-modal-content {
+                    border-radius  : 20px;
+                    overflow       : hidden;
+                    box-shadow     : 0 25px 80px rgba(46, 204, 113, 0.15);
+                    backdrop-filter: blur(20px);
+                }
+
+                .ant-modal-header {
+                    background   : linear-gradient(135deg, #f8fcff 0%, #e8f5e8 100%);
+                    border-bottom: 1px solid rgba(46, 204, 113, 0.1);
+                }
+            }
+
+            // Loading states
+            .ant-spin-container {
+                .ant-spin {
+                    .ant-spin-dot {
+                        i {
+                            background-color: #27ae60;
+                        }
+                    }
+                }
+            }
+
+            // Scrollbar styling
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background   : rgba(46, 204, 113, 0.1);
+                border-radius: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background   : linear-gradient(135deg, #27ae60, #2ecc71);
+                border-radius: 4px;
+
+                &:hover {
+                    background: linear-gradient(135deg, #1e8449, #27ae60);
+                }
             }
         }
     }
 
-    // When sidebar is collapsed
+    // 🎯 KEY FIX: When sidebar is collapsed - adjust main content
     &:has(.admin-sidebar.collapsed) {
         .admin-main {
-            margin-left: 70px;
-            width: calc(100% - 70px); // Cập nhật width khi sidebar thu gọn
+            margin-left: 70px; // Adjust to collapsed sidebar width
+            width      : calc(100% - 70px); // Recalculate available width
+        }
+    }
+
+    // Animations
+    @keyframes shimmer {
+        0% {
+            left: -100%;
+        }
+
+        100% {
+            left: 100%;
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity  : 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity  : 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.02);
         }
     }
 }
 
-// Responsive
-@media (max-width: 1024px) {
+// Responsive Design - IMPROVED LOGIC
+@media (max-width: 1400px) {
     .admin-container {
         .admin-main {
-            margin-left: 0;
-            width: 100%; // Cập nhật width cho responsive
+            .admin-content {
+                padding: 20px;
+            }
         }
     }
 }
 
+@media (max-width: 1200px) {
+    .admin-container {
+
+        // Force collapsed sidebar on tablet
+        .admin-sidebar {
+            width: 70px; // Force collapsed
+
+            // Override any expanded state
+            &:not(.mobile-hidden) {
+                width: 70px;
+            }
+        }
+
+        .admin-main {
+            margin-left: 70px; // Always collapsed margin on tablet
+            width      : calc(100% - 70px); // Always collapsed width on tablet
+
+            .admin-content {
+                padding: 0px 20px 0px 20px;
 
 
+                .main-card,
+                .ant-card {
+                    border-radius: 16px;
+                    margin-bottom: 20px;
+                }
+
+                h1 {
+                    font-size: 1.8rem;
+                }
+            }
+        }
+
+        // Override the collapsed state calculation for tablet
+        &:has(.admin-sidebar.collapsed),
+        &:has(.admin-sidebar:not(.collapsed)) {
+            .admin-main {
+                margin-left: 70px;
+                width      : calc(100% - 70px);
+            }
+        }
+    }
+}
+
+// Mobile - Hide sidebar completely
+@media (max-width: 768px) {
+    .admin-container {
+        .admin-sidebar {
+            transform : translateX(-100%);
+            transition: transform 0.3s ease;
+
+            &.sidebar-open {
+                transform: translateX(0);
+            }
+
+            // Mobile overlay background
+            &.sidebar-open::before {
+                content   : '';
+                position  : fixed;
+                top       : 0;
+                left      : 0;
+                right     : 0;
+                bottom    : 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index   : -1;
+                opacity   : 1;
+            }
+        }
+
+        .admin-main {
+            margin-left: 0; // Full width on mobile
+            width      : 100%; // Full width on mobile
+
+            .admin-content {
+                padding: 8px;
+
+                h1 {
+                    font-size    : 1.5rem;
+                    margin-bottom: 20px;
+
+                    &::after {
+                        width : 40px;
+                        height: 2px;
+                    }
+                }
+
+                .main-card,
+                .ant-card {
+                    border-radius: 8px;
+                    margin-bottom: 12px;
+
+                    .page-header {
+                        border-radius: 8px 8px 0 0;
+                        padding      : 16px;
+                    }
+                }
+
+                .ant-btn {
+                    border-radius: 8px;
+                }
+            }
+        }
+
+        // Override all sidebar calculations for mobile
+        &:has(.admin-sidebar.collapsed),
+        &:has(.admin-sidebar:not(.collapsed)),
+        &:has(.admin-sidebar.sidebar-open) {
+            .admin-main {
+                margin-left: 0;
+                width      : 100%;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-container {
+        .admin-main {
+            .admin-content {
+                padding: 4px;
+
+                .main-card,
+                .ant-card {
+                    border-radius: 6px;
+                }
+
+                .search-section {
+                    padding      : 16px;
+                    border-radius: 12px;
+                }
+            }
+        }
+    }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+    .admin-container {
+        background: linear-gradient(135deg, #0d1f1c 0%, #1a2f2a 100%);
+
+        &::before {
+            background:
+                radial-gradient(circle at 20% 20%, rgba(46, 204, 113, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(129, 236, 236, 0.08) 0%, transparent 50%);
+        }
+
+        .admin-main {
+            .admin-content {
+
+                .main-card,
+                .ant-card {
+                    background  : rgba(30, 40, 35, 0.95);
+                    border-color: rgba(46, 204, 113, 0.2);
+                }
+
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                h6 {
+                    color: #2ecc71;
+                }
+
+                p {
+                    color: #b8c5b8;
+                }
+            }
+        }
+    }
+}
+
+// Reduced motion support
+@media (prefers-reduced-motion: reduce) {
+    .admin-container {
+        * {
+            animation-duration       : 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration      : 0.01ms !important;
+        }
+    }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+    .admin-container {
+        .admin-main {
+            .admin-content {
+
+                .main-card,
+                .ant-card {
+                    border    : 2px solid #27ae60;
+                    background: rgba(255, 255, 255, 1);
+                }
+
+                .ant-btn {
+                    border-width: 2px;
+                }
+            }
+        }
+    }
+}
+
+// 🎯 FORCE PROPER SPACING - Additional safety rules
+.admin-container {
+
+    // Desktop default state
+    @media (min-width: 1201px) {
+        .admin-sidebar:not(.collapsed)+.admin-main {
+            margin-left: 280px;
+            width      : calc(100% - 280px);
+        }
+
+        .admin-sidebar.collapsed+.admin-main {
+            margin-left: 70px;
+            width      : calc(100% - 70px);
+        }
+    }
+
+    // Tablet forced collapsed
+    @media (min-width: 769px) and (max-width: 1200px) {
+        .admin-main {
+            margin-left: 70px !important;
+            width      : calc(100% - 70px) !important;
+        }
+    }
+
+    // Mobile full width
+    @media (max-width: 768px) {
+        .admin-main {
+            margin-left: 0 !important;
+            width      : 100% !important;
+        }
+    }
+}

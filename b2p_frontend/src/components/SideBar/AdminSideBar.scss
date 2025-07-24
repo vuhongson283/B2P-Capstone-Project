@@ -3,7 +3,7 @@
     height        : 100vh;
     background    : linear-gradient(180deg, #1e8449 0%, #27ae60 100%);
     color         : #ecf0f1;
-    transition    : all 0.3s ease;
+    transition    : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position      : fixed;
     left          : 0;
     top           : 0;
@@ -16,11 +16,50 @@
     &.collapsed {
         width: 70px;
 
+        // FIX: Header layout khi collapsed
+        .sidebar__header {
+            padding       : 15px 10px; // Giảm padding để fit
+            flex-direction: column; // Stack vertical
+            gap           : 10px;
+
+            .logo-section {
+                justify-content: center;
+
+                .logo-icon-wrapper {
+                    width : 32px;
+                    height: 32px;
+
+                    .logo-icon {
+                        font-size: 16px;
+                    }
+                }
+            }
+
+            .header-controls {
+                justify-content: center;
+
+                .collapse-btn {
+                    width : 30px;
+                    height: 30px;
+
+                    i {
+                        font-size: 12px;
+                    }
+                }
+            }
+        }
+
         .sidebar__user-info {
             padding: 15px 10px;
 
             .user-avatar {
                 margin: 0 auto;
+                width : 45px;
+                height: 45px;
+
+                .avatar-placeholder {
+                    font-size: 18px;
+                }
             }
         }
 
@@ -36,9 +75,22 @@
         .submenu-arrow {
             display: none;
         }
+
+        .sidebar__footer {
+            .footer-item {
+                justify-content: center;
+                padding        : 12px 10px;
+                flex-direction : column;
+                gap            : 4px;
+
+                .footer-icon-wrapper {
+                    margin: 0;
+                }
+            }
+        }
     }
 
-    // Header Section
+    // Header Section - ENHANCED & FIXED
     .sidebar__header {
         padding        : 20px;
         border-bottom  : 1px solid rgba(236, 240, 241, 0.1);
@@ -46,49 +98,131 @@
         align-items    : center;
         justify-content: space-between;
         flex-shrink    : 0;
+        background     : linear-gradient(135deg, rgba(46, 204, 113, 0.05), rgba(243, 156, 18, 0.02));
+        min-height     : 80px; // Ensure minimum height
+        transition     : all 0.3s ease;
 
         .logo-section {
             display    : flex;
             align-items: center;
             gap        : 12px;
+            flex       : 1;
+            min-width  : 0; // Allow shrinking
 
-            .logo-icon {
-                font-size: 24px;
-                color    : #f39c12;
+            .logo-icon-wrapper {
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                width          : 40px;
+                height         : 40px;
+                background     : linear-gradient(135deg, #f39c12, #e67e22);
+                border-radius  : 12px;
+                box-shadow     : 0 4px 12px rgba(243, 156, 18, 0.3);
+                flex-shrink    : 0;
+                transition     : all 0.3s ease;
+
+                .logo-icon {
+                    font-size : 20px;
+                    color     : white;
+                    transition: font-size 0.3s ease;
+                }
             }
 
-            .logo-text {
-                font-size  : 18px;
-                font-weight: 700;
-                color      : #ecf0f1;
+            .logo-text-wrapper {
+                display       : flex;
+                flex-direction: column;
+                gap           : 2px;
+                min-width     : 0;
+                overflow      : hidden;
+
+                .logo-text {
+                    font-size    : 18px;
+                    font-weight  : 700;
+                    color        : #ecf0f1;
+                    line-height  : 1.2;
+                    white-space  : nowrap;
+                    overflow     : hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .logo-subtitle {
+                    font-size    : 12px;
+                    color        : #a3b3a3;
+                    font-weight  : 500;
+                    white-space  : nowrap;
+                    overflow     : hidden;
+                    text-overflow: ellipsis;
+                }
             }
         }
 
-        .collapse-btn {
-            background     : rgba(46, 204, 113, 0.2);
-            border         : none;
-            color          : #ecf0f1;
-            width          : 32px;
-            height         : 32px;
-            border-radius  : 6px;
-            cursor         : pointer;
-            transition     : all 0.3s ease;
-            display        : flex;
-            align-items    : center;
-            justify-content: center;
+        .header-controls {
+            display    : flex;
+            align-items: center;
+            gap        : 8px;
+            flex-shrink: 0; // Never shrink controls
 
-            &:hover {
-                background: rgba(46, 204, 113, 0.3);
-                transform : scale(1.05);
-            }
+            .collapse-btn {
+                background     : rgba(46, 204, 113, 0.15);
+                border         : 1px solid rgba(46, 204, 113, 0.3);
+                color          : #ecf0f1;
+                width          : 36px;
+                height         : 36px;
+                border-radius  : 8px;
+                cursor         : pointer;
+                transition     : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                backdrop-filter: blur(10px);
+                flex-shrink    : 0;
 
-            i {
-                font-size: 14px;
+                &:hover {
+                    background  : rgba(46, 204, 113, 0.25);
+                    border-color: rgba(46, 204, 113, 0.5);
+                    transform   : scale(1.05);
+                    box-shadow  : 0 4px 12px rgba(46, 204, 113, 0.2);
+                }
+
+                &:active {
+                    transform: scale(0.95);
+                }
+
+                &.mobile-close {
+                    background  : rgba(231, 76, 60, 0.15);
+                    border-color: rgba(231, 76, 60, 0.3);
+
+                    &:hover {
+                        background  : rgba(231, 76, 60, 0.25);
+                        border-color: rgba(231, 76, 60, 0.5);
+                        box-shadow  : 0 4px 12px rgba(231, 76, 60, 0.2);
+                    }
+
+                    i {
+                        color: #e74c3c;
+                    }
+                }
+
+                &.desktop-toggle {
+                    i {
+                        font-size : 14px;
+                        transition: transform 0.3s ease;
+                    }
+
+                    &:hover i {
+                        transform: translateX(2px);
+                    }
+                }
+
+                i {
+                    font-size: 14px;
+                }
             }
         }
     }
 
-    // User Info Section
+    // Rest of your existing styles...
+    // User Info Section - ENHANCED
     .sidebar__user-info {
         padding      : 25px 20px;
         border-bottom: 1px solid rgba(236, 240, 241, 0.1);
@@ -124,15 +258,45 @@
                 border         : 3px solid #2ecc71;
                 text-shadow    : 0 2px 4px rgba(0, 0, 0, 0.2);
             }
+
+            .online-indicator {
+                position     : absolute;
+                bottom       : 5px;
+                right        : 5px;
+                width        : 16px;
+                height       : 16px;
+                background   : #2ecc71;
+                border-radius: 50%;
+                border       : 3px solid #1e8449;
+                animation    : pulse 2s infinite;
+            }
         }
 
         .user-details {
             .user-name {
                 font-size    : 18px;
                 font-weight  : 600;
-                margin-bottom: 12px;
+                margin-bottom: 8px;
                 color        : #ecf0f1;
                 text-shadow  : 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            .user-role {
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                gap            : 6px;
+                margin-bottom  : 12px;
+                padding        : 4px 12px;
+                background     : rgba(243, 156, 18, 0.2);
+                border-radius  : 12px;
+                font-size      : 12px;
+                color          : #f39c12;
+                font-weight    : 600;
+
+                i {
+                    font-size: 10px;
+                }
             }
 
             .user-contact {
@@ -171,6 +335,17 @@
         overflow-x: hidden;
         min-height: 0;
 
+        .menu-section-title {
+            padding       : 15px 20px 10px;
+            font-size     : 11px;
+            font-weight   : 700;
+            color         : #a3b3a3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom : 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom : 10px;
+        }
+
         // Custom Scrollbar
         &::-webkit-scrollbar {
             width     : 8px;
@@ -195,14 +370,6 @@
                 border-color: rgba(46, 204, 113, 0.5);
             }
         }
-
-        &::-webkit-scrollbar-thumb:active {
-            background: linear-gradient(180deg, #229954, #1e8449);
-        }
-
-        // Firefox scrollbar
-        scrollbar-width: thin;
-        scrollbar-color: #2ecc71 rgba(30, 132, 73, 0.3);
 
         .menu-list {
             display       : flex;
@@ -231,7 +398,6 @@
                     box-shadow: inset 4px 0 0 rgba(46, 204, 113, 0.5);
                 }
 
-                // 🎯 Active menu với nền tối hơn
                 &.active {
                     background  : linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(30, 132, 73, 0.3) 100%);
                     color       : #ffffff;
@@ -252,8 +418,7 @@
                         background: linear-gradient(180deg, #2ecc71, #f39c12);
                     }
 
-                    // Icon sáng hơn khi active
-                    .menu-content i {
+                    .menu-content .menu-icon-wrapper i {
                         color: #2ecc71;
                     }
                 }
@@ -263,11 +428,16 @@
                     align-items: center;
                     gap        : 15px;
 
-                    i {
-                        width     : 20px;
-                        font-size : 16px;
-                        text-align: center;
-                        transition: color 0.3s ease;
+                    .menu-icon-wrapper {
+                        display        : flex;
+                        align-items    : center;
+                        justify-content: center;
+                        width          : 20px;
+
+                        i {
+                            font-size : 16px;
+                            transition: color 0.3s ease;
+                        }
                     }
 
                     .menu-title {
@@ -288,86 +458,9 @@
                 }
             }
         }
-
-        // Submenu Styles
-        .submenu {
-            background     : rgba(0, 0, 0, 0.15);
-            border-left    : 2px solid rgba(46, 204, 113, 0.6);
-            margin-left    : 20px;
-            border-radius  : 0 8px 8px 0;
-            backdrop-filter: blur(5px);
-            margin-bottom  : 8px;
-            animation      : slideDown 0.3s ease;
-
-            .submenu-item {
-                display      : flex;
-                align-items  : center;
-                gap          : 12px;
-                padding      : 12px 20px;
-                cursor       : pointer;
-                transition   : all 0.3s ease;
-                color        : #bdc3c7;
-                font-size    : 13px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-                &:last-child {
-                    border-bottom: none;
-                }
-
-                &:hover {
-                    background : rgba(46, 204, 113, 0.15);
-                    color      : #ecf0f1;
-                    transform  : translateX(4px);
-                    border-left: 2px solid rgba(46, 204, 113, 0.5);
-                    box-shadow : inset 2px 0 0 rgba(46, 204, 113, 0.4);
-                }
-
-                // 🎯 Active submenu với nền tối hơn
-                &.active {
-                    background : linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(46, 204, 113, 0.2) 100%);
-                    color      : #ffffff;
-                    border-left: 3px solid #f39c12;
-                    font-weight: 600;
-                    box-shadow :
-                        inset 3px 0 0 #f39c12,
-                        0 2px 8px rgba(0, 0, 0, 0.15);
-
-                    // Icon sáng hơn khi active
-                    i {
-                        color: #f39c12 !important;
-                    }
-                }
-
-                i {
-                    width     : 16px;
-                    font-size : 12px;
-                    text-align: center;
-                    color     : #58d68d;
-                    transition: color 0.3s ease;
-                }
-
-                .facility-info {
-                    display       : flex;
-                    flex-direction: column;
-                    flex          : 1;
-
-                    .facility-name {
-                        font-weight: 500;
-                        line-height: 1.2;
-                        color      : inherit;
-                    }
-
-                    .court-count {
-                        font-size : 11px;
-                        color     : #a3b3a3;
-                        margin-top: 2px;
-                    }
-                }
-            }
-        }
     }
 
-    // Footer Section - 🎯 Đổi màu đăng xuất
+    // Footer Section - ENHANCED
     .sidebar__footer {
         padding    : 20px;
         border-top : 1px solid rgba(236, 240, 241, 0.1);
@@ -381,13 +474,14 @@
             padding      : 12px 16px;
             cursor       : pointer;
             transition   : all 0.3s ease;
-            color        : #f8c471; // Màu cam nhạt thay vì đỏ
+            color        : #f8c471;
             border-radius: 8px;
             background   : rgba(248, 196, 113, 0.1);
             border       : 1px solid rgba(248, 196, 113, 0.2);
+            margin-bottom: 12px;
 
             &:hover {
-                color       : #f39c12; // Cam đậm hơn
+                color       : #f39c12;
                 transform   : translateX(4px);
                 background  : rgba(243, 156, 18, 0.2);
                 border-color: rgba(243, 156, 18, 0.4);
@@ -398,15 +492,17 @@
 
             &:active {
                 transform: translateX(2px);
-                box-shadow:
-                    0 2px 6px rgba(243, 156, 18, 0.3),
-                    inset 0 0 0 1px rgba(243, 156, 18, 0.4);
             }
 
-            i {
-                width     : 20px;
-                font-size : 16px;
-                text-align: center;
+            .footer-icon-wrapper {
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                width          : 20px;
+
+                i {
+                    font-size: 16px;
+                }
             }
 
             span {
@@ -414,165 +510,110 @@
                 font-weight: 600;
             }
         }
-    }
 
-    // Scrollbar enhancement khi hover
-    &:hover {
-        .sidebar__navigation {
-            &::-webkit-scrollbar-thumb {
-                background: linear-gradient(180deg, #2ecc71, #f39c12);
-                box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
-            }
+        .sidebar-version {
+            text-align : center;
+            font-size  : 11px;
+            color      : #7f8c8d;
+            font-weight: 500;
+            opacity    : 0.7;
         }
     }
 
-    // Force scrollbar visible
-    .sidebar__navigation {
-        &::-webkit-scrollbar {
-            -webkit-appearance: none;
+    // Animations
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.7;
         }
     }
 }
 
-// Animation for menu expansion
-@keyframes slideDown {
-    from {
-        opacity  : 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity  : 1;
-        transform: translateY(0);
-    }
-}
-
-// Responsive Design
-@media (max-width: 1024px) {
+// Responsive Design - UPDATED
+@media (max-width: 1200px) {
     .court-owner-sidebar {
-        &:not(.collapsed) {
-            transform: translateX(-100%);
+        // Force collapsed on tablet
+        width: 70px;
+
+        &:not(.mobile-open) {
+            width: 70px;
         }
 
-        &.mobile-open {
-            transform: translateX(0);
+        // Apply collapsed styles
+        .sidebar__header {
+            padding       : 15px 10px;
+            flex-direction: column;
+            gap           : 10px;
+
+            .logo-section {
+                justify-content: center;
+
+                .logo-icon-wrapper {
+                    width : 32px;
+                    height: 32px;
+
+                    .logo-icon {
+                        font-size: 16px;
+                    }
+                }
+            }
+
+            .header-controls {
+                justify-content: center;
+
+                .desktop-toggle {
+                    display: none; // Hide toggle on tablet
+                }
+            }
         }
     }
 }
 
 @media (max-width: 768px) {
     .court-owner-sidebar {
-        width: 260px;
+        transform: translateX(-100%);
+        width    : 280px;
 
+        &.mobile-open {
+            transform: translateX(0);
+        }
+
+        // Reset to full layout on mobile when open
         &.collapsed {
-            width: 60px;
-        }
+            width: 280px;
 
-        .sidebar__user-info {
-            padding: 20px 15px;
+            .sidebar__header {
+                padding       : 20px;
+                flex-direction: row;
+                gap           : 12px;
 
-            .user-avatar {
-                width : 60px;
-                height: 60px;
-            }
+                .logo-section {
+                    justify-content: flex-start;
 
-            .user-details {
-                .user-name {
-                    font-size: 16px;
+                    .logo-icon-wrapper {
+                        width : 40px;
+                        height: 40px;
+
+                        .logo-icon {
+                            font-size: 20px;
+                        }
+                    }
                 }
 
-                .contact-item {
-                    font-size: 12px;
-                }
-            }
-        }
+                .header-controls {
+                    justify-content: flex-end;
 
-        .menu-link {
-            padding: 12px 15px;
+                    .desktop-toggle {
+                        display: none;
+                    }
 
-            .menu-content {
-                gap: 12px;
-
-                i {
-                    font-size: 14px;
-                }
-
-                .menu-title {
-                    font-size: 13px;
-                }
-            }
-        }
-
-        .submenu {
-            margin-left: 15px;
-
-            .submenu-item {
-                padding  : 10px 15px;
-                font-size: 12px;
-            }
-        }
-
-        // Mobile scrollbar
-        .sidebar__navigation {
-            &::-webkit-scrollbar {
-                width: 6px;
-            }
-        }
-    }
-}
-
-@media (max-width: 480px) {
-    .court-owner-sidebar {
-        width: 240px;
-
-        &.collapsed {
-            width: 55px;
-        }
-
-        .sidebar__header {
-            padding: 15px;
-
-            .logo-icon {
-                font-size: 20px;
-            }
-
-            .logo-text {
-                font-size: 16px;
-            }
-
-            .collapse-btn {
-                width : 28px;
-                height: 28px;
-
-                i {
-                    font-size: 12px;
-                }
-            }
-        }
-
-        .sidebar__user-info {
-            padding: 15px;
-
-            .user-avatar {
-                width : 50px;
-                height: 50px;
-
-                .avatar-placeholder {
-                    font-size: 20px;
-                }
-            }
-
-            .user-details {
-                .user-name {
-                    font-size: 14px;
-                }
-
-                .contact-item {
-                    font-size: 11px;
-
-                    i {
-                        width    : 14px;
-                        font-size: 10px;
+                    .mobile-close {
+                        display: flex;
                     }
                 }
             }
@@ -580,79 +621,44 @@
     }
 }
 
-// Dark theme adjustments
-@media (prefers-color-scheme: dark) {
+@media (max-width: 480px) {
     .court-owner-sidebar {
-        background: linear-gradient(180deg, #0f3622 0%, #1e8449 100%);
-        box-shadow: 4px 0 15px rgba(15, 54, 34, 0.3);
+        width: 260px;
 
-        .sidebar__navigation {
-            &::-webkit-scrollbar-track {
-                background: rgba(15, 54, 34, 0.5);
+        .sidebar__header {
+            padding: 15px;
+
+            .logo-section {
+                .logo-icon-wrapper {
+                    width : 36px;
+                    height: 36px;
+
+                    .logo-icon {
+                        font-size: 18px;
+                    }
+                }
+
+                .logo-text-wrapper {
+                    .logo-text {
+                        font-size: 16px;
+                    }
+
+                    .logo-subtitle {
+                        font-size: 11px;
+                    }
+                }
+            }
+
+            .header-controls {
+                .collapse-btn {
+                    width : 32px;
+                    height: 32px;
+
+                    i {
+                        font-size: 12px;
+                    }
+                }
             }
         }
-
-        .submenu {
-            background: rgba(0, 0, 0, 0.25);
-        }
-
-        .menu-link.active {
-            background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(15, 54, 34, 0.4) 100%);
-        }
-
-        .submenu-item.active {
-            background: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(46, 204, 113, 0.25) 100%);
-        }
-    }
-}
-
-// High contrast mode
-@media (prefers-contrast: high) {
-    .court-owner-sidebar {
-        border-right: 2px solid #2ecc71;
-
-        .menu-link {
-            border: 1px solid transparent;
-
-            &.active {
-                border-color: #2ecc71;
-                background  : rgba(0, 0, 0, 0.5);
-            }
-        }
-
-        .sidebar__navigation {
-            &::-webkit-scrollbar-thumb {
-                background: #2ecc71;
-                border    : 1px solid #1e8449;
-            }
-        }
-
-        .footer-item {
-            border-color: #f39c12;
-        }
-    }
-}
-
-// Reduce motion
-@media (prefers-reduced-motion: reduce) {
-
-    .court-owner-sidebar,
-    .menu-link,
-    .submenu-item,
-    .collapse-btn,
-    .submenu-arrow,
-    .footer-item {
-        transition: none !important;
-        animation : none !important;
-    }
-
-    .menu-link:hover,
-    .submenu-item:hover,
-    .footer-item:hover {
-        transform: none !important;
-    }
-
-    .sidebar__navigation::-webkit-scrollbar-thumb {
-        transition: none !important;
     }
 }

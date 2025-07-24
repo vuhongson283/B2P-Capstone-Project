@@ -72,13 +72,17 @@ namespace B2P_API.Services
                         StatusName = f.Status.StatusName,
                         StatusDescription = f.Status.StatusDescription
                     },
-                    Images = f.Images?.Select(i => new ImageDto
-                    {
-                        ImageId = i.ImageId,
-                        ImageUrl = i.ImageUrl,
-                        Order = i.Order,
-                        Caption = i.Caption
-                    }).ToList()
+                    Images = f.Images?
+                        .OrderBy(i => i.Order) 
+                        .Take(1) 
+                        .Select(i => new ImageDto
+                        {
+                            ImageId = i.ImageId,
+                            ImageUrl = i.ImageUrl,
+                            Order = i.Order,
+                            Caption = i.Caption
+                        }).ToList()
+
                 }).ToList();
 
                 int totalItems = mappedFacilities.Count;

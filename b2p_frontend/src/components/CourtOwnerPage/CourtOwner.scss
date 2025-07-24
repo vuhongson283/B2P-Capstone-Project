@@ -1,50 +1,90 @@
 .court-owner-container {
-    display   : flex;
+    display: flex;
     min-height: 100vh;
     background: linear-gradient(135deg, #e8f5e8 0%, #d5e8d4 100%);
 
     .court-owner-sidebar {
         flex-shrink: 0;
+
+        &.collapsed {
+            .sidebar__header {
+                padding: 15px 10px;
+            }
+        }
+
+        &.sidebar-open {
+            transform: translateX(0);
+        }
     }
 
     .court-owner-main {
-        flex       : 1;
-        margin-left: 280px; // Width của sidebar
-        transition : margin-left 0.3s ease;
+        flex: 1;
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
 
         .court-owner-content {
-            padding        : 30px;
-            min-height     : 100vh;
-            background     : rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-left    : 1px solid rgba(46, 204, 113, 0.1);
+            border-left: 1px solid rgba(46, 204, 113, 0.1);
 
             h1 {
-                color        : #1e8449;
+                color: #1e8449;
                 margin-bottom: 20px;
-                text-shadow  : 0 1px 2px rgba(0, 0, 0, 0.1);
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             }
 
             p {
-                color    : #5d6d5d;
+                color: #5d6d5d;
                 font-size: 16px;
             }
         }
     }
 
-    // When sidebar is collapsed
-    &:has(.court-owner-sidebar.collapsed) {
+    &.sidebar-collapsed {
         .court-owner-main {
             margin-left: 70px;
         }
     }
 }
 
-// Responsive
-@media (max-width: 1024px) {
+// Mobile styles
+@media (max-width: 768px) {
     .court-owner-container {
+        .court-owner-sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+
+            &.sidebar-open {
+                transform: translateX(280px);
+            }
+        }
+
         .court-owner-main {
             margin-left: 0;
         }
+    }
+
+    .mobile-overlay {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: block;
+    }
+}
+
+// Animation
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
