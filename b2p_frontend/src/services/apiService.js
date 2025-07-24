@@ -38,6 +38,27 @@ const getAllBankType = (search, pageNumber, pageSize) => {
   );
 };
 
+//Account Management
+const getAccountList = (data) => {
+  return axios.post("AccountManagement/account-list", data);
+};
+
+const getAccountById = (userId) => {
+  return axios.get(`AccountManagement/get-user/${userId}`);
+};
+
+const banUser = (userId) => {
+  return axios.put(`AccountManagement/${userId}/ban`);
+};
+
+const unbanUser = (userId) => {
+  return axios.put(`AccountManagement/${userId}/unban`);
+};
+
+const deleteUser = (userId) => {
+  return axios.delete(`AccountManagement/${userId}`);
+};
+///
 const getUserImage = (userId) => {
   return axios.get(`Image/user/${userId}`);
 };
@@ -125,6 +146,11 @@ const resendOtpBySms = (phoneNumber) => {
 };
 
 export {
+  getAccountList,
+  getAccountById,
+  banUser,
+  deleteUser,
+  unbanUser,
   getAllCourtCategories,
   getAllActiveSliders,
   getAllFacilitiesByPlayer,
