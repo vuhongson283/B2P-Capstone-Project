@@ -169,7 +169,7 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IGoogleDriveService, GoogleDriveService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISMSService, eSmsService>();
+//builder.Services.AddScoped<ISMSService, eSMSService>();
 
 builder.Services.AddScoped<AccountManagementRepository>();
 builder.Services.AddScoped<IAccountManagementRepository, AccountManagementRepository>();
@@ -189,27 +189,24 @@ builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<ICourtRepository, CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
-// Booking services
 builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<BookingService>();
 
-// TimeSlot services
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 
-// Bank Account services
 builder.Services.AddScoped<BankAccountService>();
 builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
 
-// Excel Export services
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
-ExcelPackage.License.SetNonCommercialPersonal("B2P");
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 // Report services
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
-// Đăng ký TwilioSettings
+
+// Đăng ký Twilio/ESMS settings
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
 
 var app = builder.Build();
@@ -226,4 +223,3 @@ app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
->>>>>>> Test

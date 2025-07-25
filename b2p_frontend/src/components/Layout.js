@@ -3,6 +3,7 @@ import "react-toastify/dist/ReactToastify.css";
 import App from "../App";
 import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
+import FacilityDetails from "./HomePage/FacilityDetails";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
 const Layout = (props) => {
@@ -13,6 +14,7 @@ const Layout = (props) => {
           <Route path="/search" element={<FacilitiesWithCondition />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/facility-details" element={<FacilityDetails />} />
         </Route>
       </Routes>
 
