@@ -6,6 +6,10 @@ import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import FacilityDetails from "./HomePage/FacilityDetails";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
+import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner component
+import Admin from "./AdminPage/Admin";
+import AccountTable from "./AdminPage/AccountTable";
+import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 const Layout = (props) => {
   return (
     <>
@@ -15,6 +19,21 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/facility-details" element={<FacilityDetails />} />
+        </Route>
+
+        <Route path="/court-owner" element={<CourtOwner />}>
+          <Route
+            path="/court-owner/search"
+            element={<FacilitiesWithCondition />}
+          />
+        </Route>
+
+        <Route path="/admin" element={<Admin />}>
+          <Route path="accounts" element={<AccountTable />} />
+          <Route
+            path="manage-court-categories"
+            element={<ManageCourtCategories />}
+          />
         </Route>
       </Routes>
 

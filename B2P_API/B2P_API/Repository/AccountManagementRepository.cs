@@ -59,12 +59,15 @@ namespace B2P_API.Repository
 
 			if (!string.IsNullOrWhiteSpace(search))
 			{
+				var loweredSearch = search.ToLower();
+
 				query = query.Where(u =>
-					u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.Phone.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.UserId.ToString().Contains(search));
+					u.FullName.ToLower().Contains(loweredSearch) ||
+					u.Email.ToLower().Contains(loweredSearch) ||
+					u.Phone.ToLower().Contains(loweredSearch) ||
+					u.UserId.ToString().Contains(loweredSearch));
 			}
+
 
 			if (roleId.HasValue)
 				query = query.Where(u => u.RoleId == roleId.Value);
@@ -78,10 +81,7 @@ namespace B2P_API.Repository
 				.ToListAsync();
 		}
 
-		public async Task<int> GetTotalAccountsAsync(
-			string? search,
-			int? roleId,
-			int? statusId)
+		public async Task<int> GetTotalAccountsAsync(string? search, int? roleId, int? statusId)
 		{
 			var allowedRoles = new[] { 2, 3 };
 
@@ -91,11 +91,13 @@ namespace B2P_API.Repository
 
 			if (!string.IsNullOrWhiteSpace(search))
 			{
+				var loweredSearch = search.ToLower();
+
 				query = query.Where(u =>
-					u.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.Email.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.Phone.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-					u.UserId.ToString().Contains(search));
+					u.FullName.ToLower().Contains(loweredSearch) ||
+					u.Email.ToLower().Contains(loweredSearch) ||
+					u.Phone.ToLower().Contains(loweredSearch) ||
+					u.UserId.ToString().Contains(loweredSearch));
 			}
 
 			if (roleId.HasValue)
@@ -106,6 +108,7 @@ namespace B2P_API.Repository
 
 			return await query.CountAsync();
 		}
+
 
 		public async Task<bool> UpdateStatusAsync(User user, int newStatusId)
 		{

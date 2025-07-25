@@ -436,18 +436,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.OldPassword.Trim()))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Mật khẩu cũ không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (string.IsNullOrEmpty(changePasswordRequest.NewPassword.Trim()))
+                if (string.IsNullOrEmpty(changePasswordRequest.NewPassword?.Trim()))
                 {
                     return new ApiResponse<object>
                     {
@@ -469,23 +458,12 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.ConfirmPassword.Trim()))
+                if (string.IsNullOrEmpty(changePasswordRequest.ConfirmPassword?.Trim()))
                 {
                     return new ApiResponse<object>
                     {
                         Data = null,
                         Message = "Xác nhận mật khẩu không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (changePasswordRequest.NewPassword != changePasswordRequest.ConfirmPassword)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_14,
                         Success = false,
                         Status = 400
                     };
@@ -515,18 +493,37 @@ namespace B2P_API.Services
                     };
                 }
 
-                // Verify old password
-                bool isValid = BCrypt.Net.BCrypt.Verify(changePasswordRequest.OldPassword, user.Password);
-                if (!isValid)
+                // 🎯 Check if user has existing password
+                bool hasExistingPassword = !string.IsNullOrEmpty(user.Password);
+
+                if (hasExistingPassword)
                 {
-                    return new ApiResponse<object>
+                    // Case 1: User has existing password - require old password verification
+                    if (string.IsNullOrEmpty(changePasswordRequest.OldPassword?.Trim()))
                     {
-                        Data = null,
-                        Message = MessagesCodes.MSG_15,
-                        Success = false,
-                        Status = 400
-                    };
+                        return new ApiResponse<object>
+                        {
+                            Data = null,
+                            Message = "Mật khẩu cũ không được để trống",
+                            Success = false,
+                            Status = 400
+                        };
+                    }
+
+                    // Verify old password
+                    bool isValidOldPassword = BCrypt.Net.BCrypt.Verify(changePasswordRequest.OldPassword, user.Password);
+                    if (!isValidOldPassword)
+                    {
+                        return new ApiResponse<object>
+                        {
+                            Data = null,
+                            Message = MessagesCodes.MSG_15, // "Mật khẩu cũ không đúng"
+                            Success = false,
+                            Status = 400
+                        };
+                    }
                 }
+                // Case 2: First-time password setup - no old password required
 
                 // Hash new password before saving
                 user.Password = BCrypt.Net.BCrypt.HashPassword(changePasswordRequest.NewPassword);
@@ -537,16 +534,25 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "Đổi mật khẩu thất bại",
+                        Message = "Cập nhật mật khẩu thất bại",
                         Success = false,
                         Status = 500
                     };
                 }
 
+                // Return appropriate success message
+                string successMessage = hasExistingPassword
+                    ? "Đổi mật khẩu thành công"
+                    : "Thiết lập mật khẩu thành công";
+
                 return new ApiResponse<object>
                 {
-                    Data = null,
-                    Message = "Đổi mật khẩu thành công",
+                    Data = new
+                    {
+                        IsFirstTimeSetup = !hasExistingPassword,
+                        Message = successMessage
+                    },
+                    Message = successMessage,
                     Success = true,
                     Status = 200
                 };
@@ -562,7 +568,6 @@ namespace B2P_API.Services
                 };
             }
         }
-
         public async Task<ApiResponse<object>> SendPasswordResetOtpBySMSAsync(ForgotPasswordRequestBySmsDto? request)
         {
             try
@@ -1274,7 +1279,78 @@ namespace B2P_API.Services
                 };
             }
         }
+        public async Task<ApiResponse<object>> CheckPasswordStatusAsync(int userId)
+        {
+            try
+            {
+                // Validate userId
+                if (userId <= 0)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "UserId không hợp lệ",
+                        Success = false,
+                        Status = 400
+                    };
+                }
 
+                // Get user by id
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                if (user == null)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = MessagesCodes.MSG_65, // "Người dùng không tồn tại"
+                        Success = false,
+                        Status = 404
+                    };
+                }
+
+                // Check if user is active
+                if (user.StatusId != 1)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = MessagesCodes.MSG_09, // "Tài khoản đã bị khóa"
+                        Success = false,
+                        Status = 400
+                    };
+                }
+
+                // Check if user has password
+                bool hasPassword = !string.IsNullOrEmpty(user.Password);
+
+                return new ApiResponse<object>
+                {
+                    Data = new
+                    {
+                        UserId = userId,
+                        HasPassword = hasPassword,
+                        RequireOldPassword = hasPassword,
+                        PasswordStatus = hasPassword ? "Đã thiết lập mật khẩu" : "Chưa thiết lập mật khẩu",
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        Phone = user.Phone
+                    },
+                    Message = hasPassword ? "Người dùng đã có mật khẩu" : "Người dùng chưa thiết lập mật khẩu",
+                    Success = true,
+                    Status = 200
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>
+                {
+                    Data = null,
+                    Message = MessagesCodes.MSG_06 + ex.Message,
+                    Success = false,
+                    Status = 500
+                };
+            }
+        }
         public async Task<bool> IsRealEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))

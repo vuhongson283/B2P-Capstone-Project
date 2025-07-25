@@ -4,12 +4,14 @@ import { getAllActiveSliders } from "../../services/apiService";
 import "./SliderField.scss";
 import { useNavigate } from "react-router-dom";
 import altImg from "../../assets/images/sports-tools.jpg";
-import SearchField from "./SearchField"; // Assuming SearchField is in the same directory
+import SearchField from "./SearchField";
+
 const SliderField = (props) => {
   const [index, setIndex] = useState(0);
   const [sliders, setSliders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
   const handleSelect = (selectedIndex) => {
     setIndex(selectedIndex);
   };
@@ -59,9 +61,14 @@ const SliderField = (props) => {
 
   if (loading) {
     return (
-      <div className="slider-loading">
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="slider-field">
+        <div className="slider-loading">
+          <div className="loading-content">
+            <div className="spinner-border text-success" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="loading-text">Đang tải slider...</p>
+          </div>
         </div>
       </div>
     );
@@ -69,8 +76,14 @@ const SliderField = (props) => {
 
   if (!sliders || sliders.length === 0) {
     return (
-      <div className="slider-empty">
-        <p>Không có slider nào để hiển thị</p>
+      <div className="slider-field">
+        <div className="slider-empty">
+          <div className="empty-content">
+            <i className="fas fa-images fa-3x"></i>
+            <p>Không có slider nào để hiển thị</p>
+          </div>
+        </div>
+        <SearchField />
       </div>
     );
   }
@@ -80,9 +93,11 @@ const SliderField = (props) => {
       <Carousel
         activeIndex={index}
         onSelect={handleSelect}
-        interval={4000}
+        interval={5000}
         pause="hover"
         fade
+        controls={true}
+        indicators={false}
       >
         {sliders.map((slider, idx) => (
           <Carousel.Item key={slider.slideUrl + "ABC" || idx}>
@@ -90,7 +105,7 @@ const SliderField = (props) => {
               <img
                 className="carousel-image"
                 src={slider.imageUrl}
-                alt={`Slider ${idx + 1}`}
+                alt={slider.title || `Slider ${idx + 1}`}
                 onError={(e) => {
                   console.log("Image load error:", slider.imageUrl);
                   e.target.src = altImg;
@@ -105,20 +120,36 @@ const SliderField = (props) => {
                 }}
               />
               <div className="carousel-overlay"></div>
+
+              {/* Optional: Add caption if slider has title/description */}
+              {(slider.title || slider.description) && (
+                <Carousel.Caption className="custom-caption">
+                  <div className="caption-content">
+                    {slider.title && (
+                      <h3 className="caption-title">{slider.title}</h3>
+                    )}
+                    {slider.description && (
+                      <p className="caption-description">
+                        {slider.description}
+                      </p>
+                    )}
+                  </div>
+                </Carousel.Caption>
+              )}
             </div>
           </Carousel.Item>
         ))}
       </Carousel>
+
+      {/* Search Field overlay */}
       <SearchField />
 
-      <div className="custom-indicators">
-        {sliders.map((_, idx) => (
-          <button
-            key={idx}
-            className={`indicator ${idx === index ? "active" : ""}`}
-            onClick={() => setIndex(idx)}
-          />
-        ))}
+      {/* 🎯 REMOVED: Custom indicators section completely removed */}
+
+      {/* Decorative elements */}
+      <div className="slider-decorations">
+        <div className="decoration-left"></div>
+        <div className="decoration-right"></div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import {
   getUserById,
   updateUserProfile,
   changePassword,
+  checkPasswordStatus,
   getAllBankType,
   updateUserImage,
 } from "../../services/apiService";
@@ -17,9 +18,10 @@ const UserProfile = (props) => {
   const [bankTypes, setBankTypes] = useState([]);
   const [originalEmail, setOriginalEmail] = useState("");
   const [imageLoadError, setImageLoadError] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState(null);
 
   // Temporary userId - sẽ thay thế bằng userId từ authentication sau
-  const userId = 1;
+  const userId = 10;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -34,7 +36,7 @@ const UserProfile = (props) => {
     bankTypeId: 0,
     bankName: "",
     imageUrl: "",
-    imageId: null, // Add imageId to profileData
+    imageId: null,
   });
 
   // State cho đổi mật khẩu
@@ -42,10 +44,62 @@ const UserProfile = (props) => {
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
-    userId: userId,
   });
 
   const [errors, setErrors] = useState({});
+
+  // 🎯 useEffect để check password status khi chuyển sang tab password
+  useEffect(() => {
+    const fetchPasswordStatus = async () => {
+      if (activeTab === "password" && userId) {
+        try {
+          setPasswordStatus(null);
+
+          const response = await checkPasswordStatus(userId);
+
+          console.log("=== PASSWORD STATUS RESPONSE ===");
+          console.log(JSON.stringify(response, null, 2));
+
+          // 🎯 Fix: response có lowercase properties do axios interceptor
+          const isSuccess = response?.success === true;
+
+          if (isSuccess && response.data) {
+            const passwordData = response.data;
+
+            setPasswordStatus({
+              UserId: passwordData.userId,
+              HasPassword: passwordData.hasPassword,
+              RequireOldPassword: passwordData.requireOldPassword,
+              PasswordStatus: passwordData.passwordStatus,
+              FullName: passwordData.fullName,
+              Email: passwordData.email,
+              Phone: passwordData.phone,
+            });
+
+            console.log("✅ Password status set successfully");
+            console.log("HasPassword:", passwordData.hasPassword);
+            console.log("RequireOldPassword:", passwordData.requireOldPassword);
+          } else {
+            console.warn("Could not get password status:", response?.message);
+            setPasswordStatus({
+              HasPassword: true,
+              RequireOldPassword: true,
+              PasswordStatus: "Không xác định được trạng thái",
+            });
+          }
+        } catch (error) {
+          console.error("Error checking password status:", error);
+          setPasswordStatus({
+            HasPassword: true,
+            RequireOldPassword: true,
+            PasswordStatus: "Lỗi khi kiểm tra trạng thái",
+          });
+        }
+      }
+    };
+
+    fetchPasswordStatus();
+  }, [activeTab, userId]);
 
   // Updated Google Drive URL converter using your working function
   const convertGoogleDriveUrl = (url) => {
@@ -220,7 +274,7 @@ const UserProfile = (props) => {
             bankTypeId: matchedBankTypeId,
             bankName: userData.bankName || "",
             imageUrl: userData.imageUrl || "",
-            imageId: userData.imageId || null, // Get imageId from user data directly
+            imageId: userData.imageId || null,
           });
 
           // Set avatar preview nếu có imageUrl
@@ -314,7 +368,7 @@ const UserProfile = (props) => {
             setProfileData((prev) => ({
               ...prev,
               imageUrl: imageUrl,
-              imageId: imageId || prev.imageId, // Keep existing imageId if not provided
+              imageId: imageId || prev.imageId,
             }));
 
             // Use converted URL for preview
@@ -476,22 +530,37 @@ const UserProfile = (props) => {
     return newErrors;
   };
 
-  // Lightweight password validation
+  // Password validation
   const validatePassword = () => {
     const newErrors = {};
 
-    if (!passwordData.oldPassword?.trim()) {
+    // Chỉ require old password nếu user đã có password
+    if (
+      passwordStatus?.RequireOldPassword &&
+      !passwordData.oldPassword?.trim()
+    ) {
       newErrors.oldPassword = "Vui lòng nhập mật khẩu cũ";
     }
 
     if (!passwordData.newPassword?.trim()) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
+    } else if (passwordData.newPassword.length < 8) {
+      newErrors.newPassword = "Mật khẩu phải có ít nhất 8 ký tự";
     }
 
     if (!passwordData.confirmPassword?.trim()) {
       newErrors.confirmPassword = "Vui lòng nhập xác nhận mật khẩu";
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không trùng khớp";
+    }
+
+    // Check if new password is same as old password (chỉ khi có old password)
+    if (
+      passwordStatus?.HasPassword &&
+      passwordStatus?.RequireOldPassword &&
+      passwordData.oldPassword === passwordData.newPassword
+    ) {
+      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu cũ";
     }
 
     return newErrors;
@@ -690,7 +759,7 @@ const UserProfile = (props) => {
     }
   };
 
-  // Xử lý đổi mật khẩu
+  // 🎯 Xử lý đổi mật khẩu - FIXED
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -706,99 +775,104 @@ const UserProfile = (props) => {
 
     try {
       const changePasswordRequest = {
-        oldPassword: passwordData.oldPassword,
+        userId: userId,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,
-        userId: userId,
       };
 
-      console.log("Changing password for userId:", userId);
+      // 🎯 Chỉ thêm oldPassword nếu RequireOldPassword = true
+      if (passwordStatus?.RequireOldPassword) {
+        changePasswordRequest.oldPassword = passwordData.oldPassword;
+      }
+
+      console.log("Changing password with data:", changePasswordRequest);
 
       const response = await changePassword(changePasswordRequest);
 
-      console.log("=== PASSWORD RESPONSE ===");
+      console.log("=== CHANGE PASSWORD RESPONSE ===");
       console.log(JSON.stringify(response, null, 2));
 
-      // Handle both uppercase and lowercase properties
+      // 🎯 Fix: Check cả uppercase và lowercase cho change password response
       const isSuccess =
-        response?.Success === true || response?.success === true;
-      const errorMessage = response?.Message || response?.message;
-
-      console.log("Password isSuccess:", isSuccess);
-      console.log("Password errorMessage:", errorMessage);
+        response?.success === true || response?.Success === true;
+      const errorMessage = response?.message || response?.Message;
 
       if (isSuccess) {
-        // Success case
-        setMessage(errorMessage || "Đổi mật khẩu thành công");
+        // 🎯 Success - show appropriate message
+        const successMessage = passwordStatus?.HasPassword
+          ? "Đổi mật khẩu thành công"
+          : "Thiết lập mật khẩu thành công";
+
+        setMessage(errorMessage || successMessage);
+
+        // Reset form
         setPasswordData({
           oldPassword: "",
           newPassword: "",
           confirmPassword: "",
-          userId: userId,
         });
+
+        // 🎯 Update password status sau khi thành công
+        setPasswordStatus((prev) => ({
+          ...prev,
+          HasPassword: true,
+          RequireOldPassword: true,
+          PasswordStatus: "Đã thiết lập mật khẩu",
+        }));
+
         setTimeout(() => setMessage(""), 5000);
       } else {
         // Error case
-        console.log("Processing password error message:", errorMessage);
-
         if (errorMessage) {
-          // OLD PASSWORD ERRORS
-          if (errorMessage.includes("Mật khẩu cũ không được để trống")) {
+          if (
+            errorMessage.includes("mật khẩu cũ") &&
+            errorMessage.includes("trống")
+          ) {
             setErrors({ oldPassword: errorMessage });
-            console.log("✅ Set oldPassword empty error:", errorMessage);
           } else if (
             errorMessage.includes("Mật khẩu hiện tại không đúng") ||
             errorMessage.includes("Mật khẩu cũ sai") ||
             errorMessage.includes("Mật khẩu cũ không đúng") ||
-            errorMessage.includes("sai mật khẩu") ||
-            errorMessage.includes("không đúng")
+            errorMessage.toLowerCase().includes("sai mật khẩu")
           ) {
             setErrors({ oldPassword: errorMessage });
-            console.log("✅ Set oldPassword wrong error:", errorMessage);
-
-            // NEW PASSWORD ERRORS
           } else if (
-            errorMessage.includes("Mật khẩu mới không được để trống")
+            errorMessage.includes("mật khẩu mới") &&
+            errorMessage.includes("trống")
           ) {
             setErrors({ newPassword: errorMessage });
-            console.log("✅ Set newPassword empty error:", errorMessage);
           } else if (
-            errorMessage.includes("Mật khẩu có ít nhất 8 ký tự") ||
             errorMessage.includes("ít nhất 8") ||
             errorMessage.includes("8 ký tự")
           ) {
             setErrors({ newPassword: errorMessage });
-            console.log("✅ Set newPassword length error:", errorMessage);
-
-            // CONFIRM PASSWORD ERRORS
           } else if (
-            errorMessage.includes("Xác nhận mật khẩu không được để trống")
+            errorMessage.includes("xác nhận") &&
+            errorMessage.includes("trống")
           ) {
             setErrors({ confirmPassword: errorMessage });
-            console.log("✅ Set confirmPassword empty error:", errorMessage);
           } else if (
-            errorMessage.includes("Mật khẩu xác nhận không trùng khớp") ||
             errorMessage.includes("không trùng khớp") ||
-            errorMessage.includes("xác nhận") ||
             errorMessage.includes("trùng khớp")
           ) {
             setErrors({ confirmPassword: errorMessage });
-            console.log("✅ Set confirmPassword mismatch error:", errorMessage);
-
-            // GENERAL ERRORS - show in message area
           } else {
             setMessage(errorMessage);
-            console.log("✅ Set general password message:", errorMessage);
           }
         } else {
           setMessage("Có lỗi xảy ra khi đổi mật khẩu");
-          console.log("❌ No password error message available");
         }
       }
     } catch (error) {
-      console.error("=== PASSWORD CATCH ERROR ===");
-      console.error("Error:", error);
-      setMessage("Có lỗi kết nối. Vui lòng thử lại.");
+      console.error("=== CHANGE PASSWORD CATCH ERROR ===", error);
+
+      let errorMessage = "Có lỗi kết nối. Vui lòng thử lại.";
+
+      if (error && typeof error === "object") {
+        errorMessage = error.message || error.Message || errorMessage;
+      }
+
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -1144,72 +1218,112 @@ const UserProfile = (props) => {
           </form>
         )}
 
-        {/* Password Tab */}
+        {/* 🎯 Password Tab - FINAL VERSION */}
         {activeTab === "password" && (
-          <form className="user-profile__form" onSubmit={handleChangePassword}>
-            <div className="user-profile__form-group">
-              <label>
-                <i className="fas fa-lock"></i>
-                Mật khẩu cũ *
-              </label>
-              <input
-                type="password"
-                name="oldPassword"
-                value={passwordData.oldPassword}
-                onChange={handlePasswordChange}
-                className={errors.oldPassword ? "error" : ""}
-                placeholder="Nhập mật khẩu cũ"
-              />
-              {errors.oldPassword && (
-                <span className="error-text">{errors.oldPassword}</span>
-              )}
-            </div>
+          <div className="user-profile__password-section">
+            {/* Loading state */}
+            {!passwordStatus && (
+              <div className="password-status-loading">
+                <div className="loading-spinner"></div>
+                <p>Đang kiểm tra trạng thái mật khẩu...</p>
+              </div>
+            )}
 
-            <div className="user-profile__form-group">
-              <label>
-                <i className="fas fa-key"></i>
-                Mật khẩu mới *
-              </label>
-              <input
-                type="password"
-                name="newPassword"
-                value={passwordData.newPassword}
-                onChange={handlePasswordChange}
-                className={errors.newPassword ? "error" : ""}
-                placeholder="Nhập mật khẩu mới"
-              />
-              {errors.newPassword && (
-                <span className="error-text">{errors.newPassword}</span>
-              )}
-            </div>
+            {/* Password Form */}
+            {passwordStatus && (
+              <form
+                className="user-profile__form"
+                onSubmit={handleChangePassword}
+              >
+                {/* 🎯 Old Password - CHỈ hiển thị khi RequireOldPassword = true */}
+                {passwordStatus.RequireOldPassword && (
+                  <div className="user-profile__form-group">
+                    <label>
+                      <i className="fas fa-lock"></i>
+                      Mật khẩu cũ *
+                    </label>
+                    <input
+                      type="password"
+                      name="oldPassword"
+                      value={passwordData.oldPassword}
+                      onChange={handlePasswordChange}
+                      className={errors.oldPassword ? "error" : ""}
+                      placeholder="Nhập mật khẩu hiện tại"
+                      autoComplete="current-password"
+                    />
+                    {errors.oldPassword && (
+                      <span className="error-text">{errors.oldPassword}</span>
+                    )}
+                  </div>
+                )}
 
-            <div className="user-profile__form-group">
-              <label>
-                <i className="fas fa-shield-alt"></i>
-                Xác nhận mật khẩu mới *
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={passwordData.confirmPassword}
-                onChange={handlePasswordChange}
-                className={errors.confirmPassword ? "error" : ""}
-                placeholder="Xác nhận mật khẩu mới"
-              />
-              {errors.confirmPassword && (
-                <span className="error-text">{errors.confirmPassword}</span>
-              )}
-            </div>
+                {/* 🎯 Notice cho first-time setup */}
+                {!passwordStatus.RequireOldPassword && (
+                  <div className="password-setup-notice">
+                    <i className="fas fa-info-circle"></i>
+                    <span>Thiết lập mật khẩu lần đầu</span>
+                  </div>
+                )}
 
-            <button
-              type="submit"
-              className="user-profile__submit-btn"
-              disabled={loading}
-            >
-              {loading && <span className="loading-spinner"></span>}
-              {loading ? "Đang đổi mật khẩu..." : "Đổi mật khẩu"}
-            </button>
-          </form>
+                <div className="user-profile__form-group">
+                  <label>
+                    <i className="fas fa-key"></i>
+                    {passwordStatus.RequireOldPassword
+                      ? "Mật khẩu mới *"
+                      : "Mật khẩu *"}
+                  </label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    className={errors.newPassword ? "error" : ""}
+                    placeholder={
+                      passwordStatus.RequireOldPassword
+                        ? "Nhập mật khẩu mới (ít nhất 8 ký tự)"
+                        : "Nhập mật khẩu (ít nhất 8 ký tự)"
+                    }
+                    autoComplete="new-password"
+                  />
+                  {errors.newPassword && (
+                    <span className="error-text">{errors.newPassword}</span>
+                  )}
+                </div>
+
+                <div className="user-profile__form-group">
+                  <label>
+                    <i className="fas fa-shield-alt"></i>
+                    Xác nhận mật khẩu *
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    className={errors.confirmPassword ? "error" : ""}
+                    placeholder="Nhập lại mật khẩu"
+                    autoComplete="new-password"
+                  />
+                  {errors.confirmPassword && (
+                    <span className="error-text">{errors.confirmPassword}</span>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="user-profile__submit-btn"
+                  disabled={loading}
+                >
+                  {loading && <span className="loading-spinner"></span>}
+                  {loading
+                    ? "Đang xử lý..."
+                    : passwordStatus.RequireOldPassword
+                    ? "Đổi mật khẩu"
+                    : "Thiết lập mật khẩu"}
+                </button>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </div>
