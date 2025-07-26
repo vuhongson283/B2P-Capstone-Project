@@ -8,8 +8,20 @@ const getAllCourtCategories = (search, pageNumber, pageSize) => {
   );
 };
 
-const addCourtCategory = (categoryData) => {
-  return axios.post("CourtCategory/add-court-category", categoryData);
+// Add court category - Updated to match new API
+const addCourtCategory = async (categoryName) => {
+  try {
+    // Send as URL parameter instead of request body
+    const response = await axios.post(
+      `CourtCategory/add-court-category?cateName=${encodeURIComponent(
+        categoryName
+      )}`
+    );
+    return response;
+  } catch (error) {
+    console.error("Error adding court category:", error);
+    throw error;
+  }
 };
 
 const updateCourtCategory = (categoryData) => {
