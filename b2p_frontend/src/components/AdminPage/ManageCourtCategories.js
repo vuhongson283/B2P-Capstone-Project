@@ -170,38 +170,51 @@ const ManageCourtCategories = () => {
     form.resetFields();
   };
 
-  // Handle form submission
+  // Handle form submission - UPDATED
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       setConfirmLoading(true);
 
-      const submitData = {
-        categoryName: values.categoryName.trim(),
-      };
+      const categoryName = values.categoryName.trim();
 
       let response;
 
       if (modalType === "add") {
-        response = await addCourtCategory(submitData);
+        // 🔧 UPDATED: Pass only categoryName string instead of object
+        response = await addCourtCategory(categoryName);
       } else if (modalType === "edit") {
+        // Keep existing update logic (assuming this API still expects object)
         response = await updateCourtCategory({
           categoryId: selectedCategory.categoryId,
-          ...submitData,
+          categoryName: categoryName,
         });
       }
 
       if (response && response.success) {
-        message.success(
-          response.message ||
-            (modalType === "add"
-              ? "Thêm thể loại sân thành công!"
-              : "Cập nhật thể loại sân thành công!")
-        );
+        message.success({
+          content: (
+            <span>
+              {modalType === "add" ? (
+                <PlusOutlined style={{ color: "#52c41a", marginRight: 8 }} />
+              ) : (
+                <EditOutlined style={{ color: "#52c41a", marginRight: 8 }} />
+              )}
+              {response.message ||
+                (modalType === "add"
+                  ? "Thêm thể loại sân thành công!"
+                  : "Cập nhật thể loại sân thành công!")}
+            </span>
+          ),
+          duration: 3,
+        });
         closeModal();
         fetchCategories();
       } else {
-        message.error(response?.message || "Có lỗi xảy ra, vui lòng thử lại");
+        message.error({
+          content: response?.message || "Có lỗi xảy ra, vui lòng thử lại",
+          duration: 4,
+        });
       }
     } catch (error) {
       if (error.errorFields) {
@@ -212,11 +225,20 @@ const ManageCourtCategories = () => {
       console.error("Error submitting form:", error);
 
       if (error.response?.data?.message) {
-        message.error(error.response.data.message);
+        message.error({
+          content: error.response.data.message,
+          duration: 4,
+        });
       } else if (error.message?.includes("timeout")) {
-        message.error("Yêu cầu đã hết thời gian chờ. Vui lòng thử lại.");
+        message.error({
+          content: "Yêu cầu đã hết thời gian chờ. Vui lòng thử lại.",
+          duration: 4,
+        });
       } else {
-        message.error("Có lỗi xảy ra khi xử lý yêu cầu");
+        message.error({
+          content: "Có lỗi xảy ra khi xử lý yêu cầu",
+          duration: 4,
+        });
       }
     } finally {
       setConfirmLoading(false);
@@ -421,12 +443,19 @@ const ManageCourtCategories = () => {
               <Input.Search
                 placeholder="Tìm kiếm theo tên thể loại..."
                 allowClear
-                enterButton={<SearchOutlined />}
+                enterButton={
+                  <SearchOutlined
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "16px",
+                    }}
+                  />
+                }
                 size="large"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 onSearch={handleSearch}
-                className="search-input"
+                className="search-input enhanced-search"
               />
             </Col>
             <Col xs={24} sm={24} md={12} className="stats-section">
@@ -516,7 +545,6 @@ const ManageCourtCategories = () => {
             name="categoryName"
             rules={[
               { required: true, message: "Vui lòng nhập tên thể loại sân!" },
-              { min: 2, message: "Tên thể loại phải có ít nhất 2 ký tự!" },
               {
                 max: 100,
                 message: "Tên thể loại không được vượt quá 100 ký tự!",
