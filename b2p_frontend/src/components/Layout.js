@@ -5,10 +5,12 @@ import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
-import CourtOwner from "./CourtOwnerPage/CourtOwner"; // Assuming you have a CourtOwner component
+import CourtOwner from "./CourtOwnerPage/CourtOwner"; 
 import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
+import FacilityTable from "./CourtOwnerPage/FacilityTable";
+
 const Layout = (props) => {
   return (
     <>
@@ -22,8 +24,9 @@ const Layout = (props) => {
         <Route path="/court-owner" element={<CourtOwner />}>
           <Route
             path="/court-owner/search"
-            element={<FacilitiesWithCondition />}
+            element={<FacilitiesWithCondition />}  
           />
+          <Route path="facility/general" element={<FacilityTable />} />
         </Route>
 
         <Route path="/admin" element={<Admin />}>

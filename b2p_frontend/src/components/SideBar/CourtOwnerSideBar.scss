@@ -606,12 +606,10 @@
 
 @media (max-width: 768px) {
     .court-owner-sidebar {
-        transform: translateX(-100%);
-        width: 260px;
+        
+        width: 280px;  // Đảm bảo width cố định
 
-        &.mobile-open {
-            transform: translateX(0);
-        }
+       
     }
 }
 

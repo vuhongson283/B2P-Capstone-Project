@@ -11,7 +11,8 @@
         Task<bool> DeleteAsync(int id);
         Task<List<Facility>> GetByUserIdAsync(int userId);
         Task<Facility> UpdateAsync(Facility facility);
-       
+        Task<bool> HasActiveBookingsAsync(int facilityId);
+        Task<bool> DeleteCascadeAsync(int facilityId);
 
 
     }

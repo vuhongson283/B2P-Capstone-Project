@@ -17,6 +17,7 @@ const CourtOwnerSideBar = ({
     email: "owner@example.com",
     phone: "0987654321",
     avatar: "",
+    role: "Court Owner"
   });
   const navigate = useNavigate();
 
@@ -128,7 +129,7 @@ const CourtOwnerSideBar = ({
         <div className="user-details">
           <h3 className="user-name">{userInfo.fullName}</h3>
           <div className="user-role">
-            <i className="fas fa-user-tie"></i>
+            <i className="fas fa-crown"></i>
             <span>{userInfo.role}</span>
           </div>
           <div className="user-contact">

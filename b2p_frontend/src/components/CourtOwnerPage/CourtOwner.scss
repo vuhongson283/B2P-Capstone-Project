@@ -54,28 +54,23 @@
     .court-owner-container {
         .court-owner-sidebar {
             position: fixed;
-            left: -280px;
+            left: 0;  // Thay đổi thành 0
             top: 0;
             bottom: 0;
             z-index: 1000;
+            width: 280px;  // Đảm bảo width cố định
+            transform: translateX(-100%);  // Ẩn hoàn toàn
             transition: transform 0.3s ease;
 
             &.sidebar-open {
-                transform: translateX(280px);
+                transform: translateX(0);  // Hiện hoàn toàn
+                width: 280px;
             }
         }
 
         .court-owner-main {
             margin-left: 0;
         }
-    }
-
-    .mobile-overlay {
-        display: none;
-    }
-
-    .mobile-menu-toggle {
-        display: block;
     }
 }
 
