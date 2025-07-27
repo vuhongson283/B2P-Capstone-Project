@@ -10,13 +10,15 @@ import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 import FacilityTable from "./CourtOwnerPage/FacilityTable";
-
+import SliderManagement from "./AdminPage/SliderManagement";
+import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister"
 const Layout = (props) => {
   return (
     <>
       <Routes>
         <Route path="/" element={<App />}>
           <Route path="/search" element={<FacilitiesWithCondition />} />
+          <Route path="/courtowner-register" element={<CourtOwnerRegister />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
@@ -31,6 +33,7 @@ const Layout = (props) => {
 
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
+          <Route path="sliders" element={< SliderManagement />} />
           <Route
             path="manage-court-categories"
             element={<ManageCourtCategories />}

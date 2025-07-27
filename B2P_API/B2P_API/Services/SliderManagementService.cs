@@ -89,7 +89,8 @@ namespace B2P_API.Services
 				SlideDescription = slider.SlideDescription,
 				StatusId = slider.StatusId,
 				StatusName = slider.Status?.StatusName,
-				ImageUrl = slider.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl
+				ImageUrl = slider.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl,
+				ImageId = slider.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageId
 			};
 
 			return new ApiResponse<GetSliderByIdResponse>
