@@ -562,12 +562,11 @@ const PartnerRegistration = () => {
 
                             {/* Success Message */}
                             <h3 className="success-title">
-                                Đăng ký thành công! 🎉
+                                Đăng ký thành công
                             </h3>
                             <p className="success-message">
                                 Cảm ơn bạn đã đăng ký làm đối tác với Book2Play.
-                                Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất để
-                                hoàn tất quá trình đăng ký.
+                                Vui lòng hoàn thành đủ thông tin trong quản lý tài khoản để hoàn tất quá trình trở thành Chủ Sân
                             </p>
 
                             {/* Action Buttons */}
