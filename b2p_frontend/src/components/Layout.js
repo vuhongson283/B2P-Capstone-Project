@@ -10,12 +10,14 @@ import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 import SliderManagement from "./AdminPage/SliderManagement";
+import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister"
 const Layout = (props) => {
   return (
     <>
       <Routes>
         <Route path="/" element={<App />}>
           <Route path="/search" element={<FacilitiesWithCondition />} />
+          <Route path="/courtowner-register" element={<CourtOwnerRegister />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>

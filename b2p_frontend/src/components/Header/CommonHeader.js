@@ -97,7 +97,7 @@ const CommonHeader = (props) => {
             <span className="separator mx-2">|</span>
 
             <NavLink
-              to="/danh-cho-doi-tac"
+              to="/courtowner-register"
               className={({ isActive }) =>
                 `nav-link px-3 ${isActive ? "active" : ""}`
               }
@@ -109,9 +109,8 @@ const CommonHeader = (props) => {
 
             {/* 🎯 Bóng đá - Category ID: 1 */}
             <button
-              className={`nav-link px-3 btn-sport-link ${
-                isSportActive(1) ? "active" : ""
-              }`}
+              className={`nav-link px-3 btn-sport-link ${isSportActive(1) ? "active" : ""
+                }`}
               onClick={() => handleSportNavigation(1, "bong-da")}
               type="button"
             >
@@ -123,9 +122,8 @@ const CommonHeader = (props) => {
 
             {/* 🎯 Cầu lông - Category ID: 2 */}
             <button
-              className={`nav-link px-3 btn-sport-link ${
-                isSportActive(2) ? "active" : ""
-              }`}
+              className={`nav-link px-3 btn-sport-link ${isSportActive(2) ? "active" : ""
+                }`}
               onClick={() => handleSportNavigation(2, "cau-long")}
               type="button"
             >
@@ -137,9 +135,8 @@ const CommonHeader = (props) => {
 
             {/* 🎯 Pickleball - Category ID: 3 */}
             <button
-              className={`nav-link px-3 btn-sport-link ${
-                isSportActive(3) ? "active" : ""
-              }`}
+              className={`nav-link px-3 btn-sport-link ${isSportActive(3) ? "active" : ""
+                }`}
               onClick={() => handleSportNavigation(3, "pickleball")}
               type="button"
             >
