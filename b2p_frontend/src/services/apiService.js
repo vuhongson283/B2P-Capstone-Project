@@ -40,6 +40,133 @@ const deleteCourtCategory = (categoryId) => {
   );
 };
 
+// ===============================
+// 📝 BLOG MANAGEMENT APIs
+// ===============================
+
+// Get all blogs with query parameters
+const getAllBlogs = (queryParams = {}) => {
+  const {
+    search = "",
+    page = 1,
+    pageSize = 10,
+    sortBy = "postAt",
+    sortDirection = "desc",
+  } = queryParams;
+
+  return axios.get("Blog", {
+    params: {
+      Search: search,
+      Page: page,
+      PageSize: pageSize,
+      SortBy: sortBy,
+      SortDirection: sortDirection,
+    },
+  });
+};
+
+// Get blog by ID
+const getBlogById = (blogId) => {
+  return axios.get(`Blog/${blogId}`);
+};
+
+// Create new blog
+const createBlog = (blogData) => {
+  return axios.post("Blog", blogData);
+};
+
+// Update blog
+const updateBlog = (blogId, blogData) => {
+  return axios.put(`Blog/${blogId}`, blogData);
+};
+
+// Delete blog
+const deleteBlog = (blogId, userId) => {
+  return axios.delete(`Blog/${blogId}?userId=${userId}`);
+};
+
+// Get blogs by user ID
+const getBlogsByUserId = (userId, queryParams = {}) => {
+  const {
+    search = "",
+    page = 1,
+    pageSize = 10,
+    sortBy = "postAt",
+    sortDirection = "desc",
+  } = queryParams;
+
+  return axios.get(`Blog/user/${userId}`, {
+    params: {
+      Search: search,
+      Page: page,
+      PageSize: pageSize,
+      SortBy: sortBy,
+      SortDirection: sortDirection,
+    },
+  });
+};
+
+// ===============================
+// 💬 COMMENT MANAGEMENT APIs
+// ===============================
+
+// Get all comments with query parameters
+const getAllComments = (queryParams = {}) => {
+  const {
+    search = "",
+    page = 1,
+    pageSize = 10,
+    sortBy = "postAt",
+    sortDirection = "desc",
+  } = queryParams;
+
+  return axios.get("Comment", {
+    params: {
+      Search: search,
+      Page: page,
+      PageSize: pageSize,
+      SortBy: sortBy,
+      SortDirection: sortDirection,
+    },
+  });
+};
+
+// Create new comment
+const createComment = (commentData) => {
+  return axios.post("Comment", commentData);
+};
+
+// Update comment
+const updateComment = (commentId, commentData) => {
+  return axios.put(`Comment/${commentId}`, commentData);
+};
+
+// Delete comment
+const deleteComment = (commentId, userId, roleId) => {
+  return axios.delete(`Comment/${commentId}?userId=${userId}&roleId=${roleId}`);
+};
+
+// Get comments by user ID
+const getCommentsByUserId = (userId, queryParams = {}) => {
+  const {
+    search = "",
+    page = 1,
+    pageSize = 10,
+    sortBy = "postAt",
+    sortDirection = "desc",
+  } = queryParams;
+
+  return axios.get(`Comment/user/${userId}`, {
+    params: {
+      Search: search,
+      Page: page,
+      PageSize: pageSize,
+      SortBy: sortBy,
+      SortDirection: sortDirection,
+    },
+  });
+};
+
 // Slider Management APIs
 const getAllActiveSliders = (pageNumber, pageSize) => {
   return axios.get(
@@ -184,7 +311,61 @@ const resetPasswordBySms = (
 const resendOtpBySms = (phoneNumber) => {
   return axios.post("User/resend-otp-by-sms", { phoneNumber });
 };
+// ===============================
+// 🖼️ IMAGE MANAGEMENT APIs
+// ===============================
 
+// Upload image for blog
+const uploadBlogImage = (file, blogId, caption = null) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("entityId", blogId.toString());
+
+  if (caption) {
+    formData.append("caption", caption);
+  }
+
+  return axios.post("Image/upload-blog", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 30000,
+  });
+};
+
+// Get blog images
+const getBlogImages = (blogId) => {
+  return axios.get(`Image/blog/${blogId}`);
+};
+
+// Delete image
+const deleteImage = (imageId) => {
+  return axios.delete(`Image/${imageId}`);
+};
+
+// Update image
+const updateImage = (imageId, file = null, order = null, caption = null) => {
+  const formData = new FormData();
+
+  if (file) {
+    formData.append("file", file);
+  }
+
+  if (order !== null) {
+    formData.append("order", order.toString());
+  }
+
+  if (caption) {
+    formData.append("caption", caption);
+  }
+
+  return axios.put(`Image/update-image/${imageId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 30000,
+  });
+};
 // Export all functions
 export {
   // Account Management
@@ -200,6 +381,21 @@ export {
   updateCourtCategory,
   getCourtCategoryById,
   deleteCourtCategory,
+
+  // 📝 Blog Management
+  getAllBlogs,
+  getBlogById,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  getBlogsByUserId,
+
+  // 💬 Comment Management
+  getAllComments,
+  createComment,
+  updateComment,
+  deleteComment,
+  getCommentsByUserId,
 
   // Slider Management
   getAllActiveSliders,
@@ -228,4 +424,9 @@ export {
   forgotPasswordBySms,
   resetPasswordBySms,
   resendOtpBySms,
+  // 🖼️ Image Management
+  uploadBlogImage,
+  getBlogImages,
+  deleteImage,
+  updateImage,
 };

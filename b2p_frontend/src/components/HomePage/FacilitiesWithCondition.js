@@ -63,7 +63,7 @@ const FacilitiesWithCondition = () => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
 
-  const pageSize = 1;
+  const pageSize = 6;
 
   // Ref to track initial search
   const initialSearchDone = useRef(false);

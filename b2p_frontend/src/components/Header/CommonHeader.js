@@ -107,6 +107,19 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
+            {/* 🎯 Thêm link Blog */}
+            <NavLink
+              to="/blog"
+              className={({ isActive }) =>
+                `nav-link px-3 ${isActive ? "active" : ""}`
+              }
+            >
+              <i className="fas fa-newspaper me-1"></i>
+              <span className="nav-text">Blog</span>
+            </NavLink>
+
+            <span className="separator mx-2">|</span>
+
             {/* 🎯 Bóng đá - Category ID: 1 */}
             <button
               className={`nav-link px-3 btn-sport-link ${
@@ -161,7 +174,6 @@ const CommonHeader = (props) => {
               <span className="nav-text">Khu vực</span>
             </NavLink>
           </Nav>
-
           <Nav className="ms-auto align-items-center auth-buttons">
             <button
               className="btn-login btn me-2"

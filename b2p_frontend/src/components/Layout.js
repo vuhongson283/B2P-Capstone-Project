@@ -9,6 +9,7 @@ import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner compone
 import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
+import Blog from "./Common/Blog";
 const Layout = (props) => {
   return (
     <>
@@ -17,6 +18,7 @@ const Layout = (props) => {
           <Route path="/search" element={<FacilitiesWithCondition />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/blog" element={<Blog />} />
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
