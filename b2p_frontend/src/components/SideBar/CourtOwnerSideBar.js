@@ -2,15 +2,22 @@ import React, { useState, useEffect } from "react";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
 
-const CourtOwnerSideBar = (props) => {
+const CourtOwnerSideBar = ({
+  onClose,
+  isMobile,
+  isTablet,
+  isOpen,
+  collapsed,
+  onToggleCollapse,
+}) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [userInfo, setUserInfo] = useState({
     fullName: "Nguyễn Văn A",
     email: "owner@example.com",
     phone: "0987654321",
-    avatar: "", // URL to avatar image
+    avatar: "",
+    role: "Court Owner"
   });
   const navigate = useNavigate();
 
@@ -105,16 +112,24 @@ const CourtOwnerSideBar = (props) => {
     if (path) {
       navigate(path);
     }
+    // Close mobile sidebar after navigation
+    if (isMobile && onClose) {
+      onClose();
+    }
   };
 
-  // Toggle sidebar collapse
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+  // Handle logout
+  const handleLogout = () => {
+    // Add logout logic here
+    navigate("/login");
+    if (isMobile && onClose) {
+      onClose();
+    }
   };
 
   // Generate avatar initials
   const getAvatarInitials = (fullName) => {
-    if (!fullName) return "U";
+    if (!fullName) return "CO";
     return fullName
       .split(" ")
       .map((name) => name.charAt(0))
@@ -134,11 +149,16 @@ const CourtOwnerSideBar = (props) => {
             {getAvatarInitials(userInfo.fullName)}
           </div>
         )}
+        <div className="online-indicator"></div>
       </div>
 
-      {!isCollapsed && (
+      {(!collapsed || isMobile) && (
         <div className="user-details">
           <h3 className="user-name">{userInfo.fullName}</h3>
+          <div className="user-role">
+            <i className="fas fa-crown"></i>
+            <span>{userInfo.role}</span>
+          </div>
           <div className="user-contact">
             <div className="contact-item">
               <i className="fas fa-envelope"></i>
@@ -174,11 +194,15 @@ const CourtOwnerSideBar = (props) => {
           }}
         >
           <div className="menu-content">
-            <i className={item.icon}></i>
-            {!isCollapsed && <span className="menu-title">{item.title}</span>}
+            <div className="menu-icon-wrapper">
+              <i className={item.icon}></i>
+            </div>
+            {(!collapsed || isMobile) && (
+              <span className="menu-title">{item.title}</span>
+            )}
           </div>
 
-          {item.hasSubmenu && !isCollapsed && (
+          {item.hasSubmenu && (!collapsed || isMobile) && (
             <i
               className={`fas fa-chevron-down submenu-arrow ${
                 isExpanded ? "expanded" : ""
@@ -188,7 +212,7 @@ const CourtOwnerSideBar = (props) => {
         </div>
 
         {/* Render submenu */}
-        {item.hasSubmenu && isExpanded && !isCollapsed && (
+        {item.hasSubmenu && isExpanded && (!collapsed || isMobile) && (
           <div className="submenu">
             {item.isDynamic
               ? renderDynamicSubmenu()
@@ -199,7 +223,7 @@ const CourtOwnerSideBar = (props) => {
     );
   };
 
-  // Render static submenu (for facility management)
+  // Render static submenu
   const renderStaticSubmenu = (submenuItems) => {
     return submenuItems.map((subItem) => (
       <div
@@ -207,15 +231,17 @@ const CourtOwnerSideBar = (props) => {
         className={`submenu-item ${activeMenu === subItem.id ? "active" : ""}`}
         onClick={() => handleMenuClick(subItem.id, subItem.path)}
       >
-        <i className={subItem.icon}></i>
+        <div className="submenu-icon-wrapper">
+          <i className={subItem.icon}></i>
+        </div>
         <span>{subItem.title}</span>
       </div>
     ));
   };
 
+
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
 
-  // Render dynamic submenu (for court management - list of facilities)
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (
       <div
@@ -228,7 +254,9 @@ const CourtOwnerSideBar = (props) => {
           setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
         }}
       >
-        <i className="fas fa-map-marker-alt"></i>
+        <div className="submenu-icon-wrapper">
+          <i className="fas fa-map-marker-alt"></i>
+        </div>
         <div className="facility-info">
           <span className="facility-name">{facility.name}</span>
           <span className="facility-location">{facility.location}</span>
@@ -237,13 +265,64 @@ const CourtOwnerSideBar = (props) => {
     ));
   };
 
+  // Generate sidebar classes
+  const getSidebarClasses = () => {
+    const classes = ["court-owner-sidebar"];
+
+    if (collapsed && !isMobile) {
+      classes.push("collapsed");
+    }
+
+    if (isMobile && isOpen) {
+      classes.push("mobile-open");
+    }
+
+    return classes.join(" ");
+  };
+
   return (
-    <div className={`court-owner-sidebar ${isCollapsed ? "collapsed" : ""}`}>
-      {/* Header */}
+    <div className={getSidebarClasses()}>
+      {/* Header with Toggle Button */}
       <div className="sidebar__header">
         <div className="logo-section">
-          <i className="fas fa-crown logo-icon"></i>
-          {!isCollapsed && <span className="logo-text">Court Owner</span>}
+          <div className="logo-icon-wrapper">
+            <i className="fas fa-crown logo-icon"></i>
+          </div>
+          {(!collapsed || isMobile) && (
+            <div className="logo-text-wrapper">
+              <span className="logo-text">Court Owner</span>
+              <span className="logo-subtitle">Book2Play</span>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle/Close Button */}
+        <div className="header-controls">
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              className="collapse-btn mobile-close"
+              onClick={onClose}
+              title="Đóng menu"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+
+          {/* Toggle button for desktop/tablet */}
+          {!isMobile && onToggleCollapse && (
+            <button
+              className="collapse-btn desktop-toggle"
+              onClick={onToggleCollapse}
+              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            >
+              <i
+                className={`fas ${
+                  collapsed ? "fa-angle-right" : "fa-angle-left"
+                }`}
+              ></i>
+            </button>
+          )}
         </div>
       </div>
 
@@ -257,10 +336,18 @@ const CourtOwnerSideBar = (props) => {
 
       {/* Footer */}
       <div className="sidebar__footer">
-        <div className="footer-item logout-btn">
-          <i className="fas fa-sign-out-alt"></i>
-          {!isCollapsed && <span>Đăng xuất</span>}
+        <div className="footer-item logout-btn" onClick={handleLogout}>
+          <div className="footer-icon-wrapper">
+            <i className="fas fa-sign-out-alt"></i>
+          </div>
+          {(!collapsed || isMobile) && <span>Đăng xuất</span>}
         </div>
+
+        {(!collapsed || isMobile) && (
+          <div className="sidebar-version">
+            <span>v1.0.0</span>
+          </div>
+        )}
       </div>
     </div>
   );

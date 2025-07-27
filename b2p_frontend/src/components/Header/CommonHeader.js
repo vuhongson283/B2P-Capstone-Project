@@ -2,12 +2,68 @@ import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import logo from "../../assets/images/logo3.png";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { GiShuttlecock } from "react-icons/gi";
+import { useDispatch, useSelector } from "react-redux";
+import { setSearchFacility } from "../../store/action/searchFacilityAction";
+import { useState, useEffect } from "react";
 import "./CommonHeader.scss";
 
 const CommonHeader = (props) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const searchFacility = useSelector((state) => state.searchFacility);
+
+  // 🎯 Track active sport category
+  const [activeSportCategory, setActiveSportCategory] = useState(null);
+
+  // 🎯 Update active sport category based on location and Redux state
+  useEffect(() => {
+    if (location.pathname === "/search" && searchFacility?.categoryId) {
+      setActiveSportCategory(parseInt(searchFacility.categoryId));
+    } else {
+      setActiveSportCategory(null);
+    }
+  }, [location.pathname, searchFacility?.categoryId]);
+
+  // 🎯 Handle sport category navigation
+  const handleSportNavigation = (categoryId, sportName) => {
+    console.log(`Navigating to ${sportName} with category ID: ${categoryId}`);
+
+    // Set active sport category immediately for UI feedback
+    setActiveSportCategory(categoryId);
+
+    // Set search facility with selected category
+    dispatch(
+      setSearchFacility({
+        searchText: "",
+        categoryId: categoryId,
+        province: "",
+        district: "",
+        // Add timestamp to force re-render
+        timestamp: Date.now(),
+      })
+    );
+
+    // Check if already on search page
+    if (location.pathname === "/search") {
+      // If already on search page, navigate with query params to force refresh
+      navigate(
+        `/search?category=${categoryId}&sport=${sportName}&t=${Date.now()}`
+      );
+    } else {
+      // Navigate to search page normally
+      navigate("/search");
+    }
+  };
+
+  // 🎯 Check if sport category is active
+  const isSportActive = (categoryId) => {
+    return (
+      location.pathname === "/search" && activeSportCategory === categoryId
+    );
+  };
 
   return (
     <Navbar
@@ -41,7 +97,7 @@ const CommonHeader = (props) => {
             <span className="separator mx-2">|</span>
 
             <NavLink
-              to="/danh-cho-doi-tac"
+              to="/courtowner-register"
               className={({ isActive }) =>
                 `nav-link px-3 ${isActive ? "active" : ""}`
               }
@@ -51,47 +107,52 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            <NavLink
-              to="/bong-da"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? "active" : ""}`
-              }
+            {/* 🎯 Bóng đá - Category ID: 1 */}
+            <button
+              className={`nav-link px-3 btn-sport-link ${isSportActive(1) ? "active" : ""
+                }`}
+              onClick={() => handleSportNavigation(1, "bong-da")}
+              type="button"
             >
               <i className="fas fa-futbol me-1"></i>
               <span className="nav-text">Bóng đá</span>
-            </NavLink>
+            </button>
 
             <span className="separator mx-2">|</span>
 
-            <NavLink
-              to="/cau-long"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? "active" : ""}`
-              }
+            {/* 🎯 Cầu lông - Category ID: 2 */}
+            <button
+              className={`nav-link px-3 btn-sport-link ${isSportActive(2) ? "active" : ""
+                }`}
+              onClick={() => handleSportNavigation(2, "cau-long")}
+              type="button"
             >
               <GiShuttlecock className="me-1" />
               <span className="nav-text">Cầu lông</span>
-            </NavLink>
+            </button>
 
             <span className="separator mx-2">|</span>
 
-            <NavLink
-              to="/pickleball"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? "active" : ""}`
-              }
+            {/* 🎯 Pickleball - Category ID: 3 */}
+            <button
+              className={`nav-link px-3 btn-sport-link ${isSportActive(3) ? "active" : ""
+                }`}
+              onClick={() => handleSportNavigation(3, "pickleball")}
+              type="button"
             >
               <i className="fas fa-table-tennis me-1"></i>
               <span className="nav-text">Pickleball</span>
-            </NavLink>
+            </button>
 
             <span className="separator mx-2">|</span>
 
             <NavLink
-              to="/khu-vuc"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? "active" : ""}`
-              }
+              to="/search"
+              className={({ isActive }) => {
+                // 🎯 Khu vực is active only if no specific sport category is selected
+                const isKhuVucActive = isActive && !activeSportCategory;
+                return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
+              }}
             >
               <i className="fas fa-map-marker-alt me-1"></i>
               <span className="nav-text">Khu vực</span>

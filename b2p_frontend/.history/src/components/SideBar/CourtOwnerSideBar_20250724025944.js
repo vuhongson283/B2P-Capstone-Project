@@ -135,9 +135,8 @@ const CourtOwnerSideBar = (props) => {
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${
-            item.hasSubmenu ? "has-submenu" : ""
-          }`}
+          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
+            }`}
           onClick={() => {
             if (item.hasSubmenu) {
               toggleMenu(item.id);
@@ -153,9 +152,8 @@ const CourtOwnerSideBar = (props) => {
 
           {item.hasSubmenu && !isCollapsed && (
             <i
-              className={`fas fa-chevron-down submenu-arrow ${
-                isExpanded ? "expanded" : ""
-              }`}
+              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
+                }`}
             ></i>
           )}
         </div>
@@ -191,9 +189,8 @@ const CourtOwnerSideBar = (props) => {
     return facilities.map((facility) => (
       <div
         key={`facility-${facility.id}`}
-        className={`submenu-item ${
-          activeMenu === `facility-${facility.id}` ? "active" : ""
-        }`}
+        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
+          }`}
         onClick={() =>
           handleMenuClick(
             `facility-${facility.id}`,
@@ -215,8 +212,47 @@ const CourtOwnerSideBar = (props) => {
       {/* Header */}
       <div className="sidebar__header">
         <div className="logo-section">
+
           <i className="fas fa-crown logo-icon"></i>
           {!isCollapsed && <span className="logo-text">Court Owner</span>}
+
+          <div className="logo-icon-wrapper">
+            <i className="fas fa-tools logo-icon"></i>
+          </div>
+          {(!collapsed || isMobile) && (
+            <div className="logo-text-wrapper">
+              <span className="logo-text">Admin Panel</span>
+              <span className="logo-subtitle">Book2Play</span>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle/Close Button */}
+        <div className="header-controls">
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              className="collapse-btn mobile-close"
+              onClick={onClose}
+              title="Đóng menu"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+
+          {/* Toggle button for desktop/tablet */}
+          {!isMobile && onToggleCollapse && (
+            <button
+              className="collapse-btn desktop-toggle"
+              onClick={onToggleCollapse}
+              title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
+            >
+              <i
+                className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"
+                  }`}
+              ></i>
+            </button>
+          )}
         </div>
       </div>
 

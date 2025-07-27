@@ -5,16 +5,22 @@ import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
-import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner component
-import DashboardField from "./CourtOwner/CourtOwnerDashboard";
-import CourtManagement from "./CourtOwner/CourtManagement";
-
+import CourtOwner from "./CourtOwnerPage/CourtOwner"; 
+import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
+import CourtManagement from "./CourtOwnerPage/CourtManagement";
+import Admin from "./AdminPage/Admin";
+import AccountTable from "./AdminPage/AccountTable";
+import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
+import FacilityTable from "./CourtOwnerPage/FacilityTable";
+import SliderManagement from "./AdminPage/SliderManagement";
+import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister"
 const Layout = (props) => {
   return (
     <>
       <Routes>
         <Route path="/" element={<App />}>
           <Route path="/search" element={<FacilitiesWithCondition />} />
+          <Route path="/courtowner-register" element={<CourtOwnerRegister />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
@@ -23,12 +29,23 @@ const Layout = (props) => {
         <Route index element={<DashboardField />} />
           <Route
             path="/court-owner/search"
-            element={<FacilitiesWithCondition />}
+            element={<FacilitiesWithCondition />}  
           />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
+          <Route path="facility/general" element={<FacilityTable />} />
+        </Route>
+
+        <Route path="/admin" element={<Admin />}>
+          <Route path="accounts" element={<AccountTable />} />
+          <Route path="sliders" element={< SliderManagement />} />
+          <Route
+            path="manage-court-categories"
+            element={<ManageCourtCategories />}
+          />
         </Route>
       </Routes>
 
+      
       <ToastContainer
         position="top-right"
         autoClose={5000}

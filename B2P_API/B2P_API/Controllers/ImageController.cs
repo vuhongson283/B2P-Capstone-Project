@@ -22,28 +22,34 @@ namespace B2P_API.Controllers
 
         [HttpPost("upload-facility")]
         public async Task<IActionResult> UploadImageFacility(
-            IFormFile file,
+            List<IFormFile> files,
             [FromForm] int entityId,
             [FromForm] string? caption = null)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest(new { message = "No file uploaded" });
+            if (files == null || files.Count == 0)
+                return BadRequest(new { message = "No files uploaded" });
 
-            if (!IsValidImageFile(file))
-                return BadRequest(new { message = "Invalid image format" });
+            foreach (var file in files)
+            {
+                if (!IsValidImageFile(file))
+                    return BadRequest(new { message = $"Invalid image format: {file.FileName}" });
+            }
+
+            var uploadResults = new List<ImageUploadResponse>();
 
             try
             {
-                var result = await _imageService.UploadImageAsync(file, "facility", entityId, caption);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
+                foreach (var file in files)
+                {
+                    var result = await _imageService.UploadImageAsync(file, "facility", entityId, caption);
+                    uploadResults.Add(result);
+                }
+
+                return Ok(uploadResults);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading image");
+                _logger.LogError(ex, "Error uploading one or more images");
                 return StatusCode(500, new { message = "Upload failed" });
             }
         }

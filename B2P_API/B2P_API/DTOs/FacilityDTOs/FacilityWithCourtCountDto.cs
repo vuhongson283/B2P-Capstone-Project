@@ -7,6 +7,7 @@
     {
         public int FacilityId { get; set; }
         public string FacilityName { get; set; }
+        public string Location { get; set; }
         public StatusDto Status { get; set; } // ✅ đúng kiểu
         public ICollection<ImageDto> Images { get; set; }
         public int CourtCount { get; set; }

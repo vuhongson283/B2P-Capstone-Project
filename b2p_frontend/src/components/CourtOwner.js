@@ -2,7 +2,7 @@ import React from "react";
 import CourtOwnerSideBar from "./SideBar/CourtOwnerSideBar";
 import "./CourtOwner.scss";
 import { Outlet } from "react-router-dom";
-import DashboardField from "./CourtOwner/CourtOwnerDashboard";
+import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 
 const CourtOwner = (props) => {
   return (
