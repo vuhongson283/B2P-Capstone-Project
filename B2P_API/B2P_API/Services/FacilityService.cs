@@ -606,10 +606,36 @@ namespace B2P_API.Services
             }
         }
 
+        // Replace the conflicted section with this clean version:
+
+        public async Task<ApiResponse<FacilityDetailsDto>> GetFacilityDetails(int facilityId)
+        {
+            var dto = await _facilityRepositoryForUser.GetFacilityDetails(facilityId);
+
+            if (dto == null)
+            {
+                return new ApiResponse<FacilityDetailsDto>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở.",
+                    Data = null
+                };
+            }
+
+            return new ApiResponse<FacilityDetailsDto>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy thông tin cơ sở thành công.",
+                Data = dto
+            };
+        }
+
         public async Task<ApiResponse<Facility>> GetFacilityById(int facilityId)
         {
             var data = await _facilityRepository.GetByIdAsync(facilityId);
-            if(data  == null)
+            if (data == null)
             {
                 return new ApiResponse<Facility>
                 {
@@ -629,9 +655,9 @@ namespace B2P_API.Services
             };
         }
 
-        
 
-       
+
+
     }
 }
 
