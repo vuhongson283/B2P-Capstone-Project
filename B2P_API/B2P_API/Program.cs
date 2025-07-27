@@ -63,11 +63,10 @@ builder.Services.AddScoped<SliderManagementService>();
 builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
 builder.Services.AddScoped<CourtCategoryService>();
 
-builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // Nếu dùng
-builder.Services.AddScoped<IFacilityRepository, FacilityManageRepository>();
+builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
+builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
-// Đăng ký trực tiếp class
-builder.Services.AddScoped<FacilityService>();
+builder.Services.AddScoped<FacilityService>(); // Đăng ký trực tiếp class nếu cần resolve cả interface và class
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
@@ -94,32 +93,26 @@ builder.Services.AddScoped<CourtRepository>();
 builder.Services.AddScoped<ICourtRepository, CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
-// Booking services
 builder.Services.AddScoped<BookingRepository>();
 builder.Services.AddScoped<BookingService>();
 
-// TimeSlot services
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 
-// Bank Account services
 builder.Services.AddScoped<BankAccountService>();
 builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
 
-// Excel Export services
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 ExcelPackage.License.SetNonCommercialPersonal("B2P");
 
-// Report services
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
-// Đăng ký TwilioSettings
+
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
 
 var app = builder.Build();
 
-// Middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

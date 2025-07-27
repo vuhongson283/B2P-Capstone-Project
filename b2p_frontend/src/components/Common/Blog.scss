@@ -1,0 +1,1110 @@
+/* ================== LAYOUT SYSTEM ================== */
+.blog-page-fixed-layout {
+    display       : flex;
+    min-height    : 100vh;
+    background    : linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 30%, #e8f5e8 70%, #d5e8d4 100%);
+    padding-top   : 80px; // 🎯 Increased space for CommonHeader (was 60px)
+    gap           : 20px; // 🎯 Gap between sidebar and main content
+    padding-left  : 16px;
+    padding-right : 16px;
+    padding-bottom: 20px; // 🎯 Add bottom padding
+
+    // Background pattern
+    &::before {
+        content : '';
+        position: fixed;
+        top     : 0;
+        left    : 0;
+        right   : 0;
+        bottom  : 0;
+        background:
+            radial-gradient(circle at 20% 20%, rgba(46, 204, 113, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(129, 236, 236, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+        z-index       : -1;
+    }
+}
+
+/* ================== SIDEBAR ================== */
+.fixed-sidebar {
+    width      : 300px; // 🎯 Reduced width to fit content
+    flex-shrink: 0;
+    transition : all 0.3s ease;
+    position   : sticky; // 🎯 Make sidebar sticky
+    top        : 80px; // 🎯 Stick at 90px from top (below header)
+    height     : calc(100vh - 110px); // 🎯 Calculate height to fit viewport
+    overflow-y : auto; // 🎯 Enable scrolling if content overflows
+    align-self : flex-start; // 🎯 Align to top of container
+
+    // 🎯 Custom scrollbar for sidebar
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background   : rgba(46, 204, 113, 0.1);
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background   : linear-gradient(135deg, #27ae60, #2ecc71);
+        border-radius: 2px;
+
+        &:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+        }
+    }
+
+    &.collapsed {
+        width: 50px; // 🎯 Further reduced collapsed width
+
+        .sidebar-card {
+            .ant-card-body {
+                padding   : 8px 4px;
+                text-align: center;
+            }
+        }
+    }
+
+    .sidebar-card {
+        background     : rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius  : 12px;
+        box-shadow     :
+            0 6px 24px rgba(46, 204, 113, 0.1),
+            0 2px 6px rgba(0, 0, 0, 0.05);
+        border        : 1px solid rgba(255, 255, 255, 0.3);
+        overflow      : hidden;
+        height        : 100%; // 🎯 Full height of sticky container
+        display       : flex;
+        flex-direction: column;
+
+        .ant-card-body {
+            padding       : 16px; // 🎯 Reduced padding
+            flex          : 1;
+            display       : flex;
+            flex-direction: column;
+            overflow-y    : auto; // 🎯 Enable scrolling within card body
+        }
+
+        .sidebar-header {
+            display        : flex;
+            align-items    : center;
+            justify-content: space-between;
+            margin-bottom  : 16px;
+            flex-shrink    : 0; // 🎯 Don't shrink header
+
+            .sidebar-toggle {
+                width          : 32px;
+                height         : 32px;
+                border-radius  : 8px;
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                color          : #27ae60;
+
+                &:hover {
+                    background: rgba(39, 174, 96, 0.1);
+                }
+            }
+
+            h3 {
+                margin     : 0;
+                font-size  : 16px; // 🎯 Reduced font size
+                font-weight: 600;
+                color      : #2c3e50;
+            }
+        }
+
+        .sidebar-content {
+            flex         : 1;
+            overflow-y   : auto;
+            padding-right: 4px; // 🎯 Space for scrollbar
+
+            // 🎯 Custom scrollbar for sidebar content
+            &::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background   : rgba(46, 204, 113, 0.05);
+                border-radius: 2px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background   : rgba(39, 174, 96, 0.3);
+                border-radius: 2px;
+
+                &:hover {
+                    background: rgba(39, 174, 96, 0.5);
+                }
+            }
+        }
+
+        .sidebar-section {
+            margin-bottom: 16px; // 🎯 Reduced spacing
+            flex-shrink  : 0; // 🎯 Don't shrink sections
+
+            h4 {
+                margin     : 0 0 8px 0; // 🎯 Reduced margin
+                font-size  : 13px; // 🎯 Reduced font size
+                font-weight: 600;
+                color      : #495057;
+                display    : flex;
+                align-items: center;
+                gap        : 6px;
+
+                .anticon {
+                    font-size: 12px;
+                }
+            }
+
+            .ant-input-search {
+                .ant-input {
+                    border-radius: 8px;
+                    font-size    : 13px; // 🎯 Reduced font size
+                }
+
+                .ant-btn {
+                    border-radius: 0 8px 8px 0;
+                }
+            }
+
+            .ant-select {
+                .ant-select-selector {
+                    border-radius: 8px;
+                    font-size    : 13px;
+                }
+            }
+
+            .ant-btn {
+                border-radius: 8px;
+                font-size    : 13px;
+                height       : 32px; // 🎯 Reduced height
+
+                &.ant-btn-block {
+                    display        : flex;
+                    align-items    : center;
+                    justify-content: center;
+                    gap            : 6px;
+                }
+            }
+
+            .filter-tags {
+                display      : flex;
+                flex-wrap    : wrap;
+                gap          : 6px; // 🎯 Reduced gap
+                margin-bottom: 8px;
+
+                .ant-tag {
+                    margin       : 0;
+                    font-size    : 11px; // 🎯 Reduced font size
+                    padding      : 2px 6px;
+                    border-radius: 6px;
+                }
+            }
+
+            .search-result-info {
+                padding      : 8px 12px; // 🎯 Reduced padding
+                border-radius: 8px;
+                font-size    : 12px; // 🎯 Reduced font size
+                font-weight  : 500;
+                text-align   : center;
+
+                &.success {
+                    background: rgba(39, 174, 96, 0.1);
+                    color     : #27ae60;
+                    border    : 1px solid rgba(39, 174, 96, 0.2);
+                }
+
+                &.error {
+                    background: rgba(220, 53, 69, 0.1);
+                    color     : #dc3545;
+                    border    : 1px solid rgba(220, 53, 69, 0.2);
+                }
+            }
+
+            .stats-info {
+                div {
+                    font-size    : 12px; // 🎯 Reduced font size
+                    margin-bottom: 6px; // 🎯 Reduced spacing
+                    color        : #6c757d;
+
+                    strong {
+                        color: #2c3e50;
+                    }
+                }
+
+                .time-info {
+                    color     : #27ae60;
+                    font-style: italic;
+                    font-size : 11px;
+                }
+            }
+        }
+
+        .ant-divider {
+            margin     : 12px 0; // 🎯 Reduced divider spacing
+            flex-shrink: 0; // 🎯 Don't shrink dividers
+        }
+    }
+}
+
+/* ================== MAIN CONTENT AREA ================== */
+.main-content-area {
+    flex          : 1;
+    max-width     : 700px; // 🎯 Reduced max width
+    margin        : 0 auto; // 🎯 Center the main content area
+    display       : flex;
+    flex-direction: column;
+    gap           : 20px; // 🎯 Increased gap between sections
+    position      : relative; // 🎯 Add position relative
+    min-height    : calc(100vh - 100px); // 🎯 Ensure minimum height
+
+    &.sidebar-collapsed {
+        max-width: 750px; // 🎯 Slightly larger when sidebar collapsed
+    }
+}
+
+/* ================== HEADER ================== */
+.blog-header-ultra-compact {
+    display        : flex;
+    justify-content: space-between;
+    align-items    : center;
+    background     : rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    padding        : 14px 20px; // 🎯 Reduced padding
+    border-radius  : 12px;
+    box-shadow     : 0 4px 12px rgba(46, 204, 113, 0.12);
+    border         : 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink    : 0;
+
+    .header-content {
+        h1 {
+            margin                 : 0;
+            font-size              : 1.1rem; // 🎯 Slightly reduced
+            font-weight            : 700;
+            background             : linear-gradient(135deg, #1e8449, #27ae60, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height            : 1;
+        }
+
+        p {
+            font-size  : 0.75rem; // 🎯 Reduced
+            color      : #6c757d;
+            margin     : 0;
+            line-height: 1;
+        }
+    }
+
+    .create-blog-btn {
+        background   : linear-gradient(135deg, #27ae60, #2ecc71);
+        border       : none;
+        height       : 34px; // 🎯 Reduced height
+        padding      : 0 16px; // 🎯 Reduced padding
+        border-radius: 17px;
+        font-weight  : 600;
+        font-size    : 12px; // 🎯 Reduced font size
+        box-shadow   : 0 3px 8px rgba(39, 174, 96, 0.3);
+    }
+}
+
+.mobile-search {
+    display: none;
+
+    .ant-card {
+        border-radius: 12px;
+        box-shadow   : 0 3px 10px rgba(46, 204, 113, 0.1);
+    }
+}
+
+/* ================== BLOG LIST ================== */
+.blog-list-container {
+    display       : flex;
+    flex-direction: column;
+    gap           : 32px; // 🎯 SIGNIFICANTLY increased gap between blog cards (was 24px)
+    flex          : 1;
+    margin        : 0 auto; // 🎯 Center the blog list within its container
+    width         : 100%; // 🎯 Ensure full width
+    max-width     : 100%; // 🎯 Ensure it doesn't exceed container
+}
+
+.blog-card-ultra {
+    background     : rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius  : 16px; // 🎯 Increased border radius for better visual separation
+    box-shadow     : 0 6px 16px rgba(46, 204, 113, 0.12); // 🎯 Enhanced shadow
+    border         : 1px solid rgba(255, 255, 255, 0.3);
+    overflow       : hidden;
+    transition     : all 0.3s ease;
+    margin-bottom  : 8px; // 🎯 Add explicit margin-bottom for additional spacing
+
+    .ant-card-body {
+        padding: 24px; // 🎯 Significantly increased padding for better spacing
+    }
+
+    &:hover {
+        transform : translateY(-4px); // 🎯 More pronounced hover effect
+        box-shadow: 0 12px 32px rgba(46, 204, 113, 0.25); // 🎯 Enhanced hover shadow
+    }
+
+    &.my-blog {
+        border-left: 5px solid #27ae60; // 🎯 Thicker accent border
+        box-shadow : 0 6px 16px rgba(39, 174, 96, 0.15); // 🎯 Special shadow for own posts
+    }
+
+    .blog-card-header {
+        display        : flex;
+        justify-content: space-between;
+        align-items    : flex-start;
+        margin-bottom  : 20px; // 🎯 Increased spacing significantly
+
+        .blog-author {
+            display    : flex;
+            gap        : 14px; // 🎯 Increased gap
+            align-items: center;
+
+            .author-info {
+                h4 {
+                    margin     : 0;
+                    font-size  : 15px; // 🎯 Increased font size
+                    font-weight: 600;
+                    color      : #2c3e50;
+                    display    : flex;
+                    align-items: center;
+                    gap        : 8px;
+                    line-height: 1.2;
+                }
+
+                .blog-meta {
+                    display    : flex;
+                    align-items: center;
+                    gap        : 10px; // 🎯 Increased gap
+                    font-size  : 12px; // 🎯 Slightly increased
+                    color      : #6c757d;
+                    margin-top : 6px; // 🎯 Increased spacing
+
+                    .anticon {
+                        font-size: 11px; // 🎯 Slightly increased
+                    }
+
+                    .updated {
+                        color     : #f39c12;
+                        font-style: italic;
+                    }
+                }
+            }
+        }
+    }
+
+    .blog-content {
+        margin-bottom: 20px; // 🎯 Increased spacing significantly
+
+        .blog-title {
+            font-size    : 18px; // 🎯 Increased font size for better visibility
+            font-weight  : 600;
+            color        : #2c3e50;
+            margin-bottom: 12px; // 🎯 Increased spacing
+            line-height  : 1.4;
+        }
+
+        .blog-text {
+            color        : #495057;
+            line-height  : 1.6;
+            font-size    : 15px; // 🎯 Increased font size for better readability
+            margin-bottom: 16px; // 🎯 Increased spacing
+        }
+    }
+
+    .blog-actions {
+        display        : flex;
+        align-items    : center;
+        justify-content: flex-start;
+        gap            : 16px; // 🎯 Increased gap
+        padding-top    : 16px; // 🎯 Increased spacing
+        border-top     : 1px solid rgba(233, 236, 239, 0.8);
+
+        .ant-tag {
+            border-radius: 12px; // 🎯 Increased border radius
+            font-weight  : 500;
+            border       : none;
+            background   : linear-gradient(135deg, #e7f3ff, #d4edda);
+            color        : #27ae60;
+            padding      : 4px 10px; // 🎯 Increased padding
+            font-size    : 12px; // 🎯 Slightly increased
+            margin       : 0;
+        }
+
+        .ant-btn {
+            border       : none;
+            color        : #6c757d;
+            font-weight  : 500;
+            font-size    : 13px; // 🎯 Increased font size
+            height       : 32px; // 🎯 Increased height
+            padding      : 0 12px; // 🎯 Increased padding
+            border-radius: 10px; // 🎯 Increased border radius
+
+            &:hover {
+                color     : #27ae60;
+                background: rgba(39, 174, 96, 0.1);
+                transform : scale(1.05);
+            }
+        }
+    }
+}
+
+/* ================== PAGINATION ================== */
+.blog-pagination-ultra {
+    display        : flex;
+    justify-content: center;
+    padding        : 20px; // 🎯 Increased padding
+    background     : rgba(255, 255, 255, 0.9);
+    border-radius  : 12px;
+    backdrop-filter: blur(20px);
+    box-shadow     : 0 4px 12px rgba(46, 204, 113, 0.12); // 🎯 Enhanced shadow
+    margin-top     : 16px; // 🎯 Increased top margin
+
+    .ant-pagination {
+        .ant-pagination-item {
+            border-radius: 8px; // 🎯 Increased border radius
+            border       : 1px solid rgba(39, 174, 96, 0.2);
+            font-size    : 13px; // 🎯 Increased font size
+            min-width    : 32px; // 🎯 Increased width
+            height       : 32px; // 🎯 Increased height
+            line-height  : 30px;
+
+            &.ant-pagination-item-active {
+                background  : linear-gradient(135deg, #27ae60, #2ecc71);
+                border-color: #27ae60;
+
+                a {
+                    color      : white;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        .ant-pagination-prev,
+        .ant-pagination-next {
+            border-radius: 8px;
+            border       : 1px solid rgba(39, 174, 96, 0.2);
+            min-width    : 32px;
+            height       : 32px;
+            line-height  : 30px;
+        }
+
+        .ant-pagination-total-text {
+            font-size: 12px; // 🎯 Slightly increased
+            color    : #666;
+        }
+    }
+}
+
+/* ================== MOBILE RESPONSIVE ================== */
+@media (max-width: 768px) {
+    .blog-page-fixed-layout {
+        flex-direction: column;
+        gap           : 12px;
+        padding       : 80px 12px 12px 12px; // 🎯 Keep increased top padding
+    }
+
+    .fixed-sidebar {
+        width: 100%;
+        order: 2; // 🎯 Move sidebar below main content on mobile
+
+        &.collapsed {
+            width: 100%;
+        }
+    }
+
+    .main-content-area {
+        max-width: none;
+        order    : 1;
+        margin   : 0; // 🎯 Remove auto margin on mobile
+
+        &.sidebar-collapsed {
+            max-width: none;
+        }
+    }
+
+    .mobile-search {
+        display: block !important;
+        order  : 0; // 🎯 Show search first on mobile
+    }
+
+    .blog-header-ultra-compact {
+        flex-direction: column;
+        text-align    : center;
+        gap           : 12px;
+
+        .create-blog-btn {
+            width : 100%;
+            height: 38px;
+        }
+    }
+
+    .blog-list-container {
+        gap: 20px; // 🎯 Reduced but still significant gap for mobile
+    }
+
+    .blog-card-ultra {
+        margin-bottom: 4px; // 🎯 Reduced margin for mobile
+
+        .ant-card-body {
+            padding: 16px; // 🎯 Reduced padding for mobile
+        }
+
+        .blog-card-header {
+            margin-bottom: 16px; // 🎯 Adjusted for mobile
+        }
+
+        .blog-content {
+            margin-bottom: 16px; // 🎯 Adjusted for mobile
+
+            .blog-title {
+                font-size: 16px; // 🎯 Slightly reduced for mobile
+            }
+
+            .blog-text {
+                font-size: 14px; // 🎯 Adjusted for mobile
+            }
+        }
+    }
+}
+
+/* ================== ANIMATIONS ================== */
+@keyframes fadeInUp {
+    from {
+        opacity  : 0;
+        transform: translateY(24px); // 🎯 More pronounced animation
+    }
+
+    to {
+        opacity  : 1;
+        transform: translateY(0);
+    }
+}
+
+.blog-card-ultra {
+    animation: fadeInUp 0.5s ease-out; // 🎯 Longer animation duration
+}
+
+/* ================== ENHANCED HOVER EFFECTS ================== */
+.blog-card-ultra:hover {
+    .blog-title {
+        color: #27ae60;
+    }
+
+    .user-avatar-wrapper .ant-avatar {
+        transform: scale(1.15); // 🎯 More pronounced scale
+    }
+}
+
+/* ================== USER AVATAR STYLING ================== */
+.user-avatar-wrapper {
+    transition: all 0.3s ease;
+
+    .ant-avatar {
+        transition: all 0.3s ease;
+        border    : 2px solid rgba(39, 174, 96, 0.1);
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.15); // 🎯 Enhanced shadow
+
+        &:hover {
+            border-color: rgba(39, 174, 96, 0.3);
+            box-shadow  : 0 6px 16px rgba(39, 174, 96, 0.3); // 🎯 Enhanced hover shadow
+        }
+    }
+}
+
+/* ================== BLOG IMAGES STYLING ================== */
+.blog-images-display {
+    margin-top: 12px;
+
+    &.card-images {
+        .image-grid {
+            display: grid;
+            gap    : 8px;
+
+            &.single-image {
+                grid-template-columns: 1fr;
+            }
+
+            &.two-images {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            &.three-or-more-images {
+                grid-template-columns: 2fr 1fr 1fr;
+
+                .blog-image-item:first-child {
+                    grid-row: 1 / 3;
+                }
+            }
+        }
+
+        .blog-image-item {
+            position     : relative;
+            overflow     : hidden;
+            border-radius: 8px;
+            transition   : all 0.3s ease;
+
+            &:hover {
+                transform: scale(1.02);
+            }
+
+            // 🎯 Overlay trên ảnh thứ 3
+            .image-overlay-on-third {
+                position       : absolute;
+                top            : 0;
+                left           : 0;
+                right          : 0;
+                bottom         : 0;
+                background     : rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(2px); // 🎯 Thêm blur effect
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                color          : white;
+                font-weight    : 600;
+                transition     : all 0.3s ease;
+                cursor         : pointer;
+                border-radius  : 8px;
+
+                .overlay-content {
+                    text-align     : center;
+                    transition     : transform 0.2s ease;
+                    padding        : 8px;
+                    border-radius  : 12px;
+                    background     : rgba(0, 0, 0, 0.3);
+                    backdrop-filter: blur(4px);
+
+                    .anticon {
+                        display      : block;
+                        margin-bottom: 4px;
+                    }
+
+                    .more-count {
+                        font-size  : 18px;
+                        font-weight: 700;
+                        display    : block;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+                    }
+                }
+
+                &:hover {
+                    background: rgba(0, 0, 0, 0.8);
+
+                    .overlay-content {
+                        transform : scale(1.1);
+                        background: rgba(0, 0, 0, 0.5);
+                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+                        .more-count {
+                            font-size: 20px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal images styling giữ nguyên
+    &.modal-images {
+        margin-top: 16px;
+
+        .blog-image-item {
+            margin-bottom: 16px;
+
+            .ant-image {
+                width        : 100%;
+                border-radius: 12px;
+                overflow     : hidden;
+                display      : block;
+
+                img {
+                    width        : 100% !important;
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                    max-height   : 400px;
+                    object-fit   : cover;
+                    display      : block;
+                }
+            }
+
+            .image-caption {
+                text-align: center;
+                font-size : 14px;
+                color     : #666;
+                font-style: italic;
+                margin-top: 8px;
+                padding   : 0 16px;
+            }
+        }
+    }
+}
+
+/* ================== RESPONSIVE IMAGES ================== */
+@media (max-width: 480px) {
+    .blog-images-display.card-images {
+        .image-grid {
+
+            &.single-image,
+            &.two-images,
+            &.three-or-more-images {
+                grid-template-columns: 1fr !important;
+            }
+
+            .blog-image-item:first-child {
+                grid-row: unset !important;
+            }
+        }
+
+        // 🎯 Điều chỉnh overlay cho mobile
+        .image-overlay-on-third {
+            .overlay-content {
+                .more-count {
+                    font-size: 16px !important;
+                }
+
+                .anticon {
+                    font-size: 18px !important;
+                }
+            }
+        }
+    }
+}
+
+/* ================== BLOG CARD STYLING ================== */
+.blog-card {
+    background     : rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius  : 16px;
+    box-shadow     : 0 6px 16px rgba(46, 204, 113, 0.12);
+    border         : 1px solid rgba(255, 255, 255, 0.3);
+    overflow       : hidden;
+    transition     : all 0.3s ease;
+    margin-bottom  : 32px;
+
+    .ant-card-body {
+        padding: 24px;
+    }
+
+    &:hover {
+        transform : translateY(-4px);
+        box-shadow: 0 12px 32px rgba(46, 204, 113, 0.25);
+    }
+
+    .blog-header {
+        display        : flex;
+        justify-content: space-between;
+        align-items    : flex-start;
+        margin-bottom  : 20px;
+
+        .blog-author {
+            display    : flex;
+            gap        : 14px;
+            align-items: center;
+
+            .author-info {
+                h4 {
+                    margin     : 0;
+                    font-size  : 15px;
+                    font-weight: 600;
+                    color      : #2c3e50;
+                    display    : flex;
+                    align-items: center;
+                    gap        : 8px;
+                    line-height: 1.2;
+                }
+
+                .blog-meta {
+                    display    : flex;
+                    align-items: center;
+                    gap        : 10px;
+                    font-size  : 12px;
+                    color      : #6c757d;
+                    margin-top : 6px;
+
+                    .anticon {
+                        font-size: 11px;
+                    }
+
+                    .updated {
+                        color     : #f39c12;
+                        font-style: italic;
+                    }
+                }
+            }
+        }
+
+        .blog-actions-dropdown {
+            .ant-btn {
+                border         : none;
+                background     : transparent;
+                color          : #6c757d;
+                border-radius  : 8px;
+                width          : 32px;
+                height         : 32px;
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+
+                &:hover {
+                    background: rgba(39, 174, 96, 0.1);
+                    color     : #27ae60;
+                }
+            }
+        }
+    }
+
+    .blog-content {
+        margin-bottom: 20px;
+
+        .blog-title {
+            font-size    : 18px;
+            font-weight  : 600;
+            color        : #2c3e50;
+            margin-bottom: 12px;
+            line-height  : 1.4;
+        }
+
+        .blog-text {
+            color        : #495057;
+            line-height  : 1.6;
+            font-size    : 15px;
+            margin-bottom: 16px;
+        }
+    }
+
+    .blog-actions {
+        display        : flex;
+        align-items    : center;
+        justify-content: flex-start;
+        gap            : 16px;
+        padding-top    : 16px;
+        border-top     : 1px solid rgba(233, 236, 239, 0.8);
+
+        .comment-btn {
+            width        : 100%;
+            border       : none;
+            color        : #6c757d;
+            font-weight  : 500;
+            font-size    : 13px;
+            height       : 32px;
+            padding      : 0 12px;
+            border-radius: 10px;
+            border       : 1px solid black;
+
+            &:hover {
+                color     : #27ae60;
+                background: rgba(39, 174, 96, 0.1);
+                transform : scale(1.05);
+            }
+        }
+    }
+}
+
+/* ================== MODAL STYLING ================== */
+.blog-modal {
+    .ant-modal-content {
+        border-radius: 16px;
+        overflow     : hidden;
+    }
+
+    .ant-modal-header {
+        background   : rgba(39, 174, 96, 0.05);
+        border-bottom: 1px solid rgba(39, 174, 96, 0.1);
+        padding      : 20px 24px;
+    }
+
+    .ant-modal-body {
+        padding: 24px;
+    }
+
+    .ant-form-item-label label {
+        font-weight: 600;
+        color      : #2c3e50;
+    }
+
+    .ant-input,
+    .ant-input:focus,
+    .ant-input-focused {
+        border-color: rgba(39, 174, 96, 0.3);
+        box-shadow  : 0 0 0 2px rgba(39, 174, 96, 0.1);
+    }
+
+    .ant-upload-dragger {
+        border-color : rgba(39, 174, 96, 0.3);
+        border-radius: 12px;
+
+        &:hover {
+            border-color: #27ae60;
+        }
+
+        .ant-upload-drag-icon .anticon {
+            color: #27ae60;
+        }
+
+        .ant-upload-text {
+            color: #2c3e50;
+        }
+
+        .ant-upload-hint {
+            color: #6c757d;
+        }
+    }
+}
+
+/* ================== COMMENT MODAL STYLING ================== */
+.comment-modal {
+    .ant-modal-content {
+        border-radius: 16px;
+        overflow     : hidden;
+        max-height   : 90vh;
+    }
+
+    .ant-modal-body {
+        padding   : 0;
+        max-height: calc(90vh - 120px);
+        overflow-y: auto;
+    }
+}
+
+/* ================== IMAGE UPLOAD STYLING ================== */
+.blog-images {
+    display      : flex;
+    flex-wrap    : wrap;
+    gap          : 12px;
+    margin-bottom: 16px;
+
+    .image-item {
+        position: relative;
+
+        .delete-image-btn {
+            position       : absolute;
+            top            : -8px;
+            right          : -8px;
+            border-radius  : 50%;
+            width          : 24px;
+            height         : 24px;
+            display        : flex;
+            align-items    : center;
+            justify-content: center;
+            box-shadow     : 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+    }
+}
+
+.uploading-images {
+    h4 {
+        margin     : 0 0 12px 0;
+        font-size  : 14px;
+        font-weight: 600;
+        color      : #2c3e50;
+    }
+
+    .image-previews {
+        display  : flex;
+        gap      : 12px;
+        flex-wrap: wrap;
+
+        .image-preview {
+            position: relative;
+
+            .delete-preview-btn {
+                position       : absolute;
+                top            : -8px;
+                right          : -8px;
+                border-radius  : 50%;
+                width          : 24px;
+                height         : 24px;
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                box-shadow     : 0 2px 8px rgba(0, 0, 0, 0.15);
+            }
+        }
+    }
+}
+
+/* ================== EMPTY STATE STYLING ================== */
+.ant-empty {
+    .ant-empty-description {
+        color: #6c757d;
+    }
+}
+
+/* ================== LOADING STYLING ================== */
+.ant-spin {
+    &.ant-spin-spinning {
+        .ant-spin-dot {
+            .ant-spin-dot-item {
+                background-color: #27ae60;
+            }
+        }
+    }
+}
+
+/* ================== SCROLLBAR STYLING ================== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background   : rgba(46, 204, 113, 0.1);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background   : linear-gradient(135deg, #27ae60, #2ecc71);
+    border-radius: 3px;
+
+    &:hover {
+        background: linear-gradient(135deg, #229954, #27ae60);
+    }
+}
+
+/* ================== ADDITIONAL MOBILE RESPONSIVE ================== */
+@media (max-width: 480px) {
+    .blog-card {
+        .ant-card-body {
+            padding: 12px;
+        }
+
+        .blog-header {
+            flex-direction: column;
+            gap           : 12px;
+            align-items   : flex-start;
+        }
+
+        .blog-content {
+            .blog-title {
+                font-size: 16px;
+            }
+
+            .blog-text {
+                font-size: 14px;
+            }
+        }
+
+        .blog-actions {
+            justify-content: center;
+        }
+    }
+
+    .blog-images-display.card-images {
+        .image-grid {
+
+            &.single-image,
+            &.two-images,
+            &.three-or-more-images {
+                grid-template-columns: 1fr !important;
+            }
+
+            .blog-image-item:first-child {
+                grid-row: unset !important;
+            }
+        }
+    }
+}

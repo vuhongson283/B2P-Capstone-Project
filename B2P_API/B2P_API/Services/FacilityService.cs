@@ -14,17 +14,17 @@ namespace B2P_API.Services
 {
     public class FacilityService : IFacilityService
     {
-        private readonly IFacilityRepository _facilityRepository;
+        private readonly IFacilityManageRepository _facilityRepository;
         private readonly IFacilityRepositoryForUser _facilityRepositoryForUser;
 
-        public FacilityService(IFacilityRepository facilityRepository, IFacilityRepositoryForUser facilityRepositoryForUser)
+        public FacilityService(IFacilityManageRepository facilityRepository, IFacilityRepositoryForUser facilityRepositoryForUser)
         {
             _facilityRepository = facilityRepository;
             _facilityRepositoryForUser = facilityRepositoryForUser;
         }
 
         public async Task<ApiResponse<PagedResponse<FacilityWithCourtCountDto>>> GetFacilitiesByUserAsync(
-            int userId, string? facilityName = null, int? statusId = null)
+            int userId, string? facilityName = null, int? statusId = null, int currentPage = 1, int itemsPerPage = 3)
         {
             if (userId <= 0)
             {
@@ -67,25 +67,28 @@ namespace B2P_API.Services
                     FacilityId = f.FacilityId,
                     FacilityName = f.FacilityName,
                     CourtCount = f.Courts?.Count ?? 0,
+                    Location = f.Location,
                     Status = f.Status == null ? null : new StatusDto
                     {
                         StatusId = f.Status.StatusId,
                         StatusName = f.Status.StatusName,
                         StatusDescription = f.Status.StatusDescription
                     },
-                    Images = f.Images?.Select(i => new ImageDto
-                    {
-                        ImageId = i.ImageId,
-                        ImageUrl = i.ImageUrl,
-                        Order = i.Order,
-                        Caption = i.Caption
-                    }).ToList()
+                    Images = f.Images?
+                        .OrderBy(i => i.Order) 
+                        .Take(1) 
+                        .Select(i => new ImageDto
+                        {
+                            ImageId = i.ImageId,
+                            ImageUrl = i.ImageUrl,
+                            Order = i.Order,
+                            Caption = i.Caption
+                        }).ToList()
+
                 }).ToList();
 
                 int totalItems = mappedFacilities.Count;
-                int itemsPerPage = 10;
                 int totalPages = (int)Math.Ceiling((double)totalItems / itemsPerPage);
-                int currentPage = 1;
 
                 var pagedItems = mappedFacilities
                     .Skip((currentPage - 1) * itemsPerPage)
@@ -490,27 +493,7 @@ namespace B2P_API.Services
                 };
             }
 
-            if (request.OpenHour >= request.CloseHour)
-            {
-                return new ApiResponse<Facility>
-                {
-                    Success = false,
-                    Status = 400,
-                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
-                    Data = null
-                };
-            }
-
-            if (request.SlotDuration <= 0 || request.SlotDuration > 180)
-            {
-                return new ApiResponse<Facility>
-                {
-                    Success = false,
-                    Status = 400,
-                    Message = "Thời lượng mỗi lượt phải từ 1 đến 180 phút",
-                    Data = null
-                };
-            }
+            
 
             try
             {
@@ -520,30 +503,11 @@ namespace B2P_API.Services
                 data.Contact = string.IsNullOrWhiteSpace(request.Contact) ? null : request.Contact.Trim();
                 data.StatusId = request.StatusId;
 
-                // Tạo lại TimeSlots mới
-                var timeSlots = new List<TimeSlot>();
-                var startTime = new TimeOnly(request.OpenHour, 0);
-                var endTime = new TimeOnly(request.CloseHour, 0);
-                var duration = TimeSpan.FromMinutes(request.SlotDuration);
-
-                var current = startTime;
-                int slotLimit = 1000;
-                int count = 0;
-
-                while (current.Add(duration) <= endTime && count < slotLimit)
-                {
-                    timeSlots.Add(new TimeSlot
-                    {
-                        StartTime = current,
-                        EndTime = current.Add(duration),
-                    });
-
-                    current = current.Add(duration);
-                    count++;
-                }
+                
+                
 
                 // Gán TimeSlot mới (nếu bạn muốn xóa hết slot cũ)
-                data.TimeSlots = timeSlots;
+               
 
                 var updated = await _facilityRepository.UpdateAsync(data);
                 if (updated == null)
@@ -580,8 +544,8 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<Facility>> DeleteFacility(int facilityId)
         {
-            var data = await _facilityRepository.GetByIdAsync(facilityId);
-            if (data == null)
+            var facility = await _facilityRepository.GetByIdAsync(facilityId);
+            if (facility == null)
             {
                 return new ApiResponse<Facility>
                 {
@@ -594,7 +558,22 @@ namespace B2P_API.Services
 
             try
             {
-                var deleted = await _facilityRepository.DeleteAsync(facilityId);
+                // Kiểm tra xem facility có booking nào đang hoạt động không
+                var hasActiveBookings = await _facilityRepository.HasActiveBookingsAsync(facilityId);
+
+                if (hasActiveBookings)
+                {
+                    return new ApiResponse<Facility>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Không thể xóa cơ sở này vì đang có booking hoạt động",
+                        Data = null
+                    };
+                }
+
+                // Nếu không có booking hoạt động, tiến hành xóa cascade
+                var deleted = await _facilityRepository.DeleteCascadeAsync(facilityId);
 
                 if (!deleted)
                 {
@@ -611,8 +590,8 @@ namespace B2P_API.Services
                 {
                     Success = true,
                     Status = 200,
-                    Message = "Xóa cơ sở thành công",
-                    Data = data // trả lại thông tin facility đã xóa nếu cần
+                    Message = "Xóa cơ sở và tất cả dữ liệu liên quan thành công",
+                    Data = facility
                 };
             }
             catch (Exception ex)
@@ -626,6 +605,57 @@ namespace B2P_API.Services
                 };
             }
         }
+
+        // Replace the conflicted section with this clean version:
+
+        public async Task<ApiResponse<FacilityDetailsDto>> GetFacilityDetails(int facilityId)
+        {
+            var dto = await _facilityRepositoryForUser.GetFacilityDetails(facilityId);
+
+            if (dto == null)
+            {
+                return new ApiResponse<FacilityDetailsDto>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở.",
+                    Data = null
+                };
+            }
+
+            return new ApiResponse<FacilityDetailsDto>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy thông tin cơ sở thành công.",
+                Data = dto
+            };
+        }
+
+        public async Task<ApiResponse<Facility>> GetFacilityById(int facilityId)
+        {
+            var data = await _facilityRepository.GetByIdAsync(facilityId);
+            if (data == null)
+            {
+                return new ApiResponse<Facility>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở hợp lệ",
+                    Data = null
+                };
+            }
+
+            return new ApiResponse<Facility>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy thông tin cơ sở thành công",
+                Data = data
+            };
+        }
+
+
 
 
     }
