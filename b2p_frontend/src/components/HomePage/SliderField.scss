@@ -1,45 +1,33 @@
 .slider-field {
-    position     : relative;
-    width        : 100%;
-    margin       : 0;
-    overflow     : hidden;
-    // Position right below fixed header
-    margin-top   : 85px; // Header height + small gap
-    background   : linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 0 0 20px 20px;
-    box-shadow   :
-        0 10px 40px rgba(0, 0, 0, 0.1),
-        0 4px 20px rgba(0, 0, 0, 0.05);
+    position   : relative;
+    width      : 100vw;
+    margin-left: calc(-50vw + 50%);
+    overflow   : hidden;
+    box-shadow : 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index    : 1;
 
     .carousel {
-        border-radius: 0 0 20px 20px;
-        overflow     : hidden;
-        position     : relative;
+        overflow: hidden;
 
         .carousel-item {
-            height    : 500px;
-            position  : relative;
-            transition: transform 0.6s ease-in-out;
+            height  : 500px;
+            position: relative;
 
             .carousel-image-container {
-                position     : relative;
-                width        : 100%;
-                height       : 100%;
-                overflow     : hidden;
-                border-radius: 0 0 20px 20px;
+                position: relative;
+                width   : 100%;
+                height  : 100%;
+                overflow: hidden;
 
                 .carousel-image {
                     width          : 100%;
                     height         : 100%;
                     object-fit     : cover;
                     object-position: center;
-                    transition     : all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-                    cursor         : pointer;
-                    filter         : brightness(0.9);
+                    transition     : transform 0.3s ease;
 
                     &:hover {
-                        transform: scale(1.08);
-                        filter   : brightness(1.1);
+                        transform: scale(1.05);
                     }
                 }
 
@@ -49,322 +37,182 @@
                     left    : 0;
                     right   : 0;
                     bottom  : 0;
-                    background: linear-gradient(180deg,
+                    background: linear-gradient(to bottom,
                             rgba(0, 0, 0, 0.1) 0%,
-                            rgba(0, 0, 0, 0.2) 30%,
-                            rgba(0, 0, 0, 0.4) 70%,
-                            rgba(0, 0, 0, 0.7) 100%);
-                    pointer-events: none;
+                            rgba(0, 0, 0, 0.3) 50%,
+                            rgba(0, 0, 0, 0.6) 100%);
                 }
             }
 
-            // Enhanced caption styling
-            .custom-caption {
-                position      : absolute;
-                top           : 50%;
-                left          : 50%;
-                transform     : translate(-50%, -50%);
-                text-align    : center;
-                z-index       : 15;
-                width         : 90%;
-                max-width     : 700px;
-                pointer-events: none;
+            .carousel-caption {
+                position  : absolute;
+                bottom    : 200px; // Đẩy caption lên cao hơn để không bị che
+                left      : 50%;
+                transform : translateX(-50%);
+                text-align: center;
+                z-index   : 10;
+                width     : 90%;
+                max-width : 600px;
 
                 .caption-content {
-                    background     : rgba(0, 0, 0, 0.6);
-                    padding        : 30px;
-                    border-radius  : 15px;
-                    backdrop-filter: blur(15px);
-                    border         : 1px solid rgba(255, 255, 255, 0.1);
-                    animation      : fadeInUp 0.8s ease-out;
+                    background     : rgba(0, 0, 0, 0.7);
+                    padding        : 20px;
+                    border-radius  : 10px;
+                    backdrop-filter: blur(10px);
 
                     .caption-title {
-                        font-size    : clamp(1.8rem, 4vw, 3rem);
+                        font-size    : clamp(1.5rem, 4vw, 2.5rem);
                         font-weight  : 700;
-                        color        : #ffffff;
-                        margin-bottom: 15px;
-                        text-shadow  : 2px 2px 8px rgba(0, 0, 0, 0.7);
-                        line-height  : 1.2;
+                        color        : #fff;
+                        margin-bottom: 10px;
+                        text-shadow  : 2px 2px 4px rgba(0, 0, 0, 0.5);
                     }
 
                     .caption-description {
-                        font-size    : clamp(1rem, 2.5vw, 1.3rem);
-                        color        : rgba(255, 255, 255, 0.9);
-                        margin-bottom: 0;
-                        line-height  : 1.6;
-                        text-shadow  : 1px 1px 4px rgba(0, 0, 0, 0.5);
+                        font-size    : clamp(0.9rem, 2vw, 1.1rem);
+                        color        : #f8f9fa;
+                        margin-bottom: 15px;
+                        line-height  : 1.5;
+                    }
+
+                    .caption-btn {
+                        padding        : 10px 25px;
+                        font-size      : 1rem;
+                        font-weight    : 600;
+                        border-radius  : 25px;
+                        text-decoration: none;
+                        transition     : all 0.3s ease;
+                        border         : 2px solid #28a745;
+
+                        &:hover {
+                            background-color: #218838;
+                            border-color    : #218838;
+                            transform       : translateY(-2px);
+                            box-shadow      : 0 4px 15px rgba(40, 167, 69, 0.3);
+                        }
                     }
                 }
             }
         }
 
-        // Enhanced carousel controls
+        // Custom carousel controls
         .carousel-control-prev,
         .carousel-control-next {
-            width          : 60px;
-            height         : 60px;
-            background     : rgba(255, 255, 255, 0.15);
-            border         : 2px solid rgba(255, 255, 255, 0.3);
+            width          : 50px;
+            height         : 50px;
+            background     : rgba(0, 0, 0, 0.5);
             border-radius  : 50%;
-            top            : 50%;
+            top            : 40%; // Đẩy lên cao hơn để không bị che
             transform      : translateY(-50%);
-            backdrop-filter: blur(20px);
-            transition     : all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            opacity        : 0.8;
+            backdrop-filter: blur(10px);
+            transition     : all 0.3s ease;
 
             &:hover {
-                background  : rgba(255, 255, 255, 0.25);
-                border-color: rgba(255, 255, 255, 0.5);
-                opacity     : 1;
-                transform   : translateY(-50%) scale(1.1);
-                box-shadow  : 0 8px 32px rgba(0, 0, 0, 0.3);
-            }
-
-            &:focus {
-                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+                background: rgba(0, 0, 0, 0.7);
             }
 
             .carousel-control-prev-icon,
             .carousel-control-next-icon {
-                width          : 24px;
-                height         : 24px;
-                background-size: 100%;
-                filter         : brightness(0) invert(1);
+                width : 20px;
+                height: 20px;
             }
         }
 
         .carousel-control-prev {
-            left: 30px;
+            left: 20px;
         }
 
         .carousel-control-next {
-            right: 30px;
+            right: 20px;
+        }
+
+        // Hide default indicators
+        .carousel-indicators {
+            display: none;
         }
     }
 
-    // Decorative elements
-    .slider-decorations {
-        position      : absolute;
-        top           : 0;
-        left          : 0;
-        right         : 0;
-        bottom        : 0;
-        pointer-events: none;
-        z-index       : 5;
+    // Hide custom indicators hoặc đẩy lên cao hơn
+    .custom-indicators {
+        display: none; // Ẩn hoàn toàn vì sẽ bị che
 
-        .decoration-left,
-        .decoration-right {
-            position: absolute;
-            top     : 50%;
-            width   : 100px;
-            height  : 200px;
-            background: linear-gradient(45deg,
-                    rgba(40, 167, 69, 0.1),
-                    rgba(40, 167, 69, 0.05),
-                    transparent);
+        // Hoặc nếu muốn giữ lại thì đẩy lên cao:
+        // position : absolute;
+        // bottom   : 180px; // Đẩy lên cao để không bị che
+        // left     : 50%;
+        // transform: translateX(-50%);
+        // display  : flex;
+        // gap      : 8px;
+        // z-index  : 15;
+
+        .indicator {
+            width        : 12px;
+            height       : 12px;
             border-radius: 50%;
-            filter       : blur(2px);
-            transform    : translateY(-50%);
-            animation    : float 6s ease-in-out infinite;
-        }
+            border       : 2px solid rgba(255, 255, 255, 0.5);
+            background   : transparent;
+            cursor       : pointer;
+            transition   : all 0.3s ease;
 
-        .decoration-left {
-            left           : -50px;
-            animation-delay: 0s;
-        }
+            &:hover {
+                border-color: rgba(255, 255, 255, 0.8);
+                transform   : scale(1.2);
+            }
 
-        .decoration-right {
-            right          : -50px;
-            animation-delay: 3s;
+            &.active {
+                background  : #28a745;
+                border-color: #28a745;
+                transform   : scale(1.3);
+            }
         }
     }
 }
 
-// Enhanced loading state
+// Loading state
 .slider-loading {
     display        : flex;
     justify-content: center;
     align-items    : center;
     height         : 500px;
-    background     : linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius  : 0 0 20px 20px;
-
-    .loading-content {
-        text-align: center;
-        animation : pulse 2s ease-in-out infinite;
-
-        .spinner-border {
-            width       : 4rem;
-            height      : 4rem;
-            border-width: 4px;
-        }
-
-        .loading-text {
-            margin-top : 20px;
-            color      : #28a745;
-            font-size  : 1.1rem;
-            font-weight: 500;
-        }
-    }
+    background     : #f8f9fa;
+    border-radius  : 15px;
+    margin         : 20px 0;
 }
 
-// Enhanced empty state
+// Empty state
 .slider-empty {
     display        : flex;
     justify-content: center;
     align-items    : center;
     height         : 500px;
-    background     : linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius  : 0 0 20px 20px;
-
-    .empty-content {
-        text-align: center;
-        color     : #6c757d;
-        animation : fadeIn 1s ease-out;
-
-        i {
-            margin-bottom: 20px;
-            opacity      : 0.5;
-            color        : #28a745;
-        }
-
-        p {
-            font-size  : 1.2rem;
-            font-weight: 500;
-            margin     : 0;
-        }
-    }
+    background     : #f8f9fa;
+    border-radius  : 15px;
+    margin         : 20px 0;
+    color          : #6c757d;
+    font-size      : 1.1rem;
 }
 
-// Animations
-@keyframes fadeInUp {
-    from {
-        opacity  : 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity  : 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(-50%) translateX(0);
-    }
-
-    50% {
-        transform: translateY(-50%) translateX(20px);
-    }
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-// 🎯 Optimized Responsive Design
-
-// 🔥 Extra Large Desktop (1600px+) - 4K & Ultra-wide
-@media (min-width: 1600px) {
+// Desktop lớn
+@media (min-width: 1400px) {
     .slider-field {
-        margin-top: 90px;
+        .carousel {
+            .carousel-item {
+                height: 600px;
 
-        .carousel .carousel-item {
-            height: 650px;
-        }
+                .carousel-caption {
+                    bottom: 250px; // Tăng khoảng cách cho desktop lớn
+                }
+            }
 
-        .carousel-control-prev,
-        .carousel-control-next {
-            width : 80px;
-            height: 80px;
-            left  : 50px;
-            right : 50px;
-
-            .carousel-control-prev-icon,
-            .carousel-control-next-icon {
-                width : 28px;
-                height: 28px;
+            .carousel-control-prev,
+            .carousel-control-next {
+                top: 35%;
             }
         }
 
-        .carousel-control-prev {
-            left: 50px;
-        }
-
-        .carousel-control-next {
-            right: 50px;
-        }
-
-        .slider-decorations {
-
-            .decoration-left,
-            .decoration-right {
-                width : 120px;
-                height: 240px;
-            }
-        }
-    }
-
-    .slider-loading,
-    .slider-empty {
-        height: 650px;
-    }
-}
-
-// 🔥 Large Desktop (1400px - 1599px) - Standard 4K
-@media (min-width: 1400px) and (max-width: 1599px) {
-    .slider-field {
-        margin-top: 70px;
-
-        .carousel .carousel-item {
-            height: 600px;
-        }
-
-        .carousel-control-prev,
-        .carousel-control-next {
-            width : 70px;
-            height: 70px;
-
-            .carousel-control-prev-icon,
-            .carousel-control-next-icon {
-                width : 26px;
-                height: 26px;
-            }
-        }
-
-        .carousel-control-prev {
-            left: 40px;
-        }
-
-        .carousel-control-next {
-            right: 40px;
-        }
-
-        .custom-caption .caption-content {
-            padding  : 35px;
-            max-width: 800px;
-        }
+        // .custom-indicators {
+        //     bottom: 230px;
+        // }
     }
 
     .slider-loading,
@@ -373,33 +221,27 @@
     }
 }
 
-// 🔥 Medium Desktop (1200px - 1399px) - Full HD
+// Desktop vừa
 @media (min-width: 1200px) and (max-width: 1399px) {
     .slider-field {
-        margin-top: 86px;
+        .carousel {
+            .carousel-item {
+                height: 550px;
 
-        .carousel .carousel-item {
-            height: 550px;
+                .carousel-caption {
+                    bottom: 220px;
+                }
+            }
+
+            .carousel-control-prev,
+            .carousel-control-next {
+                top: 35%;
+            }
         }
 
-        .carousel-control-prev,
-        .carousel-control-next {
-            width : 65px;
-            height: 65px;
-        }
-
-        .carousel-control-prev {
-            left: 35px;
-        }
-
-        .carousel-control-next {
-            right: 35px;
-        }
-
-        .custom-caption .caption-content {
-            padding  : 30px;
-            max-width: 700px;
-        }
+        // .custom-indicators {
+        //     bottom: 200px;
+        // }
     }
 
     .slider-loading,
@@ -408,198 +250,66 @@
     }
 }
 
-// 🔥 Small Desktop / Large Laptop (992px - 1199px)
+// Laptop
 @media (min-width: 992px) and (max-width: 1199px) {
     .slider-field {
-        margin-top   : 110px;
-        border-radius: 0 0 18px 18px;
-
         .carousel {
-            border-radius: 0 0 18px 18px;
-
             .carousel-item {
-                height: 480px;
+                height: 450px;
 
-                .carousel-image-container {
-                    border-radius: 0 0 18px 18px;
-                }
-
-                .custom-caption {
-                    .caption-content {
-                        padding  : 25px;
-                        max-width: 600px;
-
-                        .caption-title {
-                            font-size    : clamp(1.6rem, 3.5vw, 2.5rem);
-                            margin-bottom: 12px;
-                        }
-
-                        .caption-description {
-                            font-size: clamp(0.9rem, 2vw, 1.1rem);
-                        }
-                    }
+                .carousel-caption {
+                    bottom: 180px;
                 }
             }
 
             .carousel-control-prev,
             .carousel-control-next {
-                width : 55px;
-                height: 55px;
-
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    width : 22px;
-                    height: 22px;
-                }
-            }
-
-            .carousel-control-prev {
-                left: 25px;
-            }
-
-            .carousel-control-next {
-                right: 25px;
+                top: 40%;
             }
         }
 
-        .slider-decorations {
-
-            .decoration-left,
-            .decoration-right {
-                width : 90px;
-                height: 180px;
-            }
-        }
+        // .custom-indicators {
+        //     bottom: 160px;
+        // }
     }
 
     .slider-loading,
     .slider-empty {
-        height: 480px;
+        height: 450px;
     }
 }
 
-// 🔥 Tablet Landscape (768px - 991px)
-@media (min-width: 768px) and (max-width: 991px) {
+// Tablet responsive
+@media (max-width: 991px) {
     .slider-field {
-        margin-top   : 0px;
-        border-radius: 0 0 15px 15px;
+        margin       : 15px 0;
+        border-radius: 10px;
 
         .carousel {
-            border-radius: 0 0 15px 15px;
+            border-radius: 10px;
 
             .carousel-item {
-                height: 400px;
+                height: 350px;
 
-                .carousel-image-container {
-                    border-radius: 0 0 15px 15px;
-
-                    .carousel-image {
-                        &:hover {
-                            transform: scale(1.05); // Reduce hover effect on tablet
-                        }
-                    }
-                }
-
-                .custom-caption {
-                    width: 95%;
-
-                    .caption-content {
-                        padding      : 20px;
-                        border-radius: 12px;
-                        max-width    : 500px;
-
-                        .caption-title {
-                            font-size    : clamp(1.4rem, 3vw, 2rem);
-                            margin-bottom: 10px;
-                        }
-
-                        .caption-description {
-                            font-size    : clamp(0.85rem, 1.8vw, 1rem);
-                            margin-bottom: 0;
-                        }
-                    }
-                }
-            }
-
-            .carousel-control-prev,
-            .carousel-control-next {
-                width  : 50px;
-                height : 50px;
-                opacity: 0.9;
-
-                &:hover {
-                    transform: translateY(-50%) scale(1.05); // Reduce hover scale
-                }
-
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    width : 20px;
-                    height: 20px;
-                }
-            }
-
-            .carousel-control-prev {
-                left: 20px;
-            }
-
-            .carousel-control-next {
-                right: 20px;
-            }
-        }
-
-        .slider-decorations {
-
-            .decoration-left,
-            .decoration-right {
-                width : 80px;
-                height: 160px;
-            }
-        }
-    }
-
-    .slider-loading,
-    .slider-empty {
-        height: 400px;
-    }
-}
-
-// 🔥 Tablet Portrait & Large Mobile (576px - 767px)
-@media (min-width: 576px) and (max-width: 767px) {
-    .slider-field {
-        margin-top   : 0px;
-        border-radius: 0 0 12px 12px;
-
-        .carousel {
-            border-radius: 0 0 12px 12px;
-
-            .carousel-item {
-                height: 320px;
-
-                .carousel-image-container {
-                    border-radius: 0 0 12px 12px;
-
-                    .carousel-image {
-                        &:hover {
-                            transform: scale(1.02); // Minimal hover on mobile
-                        }
-                    }
-                }
-
-                .custom-caption {
-                    width: 95%;
+                .carousel-caption {
+                    bottom: 140px; // Điều chỉnh cho tablet
+                    width : 95%;
 
                     .caption-content {
                         padding      : 15px;
-                        border-radius: 10px;
-                        max-width    : 400px;
+                        border-radius: 8px;
 
                         .caption-title {
-                            font-size    : clamp(1.2rem, 4vw, 1.6rem);
                             margin-bottom: 8px;
                         }
 
                         .caption-description {
-                            font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+                            margin-bottom: 12px;
+                        }
+
+                        .caption-btn {
+                            padding  : 8px 20px;
+                            font-size: 0.9rem;
                         }
                     }
                 }
@@ -607,111 +317,9 @@
 
             .carousel-control-prev,
             .carousel-control-next {
-                width  : 45px;
-                height : 45px;
-                opacity: 0.8;
-
-                &:hover {
-                    transform: translateY(-50%) scale(1.02);
-                }
-
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    width : 18px;
-                    height: 18px;
-                }
-            }
-
-            .carousel-control-prev {
-                left: 15px;
-            }
-
-            .carousel-control-next {
-                right: 15px;
-            }
-        }
-
-        .slider-decorations {
-
-            .decoration-left,
-            .decoration-right {
-                width  : 60px;
-                height : 120px;
-                opacity: 0.5;
-            }
-        }
-    }
-
-    .slider-loading,
-    .slider-empty {
-        height: 320px;
-
-        .loading-content,
-        .empty-content {
-            .spinner-border {
-                width : 3rem;
-                height: 3rem;
-            }
-
-            .loading-text,
-            p {
-                font-size: 1rem;
-            }
-        }
-    }
-}
-
-// 🔥 Mobile Portrait (480px - 575px)
-@media (min-width: 480px) and (max-width: 575px) {
-    .slider-field {
-        margin-top   : 0px;
-        border-radius: 0 0 10px 10px;
-
-        .carousel {
-            border-radius: 0 0 10px 10px;
-
-            .carousel-item {
-                height: 260px;
-
-                .carousel-image-container {
-                    border-radius: 0 0 10px 10px;
-
-                    .carousel-image {
-                        &:hover {
-                            transform: none; // Disable hover on small mobile
-                        }
-                    }
-                }
-
-                .custom-caption {
-                    width: 98%;
-
-                    .caption-content {
-                        padding      : 12px;
-                        border-radius: 8px;
-
-                        .caption-title {
-                            font-size    : clamp(1.1rem, 5vw, 1.4rem);
-                            margin-bottom: 6px;
-                        }
-
-                        .caption-description {
-                            font-size  : clamp(0.75rem, 3vw, 0.9rem);
-                            line-height: 1.4;
-                        }
-                    }
-                }
-            }
-
-            .carousel-control-prev,
-            .carousel-control-next {
-                width  : 40px;
-                height : 40px;
-                opacity: 0.7;
-
-                &:hover {
-                    transform: translateY(-50%); // No scale on mobile
-                }
+                width : 40px;
+                height: 40px;
+                top   : 40%;
 
                 .carousel-control-prev-icon,
                 .carousel-control-next-icon {
@@ -721,157 +329,75 @@
             }
 
             .carousel-control-prev {
-                left: 12px;
+                left: 10px;
             }
 
             .carousel-control-next {
-                right: 12px;
+                right: 10px;
             }
         }
 
-        .slider-decorations {
-            display: none; // Hide decorations on small mobile
-        }
+        // .custom-indicators {
+        //     bottom: 120px;
+        //     gap   : 6px;
+
+        //     .indicator {
+        //         width : 10px;
+        //         height: 10px;
+        //     }
+        // }
     }
 
     .slider-loading,
     .slider-empty {
-        height: 260px;
-
-        .loading-content,
-        .empty-content {
-            .spinner-border {
-                width : 2.5rem;
-                height: 2.5rem;
-            }
-
-            .loading-text,
-            p {
-                font-size: 0.9rem;
-            }
-
-            i {
-                font-size: 2rem;
-            }
-        }
+        height: 350px;
     }
 }
 
-// 🔥 Small Mobile (< 480px)
-@media (max-width: 479px) {
+// Mobile responsive
+@media (max-width: 768px) {
     .slider-field {
-        margin-top   : 5px;
-        border-radius: 0 0 8px 8px;
-
         .carousel {
-            border-radius: 0 0 8px 8px;
-
             .carousel-item {
-                height: 220px;
+                height: 250px;
 
-                .carousel-image-container {
-                    border-radius: 0 0 8px 8px;
-
-                    .carousel-image {
-                        &:hover {
-                            transform: none;
-                        }
-                    }
-                }
-
-                .custom-caption {
-                    width: 98%;
-
-                    .caption-content {
-                        padding      : 10px;
-                        border-radius: 6px;
-
-                        .caption-title {
-                            font-size    : clamp(1rem, 6vw, 1.2rem);
-                            margin-bottom: 5px;
-                        }
-
-                        .caption-description {
-                            font-size  : clamp(0.7rem, 4vw, 0.85rem);
-                            line-height: 1.3;
-                        }
-                    }
+                .carousel-caption {
+                    bottom: 90px; // Điều chỉnh cho mobile
                 }
             }
 
             .carousel-control-prev,
             .carousel-control-next {
-                width  : 35px;
-                height : 35px;
-                opacity: 0.6;
-
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    width : 14px;
-                    height: 14px;
-                }
-            }
-
-            .carousel-control-prev {
-                left: 8px;
-            }
-
-            .carousel-control-next {
-                right: 8px;
+                top: 45%;
             }
         }
 
-        .slider-decorations {
-            display: none;
-        }
+        // .custom-indicators {
+        //     bottom: 70px;
+        // }
     }
 
     .slider-loading,
     .slider-empty {
-        height: 220px;
-
-        .loading-content,
-        .empty-content {
-            .spinner-border {
-                width       : 2rem;
-                height      : 2rem;
-                border-width: 3px;
-            }
-
-            .loading-text,
-            p {
-                font-size : 0.85rem;
-                margin-top: 15px;
-            }
-
-            i {
-                font-size    : 1.8rem;
-                margin-bottom: 15px;
-            }
-        }
+        height: 250px;
     }
 }
 
-// 🔥 Very Small Mobile (< 375px) - iPhone SE, etc.
-@media (max-width: 374px) {
+@media (max-width: 480px) {
     .slider-field {
-        margin-top: 60px;
-
         .carousel {
             .carousel-item {
                 height: 200px;
 
-                .custom-caption {
+                .carousel-caption {
+                    bottom: 70px; // Điều chỉnh cho mobile nhỏ
+
                     .caption-content {
-                        padding: 8px;
+                        padding: 10px;
 
-                        .caption-title {
-                            font-size    : clamp(0.9rem, 7vw, 1.1rem);
-                            margin-bottom: 4px;
-                        }
-
-                        .caption-description {
-                            font-size: clamp(0.65rem, 5vw, 0.8rem);
+                        .caption-btn {
+                            padding  : 6px 15px;
+                            font-size: 0.8rem;
                         }
                     }
                 }
@@ -879,41 +405,17 @@
 
             .carousel-control-prev,
             .carousel-control-next {
-                width : 32px;
-                height: 32px;
-
-                .carousel-control-prev-icon,
-                .carousel-control-next-icon {
-                    width : 12px;
-                    height: 12px;
-                }
-            }
-
-            .carousel-control-prev {
-                left: 5px;
-            }
-
-            .carousel-control-next {
-                right: 5px;
+                top: 45%;
             }
         }
+
+        // .custom-indicators {
+        //     bottom: 50px;
+        // }
     }
 
     .slider-loading,
     .slider-empty {
         height: 200px;
-
-        .loading-content,
-        .empty-content {
-
-            .loading-text,
-            p {
-                font-size: 0.8rem;
-            }
-
-            i {
-                font-size: 1.5rem;
-            }
-        }
     }
 }

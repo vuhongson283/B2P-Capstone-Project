@@ -9,9 +9,6 @@ import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner compone
 import DashboardField from "./CourtOwner/CourtOwnerDashboard";
 import CourtManagement from "./CourtOwner/CourtManagement";
 
-import Admin from "./AdminPage/Admin";
-import AccountTable from "./AdminPage/AccountTable";
-import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 const Layout = (props) => {
   return (
     <>
@@ -29,14 +26,6 @@ const Layout = (props) => {
             element={<FacilitiesWithCondition />}
           />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
-        </Route>
-
-        <Route path="/admin" element={<Admin />}>
-          <Route path="accounts" element={<AccountTable />} />
-          <Route
-            path="manage-court-categories"
-            element={<ManageCourtCategories />}
-          />
         </Route>
       </Routes>
 

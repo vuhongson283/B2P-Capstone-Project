@@ -8,7 +8,6 @@ using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Utils;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Twilio.TwiML.Messaging;
 
 namespace B2P_API.Services
 {
@@ -131,18 +130,6 @@ namespace B2P_API.Services
         {
             try
             {
-                // Fix 1: Move request null check to the beginning
-                if (request == null)
-                {
-                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
-                    {
-                        Success = false,
-                        Message = MessagesCodes.MSG_80,
-                        Status = 400, // Changed to 400 for bad request
-                        Data = null
-                    };
-                }
-
                 var facilities = await _facilityRepositoryForUser.GetAllFacilitiesByPlayer();
                 var activeFacilities = facilities?.Where(f => f.StatusId == 1).ToList();
 
@@ -151,7 +138,7 @@ namespace B2P_API.Services
                     return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
                     {
                         Success = false,
-                        Message = MessagesCodes.MSG_72,
+                        Message = MessagesCodes.MSG_44,
                         Status = 404,
                         Data = null
                     };
@@ -164,7 +151,6 @@ namespace B2P_API.Services
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.FacilityName.Contains(request.Name, StringComparison.OrdinalIgnoreCase));
                 }
-
                 if (request.Type != null && request.Type.Any())
                 {
                     filteredFacilities = filteredFacilities.Where(f =>
@@ -175,11 +161,12 @@ namespace B2P_API.Services
                     return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
                     {
                         Success = false,
-                        Message = MessagesCodes.MSG_72,
+                        Message = "No facilities found matching the search criteria.",
                         Status = 404,
                         Data = null
                     };
                 }
+
 
                 if (!string.IsNullOrEmpty(request.City))
                 {
@@ -202,7 +189,7 @@ namespace B2P_API.Services
                     return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
                     {
                         Success = false,
-                        Message = MessagesCodes.MSG_72,
+                        Message = "No facilities found matching the search criteria.",
                         Status = 404,
                         Data = null
                     };
@@ -263,12 +250,23 @@ namespace B2P_API.Services
                 var totalItems = results.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
+                if (totalPages == 0)
+                {
+                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>
+                    {
+                        Data = null,
+                        Message = "Không có kết quả tìm kiếm.",
+                        Success = false,
+                        Status = 404
+                    };
+                }
+
                 if (pageNumber < 1 || pageNumber > totalPages)
                 {
                     return new ApiResponse<PagedResponse<SearchFacilityResponse>>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_78,
+                        Message = $"Số trang không hợp lệ",
                         Success = false,
                         Status = 400
                     };
@@ -291,7 +289,7 @@ namespace B2P_API.Services
                 return new ApiResponse<PagedResponse<SearchFacilityResponse>>
                 {
                     Success = true,
-                    Message = $"Tìm thấy {totalItems} cơ sở.",
+                    Message = $"Found {totalItems} facilities matching search criteria.",
                     Status = 200,
                     Data = pagedResponse
                 };

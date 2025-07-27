@@ -97,12 +97,7 @@ namespace B2P_API.Controllers
             return StatusCode(response.Status, response);
         }
 
-        [HttpGet("check-password-status/{userId}")]
-        public async Task<IActionResult> CheckPasswordStatus(int userId)
-        {
-            var response = await _userService.CheckPasswordStatusAsync(userId);
-            return StatusCode(response.Status, response);
-        }
+
 
     }
 }

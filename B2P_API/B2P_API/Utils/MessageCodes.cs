@@ -71,20 +71,6 @@
         public const string MSG_67 = "Lỗi cập nhật ảnh";
         public const string MSG_68 = "Địa chỉ Email không hợp lệ";
         public const string MSG_69 = "Email đã được sử dụng";
-        public const string MSG_70 = "Cơ sở không tồn tại hoặc đã bị loại bỏ";
-        public const string MSG_71 = "Không tìm thấy danh sách kiểu sân";
-        public const string MSG_72 = "Không tìm thấy cơ sở nào phù hợp với tiêu chí tìm kiếm của bạn.";
-        public const string MSG_73 = "Không tìm thấy kiểu sân với ID đã cho";
-        public const string MSG_74 = "Tên kiểu sân không được để trống";
-        public const string MSG_75 = "Thêm kiểu sân thành công";
-        public const string MSG_76 = "Tên kiểu sân không vượt quá 100 ký tự";
-        public const string MSG_77 = "Không có kết quả tìm kiếm";
-        public const string MSG_78 = "Số trang không hợp lệ";
-        public const string MSG_79 = "Tải danh sách kiểu sân thành công. ";
-        public const string MSG_80 = "Dữ liệu không hợp lệ";
-
-
-
     }
 
 }

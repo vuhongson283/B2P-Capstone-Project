@@ -25,9 +25,9 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("add-court-category")]
-        public async Task<IActionResult> AddCourtCategory(string cateName)
+        public async Task<IActionResult> AddCourtCategory([FromBody] CourtCategoryAddRequest request)
         {
-            var response = await _courtCategoryService.AddCourtCategoryAsync(cateName);
+            var response = await _courtCategoryService.AddCourtCategoryAsync(request);
             return StatusCode(response.Status, response);
 
         }

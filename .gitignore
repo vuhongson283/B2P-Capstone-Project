@@ -47,8 +47,3 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Remove the echo commands and just add the patterns directly:
-**/coveragereport/
-**/coverage.cobertura.xml
-**/*.DotSettings

@@ -27,7 +27,7 @@ namespace B2P_API.Services
                     return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_71,
+                        Message = "Không tìm thấy danh sách kiểu sân",
                         Success = false,
                         Status = 404
                     };
@@ -35,10 +35,10 @@ namespace B2P_API.Services
 
                 // Apply search filter
                 var filteredCategories = categories.AsQueryable();
-                if (!string.IsNullOrWhiteSpace(search))
+                if (!string.IsNullOrEmpty(search))
                 {
                     filteredCategories = filteredCategories.Where(c =>
-                        !string.IsNullOrEmpty(c.CategoryName) && c.CategoryName.Contains(search, StringComparison.OrdinalIgnoreCase));
+                        c.CategoryName.Contains(search, StringComparison.OrdinalIgnoreCase));
                 }
 
                 var filteredList = filteredCategories.ToList();
@@ -49,7 +49,7 @@ namespace B2P_API.Services
                     return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_77,
+                        Message = "Không tìm thấy kiểu sân phù hợp với từ khóa tìm kiếm",
                         Success = false,
                         Status = 404
                     };
@@ -66,12 +66,23 @@ namespace B2P_API.Services
                 var totalItems = response.Count;
                 var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
+                if (totalPages == 0)
+                {
+                    return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
+                    {
+                        Data = null,
+                        Message = "Không có kết quả tìm kiếm.",
+                        Success = false,
+                        Status = 404
+                    };
+                }
+
                 if (pageNumber < 1 || pageNumber > totalPages)
                 {
                     return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_78,
+                        Message = "Số trang không hợp lệ",
                         Success = false,
                         Status = 400
                     };
@@ -94,7 +105,7 @@ namespace B2P_API.Services
                 return new ApiResponse<PagedResponse<CourtCategoryResponse>?>
                 {
                     Data = pagedResponse,
-                    Message = MessagesCodes.MSG_79 + $"Tìm thấy {totalItems} kết quả",
+                    Message = $"Tải danh sách kiểu sân thành công. Tìm thấy {totalItems} kết quả",
                     Success = true,
                     Status = 200
                 };
@@ -111,28 +122,16 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<object>> AddCourtCategoryAsync(string cateName)
+        public async Task<ApiResponse<object>> AddCourtCategoryAsync(CourtCategoryAddRequest request)
         {
             try
-            {
-                if (string.IsNullOrEmpty(cateName?.Trim()))
+            {   
+                if (request == null||string.IsNullOrEmpty(request.CategoryName?.Trim()))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
-                        Message = MessagesCodes.MSG_74,
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                // NEW: Length validation
-                if (cateName.Trim().Length > 100)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null!,
-                        Message = MessagesCodes.MSG_76, // Assuming new message for length
+                        Data = null,
+                        Message = "Tên kiểu sân không được để trống",
                         Success = false,
                         Status = 400
                     };
@@ -140,29 +139,42 @@ namespace B2P_API.Services
 
                 var newCategory = new CourtCategory
                 {
-                    CategoryName = cateName.Trim(), // CHANGED: Added Trim()
+                    CategoryName = request.CategoryName,
                 };
                 var result = await _categoryRepo.AddCourtCategoryAsync(newCategory);
-
-                return new ApiResponse<object>
+                if (result)
                 {
-                    Data = null!,
-                    Message = MessagesCodes.MSG_75,
-                    Success = true,
-                    Status = 200
-                };
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Thêm kiểu sân thành công",
+                        Success = true,
+                        Status = 200
+                    };
+                }
+                else
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Thêm kiểu sân thất bại",
+                        Success = false,
+                        Status = 500
+                    };
+                }
             }
             catch (Exception ex)
             {
                 return new ApiResponse<object>
                 {
-                    Data = null!,
+                    Data = null,
                     Message = MessagesCodes.MSG_06 + ex.Message,
                     Success = false,
                     Status = 500
                 };
             }
         }
+
         public async Task<ApiResponse<object>> UpdateCourtCategoryAsync(CourtCategoryUpdateRequest request)
         {
             try
@@ -182,7 +194,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "Tên kiểu sân không được để trống",
                         Success = false,
                         Status = 400
@@ -194,7 +206,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "Không tìm thấy kiểu sân với ID đã cho",
                         Success = false,
                         Status = 404
@@ -206,7 +218,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "Cập nhật kiểu sân thành công",
                         Success = true,
                         Status = 200
@@ -216,7 +228,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "Cập nhật kiểu sân thất bại",
                         Success = false,
                         Status = 500
@@ -227,7 +239,7 @@ namespace B2P_API.Services
             {
                 return new ApiResponse<object>
                 {
-                    Data = null!,
+                    Data = null,
                     Message = MessagesCodes.MSG_06 + ex.Message,
                     Success = false,
                     Status = 500
@@ -243,7 +255,7 @@ namespace B2P_API.Services
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "ID kiểu sân không hợp lệ",
                         Success = false,
                         Status = 400
@@ -254,7 +266,7 @@ namespace B2P_API.Services
 
                     return new ApiResponse<object>
                     {
-                        Data = null!,
+                        Data = null,
                         Message = "Xóa kiểu sân thành công",
                         Success = true,
                         Status = 200
@@ -265,7 +277,7 @@ namespace B2P_API.Services
             {
                 return new ApiResponse<object>
                 {
-                    Data = null!,
+                    Data = null,
                     Message = MessagesCodes.MSG_06 + ex.Message,
                     Success = false,
                     Status = 500

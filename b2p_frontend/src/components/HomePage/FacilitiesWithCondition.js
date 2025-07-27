@@ -1,6 +1,6 @@
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import Card from "react-bootstrap/Card";
+import Card from "react-bootstrap/Card"; // Import Card
 import React, { useEffect, useState, useRef } from "react";
 import {
   getAllCourtCategories,
@@ -8,9 +8,9 @@ import {
 } from "../../services/apiService";
 import { useSelector, useDispatch } from "react-redux";
 import ReactPaginate from "react-paginate";
-import { useNavigate, useLocation } from "react-router-dom";
-import { setSearchFacility } from "../../store/action/searchFacilityAction";
-import "./FacilitiesWithCondition.scss";
+import { useNavigate } from "react-router-dom";
+import { setSearchFacility } from "../../store/action/searchFacilityAction"; // Import action
+import "./FacilitiesWithCondition.scss"; // Import your CSS file
 import altImg from "../../assets/images/sports-tools.jpg";
 
 const convertGoogleDriveUrl = (url) => {
@@ -33,9 +33,10 @@ const formatPrice = (price) => {
   return parseInt(price).toLocaleString("vi-VN");
 };
 
+// Sample image for facilities
+
 const FacilitiesWithCondition = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const searchFacility = useSelector((state) => state.searchFacility);
   const dispatch = useDispatch();
 
@@ -47,7 +48,7 @@ const FacilitiesWithCondition = () => {
 
   // Filter states
   const [searchText, setSearchText] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [sortOrder, setSortOrder] = useState("3");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -56,12 +57,12 @@ const FacilitiesWithCondition = () => {
   // State for selected province and district
   const [selectedProvince, setSelectedProvince] = useState(
     searchFacility.province || ""
-  );
+  ); // Add state for province
   const [selectedDistrict, setSelectedDistrict] = useState(
     searchFacility.district || ""
-  );
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
+  ); // Add state for district
+  const [provinces, setProvinces] = useState([]); // Add state for provinces
+  const [districts, setDistricts] = useState([]); // Add state for districts
 
   const pageSize = 1;
 
@@ -76,18 +77,7 @@ const FacilitiesWithCondition = () => {
         1,
         Number.MAX_SAFE_INTEGER
       );
-      const categories = response.data.items;
-      setListCourtCategories(categories);
-
-      console.log("=== COURT CATEGORIES LOADED ===");
-      console.log("Categories:", categories);
-
-      // Set default selected category to first item when categories are loaded
-      if (categories.length > 0 && !selectedCategory) {
-        const firstCategoryId = categories[0].categoryId.toString();
-        setSelectedCategory(firstCategoryId);
-        console.log("Set default category to:", firstCategoryId);
-      }
+      setListCourtCategories(response.data.items);
     } catch (error) {
       console.error("Error fetching court categories:", error);
     }
@@ -146,155 +136,69 @@ const FacilitiesWithCondition = () => {
     }
   }, [selectedProvince]);
 
-  // 🎯 Handle URL parameter changes (for forced refresh from header)
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const categoryFromUrl = urlParams.get("category");
-    const timestampFromUrl = urlParams.get("t");
-
-    console.log("=== URL PARAMS CHANGED ===");
-    console.log("Category from URL:", categoryFromUrl);
-    console.log("Timestamp from URL:", timestampFromUrl);
-
-    if (categoryFromUrl && listCourtCategories.length > 0) {
-      console.log("Setting category from URL:", categoryFromUrl);
-      setSelectedCategory(categoryFromUrl);
-
-      // Update Redux state to match URL
-      dispatch(
-        setSearchFacility({
-          searchText: "",
-          categoryId: parseInt(categoryFromUrl),
-          province: "",
-          district: "",
-          timestamp: timestampFromUrl ? parseInt(timestampFromUrl) : Date.now(),
-        })
-      );
-
-      // Perform search with new category
-      const requestBody = {
-        name: "",
-        type: [parseInt(categoryFromUrl)],
-        city: "",
-        ward: "",
-        order: parseInt(sortOrder),
-      };
-
-      console.log("Searching from URL params:", requestBody);
-      fetchFacilities(1, requestBody);
-
-      // Clean up URL params after processing
-      navigate("/search", { replace: true });
-    }
-  }, [location.search, listCourtCategories, sortOrder, dispatch, navigate]);
-
-  // 🎯 Handle Redux search facility state changes
-  useEffect(() => {
-    if (searchFacility && listCourtCategories.length > 0) {
-      console.log("=== REDUX STATE CHANGED ===");
-      console.log("searchFacility:", searchFacility);
-
+    if (searchFacility) {
       // Update local states from searchFacility
       setSearchText(searchFacility.searchText || "");
-
-      // Handle category selection from Redux state
-      if (searchFacility.categoryId) {
-        let categoryToSet;
-        if (Array.isArray(searchFacility.categoryId)) {
-          categoryToSet = searchFacility.categoryId[0]?.toString() || "";
-        } else {
-          categoryToSet = searchFacility.categoryId.toString();
-        }
-
-        console.log("Setting category from Redux:", categoryToSet);
-        setSelectedCategory(categoryToSet);
-      } else {
-        if (listCourtCategories.length > 0) {
-          const firstCategoryId = listCourtCategories[0].categoryId.toString();
-          setSelectedCategory(firstCategoryId);
-          console.log("No category from Redux, using first:", firstCategoryId);
-        }
-      }
-
+      setSelectedCategories(
+        Array.isArray(searchFacility.categoryId)
+          ? searchFacility.categoryId.map((id) => parseInt(id))
+          : searchFacility.categoryId
+          ? [parseInt(searchFacility.categoryId)]
+          : [1]
+      );
       setSelectedProvince(searchFacility.province || "");
       setSelectedDistrict(searchFacility.district || "");
 
-      // 🎯 Check for timestamp to force search (from header navigation)
-      if (searchFacility.timestamp) {
-        console.log(
-          "Timestamp detected, forcing search:",
-          searchFacility.timestamp
-        );
-
-        const categoryToSearch = searchFacility.categoryId
-          ? Array.isArray(searchFacility.categoryId)
-            ? searchFacility.categoryId[0]
-            : searchFacility.categoryId
-          : listCourtCategories.length > 0
-          ? listCourtCategories[0].categoryId
-          : null;
-
+      // Only perform search on initial load
+      if (!initialSearchDone.current) {
         const requestBody = {
           name: searchFacility.searchText || "",
-          type: categoryToSearch ? [parseInt(categoryToSearch)] : [],
+          type: searchFacility.categoryId
+            ? Array.isArray(searchFacility.categoryId)
+              ? searchFacility.categoryId.map((id) => parseInt(id))
+              : [parseInt(searchFacility.categoryId)]
+            : [1],
           city: searchFacility.province || "",
           ward: searchFacility.district || "",
           order: parseInt(sortOrder),
         };
-
-        console.log("Force search request body:", requestBody);
-        fetchFacilities(1, requestBody);
-
-        // Clear timestamp to prevent infinite loops
-        dispatch(
-          setSearchFacility({
-            ...searchFacility,
-            timestamp: null,
-          })
-        );
-      } else if (!initialSearchDone.current) {
-        // Only perform initial search if no timestamp
-        const categoryToSearch = searchFacility.categoryId
-          ? Array.isArray(searchFacility.categoryId)
-            ? searchFacility.categoryId[0]
-            : searchFacility.categoryId
-          : listCourtCategories.length > 0
-          ? listCourtCategories[0].categoryId
-          : null;
-
-        console.log("Initial search with category:", categoryToSearch);
-
-        const requestBody = {
-          name: searchFacility.searchText || "",
-          type: categoryToSearch ? [parseInt(categoryToSearch)] : [],
-          city: searchFacility.province || "",
-          ward: searchFacility.district || "",
-          order: parseInt(sortOrder),
-        };
-
-        console.log("Initial search request body:", requestBody);
         fetchFacilities(1, requestBody);
         initialSearchDone.current = true;
       }
     }
-  }, [searchFacility, listCourtCategories, sortOrder, dispatch]);
+  }, [searchFacility]);
+
+  // Handle category checkbox change
+  const handleCategoryChange = (categoryId, isChecked) => {
+    // Đảm bảo categoryId là số
+    const numericCategoryId = parseInt(categoryId);
+
+    let newCategories;
+    if (isChecked) {
+      // Kiểm tra xem categoryId đã tồn tại chưa để tránh trùng lặp
+      if (!selectedCategories.includes(numericCategoryId)) {
+        newCategories = [...selectedCategories, numericCategoryId];
+      } else {
+        newCategories = [...selectedCategories];
+      }
+    } else {
+      newCategories = selectedCategories.filter(
+        (id) => id !== numericCategoryId
+      );
+    }
+    setSelectedCategories(newCategories);
+  };
 
   // Handle search
   const handleSearch = () => {
-    const categoryId = selectedCategory ? parseInt(selectedCategory) : null;
-
-    console.log("=== HANDLING SEARCH ===");
-    console.log("Selected category:", categoryId);
-
     // Update searchParams with latest values
     const searchParams = {
       searchText: searchText,
-      categoryId: categoryId,
+      categoryId: selectedCategories.map((id) => parseInt(id)), // Ensure all IDs are numbers
       province: selectedProvince,
       district: selectedDistrict,
     };
-
-    console.log("Search params:", searchParams);
 
     // Update Redux state with new search params
     dispatch(setSearchFacility(searchParams));
@@ -302,13 +206,11 @@ const FacilitiesWithCondition = () => {
     // Create request body for API call
     const requestBody = {
       name: searchText,
-      type: categoryId ? [categoryId] : [],
+      type: selectedCategories.length > 0 ? selectedCategories : [],
       city: selectedProvince,
       ward: selectedDistrict,
       order: parseInt(sortOrder),
     };
-
-    console.log("Search request body:", requestBody);
 
     // Call API with request body
     fetchFacilities(1, requestBody);
@@ -319,18 +221,13 @@ const FacilitiesWithCondition = () => {
     setLoading(true);
     setApiStatus(null);
     try {
-      const categoryId = selectedCategory ? parseInt(selectedCategory) : null;
-
       const requestBody = customRequestBody || {
         name: searchText,
-        type: categoryId ? [categoryId] : [],
+        type: selectedCategories.length > 0 ? selectedCategories : [],
         city: selectedProvince,
         ward: selectedDistrict,
         order: parseInt(sortOrder),
       };
-
-      console.log("=== FETCHING FACILITIES ===");
-      console.log("Page:", page, "Request body:", requestBody);
 
       const response = await getAllFacilitiesByPlayer(
         page,
@@ -363,58 +260,33 @@ const FacilitiesWithCondition = () => {
     }
   };
 
-  // Handle reset filters - set to first category
+  // Handle reset filters
   const handleReset = () => {
-    console.log("=== RESETTING FILTERS ===");
-
     setSearchText("");
+    setSelectedCategories([1]);
     setSelectedProvince("");
     setSelectedDistrict("");
     setSortOrder("3");
     setCurrentPage(1);
 
-    // Set selectedCategory to first category
-    const firstCategoryId =
-      listCourtCategories.length > 0 ? listCourtCategories[0].categoryId : "";
-
-    console.log("Reset to first category:", firstCategoryId);
-    setSelectedCategory(firstCategoryId.toString());
-
-    // Reset Redux state with first category
+    // Reset Redux state
     dispatch(
       setSearchFacility({
         searchText: "",
-        categoryId: firstCategoryId,
+        categoryId: [1],
         province: "",
         district: "",
       })
     );
 
-    // Call API with first category as default
-    const requestBody = {
-      name: "",
-      type: firstCategoryId ? [firstCategoryId] : [],
-      city: "",
-      ward: "",
-      order: 3,
-    };
-
-    console.log("Reset request body:", requestBody);
-    fetchFacilities(1, requestBody);
+    // Gọi API với các giá trị mặc định
+    fetchFacilities(1);
   };
 
   // Handle pagination
   const handlePageChange = (selectedPage) => {
     const page = selectedPage.selected + 1;
     fetchFacilities(page);
-  };
-
-  // Get category name by ID for debugging
-  const getCategoryNameById = (categoryId) => {
-    const category = listCourtCategories.find(
-      (cat) => cat.categoryId === parseInt(categoryId)
-    );
-    return category ? category.categoryName : "Unknown";
   };
 
   return (
@@ -441,7 +313,6 @@ const FacilitiesWithCondition = () => {
                   onChange={(e) => setSearchText(e.target.value)}
                 />
               </div>
-
               {/* Tỉnh/Thành phố */}
               <div className="filter-section">
                 <h5 className="filter-title">Tỉnh/Thành phố</h5>
@@ -474,26 +345,26 @@ const FacilitiesWithCondition = () => {
                   ))}
                 </Form.Select>
               </div>
-
-              {/* Loại sân */}
               <div className="filter-section">
                 <h5 className="filter-title">Loại sân</h5>
-                <Form.Select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    console.log("Category changed to:", e.target.value);
-                    setSelectedCategory(e.target.value);
-                  }}
-                >
+                <div className="checkbox-group">
                   {listCourtCategories.map((category) => (
-                    <option
+                    <Form.Check
                       key={category.categoryId}
-                      value={category.categoryId}
-                    >
-                      {category.categoryName}
-                    </option>
+                      type="checkbox"
+                      id={`category-${category.categoryId}`}
+                      label={category.categoryName}
+                      className="filter-checkbox"
+                      checked={selectedCategories.includes(category.categoryId)}
+                      onChange={(e) =>
+                        handleCategoryChange(
+                          category.categoryId,
+                          e.target.checked
+                        )
+                      }
+                    />
                   ))}
-                </Form.Select>
+                </div>
               </div>
 
               <div className="filter-section">
@@ -582,7 +453,7 @@ const FacilitiesWithCondition = () => {
                             alt={facility.facilityName}
                             className="facility-image"
                             onError={(e) => {
-                              e.target.onerror = null;
+                              e.target.onerror = null; // Prevents infinite loop
                               e.target.src = altImg;
                             }}
                           />
