@@ -150,15 +150,24 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
-  return axios.get(`Report/Export-Report-CourtOwner`, {
-    params: {
-      userId,
-      startDate,
-      endDate,
-      facilityId,
-      pageNumber,
-    },
-    responseType: 'arraybuffer', // Quan trọng: yêu cầu dữ liệu dạng binary
+  const params = {
+    userId,
+    pageNumber
+  };
+
+  // Chỉ thêm các tham số nếu chúng có giá trị
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
+  if (facilityId) params.facilityId = facilityId;
+
+  return axios({
+    method: 'GET',
+    url: 'Report/Export-Report-CourtOwner',
+    params: params,
+    responseType: 'blob',
+    headers: {
+      'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
   });
 };
 

@@ -144,21 +144,26 @@ const getTotalReport = (
 };
 
 const exportReportToExcel = (
-  userId = 6,
-  startDate,
-  endDate,
-  facilityId,
-  pageNumber = 1
+  userId, 
+  startDate, 
+  endDate, 
+  facilityId, 
+  pageNumber, 
+  pageSize
 ) => {
-  return axios.get(`Report/Export-Report-CourtOwner`, {
+  return axios.get('Report/ExportToExcel', {
     params: {
       userId,
       startDate,
       endDate,
       facilityId,
       pageNumber,
+      pageSize
     },
-    responseType: 'arraybuffer', // Quan trọng: yêu cầu dữ liệu dạng binary
+    responseType: 'blob', // Changed from arraybuffer to blob
+    headers: {
+      'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }
   });
 };
 

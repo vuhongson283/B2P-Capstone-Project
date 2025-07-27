@@ -152,7 +152,7 @@ const exportReportToExcel = (
 ) => {
   return axios.get(`Report/Export-Report-CourtOwner`, {
     params: {
-      userId,
+      userId:6,
       startDate,
       endDate,
       facilityId,

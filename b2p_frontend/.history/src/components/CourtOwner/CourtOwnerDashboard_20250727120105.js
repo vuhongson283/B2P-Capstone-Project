@@ -48,13 +48,13 @@ const OwnerDashboard = () => {
       const response = await exportReportToExcel(6, null, null, null, 1, 10);
 
       // Kiểm tra magic number
-      const header = new Uint8Array(response.slice(0, 4));
+      const header = new Uint8Array(response.data.slice(0, 4));
       if (header[0] !== 0x50 || header[1] !== 0x4B || header[2] !== 0x03 || header[3] !== 0x04) {
         throw new Error("Dữ liệu không phải file Excel hợp lệ");
       }
 
       // Tạo blob với MIME type chính xác
-      const blob = new Blob([response], {
+      const blob = new Blob([response.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 

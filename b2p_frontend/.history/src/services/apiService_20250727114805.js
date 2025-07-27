@@ -144,22 +144,14 @@ const getTotalReport = (
 };
 
 const exportReportToExcel = (
-  userId = 6,
-  startDate,
-  endDate,
-  facilityId,
-  pageNumber = 1
+  userId=6, 
+  startDate, 
+  endDate, 
+  facilityId, 
+  pageNumber=1, 
+  pageSize=10
 ) => {
-  return axios.get(`Report/Export-Report-CourtOwner`, {
-    params: {
-      userId,
-      startDate,
-      endDate,
-      facilityId,
-      pageNumber,
-    },
-    responseType: 'arraybuffer', // Quan trọng: yêu cầu dữ liệu dạng binary
-  });
+  return axios.get(`Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
 };
 
 const getAllCourts = (params) => {

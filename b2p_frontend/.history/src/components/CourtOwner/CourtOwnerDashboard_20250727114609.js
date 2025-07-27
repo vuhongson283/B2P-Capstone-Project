@@ -46,37 +46,35 @@ const OwnerDashboard = () => {
     setExportLoading(true);
     try {
       const response = await exportReportToExcel(6, null, null, null, 1, 10);
-
-      // Kiểm tra magic number
-      const header = new Uint8Array(response.slice(0, 4));
-      if (header[0] !== 0x50 || header[1] !== 0x4B || header[2] !== 0x03 || header[3] !== 0x04) {
-        throw new Error("Dữ liệu không phải file Excel hợp lệ");
+      
+      // Kiểm tra dữ liệu nhận được
+      if (!response.data || response.data.byteLength === 0) {
+        throw new Error('Dữ liệu file Excel trống');
       }
 
-      // Tạo blob với MIME type chính xác
-      const blob = new Blob([response], {
+      // Tạo blob từ arraybuffer
+      const blob = new Blob([response.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
-      // Tạo URL tạm
-      const url = URL.createObjectURL(blob);
+      // Tạo URL từ blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'report.xlsx');
+      document.body.appendChild(link);
+      link.click();
       
-      // Tạo thẻ a ẩn để tải xuống
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Report_2025-07-27.xlsx'; // Dùng tên file từ server hoặc tự đặt
-      document.body.appendChild(a);
-      a.click();
-
       // Dọn dẹp
       setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
       }, 100);
 
+      alert('Xuất file Excel thành công!');
     } catch (error) {
-      console.error('Lỗi khi xuất Excel:', error);
-      alert('Lỗi: ' + error.message);
+      console.error('Lỗi khi export excel:', error);
+      alert('Xuất file Excel thất bại: ' + (error.message || 'Lỗi không xác định'));
     } finally {
       setExportLoading(false);
     }

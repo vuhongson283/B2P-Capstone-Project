@@ -47,36 +47,33 @@ const OwnerDashboard = () => {
     try {
       const response = await exportReportToExcel(6, null, null, null, 1, 10);
 
-      // Kiểm tra magic number
-      const header = new Uint8Array(response.slice(0, 4));
-      if (header[0] !== 0x50 || header[1] !== 0x4B || header[2] !== 0x03 || header[3] !== 0x04) {
-        throw new Error("Dữ liệu không phải file Excel hợp lệ");
-      }
-
-      // Tạo blob với MIME type chính xác
-      const blob = new Blob([response], {
+      // Convert the binary data to a Blob
+      const blob = new Blob([new Uint8Array(response.data)], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
-      // Tạo URL tạm
-      const url = URL.createObjectURL(blob);
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       
-      // Tạo thẻ a ẩn để tải xuống
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'Report_2025-07-27.xlsx'; // Dùng tên file từ server hoặc tự đặt
-      document.body.appendChild(a);
-      a.click();
+      // Generate filename with current date
+      const currentDate = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+      link.download = `bao-cao-dat-san_${currentDate}.xlsx`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-      // Dọn dẹp
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-
+      // Show success message
+      alert('Xuất file Excel thành công!');
     } catch (error) {
-      console.error('Lỗi khi xuất Excel:', error);
-      alert('Lỗi: ' + error.message);
+      console.error('Lỗi khi export excel:', error);
+      alert('Xuất file Excel thất bại: ' + (error.response?.data?.message || error.message));
     } finally {
       setExportLoading(false);
     }

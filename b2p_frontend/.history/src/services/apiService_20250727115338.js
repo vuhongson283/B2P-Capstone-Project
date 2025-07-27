@@ -150,7 +150,7 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
-  return axios.get(`Report/Export-Report-CourtOwner`, {
+  return axios.get(`Report/ReportList`, {
     params: {
       userId,
       startDate,
