@@ -10,5 +10,6 @@ namespace B2P_API.DTOs.SliderDTOs
 		public int? StatusId { get; set; }
 		public string? StatusName { get; set; }
 		public string? ImageUrl { get; set; }
+		public int? ImageId { get; set; }
 	}
 }

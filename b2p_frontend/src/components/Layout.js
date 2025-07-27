@@ -9,6 +9,7 @@ import CourtOwner from "./CourtOwner"; // Assuming you have a CourtOwner compone
 import Admin from "./AdminPage/Admin";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
+import SliderManagement from "./AdminPage/SliderManagement";
 const Layout = (props) => {
   return (
     <>
@@ -28,6 +29,7 @@ const Layout = (props) => {
 
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
+          <Route path="sliders" element={< SliderManagement />} />
           <Route
             path="manage-court-categories"
             element={<ManageCourtCategories />}

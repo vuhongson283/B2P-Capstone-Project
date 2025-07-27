@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AccountTable.scss";
+import { UserOutlined } from "@ant-design/icons";
 import {
     Table,
     Input,
@@ -87,11 +88,14 @@ const AccountTable = () => {
 
             const response = await getAccountList(requestData);
             if (response?.data) {
-                setAccounts(response.data.items || []);
+                setAccounts(Array.isArray(response.data.items) ? response.data.items : []);
                 setPagination((prev) => ({
                     ...prev,
                     total: response.data.totalItems || 0,
                 }));
+            } else {
+                setAccounts([]);
+                setPagination((prev) => ({ ...prev, total: 0 }));
             }
         } catch (error) {
             message.error("Có lỗi xảy ra khi tải danh sách tài khoản");
@@ -210,8 +214,6 @@ const AccountTable = () => {
         });
     };
 
-
-
     const columns = [
         {
             title: "STT",
@@ -292,7 +294,11 @@ const AccountTable = () => {
         <div className="account-table-wrapper">
             <div className="account-table-card">
                 <div className="page-header">
-                    <h1>Quản lý tài khoản</h1>
+                    <h1>
+                        <UserOutlined style={{ fontSize: "22px", marginRight: "8px", color: "#ffffff" }} />
+                        Quản lý tài khoản
+                    </h1>
+
                     <Text type="secondary">
                         {searchText ? (
                             <>
@@ -356,9 +362,11 @@ const AccountTable = () => {
                     onChange={handleTableChange}
                     rowKey="userId"
                     locale={{
-                        emptyText: searchText
-                            ? "Không tìm thấy kết quả phù hợp"
-                            : "Không có dữ liệu tài khoản",
+                        emptyText: loading
+                            ? "Đang tải dữ liệu..."
+                            : searchText || roleFilter || statusFilter
+                                ? "Không tìm thấy kết quả phù hợp"
+                                : "Không có dữ liệu tài khoản",
                     }}
                 />
             </div>

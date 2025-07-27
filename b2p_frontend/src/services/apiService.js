@@ -88,6 +88,36 @@ const deleteUser = (userId) => {
   return axios.delete(`AccountManagement/${userId}`);
 };
 
+//SliderManagement APIS 
+// Slider Management APIs
+const getSliderList = (data) => {
+  return axios.post("SliderManagement/slider-list", data);
+};
+
+const getSliderById = (slideId) => {
+  return axios.get(`SliderManagement/get-slider/${slideId}`);
+};
+
+const createSlider = (sliderData) => {
+  return axios.post("SliderManagement/create-slider", sliderData);
+};
+
+const updateSlider = (slideId, sliderData) => {
+  return axios.put(`SliderManagement/${slideId}`, sliderData);
+};
+
+const deleteSlider = (slideId) => {
+  return axios.delete(`SliderManagement/${slideId}`);
+};
+
+const activateSlider = (slideId) => {
+  return axios.put(`SliderManagement/${slideId}/activate`);
+};
+
+const deactivateSlider = (slideId) => {
+  return axios.put(`SliderManagement/${slideId}/deactivate`);
+};
+
 // Image Management APIs
 const getUserImage = (userId) => {
   return axios.get(`Image/user/${userId}`);
@@ -110,7 +140,48 @@ const uploadUserImage = (file, userId, caption = null) => {
   });
 };
 
+const uploadslideImage = (file, slideId, caption = null) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("entityId", slideId.toString());
+
+  if (caption) {
+    formData.append("caption", caption);
+  }
+
+  return axios.post("Image/upload-slide", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 30000,
+  });
+};
+
 const updateUserImage = (imageId, file, order = null, caption = null) => {
+  const formData = new FormData();
+
+  if (file) {
+    formData.append("file", file);
+  }
+
+  if (order !== null) {
+    formData.append("order", order.toString());
+  }
+
+  if (caption) {
+    formData.append("caption", caption);
+  }
+
+  return axios.put(`Image/update-image/${imageId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    timeout: 30000,
+  });
+};
+
+
+const updateSlideImage = (imageId, file, order = null, caption = null) => {
   const formData = new FormData();
 
   if (file) {
@@ -208,6 +279,8 @@ export {
   getUserImage,
   uploadUserImage,
   updateUserImage,
+  uploadslideImage,
+  updateSlideImage,
 
   // Password Reset
   forgotPasswordByEmail,
@@ -216,4 +289,13 @@ export {
   forgotPasswordBySms,
   resetPasswordBySms,
   resendOtpBySms,
+
+  //SliderManagement
+  getSliderList,
+  getSliderById,
+  createSlider,
+  updateSlider,
+  deleteSlider,
+  activateSlider,
+  deactivateSlider,
 };
