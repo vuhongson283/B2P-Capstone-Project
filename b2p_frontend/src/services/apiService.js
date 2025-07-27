@@ -55,9 +55,6 @@ const getAllFacilitiesByPlayer = (pageNumber, pageSize, body) => {
   );
 };
 
-const getFacilityById = (facilityId) => {
-  return axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
-};
 // Booking Management APIs
 const getAvailableSlots = (facilityId, categoryId, checkInDate) => {
   return axios.get(`Booking/available-slots?facilityId=${facilityId}&categoryId=${categoryId}&checkInDate=${checkInDate}`);
@@ -313,7 +310,7 @@ const uploadFacilityImages = (formData) => {
 };
 // Thêm vào file apiService.js (theo format của bạn)
 
-const getFacilityDetailsById = (facilityId) => {
+const getFacilityById = (facilityId) => {
   console.log("🔍 Getting facility by ID:", facilityId);
 
   const url = `FacilitiesManage/getFacilityById/${facilityId}`;
@@ -321,6 +318,11 @@ const getFacilityDetailsById = (facilityId) => {
 
   return axios.get(url);
 };
+// Facility Management APIs
+const getFacilityDetailsById = (facilityId) => {
+  return axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
+};
+
 
 const updateFacility = (facilityId, updateData) => {
   console.log("📝 Updating facility:", facilityId, updateData);
