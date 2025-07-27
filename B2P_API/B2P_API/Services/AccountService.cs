@@ -33,7 +33,7 @@ namespace B2P_API.Services
 					return new ApiResponse<string>
 					{
 						Success = false,
-						Message = MessagesCodes.MSG_64,
+						Message = "Email đã tồn tại trong hệ thống",
 						Status = 400,
 						Data = null
 					};
@@ -46,7 +46,7 @@ namespace B2P_API.Services
 					return new ApiResponse<string>
 					{
 						Success = false,
-						Message = MessagesCodes.MSG_68,
+						Message = "Format Email bị sai !",
 						Status = 400,
 						Data = null
 					};
@@ -58,7 +58,7 @@ namespace B2P_API.Services
 					return new ApiResponse<string>
 					{
 						Success = false,
-						Message = MessagesCodes.MSG_64,
+						Message = "Số điện thoại đã tồn tại",
 						Status = 400,
 						Data = null
 					};

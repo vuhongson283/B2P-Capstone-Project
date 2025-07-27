@@ -366,6 +366,196 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   }
 }
 
+// ======================= MODAL STYLES =======================
+// Modal overlay
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+// Success modal
+.success-modal {
+  background: $white;
+  border-radius: 1rem;
+  box-shadow: $shadow-xl;
+  max-width: 28rem;
+  width: 100%;
+  position: relative;
+  animation: modalSlideUp 0.4s ease-out;
+  
+  @media (max-width: 480px) {
+    max-width: 90vw;
+    margin: 1rem;
+  }
+}
+
+// Modal close button
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: $gray-200;
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $gray-600;
+  @include transition();
+  z-index: 10;
+
+  &:hover {
+    background: $gray-300;
+    color: $gray-800;
+    transform: scale(1.1);
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// Modal content
+.modal-content {
+  padding: 3rem 2rem 2rem;
+  text-align: center;
+
+  @media (max-width: 480px) {
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+}
+
+// Success icon
+.success-icon {
+  width: 4rem;
+  height: 4rem;
+  @include gradient-bg($green-500, $green-600);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: iconBounce 0.6s ease-out 0.2s both;
+
+  svg {
+    width: 2rem;
+    height: 2rem;
+    color: $white;
+  }
+}
+
+// Success title
+.success-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: $gray-800;
+  margin-bottom: 1rem;
+  animation: slideUp 0.5s ease-out 0.3s both;
+
+  @media (max-width: 480px) {
+    font-size: 1.25rem;
+  }
+}
+
+// Success message
+.success-message {
+  color: $gray-600;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  animation: slideUp 0.5s ease-out 0.4s both;
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+  }
+}
+
+// Modal actions
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-direction: column;
+  animation: slideUp 0.5s ease-out 0.5s both;
+
+  @media (min-width: 480px) {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+// Primary button in modal
+.btn-primary {
+  background: linear-gradient(135deg, $green-500, $green-600);
+  color: $white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition();
+  flex: 1;
+
+  &:hover {
+    @include button-hover();
+    background: linear-gradient(135deg, $green-600, $green-700);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (min-width: 480px) {
+    flex: none;
+    min-width: 10rem;
+  }
+}
+
+// Secondary button in modal
+.btn-secondary {
+  background: $white;
+  color: $gray-700;
+  border: 2px solid $gray-300;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition();
+  flex: 1;
+
+  &:hover {
+    background: $gray-100;
+    border-color: $gray-400;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @media (min-width: 480px) {
+    flex: none;
+    min-width: 10rem;
+  }
+}
+
 // Animations
 @keyframes slideUp {
   from {
@@ -375,6 +565,41 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes iconBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -430,12 +655,15 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
 // Focus states for accessibility
 .input-field:focus,
 .submit-button:focus,
+.btn-primary:focus,
+.btn-secondary:focus,
+.modal-close-btn:focus,
 input[type="radio"]:focus {
   outline: 2px solid $primary-green;
   outline-offset: 2px;
 }
 
-// Loading state for submit button (optional)
+// Loading state for submit button
 .submit-button {
   &.loading {
     opacity: 0.7;

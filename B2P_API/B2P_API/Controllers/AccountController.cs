@@ -18,6 +18,10 @@ namespace B2P_API.Controllers
 		public async Task<IActionResult> Register([FromBody] RegisterAccountRequest request)
 		{
 			var result = await _accountService.RegisterAccountAsync(request);
+
+			// Debug log
+			Console.WriteLine($"Returning response: Status={result.Status}, Success={result.Success}, Message={result.Message}");
+
 			return StatusCode(result.Status, result);
 		}
 	}

@@ -256,6 +256,18 @@ const resendOtpBySms = (phoneNumber) => {
   return axios.post("User/resend-otp-by-sms", { phoneNumber });
 };
 
+const axiosInstance = axios.create({
+  baseURL: 'your-api-base-url',
+  validateStatus: function (status) {
+    // Chỉ resolve promise cho status < 400
+    return status < 400;
+  }
+});
+const registerCourtOwner = (payload) => {
+  return axios.post("Account/register-court-owner", payload);
+};
+
+
 // Export all functions
 export {
   // Account Management
@@ -264,6 +276,9 @@ export {
   banUser,
   deleteUser,
   unbanUser,
+
+  //Account 
+  registerCourtOwner,
 
   // Court Category Management
   getAllCourtCategories,
