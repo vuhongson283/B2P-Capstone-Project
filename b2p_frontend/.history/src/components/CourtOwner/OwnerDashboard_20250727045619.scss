@@ -1,0 +1,159 @@
+.owner-dashboard {
+  padding: 20px;
+
+  .dashboard-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .dashboard-subtitle {
+    color: #666;
+    margin-bottom: 30px;
+  }
+
+  .stats-row {
+    margin-bottom: 30px;
+
+    .stat-card {
+      height: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+      border: none;
+
+      &:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-top: 10px;
+      }
+    }
+  }
+
+  .recent-bookings-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+
+    .section-title {
+      font-size: 20px;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .booking-list {
+      .booking-item {
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        transition: all 0.3s;
+
+        &:hover {
+          background-color: #f0f0f0;
+          transform: translateX(5px);
+        }
+
+        .booking-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .customer-info {
+            width: 25%;
+            strong {
+              display: block;
+              margin-bottom: 5px;
+            }
+          }
+
+          .booking-details {
+            width: 50%;
+            div {
+              margin-bottom: 5px;
+            }
+          }
+
+          .booking-status {
+            width: 25%;
+            text-align: right;
+
+            .status-badge {
+              display: inline-block;
+              padding: 5px 10px;
+              border-radius: 20px;
+              font-size: 12px;
+              font-weight: bold;
+              margin-bottom: 10px;
+
+              &.completed {
+                background-color: #d4edda;
+                color: #155724;
+              }
+
+              &.paid {
+                background-color: #cce5ff;
+                color: #004085;
+              }
+
+              &.pending {
+                background-color: #fff3cd;
+                color: #856404;
+              }
+
+              &.cancelled {
+                background-color: #f8d7da;
+                color: #721c24;
+              }
+            }
+
+            .booking-price {
+              font-weight: bold;
+              color: #2c3e50;
+              font-size: 16px;
+            }
+          }
+        }
+      }
+    }
+
+    .no-bookings {
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+
+    .view-all-btn {
+      margin-top: 20px;
+      background-color: #3498db;
+      border: none;
+      padding: 8px 20px;
+    }
+  }
+
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 18px;
+    color: #666;
+  }
+
+  .error-message {
+    color: #dc3545;
+    padding: 20px;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+}

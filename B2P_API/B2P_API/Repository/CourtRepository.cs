@@ -115,6 +115,9 @@ namespace B2P_API.Repository
             if (!string.IsNullOrWhiteSpace(court.CourtName))
                 existCourt.CourtName = court.CourtName;
 
+            if (court.StatusId.HasValue)
+                existCourt.StatusId = court.StatusId;
+
             if (court.CategoryId.HasValue)
                 existCourt.CategoryId = court.CategoryId;
 
