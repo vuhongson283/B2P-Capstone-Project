@@ -336,81 +336,7 @@ const deleteFacility = (facilityId) =>
   axios.delete(`FacilitiesManage/${facilityId}`);
 const deleteFacilityImage = (imageId) => axios.delete(`Image/${imageId}`);
 
-// ===============================
-// 🏟️ REPORT + COURT MANAGEMENT
-const getReport = (
-  userId=6, 
-  startDate, 
-  endDate, 
-  facilityId, 
-  pageNumber=1, 
-  pageSize=10
-) => {
-  return axios.get(`Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
-};
 
-const getTotalReport = (
-  userId=6, 
-  startDate, 
-  endDate
-) => {
-  return axios.get(`Report/TotalReport?userId=${userId}&startDate=${startDate}&endDate=${endDate}`);
-};
-
-const exportReportToExcel = (
-  userId = 6,
-  startDate,
-  endDate,
-  facilityId,
-  pageNumber = 1
-) => {
-  return axios.get(`Report/Export-Report-CourtOwner`, {
-    params: {
-      userId,
-      startDate,
-      endDate,
-      facilityId,
-      pageNumber,
-    },
-    responseType: 'arraybuffer', // Quan trọng: yêu cầu dữ liệu dạng binary
-  });
-};
-
-const getAllCourts = (params) => {
-  return axios.get('CourtManagement/CourtList', {
-    params: {
-      PageNumber: params.pageNumber || 1,
-      PageSize: params.pageSize || 10,
-      FacilityId: params.facilityId,
-      Search: params.search || undefined,
-      Status: params.status || undefined,
-      CategoryId: params.categoryId || undefined
-    }
-  });
-};
-
-const addNewCourt = (courtData) => {
-  return axios.post('CourtManagement/CreateCourt', courtData);
-};
-
-const updateCourt = (courtData, userId = 6) => {
-  return axios.put(`CourtManagement/UpdateCourt?userId=${userId}`, {
-    courtId: courtData.courtId,
-    statusId: courtData.status,
-    courtName: courtData.courtName,
-    categoryId: courtData.categoryId,
-    pricePerHour: courtData.pricePerHour,
-    facilityId: courtData.facilityId
-  });
-};
-
-const deleteCourt = (courtId, userId = 6) => {
-  return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
-};
-
-const getCourtDetail = (courtId) => {
-  return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
-};
 
 // ===============================
 // EXPORT
@@ -475,12 +401,4 @@ export {
   updateFacility,
   deleteFacility,
   deleteFacilityImage,
-  getReport,
-  getTotalReport,
-  exportReportToExcel,
-  getAllCourts,
-  addNewCourt,
-  updateCourt,
-  deleteCourt,
-  getCourtDetail,
 };

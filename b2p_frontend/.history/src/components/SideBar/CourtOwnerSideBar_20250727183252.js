@@ -239,8 +239,7 @@ const CourtOwnerSideBar = ({
     ));
   };
 
-  const [selectedFacilityId, setSelectedFacilityId] = useState(null);
-  // Render dynamic submenu
+  // Render dynamic submenu (for court management - list of facilities)
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (
       <div

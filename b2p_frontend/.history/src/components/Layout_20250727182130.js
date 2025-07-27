@@ -14,8 +14,8 @@ import Blog from "./Common/Blog";
 import FacilityTable from "./CourtOwnerPage/FacilityTable";
 import SliderManagement from "./AdminPage/SliderManagement";
 import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
-import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
-import CourtManagement from "./CourtOwnerPage/CourtManagement";
+import DashboardField from "./CourtOwner/CourtOwnerDashboard";
+import CourtManagement from "./CourtOwner/CourtManagement";
 
 const Layout = (props) => {
   return (
@@ -31,7 +31,6 @@ const Layout = (props) => {
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
-          <Route index element={<DashboardField />} />
           <Route
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}

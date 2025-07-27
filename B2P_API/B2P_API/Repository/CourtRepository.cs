@@ -116,6 +116,9 @@ namespace B2P_API.Repository
                 existCourt.CourtName = court.CourtName;
 
             if (court.CategoryId.HasValue)
+                existCourt.StatusId = court.StatusId;
+
+            if (court.CategoryId.HasValue)
                 existCourt.CategoryId = court.CategoryId;
 
             if (court.PricePerHour.HasValue)

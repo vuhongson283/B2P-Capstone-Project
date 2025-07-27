@@ -31,7 +31,6 @@ const Layout = (props) => {
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
-          <Route index element={<DashboardField />} />
           <Route
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
