@@ -39,7 +39,7 @@ const FacilityHeader = ({ facilityData }) => (
 // Image Carousel Component
 const ImageCarousel = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   // Process facility images - only use valid images from API
   const displayImages = React.useMemo(() => {
     if (images && images.length > 0) {
@@ -48,21 +48,21 @@ const ImageCarousel = ({ images }) => {
         .filter(img => img.imageUrl && img.imageUrl.trim() !== '')
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(img => img.imageUrl);
-      
+
       // Return valid images if any exist, otherwise fallback to default
       return validImages.length > 0 ? validImages : FACILITY_IMAGES;
     }
     // No images from API, use default images
     return FACILITY_IMAGES;
   }, [images]);
-  
+
   // Reset current index if it's out of bounds
   React.useEffect(() => {
     if (currentIndex >= displayImages.length) {
       setCurrentIndex(0);
     }
   }, [displayImages.length, currentIndex]);
-  
+
   const navigateImage = (direction) => {
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex + direction;
@@ -73,8 +73,8 @@ const ImageCarousel = ({ images }) => {
   return (
     <div className="carousel">
       {displayImages.length > 1 && (
-        <button 
-          className="carousel__btn carousel__btn--prev" 
+        <button
+          className="carousel__btn carousel__btn--prev"
           onClick={() => navigateImage(-1)}
           aria-label="Previous image"
         >
@@ -82,9 +82,9 @@ const ImageCarousel = ({ images }) => {
         </button>
       )}
       <div className="carousel__container">
-        <img 
-          src={displayImages[currentIndex]} 
-          alt={`Facility view ${currentIndex + 1}`} 
+        <img
+          src={displayImages[currentIndex]}
+          alt={`Facility view ${currentIndex + 1}`}
           className="carousel__image"
           onError={(e) => {
             console.error('Image failed to load:', displayImages[currentIndex]);
@@ -97,8 +97,8 @@ const ImageCarousel = ({ images }) => {
         />
       </div>
       {displayImages.length > 1 && (
-        <button 
-          className="carousel__btn carousel__btn--next" 
+        <button
+          className="carousel__btn carousel__btn--next"
           onClick={() => navigateImage(1)}
           aria-label="Next image"
         >
@@ -141,7 +141,7 @@ const FacilityInfo = ({ facilityData }) => {
         <div className="info-item">
           <span className="info-label">Giờ mở cửa:</span>
           <span className="info-value">
-            {facilityData?.openTime && facilityData?.closeTime 
+            {facilityData?.openTime && facilityData?.closeTime
               ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
               : 'Chưa có thông tin'
             }
@@ -161,23 +161,23 @@ const FacilityInfo = ({ facilityData }) => {
 };
 
 // Booking Table Component
-const BookingTable = ({ 
-  onOpenModal, 
-  courtCategories, 
-  selectedCategory, 
-  onCategoryChange, 
+const BookingTable = ({
+  onOpenModal,
+  courtCategories,
+  selectedCategory,
+  onCategoryChange,
   selectedDate,
   onDateChange,
   timeSlots,
   loading,
-  loadingSlots 
+  loadingSlots
 }) => (
   <section className="booking-section">
     <h2 className="booking-section__title">Lịch đặt sân</h2>
     <div className="booking-toolbar">
       <div className="booking-controls">
-        <select 
-          className="form-select" 
+        <select
+          className="form-select"
           aria-label="Select facility type"
           value={selectedCategory}
           onChange={(e) => onCategoryChange(e.target.value)}
@@ -204,13 +204,13 @@ const BookingTable = ({
         />
       </div>
     </div>
-    
+
     {loadingSlots && (
       <div style={{ textAlign: 'center', padding: '20px' }}>
         Đang tải lịch trống...
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length > 0 && (
       <div className="table-responsive">
         <table className="booking-table">
@@ -240,21 +240,21 @@ const BookingTable = ({
         </table>
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
         Không có khung giờ nào khả dụng cho loại sân này
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
         Vui lòng chọn loại sân để xem lịch trống
       </div>
     )}
-    
-    <button 
-      className="btn-primary btn-booking" 
+
+    <button
+      className="btn-primary btn-booking"
       onClick={onOpenModal}
       disabled={!selectedCategory || timeSlots.length === 0}
     >
@@ -306,15 +306,15 @@ const FacilityDetails = ({ facilityId = 1021 }) => { // Add facilityId prop with
     const fetchFacilityDetails = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await getFacilityDetailsById(facilityId);
-        
+
         // Assuming the API returns data in response.data format
         // Adjust this based on your actual API response structure
         if (response.data) {
           setFacilityData(response.data);
-          
+
           // Set default category to the first available category
           if (response.data.categories && response.data.categories.length > 0) {
             setSelectedCategory(response.data.categories[0].categoryId.toString());
@@ -346,7 +346,7 @@ const FacilityDetails = ({ facilityId = 1021 }) => { // Add facilityId prop with
       setLoadingSlots(true);
       try {
         const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
-        
+
         // Assuming the API returns data in response.data.data format (based on ApiResponse structure)
         if (response.data && response.data.data) {
           setTimeSlots(response.data.data);
@@ -379,11 +379,11 @@ const FacilityDetails = ({ facilityId = 1021 }) => { // Add facilityId prop with
 
   if (loading) {
     return (
-      <div className="facility-page" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
+      <div className="facility-page" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '50vh'
       }}>
         <div>Đang tải thông tin cơ sở...</div>
       </div>
@@ -397,20 +397,20 @@ const FacilityDetails = ({ facilityId = 1021 }) => { // Add facilityId prop with
         <ImageCarousel images={facilityData?.images} />
         <FacilityInfo facilityData={facilityData} />
       </main>
-      
+
       {error && (
-        <div className="error-message" style={{ 
-          color: 'red', 
-          padding: '10px', 
-          margin: '10px', 
-          backgroundColor: '#fee', 
-          borderRadius: '4px' 
+        <div className="error-message" style={{
+          color: 'red',
+          padding: '10px',
+          margin: '10px',
+          backgroundColor: '#fee',
+          borderRadius: '4px'
         }}>
           {error}
         </div>
       )}
-      
-      <BookingTable 
+
+      <BookingTable
         onOpenModal={() => setModalOpen(true)}
         courtCategories={facilityData?.categories || []}
         selectedCategory={selectedCategory}
@@ -423,9 +423,9 @@ const FacilityDetails = ({ facilityId = 1021 }) => { // Add facilityId prop with
       />
       <Reviews />
       {modalOpen && (
-        <BookingModal 
-          open={modalOpen} 
-          onClose={() => setModalOpen(false)} 
+        <BookingModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
         />
       )}
     </div>

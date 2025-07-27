@@ -179,7 +179,8 @@ const updateUserImage = (imageId, file, order = null, caption = null) => {
   });
 };
 
-const updateSlideImage = updateUserImage; // same logic
+const updateSlideImage = updateUserImage;
+const updateImage = updateUserImage;
 
 const uploadBlogImage = (file, blogId, caption = null) => {
   const formData = new FormData();
@@ -195,7 +196,6 @@ const uploadBlogImage = (file, blogId, caption = null) => {
 
 const getBlogImages = (blogId) => axios.get(`Image/blog/${blogId}`);
 const deleteImage = (imageId) => axios.delete(`Image/${imageId}`);
-const updateImage = updateUserImage;
 
 // ===============================
 // 🔒 PASSWORD RESET
@@ -262,6 +262,12 @@ const banUser = (userId) => axios.put(`AccountManagement/${userId}/ban`);
 const unbanUser = (userId) => axios.put(`AccountManagement/${userId}/unban`);
 const deleteUser = (userId) => axios.delete(`AccountManagement/${userId}`);
 
+const registerCourtOwner = (payload) => {
+  return axios.post("Account/register-court-owner", payload, {
+    validateStatus: () => true,
+  });
+};
+
 // ===============================
 // 🖼️ SLIDER MANAGEMENT
 // ===============================
@@ -286,7 +292,7 @@ const deactivateSlider = (slideId) =>
   axios.put(`SliderManagement/${slideId}/deactivate`);
 
 // ===============================
-// 🏟️ FACILITY MANAGEMENT
+// 🏟️ FACILITY + COURT + REPORT
 // ===============================
 const getAllFacilitiesByPlayer = (pageNumber, pageSize, body) => {
   return axios.post(
@@ -336,25 +342,23 @@ const deleteFacility = (facilityId) =>
   axios.delete(`FacilitiesManage/${facilityId}`);
 const deleteFacilityImage = (imageId) => axios.delete(`Image/${imageId}`);
 
-// ===============================
-// 🏟️ REPORT + COURT MANAGEMENT
 const getReport = (
-  userId=6, 
-  startDate, 
-  endDate, 
-  facilityId, 
-  pageNumber=1, 
-  pageSize=10
+  userId = 6,
+  startDate,
+  endDate,
+  facilityId,
+  pageNumber = 1,
+  pageSize = 10
 ) => {
-  return axios.get(`Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
+  return axios.get(
+    `Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`
+  );
 };
 
-const getTotalReport = (
-  userId=6, 
-  startDate, 
-  endDate
-) => {
-  return axios.get(`Report/TotalReport?userId=${userId}&startDate=${startDate}&endDate=${endDate}`);
+const getTotalReport = (userId = 6, startDate, endDate) => {
+  return axios.get(
+    `Report/TotalReport?userId=${userId}&startDate=${startDate}&endDate=${endDate}`
+  );
 };
 
 const exportReportToExcel = (
@@ -372,25 +376,25 @@ const exportReportToExcel = (
       facilityId,
       pageNumber,
     },
-    responseType: 'arraybuffer', // Quan trọng: yêu cầu dữ liệu dạng binary
+    responseType: "arraybuffer",
   });
 };
 
 const getAllCourts = (params) => {
-  return axios.get('CourtManagement/CourtList', {
+  return axios.get("CourtManagement/CourtList", {
     params: {
       PageNumber: params.pageNumber || 1,
       PageSize: params.pageSize || 10,
       FacilityId: params.facilityId,
       Search: params.search || undefined,
       Status: params.status || undefined,
-      CategoryId: params.categoryId || undefined
-    }
+      CategoryId: params.categoryId || undefined,
+    },
   });
 };
 
 const addNewCourt = (courtData) => {
-  return axios.post('CourtManagement/CreateCourt', courtData);
+  return axios.post("CourtManagement/CreateCourt", courtData);
 };
 
 const updateCourt = (courtData, userId = 6) => {
@@ -400,12 +404,14 @@ const updateCourt = (courtData, userId = 6) => {
     courtName: courtData.courtName,
     categoryId: courtData.categoryId,
     pricePerHour: courtData.pricePerHour,
-    facilityId: courtData.facilityId
+    facilityId: courtData.facilityId,
   });
 };
 
 const deleteCourt = (courtId, userId = 6) => {
-  return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
+  return axios.delete(
+    `CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`
+  );
 };
 
 const getCourtDetail = (courtId) => {
@@ -413,7 +419,7 @@ const getCourtDetail = (courtId) => {
 };
 
 // ===============================
-// EXPORT
+// EXPORT ALL
 // ===============================
 export {
   getAllCourtCategories,
@@ -483,4 +489,5 @@ export {
   updateCourt,
   deleteCourt,
   getCourtDetail,
+  registerCourtOwner,
 };

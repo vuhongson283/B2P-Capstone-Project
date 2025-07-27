@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Building } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Building, CheckCircle, X } from 'lucide-react';
 import './CourtOwnerRegister.scss';
+import { registerCourtOwner } from "../../services/apiService";
 
 const PartnerRegistration = () => {
     const [formData, setFormData] = useState({
@@ -18,6 +19,8 @@ const PartnerRegistration = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State cho tỉnh/thành phố và quận/huyện
     const [provinces, setProvinces] = useState([]);
@@ -136,19 +139,140 @@ const PartnerRegistration = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    // Thêm vào phần khai báo state (sau dòng const [isSubmitting, setIsSubmitting] = useState(false);)
+    const [apiError, setApiError] = useState('');
+
+    // Sửa lại handleSubmit đơn giản hơn
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (validateForm()) {
-            // Tạo địa chỉ đầy đủ
-            const fullAddress = `${formData.detailAddress}, ${formData.district}, ${formData.province}`;
-            const submitData = {
-                ...formData,
-                fullAddress
-            };
-            console.log('Form Data:', submitData);
-            // Xử lý gửi dữ liệu API ở đây
-            alert('Đăng ký thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.');
+
+        if (!validateForm()) return;
+
+        setIsSubmitting(true);
+        setApiError(''); // Clear previous API errors
+
+        // Clear existing field errors
+        setErrors(prev => ({
+            ...prev,
+            email: '',
+            phoneNumber: ''
+        }));
+
+        // Gộp địa chỉ đầy đủ
+        const fullAddress = `${formData.detailAddress}, ${formData.district}, ${formData.province}`;
+
+        // Tạo payload đúng schema của API
+        const payload = {
+            email: formData.email,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword,
+            fullName: formData.fullName,
+            phoneNumber: formData.phoneNumber,
+            isMale: formData.isMale,
+            address: fullAddress
+        };
+
+        try {
+            const res = await registerCourtOwner(payload);
+
+            console.log("API Response:", res);
+
+            // Kiểm tra response structure dựa trên log
+            if (res.success === false && res.status === 400) {
+                // Xử lý lỗi dựa trên message
+                const errorMessage = res.message;
+
+                if (errorMessage.toLowerCase().includes('email')) {
+                    // Lỗi liên quan đến email
+                    setErrors(prev => ({
+                        ...prev,
+                        email: errorMessage
+                    }));
+                } else if (errorMessage.toLowerCase().includes('số điện thoại') || errorMessage.toLowerCase().includes('phone')) {
+                    // Lỗi liên quan đến số điện thoại
+                    setErrors(prev => ({
+                        ...prev,
+                        phoneNumber: errorMessage
+                    }));
+                } else {
+                    // Lỗi chung khác
+                    setApiError(errorMessage);
+                }
+                return;
+            }
+
+            // Nếu thành công
+            if (res.success === true && (res.status === 200 || res.status === 201)) {
+                console.log("Registration successful!");
+                setShowSuccessModal(true);
+            } else {
+                console.log("Unexpected response:", res);
+                setApiError("Phản hồi không mong đợi từ server.");
+            }
+
+        } catch (err) {
+            console.error("Registration error:", err);
+
+            // Fallback error handling
+            if (err.response) {
+                const errorData = err.response.data;
+                const errorMessage = errorData?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+                setApiError(errorMessage);
+            } else if (err.request) {
+                setApiError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+            } else {
+                setApiError("Có lỗi xảy ra. Vui lòng thử lại.");
+            }
+        } finally {
+            setIsSubmitting(false);
         }
+    };
+
+    // Thêm vào JSX trước Submit Button (trong form):
+    {
+        apiError && (
+            <div className="form-group">
+                <div style={{
+                    padding: '12px',
+                    backgroundColor: '#fee',
+                    border: '1px solid #fcc',
+                    borderRadius: '4px',
+                    marginBottom: '16px'
+                }}>
+                    <p style={{
+                        color: '#c33',
+                        margin: '0',
+                        fontSize: '14px'
+                    }}>
+                        {apiError}
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    const handleModalClose = () => {
+        setShowSuccessModal(false);
+        // Reset form
+        setFormData({
+            email: '',
+            password: '',
+            confirmPassword: '',
+            fullName: '',
+            phoneNumber: '',
+            isMale: true,
+            province: '',
+            district: '',
+            detailAddress: ''
+        });
+        setErrors({});
+    };
+
+    const handleGoHome = () => {
+        setShowSuccessModal(false);
+        // Add your navigation logic here
+        // window.location.href = '/';
+        // or using React Router: navigate('/');
     };
 
     return (
@@ -387,9 +511,10 @@ const PartnerRegistration = () => {
                         <div className="form-group">
                             <button
                                 onClick={handleSubmit}
-                                className="submit-button"
+                                disabled={isSubmitting}
+                                className={`submit-button ${isSubmitting ? 'loading' : ''}`}
                             >
-                                Đăng Ký Đối Tác
+                                {isSubmitting ? 'Đang xử lý...' : 'Đăng Ký Đối Tác'}
                             </button>
                         </div>
 
@@ -417,6 +542,52 @@ const PartnerRegistration = () => {
                     </a>
                 </div>
             </div>
+
+            {/* Success Modal */}
+            {showSuccessModal && (
+                <div className="modal-overlay">
+                    <div className="success-modal">
+                        <button
+                            onClick={handleModalClose}
+                            className="modal-close-btn"
+                        >
+                            <X />
+                        </button>
+
+                        <div className="modal-content">
+                            {/* Success Icon */}
+                            <div className="success-icon">
+                                <CheckCircle />
+                            </div>
+
+                            {/* Success Message */}
+                            <h3 className="success-title">
+                                Đăng ký thành công
+                            </h3>
+                            <p className="success-message">
+                                Cảm ơn bạn đã đăng ký làm đối tác với Book2Play.
+                                Vui lòng hoàn thành đủ thông tin trong quản lý tài khoản để hoàn tất quá trình trở thành Chủ Sân
+                            </p>
+
+                            {/* Action Buttons */}
+                            <div className="modal-actions">
+                                <button
+                                    onClick={handleModalClose}
+                                    className="btn-primary"
+                                >
+                                    Đăng ký thêm đối tác khác
+                                </button>
+                                <button
+                                    onClick={handleGoHome}
+                                    className="btn-secondary"
+                                >
+                                    Về trang chủ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
