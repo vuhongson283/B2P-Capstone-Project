@@ -139,9 +139,8 @@ const AdminSideBar = ({
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${
-            item.hasSubmenu ? "has-submenu" : ""
-          }`}
+          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
+            }`}
           onClick={() => {
             if (item.hasSubmenu) {
               toggleMenu(item.id);
@@ -161,9 +160,8 @@ const AdminSideBar = ({
 
           {item.hasSubmenu && (!collapsed || isMobile) && (
             <i
-              className={`fas fa-chevron-down submenu-arrow ${
-                isExpanded ? "expanded" : ""
-              }`}
+              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
+                }`}
             ></i>
           )}
         </div>
@@ -201,9 +199,8 @@ const AdminSideBar = ({
     return facilities.map((facility) => (
       <div
         key={`facility-${facility.id}`}
-        className={`submenu-item ${
-          activeMenu === `facility-${facility.id}` ? "active" : ""
-        }`}
+        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
+          }`}
         onClick={() =>
           handleMenuClick(
             `facility-${facility.id}`,
@@ -274,9 +271,8 @@ const AdminSideBar = ({
               title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
             >
               <i
-                className={`fas ${
-                  collapsed ? "fa-angle-right" : "fa-angle-left"
-                }`}
+                className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"
+                  }`}
               ></i>
             </button>
           )}

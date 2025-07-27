@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.Interface;
+using B2P_API.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,33 +8,83 @@ namespace B2P_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FacilitiesForCourtOwnerController : ControllerBase
+    public class FacilitiesManageController : ControllerBase
     {
         private readonly IFacilityService _facilityService;
 
-        public FacilitiesForCourtOwnerController(IFacilityService facilityService)
+        public FacilitiesManageController(IFacilityService facilityService)
         {
             _facilityService = facilityService;
         }
 
         [HttpGet("listCourt/{userId}")]
         public async Task<IActionResult> GetFacilitiesByUser(
-        int userId,
-        [FromQuery] string? facilityName = null,
-        [FromQuery] int? statusId = null)
+    int userId,
+    [FromQuery] string? facilityName = null,
+    [FromQuery] int? statusId = null,
+    [FromQuery] int currentPage = 1,
+    [FromQuery] int itemsPerPage = 3)
         {
             try
             {
-                var facilities = await _facilityService.GetFacilitiesByUserAsync(userId, facilityName, statusId);
-                return Ok(facilities);
+                var response = await _facilityService.GetFacilitiesByUserAsync(
+                    userId,
+                    facilityName,
+                    statusId,
+                    currentPage,
+                    itemsPerPage
+                );
+
+                return Ok(response); 
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = ex.Message,
+                    Data = null
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi server: {ex.Message}");
+                return StatusCode(500, new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = $"Lỗi server: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+        [HttpGet("getFacilityById/{facilityId}")]
+        public async Task<IActionResult> GetFacilityById(int facilityId)
+        {
+            try
+            {
+                var response = await _facilityService.GetFacilityById(facilityId);
+                if (response == null)
+                {
+                    return NotFound(new ApiResponse<string>
+                    {
+                        Success = false,
+                        Status = 404,
+                        Message = "Không tìm thấy cơ sở",
+                        Data = null
+                    });
+                }
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = $"Lỗi server: {ex.Message}",
+                    Data = null
+                });
             }
         }
 
