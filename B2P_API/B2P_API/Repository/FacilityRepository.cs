@@ -30,8 +30,24 @@ namespace B2P_API.Repository
 
             if (facility == null) return null;
 
+            // Lấy open - close time từ TimeSlots
             var openTime = facility.TimeSlots.Any() ? facility.TimeSlots.Min(t => t.StartTime) : null;
             var closeTime = facility.TimeSlots.Any() ? facility.TimeSlots.Max(t => t.EndTime) : null;
+
+            // Lấy danh sách các category mà facility này có qua các court
+            var categories = await _context.Courts
+                .Where(c => c.FacilityId == facilityId)
+                .Select(c => c.CategoryId)
+                .Distinct()
+                .Join(_context.CourtCategories,
+                      cid => cid,
+                      cat => cat.CategoryId,
+                      (cid, cat) => new CategoryDto
+                      {
+                          CategoryId = cat.CategoryId,
+                          CategoryName = cat.CategoryName
+                      })
+                .ToListAsync();
 
             return new FacilityDetailsDto
             {
@@ -47,8 +63,10 @@ namespace B2P_API.Repository
                     ImageUrl = img.ImageUrl,
                     Caption = img.Caption,
                     Order = img.Order
-                }).ToList()
+                }).ToList(),
+                Categories = categories
             };
         }
+
     }
 }

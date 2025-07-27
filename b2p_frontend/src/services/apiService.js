@@ -43,6 +43,13 @@ const getAllFacilitiesByPlayer = (pageNumber, pageSize, body) => {
   );
 };
 
+const getFacilityById = (facilityId) => {
+  return axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
+};
+// Booking Management APIs
+const getAvailableSlots = (facilityId, categoryId, checkInDate) => {
+  return axios.get(`Booking/available-slots?facilityId=${facilityId}&categoryId=${categoryId}&checkInDate=${checkInDate}`);
+};
 // User Management APIs
 const getUserById = (userId) => {
   return axios.get(`User/get-user-by-id?userId=${userId}`);
@@ -194,6 +201,8 @@ export {
 
   // Facilities Management
   getAllFacilitiesByPlayer,
+  getFacilityById,
+  getAvailableSlots,
 
   // User Management
   getUserById,

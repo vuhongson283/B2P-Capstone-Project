@@ -27,7 +27,7 @@ namespace B2P_API.Controllers
             return Ok(response);
 
         }
-        [HttpGet("{id}")]
+        [HttpGet("get-facility-by-id")]
         public async Task<IActionResult> GetFacilityDetails(int id)
         {
             var response = await _facilityService.GetFacilityDetails(id);

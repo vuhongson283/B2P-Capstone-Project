@@ -27,6 +27,7 @@ namespace B2P_API.DTOs.FacilityDTO
         public TimeOnly? CloseTime { get; set; }
 
         public List<FImageDto> Images { get; set; }
+        public List<CategoryDto> Categories { get; set; }
     }
 
     public class FImageDto
@@ -36,5 +37,13 @@ namespace B2P_API.DTOs.FacilityDTO
         public string Caption { get; set; }
         public int? Order { get; set; }
     }
+    
+
+public class CategoryDto
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
+    }
+
 
 }
