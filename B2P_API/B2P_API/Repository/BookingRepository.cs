@@ -128,6 +128,65 @@ namespace B2P_API.Repository
                 .FirstOrDefault(b => b.BookingId == id);
         }
 
+        public async Task<List<TimeSlotAvailability>> GetAvailableCourtCountPerSlotAsync(
+    int facilityId,
+    int categoryId,
+    DateTime checkInDate)
+        {
+            // 1. Lấy danh sách sân đang hoạt động thuộc Facility và Category
+            var courtIds = await _context.Courts
+                .Where(c => c.FacilityId == facilityId && c.CategoryId == categoryId && c.StatusId == 1)
+                .Select(c => c.CourtId)
+                .ToListAsync();
+
+            if (!courtIds.Any()) return new List<TimeSlotAvailability>();
+
+            // 2. Lấy danh sách TimeSlot thuộc Facility này
+            var allTimeSlots = await _context.TimeSlots
+                .Where(ts => ts.FacilityId == facilityId)
+                .OrderBy(ts => ts.StartTime)
+                .Select(ts => new
+                {
+                    ts.TimeSlotId,
+                    ts.StartTime,
+                    ts.EndTime
+                })
+                .ToListAsync();
+
+            // 3. Lấy số sân đã được đặt trong mỗi TimeSlot vào ngày check-in (trừ booking đã hủy)
+            var bookedDetails = await _context.BookingDetails
+                .Where(bd =>
+                    courtIds.Contains(bd.CourtId) &&
+                    bd.CheckInDate.Date == checkInDate.Date &&
+                    bd.StatusId != 3
+                )
+                .GroupBy(bd => bd.TimeSlotId)
+                .Select(g => new
+                {
+                    TimeSlotId = g.Key,
+                    BookedCourtIds = g.Select(x => x.CourtId).Distinct()
+                })
+                .ToListAsync();
+
+            // 4. Tính toán số sân còn trống cho từng slot
+            var result = new List<TimeSlotAvailability>();
+
+            foreach (var slot in allTimeSlots)
+            {
+                var booked = bookedDetails.FirstOrDefault(b => b.TimeSlotId == slot.TimeSlotId);
+                int bookedCount = booked?.BookedCourtIds.Count() ?? 0;
+
+                result.Add(new TimeSlotAvailability
+                {
+                    TimeSlotId = slot.TimeSlotId,
+                    StartTime = slot.StartTime,
+                    EndTime = slot.EndTime,
+                    AvailableCourtCount = courtIds.Count - bookedCount
+                });
+            }
+
+            return result;
+        }
 
 
     }
@@ -138,4 +197,15 @@ namespace B2P_API.Repository
         public string CourtName { get; set; }
         public HashSet<int> UnavailableSlotIds { get; set; } = new();
     }
+    public class TimeSlotAvailability
+    {
+        public int TimeSlotId { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
+
+        public int AvailableCourtCount { get; set; }
+    }
+
+
+
 }

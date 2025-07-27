@@ -1,0 +1,85 @@
+.court-owner-container {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d5e8d4 100%);
+
+    .court-owner-sidebar {
+        flex-shrink: 0;
+
+        &.collapsed {
+            .sidebar__header {
+                padding: 15px 10px;
+            }
+        }
+
+        &.sidebar-open {
+            transform: translateX(0);
+        }
+    }
+
+    .court-owner-main {
+        flex: 1;
+        margin-left: 280px;
+        transition: margin-left 0.3s ease;
+
+        .court-owner-content {
+            padding: 30px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(46, 204, 113, 0.1);
+
+            h1 {
+                color: #1e8449;
+                margin-bottom: 20px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            p {
+                color: #5d6d5d;
+                font-size: 16px;
+            }
+        }
+    }
+
+    &.sidebar-collapsed {
+        .court-owner-main {
+            margin-left: 70px;
+        }
+    }
+}
+
+// Mobile styles
+@media (max-width: 768px) {
+    .court-owner-container {
+        .court-owner-sidebar {
+            position: fixed;
+            left: 0;  // Thay đổi thành 0
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            width: 280px;  // Đảm bảo width cố định
+            transform: translateX(-100%);  // Ẩn hoàn toàn
+            transition: transform 0.3s ease;
+
+            &.sidebar-open {
+                transform: translateX(0);  // Hiện hoàn toàn
+                width: 280px;
+            }
+        }
+
+        .court-owner-main {
+            margin-left: 0;
+        }
+    }
+}
+
+// Animation
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

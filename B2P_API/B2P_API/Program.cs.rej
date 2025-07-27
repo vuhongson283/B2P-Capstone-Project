@@ -1,0 +1,13 @@
+diff a/B2P_API/B2P_API/Program.cs b/B2P_API/B2P_API/Program.cs	(rejected hunks)
+@@ -158,10 +158,9 @@
+ builder.Services.AddScoped<ICourtCategoryRepository, CourtCategoryRepository>();
+ builder.Services.AddScoped<CourtCategoryService>();
+ 
+-builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>(); // Nếu dùng
++builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
+ builder.Services.AddScoped<IFacilityRepository, FacilityManageRepository>();
+ builder.Services.AddScoped<IFacilityService, FacilityService>();
+-// Đăng ký trực tiếp class
+ builder.Services.AddScoped<FacilityService>();
+ 
+ builder.Services.AddScoped<IImageRepository, ImageRepository>();
