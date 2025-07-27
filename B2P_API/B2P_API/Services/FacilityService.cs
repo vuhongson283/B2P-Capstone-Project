@@ -606,7 +606,8 @@ namespace B2P_API.Services
             }
         }
 
-<<<<<<< HEAD
+        // Replace the conflicted section with this clean version:
+
         public async Task<ApiResponse<FacilityDetailsDto>> GetFacilityDetails(int facilityId)
         {
             var dto = await _facilityRepositoryForUser.GetFacilityDetails(facilityId);
@@ -631,11 +632,10 @@ namespace B2P_API.Services
             };
         }
 
-=======
         public async Task<ApiResponse<Facility>> GetFacilityById(int facilityId)
         {
             var data = await _facilityRepository.GetByIdAsync(facilityId);
-            if(data  == null)
+            if (data == null)
             {
                 return new ApiResponse<Facility>
                 {
@@ -645,7 +645,6 @@ namespace B2P_API.Services
                     Data = null
                 };
             }
->>>>>>> Test
 
             return new ApiResponse<Facility>
             {
@@ -656,9 +655,9 @@ namespace B2P_API.Services
             };
         }
 
-        
 
-       
+
+
     }
 }
 
