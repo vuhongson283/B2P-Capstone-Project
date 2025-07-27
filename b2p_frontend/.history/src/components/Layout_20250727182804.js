@@ -31,20 +31,13 @@ const Layout = (props) => {
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
-          <Route index element={<DashboardField />} />
           <Route
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
           />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
         </Route>
-        <Route path="/court-owner" element={<CourtOwner />}>
-          <Route
-            path="/court-owner/search"
-            element={<FacilitiesWithCondition />}  
-          />
-          <Route path="facility/general" element={<FacilityTable />} />
-        </Route>
+
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />

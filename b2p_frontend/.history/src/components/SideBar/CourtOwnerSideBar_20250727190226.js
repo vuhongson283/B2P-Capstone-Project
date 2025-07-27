@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { Color } from "antd/es/color-picker";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -256,7 +257,7 @@ const CourtOwnerSideBar = ({
         <i className="fas fa-map-marker-alt"></i>
         <div className="facility-info">
           <span className="facility-name">{facility.name}</span>
-          <span className="facility-location">{facility.location}</span>
+          <span className="facility-location" style={Color=Black}>{facility.location}</span>
         </div>
       </div>
     ));

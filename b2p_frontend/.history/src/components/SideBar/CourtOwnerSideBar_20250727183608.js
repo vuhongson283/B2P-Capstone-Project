@@ -239,7 +239,6 @@ const CourtOwnerSideBar = ({
     ));
   };
 
-  const [selectedFacilityId, setSelectedFacilityId] = useState(null);
   // Render dynamic submenu
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (
@@ -248,20 +247,23 @@ const CourtOwnerSideBar = ({
         className={`submenu-item ${
           activeMenu === `facility-${facility.id}` ? "active" : ""
         }`}
-        onClick={() => {
-          handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
-          setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
-        }}
+        onClick={() =>
+          handleMenuClick(
+            `facility-${facility.id}`,
+            `/court-owner/courts/${facility.id}`
+          )
+        }
       >
-        <i className="fas fa-map-marker-alt"></i>
+        <div className="submenu-icon-wrapper">
+          <i className="fas fa-map-marker-alt"></i>
+        </div>
         <div className="facility-info">
           <span className="facility-name">{facility.name}</span>
-          <span className="facility-location">{facility.location}</span>
+          <span className="court-count">{facility.courts} sân</span>
         </div>
       </div>
     ));
   };
-
 
   // Generate sidebar classes
   const getSidebarClasses = () => {
