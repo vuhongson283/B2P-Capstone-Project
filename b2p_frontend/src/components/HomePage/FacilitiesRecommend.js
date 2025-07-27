@@ -47,7 +47,7 @@ const FacilitiesRecommend = (props) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getAllFacilitiesByPlayer(1, 12, requestBody);
+      const response = await getAllFacilitiesByPlayer(1, 6, requestBody);
       if (response && response.data.items.length > 0) {
         setFacilities(response.data.items);
       } else {

@@ -222,34 +222,43 @@
                     }
 
                     .facility-body {
-                        padding: 1.25rem;
+                        padding   : 1.25rem;
+                        text-align: left !important;
 
                         .card-title {
                             color        : #2c3e50;
                             font-size    : 1.1rem;
                             font-weight  : 700;
-                            margin-bottom: 1rem;
                             line-height  : 1.3;
+                            text-align   : left; // 🎯 Force left align
+                            margin-bottom: 0.5rem; // 🎯 Add margin bottom for spacing
                         }
 
                         .facility-info {
                             margin-bottom: 1.25rem;
+                            margin-top   : 0;
 
                             .info-item {
-                                display      : flex;
-                                align-items  : center;
-                                margin-bottom: 0.5rem;
-                                font-size    : 0.85rem;
-                                color        : #6c757d;
+                                display        : flex;
+                                align-items    : center;
+                                margin-bottom  : 0.5rem;
+                                font-size      : 0.85rem;
+                                color          : #6c757d;
+                                text-align     : left; // 🎯 Force text align left
+                                justify-content: flex-start; // 🎯 Align to start
 
                                 i {
                                     width       : 16px;
                                     margin-right: 0.5rem;
                                     color       : #28a745;
+                                    flex-shrink : 0; // 🎯 Prevent icon from shrinking
+                                    text-align  : center; // 🎯 Center icon within its width
                                 }
 
                                 span {
                                     line-height: 1.4;
+                                    text-align : left; // 🎯 Force text align left
+                                    flex       : 1; // 🎯 Take remaining space
                                 }
                             }
                         }
@@ -260,6 +269,7 @@
                             font-weight  : 600;
                             font-size    : 0.9rem;
                             transition   : all 0.3s ease;
+                            text-align   : center; // 🎯 Button text should be centered
 
                             &:hover {
                                 transform: translateY(-1px);
