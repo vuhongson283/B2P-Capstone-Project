@@ -48,5 +48,17 @@ namespace B2P_API.Controllers
             return StatusCode(result.Status, result);
         }
 
+        [HttpGet("available-slots")]
+        public async Task<IActionResult> GetAvailableSlots(
+        [FromQuery] int facilityId,
+        [FromQuery] int categoryId,
+        [FromQuery] DateTime checkInDate)
+        {
+            var response = await _bookingService.GetTimeSlotAvailabilityAsync(
+                facilityId, categoryId, checkInDate);
+
+            return Ok(response);
+        }
+
     }
 }

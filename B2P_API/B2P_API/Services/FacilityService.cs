@@ -625,6 +625,30 @@ namespace B2P_API.Services
             }
         }
 
+        public async Task<ApiResponse<FacilityDetailsDto>> GetFacilityDetails(int facilityId)
+        {
+            var dto = await _facilityRepositoryForUser.GetFacilityDetails(facilityId);
+
+            if (dto == null)
+            {
+                return new ApiResponse<FacilityDetailsDto>
+                {
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy cơ sở.",
+                    Data = null
+                };
+            }
+
+            return new ApiResponse<FacilityDetailsDto>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy thông tin cơ sở thành công.",
+                Data = dto
+            };
+        }
+
 
     }
 }

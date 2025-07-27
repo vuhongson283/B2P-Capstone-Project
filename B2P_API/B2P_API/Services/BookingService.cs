@@ -246,6 +246,81 @@ namespace B2P_API.Services
 
         }
 
+        /*  public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
+          {
+              // Lấy danh sách sân thuộc Facility và Category được chỉ định
+              var courts = await _context.Courts
+                  .Where(c => c.FacilityId == request.FacilityId && c.CategoryId == request.CategoryId)
+                  .Select(c => new { c.CourtId })
+                  .ToListAsync();
+
+              if (!courts.Any()) return null;
+
+              var courtIds = courts.Select(c => c.CourtId).ToList();
+
+              // Lấy danh sách các BookingDetail đang chiếm chỗ các slot đó vào ngày đặt
+              var booked = await _context.BookingDetails
+                  .Where(d =>
+                      courtIds.Contains(d.CourtId) &&
+                      d.Booking. == DateOnly.FromDateTime(request.CheckInDate) &&
+                      d.Booking.StatusId != 3 // 3 = đã huỷ
+                  )
+                  .Select(d => new { d.CourtId, d.TimeSlotId })
+                  .ToListAsync();
+
+              // Lấy giờ bắt đầu của các TimeSlot để sắp xếp
+              var timeSlotTimes = await _context.TimeSlots
+                  .Where(ts => request.TimeSlotIds.Contains(ts.TimeSlotId))
+                  .ToDictionaryAsync(ts => ts.TimeSlotId, ts => ts.StartTime);
+
+              // Sắp xếp danh sách TimeSlotIds theo StartTime, giữ nguyên duplicate
+              var sortedTimeSlotIds = request.TimeSlotIds
+                  .OrderBy(id => timeSlotTimes[id])
+                  .ToList();
+
+              int courtCount = courtIds.Count;
+              int slotCount = sortedTimeSlotIds.Count;
+
+              // Tạo ma trận: hàng = sân, cột = yêu cầu slot cụ thể
+              int[,] matrix = new int[courtCount, slotCount];
+
+              for (int i = 0; i < courtCount; i++)
+              {
+                  int courtId = courtIds[i];
+                  var unavailable = booked
+                      .Where(b => b.CourtId == courtId)
+                      .Select(b => b.TimeSlotId)
+                      .ToHashSet();
+
+                  for (int j = 0; j < slotCount; j++)
+                  {
+                      int slotId = sortedTimeSlotIds[j];
+                      matrix[i, j] = unavailable.Contains(slotId) ? -1 : 0;
+                  }
+              }
+
+              // Thử gán slot
+              var result = TrySmartBookingAllowDuplicate(matrix);
+              if (result == null) return null;
+
+              // Map kết quả: mỗi slot cụ thể -> sân
+              var slotToCourtMap = new Dictionary<int, int>();
+              for (int i = 0; i < result.Length; i++)
+              {
+                  int courtIndex = result[i];
+                  if (courtIndex == -1) continue;
+
+                  int slotId = sortedTimeSlotIds[i];
+                  int courtId = courtIds[courtIndex];
+
+                  slotToCourtMap.Add(i, courtId); // Key = thứ tự slot trong danh sách gốc
+              }
+
+              return slotToCourtMap;
+          }*/
+
+
+
         /// <summary>
         /// Thuật toán gán slot vào sân tối ưu.
         /// Ưu tiên các slot liền nhau cùng sân.
@@ -573,6 +648,58 @@ namespace B2P_API.Services
             };
         }
 
+        public async Task<ApiResponse<List<TimeSlotAvailability>>> GetTimeSlotAvailabilityAsync(
+        int facilityId, int categoryId, DateTime checkInDate)
+        {
+            var result = await _bookingRepo.GetAvailableCourtCountPerSlotAsync(
+                facilityId, categoryId, checkInDate);
+
+            return new ApiResponse<List<TimeSlotAvailability>>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Lấy danh sách slot trống thành công.",
+                Data = result
+            };
+        }
+
+        private int[]? TrySmartBookingAllowDuplicate(int[,] matrix)
+        {
+            int courts = matrix.GetLength(0);
+            int slots = matrix.GetLength(1);
+
+            var result = new int[slots];
+            Array.Fill(result, -1);
+
+            var used = new bool[courts]; // đánh dấu sân đã dùng tại từng vòng lặp
+
+            for (int j = 0; j < slots; j++)
+            {
+                bool assigned = false;
+
+                for (int c = 0; c < courts; c++)
+                {
+                    if (matrix[c, j] == 0 && !used[c])
+                    {
+                        result[j] = c;
+                        used[c] = true;
+                        assigned = true;
+                        break;
+                    }
+                }
+
+                if (!assigned)
+                {
+                    // Không tìm được sân phù hợp
+                    return null;
+                }
+
+                // Reset used cho slot tiếp theo (vì mỗi slot là yêu cầu độc lập)
+                Array.Fill(used, false);
+            }
+
+            return result;
+        }
 
     }
 }

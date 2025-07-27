@@ -15,4 +15,26 @@ namespace B2P_API.DTOs.FacilityDTO
         public decimal MaxPrice { get; set; }
 
     }
+
+    public class FacilityDetailsDto
+    {
+        public int FacilityId { get; set; }
+        public string FacilityName { get; set; }
+        public string Location { get; set; }
+        public string Contact { get; set; }
+
+        public TimeOnly? OpenTime { get; set; }
+        public TimeOnly? CloseTime { get; set; }
+
+        public List<FImageDto> Images { get; set; }
+    }
+
+    public class FImageDto
+    {
+        public int ImageId { get; set; }
+        public string ImageUrl { get; set; }
+        public string Caption { get; set; }
+        public int? Order { get; set; }
+    }
+
 }
