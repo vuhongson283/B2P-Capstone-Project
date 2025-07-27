@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './FacilityDetails.scss';
 import BookingModal from "./BookingModal.js";
-import { getFacilityById, getAvailableSlots } from "../../services/apiService";
+import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiService";
 
 // Constants
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -308,7 +308,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       setError(null);
       
       try {
-        const response = await getFacilityById(facilityId);
+        const response = await getFacilityDetailsById(facilityId);
         
         // Assuming the API returns data in response.data format
         // Adjust this based on your actual API response structure

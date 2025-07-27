@@ -313,7 +313,7 @@ const uploadFacilityImages = (formData) => {
 };
 // Thêm vào file apiService.js (theo format của bạn)
 
-const getFacilityById = (facilityId) => {
+const getFacilityDetailsById = (facilityId) => {
   console.log("🔍 Getting facility by ID:", facilityId);
 
   const url = `FacilitiesManage/getFacilityById/${facilityId}`;
@@ -363,7 +363,7 @@ export {
 
   // Facilities Management
   getAllFacilitiesByPlayer,
-  getFacilityById,
+  getFacilityDetailsById,
   getAvailableSlots,
 
   // User Management
