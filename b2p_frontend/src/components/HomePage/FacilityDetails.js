@@ -34,13 +34,8 @@ const convertGoogleDriveLink = (url) => {
   }
   
   if (fileId) {
-    // Try multiple methods to get the image
-    // Method 1: Direct download link (works for public images)
+    // Direct download link (works for public images)
     return `https://drive.google.com/uc?export=download&id=${fileId}`;
-    
-    // Alternative methods you can try:
-    // return `https://drive.google.com/uc?id=${fileId}`;
-    // return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
   }
   
   // If not a Google Drive link, return as is
@@ -50,8 +45,6 @@ const convertGoogleDriveLink = (url) => {
 // Helper function to validate image URLs
 const isValidImageUrl = (url) => {
   if (!url) return false;
-  
-  // Accept all URLs for now, let the browser handle loading
   return true;
 };
 
@@ -67,12 +60,14 @@ const formatTimeSlot = (startTime, endTime) => {
 // Header Component
 const FacilityHeader = ({ facilityData }) => (
   <header className="facility-header">
-    <button className="btn-icon btn-back" aria-label="Go back">
+    <button className="btn-icon btn-back" aria-label="Go back" onClick={() => window.history.back()}>
       <span className="icon">←</span>
     </button>
     <div className="facility-header__content">
       <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
-      <div className="owner-name">Tên chủ sân</div>
+      <div className="owner-name">
+        {facilityData?.ownerName || 'Chủ sân thể thao'}
+      </div>
     </div>
     <button className="btn-icon btn-favorite" aria-label="Add to favorites">
       <span className="icon">♡</span>
@@ -87,7 +82,7 @@ const ImageCarousel = ({ images }) => {
   
   // Process facility images - convert Google Drive links and handle all URLs
   const displayImages = React.useMemo(() => {
-    console.log('Raw images from API:', images); // Debug log
+    console.log('Raw images from API:', images);
     
     if (images && images.length > 0) {
       // Process all images, convert Google Drive links
@@ -104,18 +99,17 @@ const ImageCarousel = ({ images }) => {
           console.log(`Converting: ${originalUrl} → ${convertedUrl}`);
           return convertedUrl;
         })
-        .filter(url => url && !failedImages.has(url)); // Filter out failed images
+        .filter(url => url && !failedImages.has(url));
       
-      console.log('Processed images:', processedImages); // Debug log
+      console.log('Processed images:', processedImages);
       
-      // If we have processed images, use them; otherwise use fallback
       if (processedImages.length > 0) {
         return processedImages;
       }
     }
     
     // No valid images from API, use default images
-    console.log('No images from API, using fallback images'); // Debug log
+    console.log('No images from API, using fallback images');
     return FACILITY_IMAGES;
   }, [images, failedImages]);
   
@@ -136,19 +130,14 @@ const ImageCarousel = ({ images }) => {
   const handleImageError = (failedUrl) => {
     console.error('Image failed to load:', failedUrl);
     
-    // Add failed image to the set
     setFailedImages(prev => new Set([...prev, failedUrl]));
     
-    // If current image failed, try to move to next image or fallback
     if (displayImages[currentIndex] === failedUrl) {
-      // Try to find next working image or reset to fallback
       const remainingImages = displayImages.filter(url => !failedImages.has(url) && url !== failedUrl);
       
       if (remainingImages.length === 0) {
-        // All images failed, this will trigger fallback to FACILITY_IMAGES
         setCurrentIndex(0);
       } else {
-        // Move to next available image
         const nextIndex = displayImages.findIndex(url => !failedImages.has(url) && url !== failedUrl);
         if (nextIndex !== -1) {
           setCurrentIndex(nextIndex);
@@ -165,17 +154,24 @@ const ImageCarousel = ({ images }) => {
           onClick={() => navigateImage(-1)}
           aria-label="Previous image"
         >
-          ←
+          ‹
         </button>
       )}
       <div className="carousel__container">
-        <img 
-          src={displayImages[currentIndex]} 
-          alt={`Facility view ${currentIndex + 1}`} 
-          className="carousel__image"
-          onError={() => handleImageError(displayImages[currentIndex])}
-          onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
-        />
+        <div className="carousel__image-wrapper">
+          <img 
+            src={displayImages[currentIndex]} 
+            alt={`Facility view ${currentIndex + 1}`} 
+            className="carousel__image"
+            onError={() => handleImageError(displayImages[currentIndex])}
+            onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
+          />
+          <div className="carousel__overlay">
+            <div className="carousel__image-counter">
+              {currentIndex + 1} / {displayImages.length}
+            </div>
+          </div>
+        </div>
       </div>
       {displayImages.length > 1 && (
         <button 
@@ -183,7 +179,7 @@ const ImageCarousel = ({ images }) => {
           onClick={() => navigateImage(1)}
           aria-label="Next image"
         >
-          →
+          ›
         </button>
       )}
       {displayImages.length > 1 && (
@@ -194,9 +190,7 @@ const ImageCarousel = ({ images }) => {
               className={`carousel__dot ${idx === currentIndex ? 'active' : ''}`}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to image ${idx + 1}`}
-            >
-              •
-            </button>
+            />
           ))}
         </div>
       )}
@@ -208,35 +202,66 @@ const ImageCarousel = ({ images }) => {
 const FacilityInfo = ({ facilityData }) => {
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
+    return timeString.substring(0, 5);
   };
+
+  const infoItems = [
+    {
+      icon: '📍',
+      label: 'Địa điểm',
+      value: facilityData?.location || 'Chưa có thông tin'
+    },
+    {
+      icon: '🕐', 
+      label: 'Giờ hoạt động',
+      value: facilityData?.openTime && facilityData?.closeTime 
+        ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
+        : 'Chưa có thông tin'
+    },
+    {
+      icon: '📞',
+      label: 'Số điện thoại', 
+      value: facilityData?.contact || 'Chưa có thông tin'
+    },
+    {
+      icon: '🏟️',
+      label: 'Loại sân',
+      value: `${facilityData?.categories?.length || 0} loại sân`
+    },
+    {
+      icon: '⚡',
+      label: 'Trạng thái',
+      value: facilityData?.status?.statusDescription || 'Đang hoạt động'
+    }
+  ];
 
   return (
     <section className="facility-info">
-      <h2 className="facility-info__title">Giới thiệu chung</h2>
+      <h2 className="facility-info__title">Thông tin cơ sở</h2>
       <div className="facility-info__details">
-        <div className="info-item">
-          <span className="info-label">Địa điểm:</span>
-          <span className="info-value">{facilityData?.location || 'Chưa có thông tin'}</span>
-        </div>
-        <div className="info-item">
-          <span className="info-label">Giờ mở cửa:</span>
-          <span className="info-value">
-            {facilityData?.openTime && facilityData?.closeTime 
-              ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
-              : 'Chưa có thông tin'
-            }
-          </span>
-        </div>
-        <div className="info-item">
-          <span className="info-label">Liên hệ:</span>
-          <span className="info-value">{facilityData?.contact || 'Chưa có thông tin'}</span>
-        </div>
-        <div className="info-item">
-          <span className="info-label">Số loại sân:</span>
-          <span className="info-value">{facilityData?.categories?.length || 0}</span>
-        </div>
+        {infoItems.map((item, index) => (
+          <div key={index} className="info-item">
+            <div className="info-label">
+              <span className="info-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+            <div className="info-value">{item.value}</div>
+          </div>
+        ))}
       </div>
+      {facilityData?.categories && facilityData.categories.length > 0 && (
+        <div className="facility-categories">
+          <h3 className="categories-title">Các loại sân có sẵn</h3>
+          <div className="categories-list">
+            {facilityData.categories.map((category) => (
+              <div key={category.categoryId} className="category-item">
+                <span className="category-icon">🏟️</span>
+                <span className="category-name">{category.categoryName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
@@ -254,125 +279,256 @@ const BookingTable = ({
   loadingSlots 
 }) => (
   <section className="booking-section">
-    <h2 className="booking-section__title">Lịch đặt sân</h2>
+    <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
     <div className="booking-toolbar">
       <div className="booking-controls">
-        <select 
-          className="form-select" 
-          aria-label="Select facility type"
-          value={selectedCategory}
-          onChange={(e) => onCategoryChange(e.target.value)}
-          disabled={loading}
-        >
-          {courtCategories.length === 0 && (
-            <option value="">
-              {loading ? 'Đang tải...' : 'Không có loại sân'}
-            </option>
-          )}
-          {courtCategories.map((category) => (
-            <option key={category.categoryId} value={category.categoryId}>
-              {category.categoryName}
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          className="form-date"
-          value={selectedDate}
-          onChange={(e) => onDateChange(e.target.value)}
-          aria-label="Select date"
-          min={TODAY}
-        />
+        <div className="control-group">
+          <label htmlFor="category-select" className="control-label">
+            <span className="label-icon">🏟️</span>
+            Chọn loại sân
+          </label>
+          <select 
+            id="category-select"
+            className="form-select" 
+            aria-label="Select facility type"
+            value={selectedCategory}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            disabled={loading}
+          >
+            {courtCategories.length === 0 && (
+              <option value="">
+                {loading ? 'Đang tải...' : 'Không có loại sân'}
+              </option>
+            )}
+            {courtCategories.map((category) => (
+              <option key={category.categoryId} value={category.categoryId}>
+                {category.categoryName}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="control-group">
+          <label htmlFor="date-select" className="control-label">
+            <span className="label-icon">📅</span>
+            Chọn ngày
+          </label>
+          <input
+            id="date-select"
+            type="date"
+            className="form-date"
+            value={selectedDate}
+            onChange={(e) => onDateChange(e.target.value)}
+            aria-label="Select date"
+            min={TODAY}
+          />
+        </div>
       </div>
     </div>
     
     {loadingSlots && (
-      <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div className="loading-state">
         Đang tải lịch trống...
       </div>
     )}
     
     {!loadingSlots && timeSlots.length > 0 && (
-      <div className="table-responsive">
-        <table className="booking-table">
-          <thead>
-            <tr>
-              <th>Khung giờ</th>
-              {timeSlots.map((slot) => (
-                <th key={slot.timeSlotId}>
-                  {formatTimeSlot(slot.startTime, slot.endTime)}
+      <div className="table-container">
+        <div className="table-responsive">
+          <table className="booking-table">
+            <thead>
+              <tr>
+                <th className="time-header">
+                  <span className="header-icon">⏰</span>
+                  Khung giờ
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Số sân trống</td>
-              {timeSlots.map((slot) => (
-                <td key={slot.timeSlotId} style={{
-                  color: slot.availableCourtCount > 0 ? 'green' : 'red',
-                  fontWeight: 'bold'
-                }}>
-                  {slot.availableCourtCount}
+                {timeSlots.map((slot) => (
+                  <th key={slot.timeSlotId} className="slot-header">
+                    <div className="slot-time">
+                      {formatTimeSlot(slot.startTime, slot.endTime)}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="row-label">
+                  <span className="label-icon">🏟️</span>
+                  Số sân trống
                 </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+                {timeSlots.map((slot) => (
+                  <td 
+                    key={slot.timeSlotId} 
+                    className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'}`}
+                  >
+                    <div className="availability-info">
+                      <span className="count">{slot.availableCourtCount}</span>
+                      <span className="status-text">
+                        {slot.availableCourtCount > 0 ? 'Còn trống' : 'Hết chỗ'}
+                      </span>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="table-legend">
+          <div className="legend-item">
+            <div className="legend-color available"></div>
+            <span>Còn sân trống</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color unavailable"></div>
+            <span>Hết sân</span>
+          </div>
+        </div>
       </div>
     )}
     
     {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
-      <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-        Không có khung giờ nào khả dụng cho loại sân này
+      <div className="empty-state">
+        <div className="empty-icon">📅</div>
+        <p>Không có khung giờ nào khả dụng cho loại sân này</p>
       </div>
     )}
     
     {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
-      <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-        Vui lòng chọn loại sân để xem lịch trống
+      <div className="empty-state">
+        <div className="empty-icon">🏟️</div>
+        <p>Vui lòng chọn loại sân để xem lịch trống</p>
       </div>
     )}
     
-    <button 
-      className="btn-primary btn-booking" 
-      onClick={onOpenModal}
-      disabled={!selectedCategory || timeSlots.length === 0}
-    >
-      Đặt sân
-    </button>
+    <div className="booking-action">
+      <button 
+        className="btn-primary btn-booking" 
+        onClick={onOpenModal}
+        disabled={!selectedCategory || timeSlots.length === 0}
+      >
+        <span className="btn-icon">⚽</span>
+        Đặt sân ngay
+      </button>
+    </div>
   </section>
 );
 
-// Reviews Component
+// Reviews Component - Cải tiến
 const Reviews = () => (
   <section className="reviews-section">
-    <h2 className="reviews-section__title">Đánh giá</h2>
+    <h2 className="reviews-section__title">
+      <span className="title-icon">⭐</span>
+      Đánh giá từ khách hàng
+    </h2>
+    
     <div className="rating-summary">
-      <span className="rating-value">4,6</span>
-      <span className="star">★</span>
-      <span className="rating-count">100 đánh giá</span>
-    </div>
-    <div className="review-card">
-      <div className="review-card__avatar" />
-      <div className="review-card__content">
-        <div className="review-card__header">
-          <span className="reviewer-name">Reviewer</span>
-          <span className="review-time">• review time</span>
-        </div>
-        <div className="review-stars">
+      <div className="rating-main">
+        <span className="rating-value">4.6</span>
+        <div className="rating-stars">
           {[...Array(5)].map((_, idx) => (
-            <span key={idx} className="star">★</span>
+            <span key={idx} className="star filled">★</span>
           ))}
         </div>
-        <p className="review-text">review content</p>
       </div>
+      
+      <div className="rating-breakdown">
+        <div className="breakdown-header">
+          <span className="total-reviews">100 đánh giá</span>
+        </div>
+        <div className="breakdown-list">
+          <div className="breakdown-item">
+            <span className="star-label">5★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width: '70%'}}></div>
+            </div>
+            <span className="count-label">70</span>
+          </div>
+          <div className="breakdown-item">
+            <span className="star-label">4★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width: '20%'}}></div>
+            </div>
+            <span className="count-label">20</span>
+          </div>
+          <div className="breakdown-item">
+            <span className="star-label">3★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width: '7%'}}></div>
+            </div>
+            <span className="count-label">7</span>
+          </div>
+          <div className="breakdown-item">
+            <span className="star-label">2★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width: '2%'}}></div>
+            </div>
+            <span className="count-label">2</span>
+          </div>
+          <div className="breakdown-item">
+            <span className="star-label">1★</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width: '1%'}}></div>
+            </div>
+            <span className="count-label">1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="reviews-list">
+      {[1, 2, 3].map((reviewId) => (
+        <div key={reviewId} className="review-card">
+          <div className="review-card__avatar">
+            <span className="avatar-text">U{reviewId}</span>
+          </div>
+          <div className="review-card__content">
+            <div className="review-card__header">
+              <div className="reviewer-info">
+                <span className="reviewer-name">Người dùng {reviewId}</span>
+                <span className="review-time">• 2 ngày trước</span>
+              </div>
+              <div className="review-stars">
+                {[...Array(5)].map((_, idx) => (
+                  <span key={idx} className="star filled">★</span>
+                ))}
+              </div>
+            </div>
+            <p className="review-text">
+              Sân rất đẹp, cỏ xanh mướt, tiện ích đầy đủ. Nhân viên phục vụ nhiệt tình, 
+              giá cả hợp lý. Sẽ quay lại lần sau!
+            </p>
+            <div className="review-actions">
+              <button className="review-action-btn helpful">
+                <span className="action-icon">👍</span>
+                <span className="action-text">Hữu ích (12)</span>
+              </button>
+              <button className="review-action-btn reply">
+                <span className="action-icon">💬</span>
+                <span className="action-text">Trả lời</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    <div className="reviews-bottom">
+      <button className="btn-write-review">
+        <span className="btn-icon">📝</span>
+        <span>Viết đánh giá</span>
+      </button>
+      <button className="btn-view-all">
+        <span>Xem tất cả đánh giá</span>
+        <span className="btn-arrow">→</span>
+      </button>
     </div>
   </section>
 );
 
 // Main Component
-const FacilityDetails = () => { // Add facilityId prop with default value
+const FacilityDetails = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -392,8 +548,6 @@ const FacilityDetails = () => { // Add facilityId prop with default value
       try {
         const response = await getFacilityDetailsById(parseInt(facilityId));
         
-        // Assuming the API returns data in response.data format
-        // Adjust this based on your actual API response structure
         if (response.data) {
           setFacilityData(response.data);
           
@@ -429,7 +583,6 @@ const FacilityDetails = () => { // Add facilityId prop with default value
       try {
         const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
         
-        // Assuming the API returns data in response.data.data format (based on ApiResponse structure)
         if (response.data && response.data.data) {
           setTimeSlots(response.data.data);
         } else if (response.data) {
@@ -440,7 +593,6 @@ const FacilityDetails = () => { // Add facilityId prop with default value
       } catch (error) {
         console.error('Error fetching available slots:', error);
         setTimeSlots([]);
-        // You might want to show an error message here
       } finally {
         setLoadingSlots(false);
       }
@@ -451,23 +603,36 @@ const FacilityDetails = () => { // Add facilityId prop with default value
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
-    setTimeSlots([]); // Clear previous slots
+    setTimeSlots([]);
   };
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    setTimeSlots([]); // Clear previous slots
+    setTimeSlots([]);
   };
 
   if (loading) {
     return (
-      <div className="facility-page" style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
-      }}>
-        <div>Đang tải thông tin cơ sở...</div>
+      <div className="facility-page">
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          Đang tải thông tin cơ sở...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="facility-page">
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
+          <h2>Có lỗi xảy ra</h2>
+          <p>{error}</p>
+          <button className="btn-primary" onClick={() => window.location.reload()}>
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
@@ -480,18 +645,6 @@ const FacilityDetails = () => { // Add facilityId prop with default value
         <FacilityInfo facilityData={facilityData} />
       </main>
       
-      {error && (
-        <div className="error-message" style={{ 
-          color: 'red', 
-          padding: '10px', 
-          margin: '10px', 
-          backgroundColor: '#fee', 
-          borderRadius: '4px' 
-        }}>
-          {error}
-        </div>
-      )}
-      
       <BookingTable 
         onOpenModal={() => setModalOpen(true)}
         courtCategories={facilityData?.categories || []}
@@ -503,7 +656,9 @@ const FacilityDetails = () => { // Add facilityId prop with default value
         loading={loading}
         loadingSlots={loadingSlots}
       />
+      
       <Reviews />
+      
       {modalOpen && (
         <BookingModal 
           open={modalOpen} 
