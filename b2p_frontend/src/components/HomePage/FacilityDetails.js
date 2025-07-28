@@ -7,9 +7,51 @@ import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiSer
 const TODAY = new Date().toISOString().slice(0, 10);
 const FACILITY_IMAGES = [
   'https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png',
-  'https://via.placeholder.com/200x150?text=Image+2',
-  'https://via.placeholder.com/200x150?text=Image+3',
+  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=800&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
 ];
+
+// Helper function to convert Google Drive share link to viewable image link
+const convertGoogleDriveLink = (url) => {
+  if (!url) return null;
+  
+  // Method 1: Extract file ID from various Google Drive URL formats
+  let fileId = null;
+  
+  // Format: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  const shareMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (shareMatch) {
+    fileId = shareMatch[1];
+  }
+  
+  // Format: https://drive.google.com/open?id=FILE_ID
+  const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (openMatch) {
+    fileId = openMatch[1];
+  }
+  
+  if (fileId) {
+    // Try multiple methods to get the image
+    // Method 1: Direct download link (works for public images)
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    
+    // Alternative methods you can try:
+    // return `https://drive.google.com/uc?id=${fileId}`;
+    // return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+  }
+  
+  // If not a Google Drive link, return as is
+  return url;
+};
+
+// Helper function to validate image URLs
+const isValidImageUrl = (url) => {
+  if (!url) return false;
+  
+  // Accept all URLs for now, let the browser handle loading
+  return true;
+};
 
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
@@ -39,30 +81,49 @@ const FacilityHeader = ({ facilityData }) => (
 // Image Carousel Component
 const ImageCarousel = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Process facility images - only use valid images from API
+  const [failedImages, setFailedImages] = useState(new Set());
+  
+  // Process facility images - convert Google Drive links and handle all URLs
   const displayImages = React.useMemo(() => {
+    console.log('Raw images from API:', images); // Debug log
+    
     if (images && images.length > 0) {
-      // Filter out invalid images and sort by order
-      const validImages = images
-        .filter(img => img.imageUrl && img.imageUrl.trim() !== '')
+      // Process all images, convert Google Drive links
+      const processedImages = images
+        .filter(img => {
+          const hasUrl = img.imageUrl && img.imageUrl.trim() !== '';
+          console.log(`Image ${img.imageId}: ${img.imageUrl} - Has URL: ${hasUrl}`);
+          return hasUrl;
+        })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map(img => img.imageUrl);
-
-      // Return valid images if any exist, otherwise fallback to default
-      return validImages.length > 0 ? validImages : FACILITY_IMAGES;
+        .map(img => {
+          const originalUrl = img.imageUrl;
+          const convertedUrl = convertGoogleDriveLink(originalUrl);
+          console.log(`Converting: ${originalUrl} → ${convertedUrl}`);
+          return convertedUrl;
+        })
+        .filter(url => url && !failedImages.has(url)); // Filter out failed images
+      
+      console.log('Processed images:', processedImages); // Debug log
+      
+      // If we have processed images, use them; otherwise use fallback
+      if (processedImages.length > 0) {
+        return processedImages;
+      }
     }
-    // No images from API, use default images
+    
+    // No valid images from API, use default images
+    console.log('No images from API, using fallback images'); // Debug log
     return FACILITY_IMAGES;
-  }, [images]);
-
+  }, [images, failedImages]);
+  
   // Reset current index if it's out of bounds
   React.useEffect(() => {
     if (currentIndex >= displayImages.length) {
       setCurrentIndex(0);
     }
   }, [displayImages.length, currentIndex]);
-
+  
   const navigateImage = (direction) => {
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex + direction;
@@ -70,11 +131,35 @@ const ImageCarousel = ({ images }) => {
     });
   };
 
+  const handleImageError = (failedUrl) => {
+    console.error('Image failed to load:', failedUrl);
+    
+    // Add failed image to the set
+    setFailedImages(prev => new Set([...prev, failedUrl]));
+    
+    // If current image failed, try to move to next image or fallback
+    if (displayImages[currentIndex] === failedUrl) {
+      // Try to find next working image or reset to fallback
+      const remainingImages = displayImages.filter(url => !failedImages.has(url) && url !== failedUrl);
+      
+      if (remainingImages.length === 0) {
+        // All images failed, this will trigger fallback to FACILITY_IMAGES
+        setCurrentIndex(0);
+      } else {
+        // Move to next available image
+        const nextIndex = displayImages.findIndex(url => !failedImages.has(url) && url !== failedUrl);
+        if (nextIndex !== -1) {
+          setCurrentIndex(nextIndex);
+        }
+      }
+    }
+  };
+
   return (
     <div className="carousel">
       {displayImages.length > 1 && (
-        <button
-          className="carousel__btn carousel__btn--prev"
+        <button 
+          className="carousel__btn carousel__btn--prev" 
           onClick={() => navigateImage(-1)}
           aria-label="Previous image"
         >
@@ -82,23 +167,17 @@ const ImageCarousel = ({ images }) => {
         </button>
       )}
       <div className="carousel__container">
-        <img
-          src={displayImages[currentIndex]}
-          alt={`Facility view ${currentIndex + 1}`}
+        <img 
+          src={displayImages[currentIndex]} 
+          alt={`Facility view ${currentIndex + 1}`} 
           className="carousel__image"
-          onError={(e) => {
-            console.error('Image failed to load:', displayImages[currentIndex]);
-            // If current image fails and we have fallback images, switch to first fallback
-            if (displayImages !== FACILITY_IMAGES) {
-              // This will trigger a re-render with fallback images
-              setCurrentIndex(0);
-            }
-          }}
+          onError={() => handleImageError(displayImages[currentIndex])}
+          onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
         />
       </div>
       {displayImages.length > 1 && (
-        <button
-          className="carousel__btn carousel__btn--next"
+        <button 
+          className="carousel__btn carousel__btn--next" 
           onClick={() => navigateImage(1)}
           aria-label="Next image"
         >
@@ -141,7 +220,7 @@ const FacilityInfo = ({ facilityData }) => {
         <div className="info-item">
           <span className="info-label">Giờ mở cửa:</span>
           <span className="info-value">
-            {facilityData?.openTime && facilityData?.closeTime
+            {facilityData?.openTime && facilityData?.closeTime 
               ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
               : 'Chưa có thông tin'
             }
@@ -161,23 +240,23 @@ const FacilityInfo = ({ facilityData }) => {
 };
 
 // Booking Table Component
-const BookingTable = ({
-  onOpenModal,
-  courtCategories,
-  selectedCategory,
-  onCategoryChange,
+const BookingTable = ({ 
+  onOpenModal, 
+  courtCategories, 
+  selectedCategory, 
+  onCategoryChange, 
   selectedDate,
   onDateChange,
   timeSlots,
   loading,
-  loadingSlots
+  loadingSlots 
 }) => (
   <section className="booking-section">
     <h2 className="booking-section__title">Lịch đặt sân</h2>
     <div className="booking-toolbar">
       <div className="booking-controls">
-        <select
-          className="form-select"
+        <select 
+          className="form-select" 
           aria-label="Select facility type"
           value={selectedCategory}
           onChange={(e) => onCategoryChange(e.target.value)}
@@ -204,13 +283,13 @@ const BookingTable = ({
         />
       </div>
     </div>
-
+    
     {loadingSlots && (
       <div style={{ textAlign: 'center', padding: '20px' }}>
         Đang tải lịch trống...
       </div>
     )}
-
+    
     {!loadingSlots && timeSlots.length > 0 && (
       <div className="table-responsive">
         <table className="booking-table">
@@ -240,21 +319,21 @@ const BookingTable = ({
         </table>
       </div>
     )}
-
+    
     {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
         Không có khung giờ nào khả dụng cho loại sân này
       </div>
     )}
-
+    
     {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
         Vui lòng chọn loại sân để xem lịch trống
       </div>
     )}
-
-    <button
-      className="btn-primary btn-booking"
+    
+    <button 
+      className="btn-primary btn-booking" 
       onClick={onOpenModal}
       disabled={!selectedCategory || timeSlots.length === 0}
     >
@@ -306,15 +385,15 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
     const fetchFacilityDetails = async () => {
       setLoading(true);
       setError(null);
-
+      
       try {
         const response = await getFacilityDetailsById(facilityId);
-
+        
         // Assuming the API returns data in response.data format
         // Adjust this based on your actual API response structure
         if (response.data) {
           setFacilityData(response.data);
-
+          
           // Set default category to the first available category
           if (response.data.categories && response.data.categories.length > 0) {
             setSelectedCategory(response.data.categories[0].categoryId.toString());
@@ -346,7 +425,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       setLoadingSlots(true);
       try {
         const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
-
+        
         // Assuming the API returns data in response.data.data format (based on ApiResponse structure)
         if (response.data && response.data.data) {
           setTimeSlots(response.data.data);
@@ -379,11 +458,11 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
 
   if (loading) {
     return (
-      <div className="facility-page" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '50vh'
+      <div className="facility-page" style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh' 
       }}>
         <div>Đang tải thông tin cơ sở...</div>
       </div>
@@ -397,20 +476,20 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
         <ImageCarousel images={facilityData?.images} />
         <FacilityInfo facilityData={facilityData} />
       </main>
-
+      
       {error && (
-        <div className="error-message" style={{
-          color: 'red',
-          padding: '10px',
-          margin: '10px',
-          backgroundColor: '#fee',
-          borderRadius: '4px'
+        <div className="error-message" style={{ 
+          color: 'red', 
+          padding: '10px', 
+          margin: '10px', 
+          backgroundColor: '#fee', 
+          borderRadius: '4px' 
         }}>
           {error}
         </div>
       )}
-
-      <BookingTable
+      
+      <BookingTable 
         onOpenModal={() => setModalOpen(true)}
         courtCategories={facilityData?.categories || []}
         selectedCategory={selectedCategory}
@@ -423,9 +502,13 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       />
       <Reviews />
       {modalOpen && (
-        <BookingModal
-          open={modalOpen}
+        <BookingModal 
+          open={modalOpen} 
           onClose={() => setModalOpen(false)}
+          timeSlots={timeSlots}
+          selectedDate={selectedDate}
+          facilityData={facilityData}
+          selectedCategory={selectedCategory}
         />
       )}
     </div>

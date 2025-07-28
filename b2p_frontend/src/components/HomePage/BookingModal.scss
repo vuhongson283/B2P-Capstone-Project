@@ -6,28 +6,36 @@
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  padding: 40px; /* Tăng từ 20px lên 40px để có khoảng cách lớn hơn với viền màn hình */
 }
 
 .booking-modal {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-  width: 400px;
-  padding: 20px;
+  width: 500px; /* Tăng chiều rộng từ 400px lên 500px */
+  max-width: 90vw; /* Giới hạn chiều rộng tối đa */
+  max-height: 75vh; /* Giảm chiều cao từ 90vh xuống 75vh */
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px; /* Tăng từ 12px lên 20px */
+  padding: 30px 40px 0 40px; /* Tăng padding từ 24px 32px lên 30px 40px */
+  flex-shrink: 0; /* Không cho header co lại */
 }
+
 .modal-header h2 {
   font-size: 2rem;
   font-weight: bold;
   margin: 0;
 }
+
 .close-btn {
   background: none;
   border: none;
@@ -36,8 +44,52 @@
 }
 
 .modal-content {
-  margin-bottom: 12px;
+  flex: 1; /* Chiếm hết không gian còn lại */
+  overflow-y: auto; /* Thêm thanh cuộn dọc */
+  padding: 0 40px; /* Tăng padding từ 32px lên 40px */
+  margin-bottom: 0;
 }
+
+/* Style cho phần thông tin booking */
+.booking-info {
+  margin-bottom: 20px;
+  padding: 0 40px;
+  flex-shrink: 0;
+}
+
+.booking-info p {
+  margin: 8px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Style cho trường hợp không có slot */
+.no-slots {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp hơn */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
 .check-all {
   display: flex;
   align-items: center;
@@ -45,19 +97,22 @@
   font-weight: 500;
   margin-bottom: 10px;
 }
+
 .slot-row {
   display: flex;
   align-items: center;
   border: 1px solid #ddd;
   border-radius: 6px;
-  padding: 12px;
+  padding: 16px; /* Tăng từ 12px lên 16px */
   margin-bottom: 10px;
-  gap: 10px;
+  gap: 12px; /* Tăng từ 10px lên 12px */
 }
+
 .slot-row.active {
   border: 2px solid #1677ff;
   background: #f7faff;
 }
+
 .slot-row label {
   flex: 1;
   font-size: 1.1rem;
@@ -66,11 +121,13 @@
   align-items: center;
   gap: 8px;
 }
+
 .slot-available {
   color: #666;
   font-size: 0.9rem;
   min-width: 80px;
 }
+
 .quantity-box {
   display: flex;
   align-items: center;
@@ -78,32 +135,47 @@
   border-radius: 6px;
   overflow: hidden;
 }
+
 .quantity-box button {
   background: none;
   border: none;
   font-size: 1.2rem;
-  width: 32px;
-  height: 32px;
+  width: 36px; /* Tăng từ 32px lên 36px */
+  height: 36px; /* Tăng từ 32px lên 36px */
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Căn giữa ký tự + và - */
 }
+
 .quantity-box span {
-  width: 32px;
+  width: 40px; /* Tăng từ 32px lên 40px */
   text-align: center;
   font-size: 1.1rem;
+  padding: 0 8px; /* Thêm padding ngang */
 }
 
 .modal-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Đưa về space-between để có text "Tổng" bên trái và button bên phải */
   align-items: center;
-  margin-top: 12px;
+  margin-top: 20px; /* Tăng từ 12px lên 20px */
+  padding: 0 40px 30px 40px; /* Tăng padding từ 32px lên 40px */
+  flex-shrink: 0; /* Không cho footer co lại */
 }
+
+.modal-footer span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
 .pay-btn {
   background: #1677ff;
   color: #fff;
   border: none;
   border-radius: 5px;
-  padding: 8px 18px;
+  padding: 10px 24px; /* Tăng từ 8px 18px lên 10px 24px */
   font-size: 1.1rem;
   cursor: pointer;
 }
