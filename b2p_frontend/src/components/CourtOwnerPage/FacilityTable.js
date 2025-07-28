@@ -14,7 +14,7 @@ import {
   Image as AntdImage,
   Card,
   Row,
-  Col,
+  Col
 } from "antd";
 import {
   SearchOutlined,
@@ -22,23 +22,18 @@ import {
   PlusOutlined,
   UploadOutlined,
   DeleteOutlined,
-  EyeOutlined,
+  EyeOutlined
 } from "@ant-design/icons";
 import {
-  getFacilitiesByCourtOwnerId,
-  createFacility,
-  uploadFacilityImages,
-  deleteFacilityImage,
-  getFacilityById,
-  updateFacility,
-  deleteFacility,
+  getFacilitiesByCourtOwnerId, createFacility, uploadFacilityImages,
+  deleteFacilityImage, getFacilityById, updateFacility, deleteFacility
 } from "../../services/apiService";
 import "./FacilityTable.scss";
 
 const { Text } = Typography;
 const convertGoogleDriveUrl = (originalUrl) => {
   if (!originalUrl) return "https://placehold.co/300x200?text=No+Image";
-  if (originalUrl.includes("thumbnail")) return originalUrl;
+  if (originalUrl.includes('thumbnail')) return originalUrl;
   const match = originalUrl.match(/id=([^&]+)/);
   if (match) {
     const id = match[1];
@@ -80,7 +75,7 @@ const FacilityTable = () => {
         console.error("Error parsing courtOwner data:", error);
       }
     }
-    return 2; // fallback ID
+    return 8; // fallback ID
   };
   // Fetch facility by ID for editing
   const fetchFacilityById = async (facilityId) => {
@@ -90,9 +85,7 @@ const FacilityTable = () => {
 
       const response = await getFacilityById(facilityId);
       console.log("📡 Get facility by ID response:", response);
-
       let success, data;
-
       // Handle different response structures
       if (response?.data?.success !== undefined) {
         success = response.data.success;
@@ -104,21 +97,16 @@ const FacilityTable = () => {
         success = false;
         data = null;
       }
-
       if (success && data) {
         console.log("✅ Facility data loaded:", data);
         setEditingFacility(data);
-        const convertedImages = (data.images || []).map((image) => ({
+        const convertedImages = (data.images || []).map(image => ({
           ...image,
-          imageUrl: convertGoogleDriveUrl(image.imageUrl), // Dùng hàm convert đã có
+          imageUrl: convertGoogleDriveUrl(image.imageUrl) // Dùng hàm convert đã có
         }));
         setFacilityImages(convertedImages);
         setUploadFileList([]); // Reset upload list
-        console.log(
-          "🖼️ Facility images loaded:",
-          convertedImages.length,
-          "images"
-        );
+        console.log("🖼️ Facility images loaded:", convertedImages.length, "images");
 
         // Populate form with facility data
         editForm.setFieldsValue({
@@ -127,104 +115,81 @@ const FacilityTable = () => {
           contact: data.contact,
           statusId: data.statusId,
         });
-
         setEditModalVisible(true);
       } else {
         message.error("Không thể tải thông tin cơ sở");
       }
     } catch (error) {
       console.error("💥 Error fetching facility:", error);
-      message.error(
-        `Lỗi khi tải thông tin cơ sở: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      message.error(`Lỗi khi tải thông tin cơ sở: ${error.response?.data?.message || error.message}`);
     } finally {
       setEditLoading(false);
     }
   };
-  // Sửa lại hàm handleDeleteImage
+  // handleDeleteImage
   const handleDeleteImage = async (imageId, imageName) => {
     Modal.confirm({
-      title: "Xác nhận xóa ảnh",
-      content: `Bạn có chắc chắn muốn xóa ảnh "${imageName || "này"}"?`,
-      okText: "Xóa",
-      cancelText: "Hủy",
-      okType: "danger",
+      title: 'Xác nhận xóa ảnh',
+      content: `Bạn có chắc chắn muốn xóa ảnh "${imageName || 'này'}"?`,
+      okText: 'Xóa',
+      cancelText: 'Hủy',
+      okType: 'danger',
       onOk: async () => {
         try {
           console.log("🗑️ Deleting image ID:", imageId);
           const response = await deleteFacilityImage(imageId);
           console.log("✅ Delete image response:", response);
-
-          // Xử lý response theo cấu trúc API thực tế
+          //response theo cấu trúc API 
           let success = false;
-
-          // Kiểm tra nhiều cấu trúc response có thể
           if (response?.message === "Image deleted successfully") {
             success = true;
           } else if (response?.data?.message === "Image deleted successfully") {
             success = true;
           } else if (response?.success === true) {
             success = true;
-          } else if (
-            !response?.message?.includes("not found") &&
-            !response?.message?.includes("failed")
-          ) {
-            success = true; // Assume success if no explicit error
+          } else if (!response?.message?.includes("not found") && !response?.message?.includes("failed")) {
+            success = true; 
           }
-
           if (success) {
-            setFacilityImages((prev) =>
-              prev.filter((img) => img.imageId !== imageId)
-            );
-            message.success("Xóa ảnh thành công");
+            setFacilityImages(prev => prev.filter(img => img.imageId !== imageId));
+            message.success('Xóa ảnh thành công');
           } else {
-            message.error(
-              response?.message || response?.data?.message || "Xóa ảnh thất bại"
-            );
+            message.error(response?.message || response?.data?.message || 'Xóa ảnh thất bại');
           }
         } catch (error) {
-          console.error("💥 Error deleting image:", error);
-
+          console.error('💥 Error deleting image:', error);
           if (error.response?.status === 404) {
-            message.error("Không tìm thấy ảnh để xóa");
+            message.error('Không tìm thấy ảnh để xóa');
           } else if (error.response?.status === 500) {
-            message.error("Lỗi máy chủ khi xóa ảnh");
+            message.error('Lỗi máy chủ khi xóa ảnh');
           } else {
-            message.error(
-              `Xóa ảnh thất bại: ${
-                error.response?.data?.message || error.message
-              }`
-            );
+            message.error(`Xóa ảnh thất bại: ${error.response?.data?.message || error.message}`);
           }
         }
       },
     });
   };
-
-  // Cập nhật hàm handlePreviewImage
+  // hàm handlePreviewImage
   const handlePreviewImage = (imageUrl, caption) => {
     // Xử lý Google Drive URL hoặc blob URL
     let previewUrl = imageUrl;
 
-    if (imageUrl.includes("thumbnail")) {
-      previewUrl = imageUrl.replace("thumbnail", "uc");
+    if (imageUrl.includes('thumbnail')) {
+      previewUrl = imageUrl.replace('thumbnail', 'uc');
     }
     // Blob URL (từ file upload) giữ nguyên
-
     Modal.info({
-      title: caption || "Xem ảnh",
+      title: caption || 'Xem ảnh',
       content: (
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: 'center' }}>
           <img
             src={previewUrl}
             alt="Preview"
             style={{
-              maxWidth: "100%",
-              maxHeight: "500px",
-              objectFit: "contain",
-              borderRadius: "8px",
+              maxWidth: '100%',
+              maxHeight: '500px',
+              objectFit: 'contain',
+              borderRadius: '8px'
             }}
             onError={(e) => {
               // Fallback về URL gốc nếu convert failed
@@ -234,20 +199,18 @@ const FacilityTable = () => {
         </div>
       ),
       width: 700,
-      okText: "Đóng",
+      okText: 'Đóng',
     });
   };
-  // Hàm xử lý upload ảnh (chuẩn bị cho tương lai)
-  // Cập nhật hàm handleUploadChange
+  //hàm handleUploadChange
   const handleUploadChange = ({ fileList }) => {
     // Validate và tạo preview URL
-    const validFiles = fileList.filter((file) => {
-      const isImage = file.type?.startsWith("image/");
+    const validFiles = fileList.filter(file => {
+      const isImage = file.type?.startsWith('image/');
       if (!isImage && file.originFileObj) {
         message.error(`${file.name} không phải là file ảnh hợp lệ`);
         return false;
       }
-
       const isValidSize = !file.size || file.size / 1024 / 1024 < 5;
       if (!isValidSize) {
         message.error(`${file.name} vượt quá 5MB`);
@@ -256,9 +219,8 @@ const FacilityTable = () => {
 
       return true;
     });
-
     // Tạo preview URL cho file mới
-    const filesWithPreview = validFiles.map((file) => {
+    const filesWithPreview = validFiles.map(file => {
       if (!file.url && !file.preview && file.originFileObj) {
         file.preview = URL.createObjectURL(file.originFileObj);
       }
@@ -266,11 +228,7 @@ const FacilityTable = () => {
     });
 
     setUploadFileList(filesWithPreview);
-    console.log(
-      "📁 Upload file list changed:",
-      filesWithPreview.length,
-      "files"
-    );
+    console.log("📁 Upload file list changed:", filesWithPreview.length, "files");
   };
   // Update facility
   // Cập nhật hàm handleUpdateFacility
@@ -283,7 +241,6 @@ const FacilityTable = () => {
         message.error("Không tìm thấy ID cơ sở");
         return;
       }
-
       // Bước 1: Update thông tin cơ sở
       const updateData = {
         facilityName: values.facilityName.trim(),
@@ -291,14 +248,9 @@ const FacilityTable = () => {
         contact: values.contact.trim(),
         statusId: values.statusId,
       };
-
       console.log("🚀 Step 1: Updating facility data...", updateData);
-      const response = await updateFacility(
-        editingFacility.facilityId,
-        updateData
-      );
+      const response = await updateFacility(editingFacility.facilityId, updateData);
       console.log("✅ Update facility response:", response);
-
       let success, message_text;
       if (response?.data?.success !== undefined) {
         success = response.data.success;
@@ -310,150 +262,121 @@ const FacilityTable = () => {
         success = true;
         message_text = "Cập nhật thành công";
       }
-
       if (!success) {
         message.error(message_text || "Cập nhật cơ sở thất bại");
         return;
       }
-
       // Bước 2: Upload ảnh mới nếu có
       let uploadResult = { success: true };
       if (uploadFileList && uploadFileList.length > 0) {
         console.log("🚀 Step 2: Uploading new images...");
-        uploadResult = await uploadImages(
-          editingFacility.facilityId,
-          uploadFileList
-        );
+        uploadResult = await uploadImages(editingFacility.facilityId, uploadFileList);
       }
-
-      // Thông báo kết quả
       if (uploadResult.success) {
-        const successMsg =
-          uploadFileList.length > 0
-            ? `Cập nhật cơ sở và thêm ${uploadFileList.length} ảnh mới thành công!`
-            : "Cập nhật cơ sở thành công!";
+        const successMsg = uploadFileList.length > 0
+          ? `Cập nhật cơ sở và thêm ${uploadFileList.length} ảnh mới thành công!`
+          : "Cập nhật cơ sở thành công!";
         message.success(successMsg);
       } else {
         message.warning("Cập nhật cơ sở thành công nhưng upload ảnh thất bại");
       }
-
       // Close modal và refresh
       handleEditModalClose();
-      await fetchFacilities(
-        pagination.current,
-        pagination.pageSize,
-        searchText,
-        statusFilter
-      );
+      await fetchFacilities(pagination.current, pagination.pageSize, searchText, statusFilter);
     } catch (error) {
       console.error("💥 Error updating facility:", error);
-      const errorMessage =
-        error.response?.data?.message || error.message || "Đã có lỗi xảy ra";
+      const errorMessage = error.response?.data?.message || error.message || "Đã có lỗi xảy ra";
       message.error(`Cập nhật cơ sở thất bại: ${errorMessage}`);
     } finally {
       setEditLoading(false);
     }
   };
-
   // Handle edit modal close
+  const fetchFacilities = useCallback(async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
+    try {
+      setLoading(true);
+      const courtOwnerId = getCourtOwnerId();
 
-  const fetchFacilities = useCallback(
-    async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
-      try {
-        setLoading(true);
-        const courtOwnerId = getCourtOwnerId();
+      console.log("🔍 Calling API with params:", {
+        courtOwnerId,
+        searchQuery,
+        status,
+        page,
+        pageSize
+      });
 
-        console.log("🔍 Calling API with params:", {
-          courtOwnerId,
-          searchQuery,
-          status,
-          page,
-          pageSize,
-        });
+      const response = await getFacilitiesByCourtOwnerId(
+        courtOwnerId,
+        searchQuery,
+        status,
+        page,
+        pageSize
+      );
 
-        const response = await getFacilitiesByCourtOwnerId(
-          courtOwnerId,
-          searchQuery,
-          status,
-          page,
-          pageSize
-        );
+      console.log("📡 Full API Response:", response);
 
-        console.log("📡 Full API Response:", response);
+      let success, payload;
 
-        let success, payload;
-
-        if (response?.data?.success !== undefined) {
-          success = response.data.success;
-          payload = response.data.data;
-        } else if (response?.success !== undefined) {
-          success = response.success;
-          payload = response.data;
-        } else if (response?.data) {
-          success = true;
-          payload = response.data;
-        } else {
-          console.error("❌ Unknown response structure:", response);
-          success = false;
-          payload = null;
-        }
-
-        if (success && payload && payload.items) {
-          const { items, totalItems, currentPage, itemsPerPage } = payload;
-
-          const convertGoogleDriveUrl = (originalUrl) => {
-            if (!originalUrl)
-              return "https://placehold.co/300x200?text=No+Image";
-            if (originalUrl.includes("thumbnail")) return originalUrl;
-            const match = originalUrl.match(/id=([^&]+)/);
-            if (match) {
-              const id = match[1];
-              return `https://drive.google.com/thumbnail?id=${id}`;
-            }
-            return originalUrl;
-          };
-
-          const mappedFacilities = items.map((facility) => ({
-            key: facility.facilityId,
-            id: facility.facilityId,
-            name: facility.facilityName,
-            address: facility.location,
-            courtCount: facility.courtCount,
-            status: facility.status,
-            image:
-              facility.images?.length > 0
-                ? convertGoogleDriveUrl(facility.images[0].imageUrl)
-                : "https://placehold.co/300x200?text=No+Image",
-          }));
-
-          setFacilities(mappedFacilities);
-          setPagination((prev) => ({
-            ...prev,
-            current: currentPage,
-            pageSize: itemsPerPage,
-            total: totalItems,
-          }));
-        } else {
-          console.error("❌ API response invalid:", { success, payload });
-          message.error(
-            `Không thể tải danh sách cơ sở. Success: ${success}, Has items: ${
-              payload?.items ? "Yes" : "No"
-            }`
-          );
-          setFacilities([]);
-        }
-      } catch (error) {
-        console.error("💥 Lỗi khi gọi API:", error);
-        message.error(
-          `Đã có lỗi xảy ra: ${error.response?.data?.message || error.message}`
-        );
-        setFacilities([]);
-      } finally {
-        setLoading(false);
+      if (response?.data?.success !== undefined) {
+        success = response.data.success;
+        payload = response.data.data;
+      } else if (response?.success !== undefined) {
+        success = response.success;
+        payload = response.data;
+      } else if (response?.data) {
+        success = true;
+        payload = response.data;
+      } else {
+        console.error("❌ Unknown response structure:", response);
+        success = false;
+        payload = null;
       }
-    },
-    []
-  );
+
+      if (success && payload && payload.items) {
+        const { items, totalItems, currentPage, itemsPerPage } = payload;
+
+        const convertGoogleDriveUrl = (originalUrl) => {
+          if (!originalUrl) return "https://placehold.co/300x200?text=No+Image";
+          if (originalUrl.includes('thumbnail')) return originalUrl;
+          const match = originalUrl.match(/id=([^&]+)/);
+          if (match) {
+            const id = match[1];
+            return `https://drive.google.com/thumbnail?id=${id}`;
+          }
+          return originalUrl;
+        };
+        const mappedFacilities = items.map((facility) => ({
+          key: facility.facilityId,
+          id: facility.facilityId,
+          name: facility.facilityName,
+          address: facility.location,
+          courtCount: facility.courtCount,
+          status: facility.status,
+          image:
+            facility.images?.length > 0
+              ? convertGoogleDriveUrl(facility.images[0].imageUrl)
+              : "https://placehold.co/300x200?text=No+Image",
+        }));
+        setFacilities(mappedFacilities);
+        setPagination(prev => ({
+          ...prev,
+          current: currentPage,
+          pageSize: itemsPerPage,
+          total: totalItems,
+        }));
+      } else {
+        console.error("❌ API response invalid:", { success, payload });
+        message.error(`Không thể tải danh sách cơ sở. Success: ${success}, Has items: ${payload?.items ? 'Yes' : 'No'}`);
+        setFacilities([]);
+      }
+    } catch (error) {
+      console.error("💥 Lỗi khi gọi API:", error);
+      message.error(`Đã có lỗi xảy ra: ${error.response?.data?.message || error.message}`);
+      setFacilities([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!hasInitialized) {
@@ -466,13 +389,7 @@ const FacilityTable = () => {
     if (hasInitialized && (searchText !== "" || statusFilter !== null)) {
       fetchFacilities(1, pagination.pageSize, searchText, statusFilter);
     }
-  }, [
-    searchText,
-    statusFilter,
-    hasInitialized,
-    pagination.pageSize,
-    fetchFacilities,
-  ]);
+  }, [searchText, statusFilter, hasInitialized, pagination.pageSize, fetchFacilities]);
 
   const handleSearch = async (value) => {
     const searchValue = value || "";
@@ -480,10 +397,9 @@ const FacilityTable = () => {
 
     const newPagination = {
       ...pagination,
-      current: 1,
+      current: 1
     };
     setPagination(newPagination);
-
     // Gọi API ngay lập tức với giá trị mới
     await fetchFacilities(1, pagination.pageSize, searchValue, statusFilter);
   };
@@ -506,23 +422,20 @@ const FacilityTable = () => {
   const handleManageCourts = (record) => {
     console.log("Manage courts for facility:", record);
   };
-
   // Cập nhật hàm handleImageChange
   const handleImageChange = (info) => {
     const { fileList } = info;
-
     // Validate file types
-    const validFiles = fileList.filter((file) => {
-      const isImage = file.type?.startsWith("image/");
+    const validFiles = fileList.filter(file => {
+      const isImage = file.type?.startsWith('image/');
       if (!isImage && file.originFileObj) {
         message.error(`${file.name} không phải là file ảnh hợp lệ`);
         return false;
       }
       return true;
     });
-
     // Validate file size (max 5MB per file)
-    const validSizeFiles = validFiles.filter((file) => {
+    const validSizeFiles = validFiles.filter(file => {
       const isValidSize = !file.size || file.size / 1024 / 1024 < 5;
       if (!isValidSize) {
         message.error(`${file.name} vượt quá 5MB`);
@@ -530,9 +443,8 @@ const FacilityTable = () => {
       }
       return true;
     });
-
     // Tạo preview URL cho các file mới
-    const filesWithPreview = validSizeFiles.map((file) => {
+    const filesWithPreview = validSizeFiles.map(file => {
       if (!file.url && !file.preview && file.originFileObj) {
         file.preview = URL.createObjectURL(file.originFileObj);
       }
@@ -541,47 +453,35 @@ const FacilityTable = () => {
 
     setSelectedImages(filesWithPreview);
   };
-
   // Upload ảnh lên server
   const uploadImages = async (facilityId, imageFiles) => {
     if (!imageFiles || imageFiles.length === 0) {
       console.log("📸 No images to upload");
       return { success: true, message: "No images to upload" };
     }
-
     try {
-      console.log(
-        `📸 Uploading ${imageFiles.length} images for facility ${facilityId}`
-      );
-
+      console.log(`📸 Uploading ${imageFiles.length} images for facility ${facilityId}`);
       // Tạo FormData
       const formData = new FormData();
-
       // Thêm files vào FormData
-      imageFiles.forEach((fileObj) => {
+      imageFiles.forEach(fileObj => {
         const file = fileObj.originFileObj || fileObj;
-        formData.append("files", file);
+        formData.append('files', file);
       });
-
       // Thêm entityId (facilityId)
-      formData.append("entityId", facilityId.toString());
-
+      formData.append('entityId', facilityId.toString());
       // Thêm caption (optional)
-      formData.append("caption", "Facility image");
-
+      formData.append('caption', 'Facility image');
       console.log("📤 FormData prepared:", {
         files: imageFiles.length,
-        entityId: facilityId,
+        entityId: facilityId
       });
-
       // Gọi API upload
       const uploadResponse = await uploadFacilityImages(formData);
-
       console.log("✅ Upload response:", uploadResponse);
       console.log("✅ Upload response.data:", uploadResponse.data);
       console.log("✅ Upload response.status:", uploadResponse.status);
 
-      // Fix: Check the response structure correctly
       // The API returns the array directly, not wrapped in response.data
       let responseData;
 
@@ -592,12 +492,10 @@ const FacilityTable = () => {
         // Direct response (the array itself)
         responseData = uploadResponse;
       }
-
       console.log("🔍 Processed response data:", responseData);
 
       // Check if responseData is an array with image data
-      const isValidResponse =
-        Array.isArray(responseData) &&
+      const isValidResponse = Array.isArray(responseData) &&
         responseData.length > 0 &&
         responseData[0].imageId;
 
@@ -605,23 +503,19 @@ const FacilityTable = () => {
         isArray: Array.isArray(responseData),
         hasLength: responseData?.length > 0,
         hasImageId: responseData?.[0]?.imageId,
-        isValidResponse,
+        isValidResponse
       });
 
       if (isValidResponse) {
-        console.log(
-          `✅ Upload successful: ${imageFiles.length} images uploaded`
-        );
+        console.log(`✅ Upload successful: ${imageFiles.length} images uploaded`);
         return { success: true, data: responseData };
       } else {
-        throw new Error(
-          "Upload response không hợp lệ - dữ liệu không đúng định dạng"
-        );
+        throw new Error("Upload response không hợp lệ - dữ liệu không đúng định dạng");
       }
+
     } catch (error) {
       console.error("💥 Error uploading images:", error);
-      const errorMessage =
-        error.response?.data?.message || error.message || "Upload ảnh thất bại";
+      const errorMessage = error.response?.data?.message || error.message || "Upload ảnh thất bại";
       message.error(`Upload ảnh thất bại: ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
@@ -649,7 +543,7 @@ const FacilityTable = () => {
         statusId: values.statusId,
         openHour: values.openHour,
         closeHour: values.closeHour,
-        slotDuration: values.slotDuration,
+        slotDuration: values.slotDuration
       };
 
       console.log("🚀 Step 1: Creating facility...", facilityData);
@@ -658,8 +552,7 @@ const FacilityTable = () => {
       console.log("✅ Create facility response:", createResponse);
 
       const success = createResponse?.data?.success || createResponse?.success;
-      const message_text =
-        createResponse?.data?.message || createResponse?.message;
+      const message_text = createResponse?.data?.message || createResponse?.message;
 
       if (!success) {
         message.error(message_text || "Tạo cơ sở thất bại");
@@ -667,8 +560,7 @@ const FacilityTable = () => {
       }
 
       // Lấy facilityId từ response
-      const facilityId =
-        createResponse?.data?.data?.facilityId ||
+      const facilityId = createResponse?.data?.data?.facilityId ||
         createResponse?.data?.facilityId ||
         createResponse?.facilityId;
 
@@ -704,23 +596,23 @@ const FacilityTable = () => {
 
       // Refresh danh sách cơ sở
       await fetchFacilities(1, pagination.pageSize, searchText, statusFilter);
-      setPagination((prev) => ({ ...prev, current: 1 }));
+      setPagination(prev => ({ ...prev, current: 1 }));
+
     } catch (error) {
       console.error("💥 Error in create facility flow:", error);
 
       if (error.response?.status === 400) {
         const errorData = error.response.data;
         if (errorData.errors) {
-          Object.keys(errorData.errors).forEach((field) => {
+          Object.keys(errorData.errors).forEach(field => {
             const fieldErrors = errorData.errors[field];
-            message.error(`${field}: ${fieldErrors.join(", ")}`);
+            message.error(`${field}: ${fieldErrors.join(', ')}`);
           });
         } else {
           message.error(errorData.message || "Dữ liệu không hợp lệ");
         }
       } else {
-        const errorMessage =
-          error.response?.data?.message || error.message || "Đã có lỗi xảy ra";
+        const errorMessage = error.response?.data?.message || error.message || "Đã có lỗi xảy ra";
         message.error(`Tạo cơ sở thất bại: ${errorMessage}`);
       }
     } finally {
@@ -730,8 +622,8 @@ const FacilityTable = () => {
 
   const handleModalClose = () => {
     // Cleanup blob URLs
-    selectedImages.forEach((file) => {
-      if (file.preview && file.preview.startsWith("blob:")) {
+    selectedImages.forEach(file => {
+      if (file.preview && file.preview.startsWith('blob:')) {
         URL.revokeObjectURL(file.preview);
       }
     });
@@ -746,8 +638,8 @@ const FacilityTable = () => {
   // Cập nhật hàm handleEditModalClose
   const handleEditModalClose = () => {
     // Cleanup blob URLs từ upload mới
-    uploadFileList.forEach((file) => {
-      if (file.preview && file.preview.startsWith("blob:")) {
+    uploadFileList.forEach(file => {
+      if (file.preview && file.preview.startsWith('blob:')) {
         URL.revokeObjectURL(file.preview);
       }
     });
@@ -772,34 +664,20 @@ const FacilityTable = () => {
       console.log("🔍 Response data:", { success, apiMessage, status });
 
       if (success) {
-        message.success(
-          apiMessage || `Đã xóa cơ sở "${record.name}" thành công!`
-        );
+        message.success(apiMessage || `Đã xóa cơ sở "${record.name}" thành công!`);
 
         // Refresh danh sách sau khi xóa
-        await fetchFacilities(
-          pagination.current,
-          pagination.pageSize,
-          searchText,
-          statusFilter
-        );
+        await fetchFacilities(pagination.current, pagination.pageSize, searchText, statusFilter);
 
         // Nếu trang hiện tại không còn dữ liệu, chuyển về trang trước
         if (facilities.length === 1 && pagination.current > 1) {
-          setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
-          await fetchFacilities(
-            pagination.current - 1,
-            pagination.pageSize,
-            searchText,
-            statusFilter
-          );
+          setPagination(prev => ({ ...prev, current: prev.current - 1 }));
+          await fetchFacilities(pagination.current - 1, pagination.pageSize, searchText, statusFilter);
         }
       } else {
         // Xử lý các trường hợp lỗi khác nhau dựa trên status
         if (status === 400) {
-          message.error(
-            apiMessage || "Không thể xóa cơ sở này vì đang có booking hoạt động"
-          );
+          message.error(apiMessage || "Không thể xóa cơ sở này vì đang có booking hoạt động");
         } else if (status === 404) {
           message.error(apiMessage || "Không tìm thấy cơ sở cần xóa");
         } else if (status === 500) {
@@ -808,6 +686,7 @@ const FacilityTable = () => {
           message.error(apiMessage || "Xóa cơ sở thất bại");
         }
       }
+
     } catch (error) {
       console.error("💥 Error deleting facility:", error);
 
@@ -816,10 +695,7 @@ const FacilityTable = () => {
         const { message: errorMessage, status } = error;
 
         if (status === 400) {
-          message.error(
-            errorMessage ||
-              "Không thể xóa cơ sở này vì đang có booking hoạt động"
-          );
+          message.error(errorMessage || "Không thể xóa cơ sở này vì đang có booking hoạt động");
         } else if (status === 404) {
           message.error(errorMessage || "Không tìm thấy cơ sở cần xóa");
         } else if (status === 500) {
@@ -828,14 +704,13 @@ const FacilityTable = () => {
           message.error(errorMessage || "Xóa cơ sở thất bại");
         }
       } else {
-        message.error(
-          `Xóa cơ sở thất bại: ${error.message || "Lỗi không xác định"}`
-        );
+        message.error(`Xóa cơ sở thất bại: ${error.message || 'Lỗi không xác định'}`);
       }
     } finally {
       setDeleteLoading(false);
     }
   };
+
 
   const handleStatusFilter = (value) => {
     console.log("🔧 Status filter changed:", value); // Debug log
@@ -933,19 +808,9 @@ const FacilityTable = () => {
             title="Xóa cơ sở"
             description={
               <div>
-                <p>
-                  Bạn có chắc chắn muốn xóa cơ sở{" "}
-                  <strong>"{record.name}"</strong>?
-                </p>
-                <p
-                  style={{
-                    color: "#ff4d4f",
-                    fontSize: "12px",
-                    margin: "4px 0 0 0",
-                  }}
-                >
-                  ⚠️ Thao tác này sẽ xóa tất cả dữ liệu liên quan và không thể
-                  hoàn tác!
+                <p>Bạn có chắc chắn muốn xóa cơ sở <strong>"{record.name}"</strong>?</p>
+                <p style={{ color: '#ff4d4f', fontSize: '12px', margin: '4px 0 0 0' }}>
+                  ⚠️ Thao tác này sẽ xóa tất cả dữ liệu liên quan và không thể hoàn tác!
                 </p>
               </div>
             }
@@ -956,18 +821,18 @@ const FacilityTable = () => {
             placement="topRight"
             okButtonProps={{
               loading: deleteLoading,
-              danger: true,
+              danger: true
             }}
           >
             <Tooltip title="Xóa cơ sở">
               <DeleteOutlined
                 className="delete-icon"
                 style={{
-                  color: deleteLoading ? "#ccc" : "#ff4d4f",
-                  fontSize: "16px",
-                  cursor: deleteLoading ? "not-allowed" : "pointer",
-                  marginLeft: "12px",
-                  transition: "all 0.3s ease",
+                  color: deleteLoading ? '#ccc' : '#ff4d4f',
+                  fontSize: '16px',
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                  marginLeft: '12px',
+                  transition: 'all 0.3s ease'
                 }}
               />
             </Tooltip>
@@ -1065,7 +930,7 @@ const FacilityTable = () => {
             name="facilityName"
             rules={[
               { required: true, message: "Vui lòng nhập tên cơ sở" },
-              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" },
+              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" }
             ]}
           >
             <Input placeholder="Nhập tên cơ sở..." />
@@ -1076,7 +941,7 @@ const FacilityTable = () => {
             name="location"
             rules={[
               { required: true, message: "Vui lòng nhập địa chỉ" },
-              { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự" },
+              { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự" }
             ]}
           >
             <Input.TextArea
@@ -1090,16 +955,13 @@ const FacilityTable = () => {
             name="contact"
             rules={[
               { required: true, message: "Vui lòng nhập số điện thoại" },
-              {
-                pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/,
-                message: "Số điện thoại không hợp lệ",
-              },
+              { pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/, message: "Số điện thoại không hợp lệ" }
             ]}
           >
             <Input placeholder="Nhập số điện thoại (VD: 0987654321)" />
           </Form.Item>
 
-          <div style={{ display: "flex", gap: "16px" }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
             <Form.Item
               label="Giờ mở cửa"
               name="openHour"
@@ -1109,7 +971,7 @@ const FacilityTable = () => {
               <Select placeholder="Chọn giờ mở cửa">
                 {Array.from({ length: 24 }, (_, i) => (
                   <Option key={i} value={i}>
-                    {i.toString().padStart(2, "0")}:00
+                    {i.toString().padStart(2, '0')}:00
                   </Option>
                 ))}
               </Select>
@@ -1119,14 +981,14 @@ const FacilityTable = () => {
               label="Giờ đóng cửa"
               name="closeHour"
               rules={[
-                { required: true, message: "Vui lòng chọn giờ đóng cửa" },
+                { required: true, message: "Vui lòng chọn giờ đóng cửa" }
               ]}
               style={{ flex: 1 }}
             >
               <Select placeholder="Chọn giờ đóng cửa">
                 {Array.from({ length: 24 }, (_, i) => (
                   <Option key={i} value={i}>
-                    {i.toString().padStart(2, "0")}:00
+                    {i.toString().padStart(2, '0')}:00
                   </Option>
                 ))}
               </Select>
@@ -1137,7 +999,7 @@ const FacilityTable = () => {
             label="Thời lượng mỗi slot (phút)"
             name="slotDuration"
             rules={[
-              { required: true, message: "Vui lòng chọn thời lượng slot" },
+              { required: true, message: "Vui lòng chọn thời lượng slot" }
             ]}
           >
             <Select placeholder="Chọn thời lượng mỗi slot">
@@ -1161,7 +1023,10 @@ const FacilityTable = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Ảnh cơ sở" name="images">
+          <Form.Item
+            label="Ảnh cơ sở"
+            name="images"
+          >
             <Upload
               listType="picture-card"
               fileList={selectedImages}
@@ -1172,15 +1037,12 @@ const FacilityTable = () => {
               maxCount={10}
               onPreview={(file) => {
                 // Tạo URL preview cho file
-                const previewUrl =
-                  file.url ||
-                  file.preview ||
-                  URL.createObjectURL(file.originFileObj);
+                const previewUrl = file.url || file.preview || URL.createObjectURL(file.originFileObj);
                 handlePreviewImage(previewUrl, file.name);
               }}
               onRemove={(file) => {
                 // Cleanup URL object nếu có
-                if (file.preview && file.preview.startsWith("blob:")) {
+                if (file.preview && file.preview.startsWith('blob:')) {
                   URL.revokeObjectURL(file.preview);
                 }
               }}
@@ -1192,25 +1054,25 @@ const FacilityTable = () => {
                 </div>
               )}
             </Upload>
-            <div style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
-              * Chọn tối đa 10 ảnh, mỗi ảnh không quá 5MB. Click vào ảnh để xem
-              trước.
+            <div style={{ marginTop: 8, color: '#666', fontSize: '12px' }}>
+              * Chọn tối đa 10 ảnh, mỗi ảnh không quá 5MB. Click vào ảnh để xem trước.
             </div>
           </Form.Item>
 
           <Form.Item>
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Button onClick={handleModalClose}>Hủy</Button>
-              <Button type="primary" htmlType="submit" loading={submitLoading}>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <Button onClick={handleModalClose}>
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={submitLoading}
+              >
                 {selectedImages.length > 0
                   ? `Thêm cơ sở + ${selectedImages.length} ảnh`
-                  : "Thêm mới cơ sở"}
+                  : 'Thêm mới cơ sở'
+                }
               </Button>
             </div>
           </Form.Item>
@@ -1218,7 +1080,7 @@ const FacilityTable = () => {
       </Modal>
       {/* Modal chỉnh sửa cơ sở */}
       <Modal
-        title={`Chỉnh sửa cơ sở: ${editingFacility?.facilityName || ""}`}
+        title={`Chỉnh sửa cơ sở: ${editingFacility?.facilityName || ''}`}
         open={editModalVisible}
         onCancel={handleEditModalClose}
         footer={null}
@@ -1237,7 +1099,7 @@ const FacilityTable = () => {
             name="facilityName"
             rules={[
               { required: true, message: "Vui lòng nhập tên cơ sở" },
-              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" },
+              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" }
             ]}
           >
             <Input placeholder="Nhập tên cơ sở..." />
@@ -1248,7 +1110,7 @@ const FacilityTable = () => {
             name="location"
             rules={[
               { required: true, message: "Vui lòng nhập địa chỉ" },
-              { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự" },
+              { min: 5, message: "Địa chỉ phải có ít nhất 5 ký tự" }
             ]}
           >
             <Input.TextArea
@@ -1262,10 +1124,7 @@ const FacilityTable = () => {
             name="contact"
             rules={[
               { required: true, message: "Vui lòng nhập số điện thoại" },
-              {
-                pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/,
-                message: "Số điện thoại không hợp lệ",
-              },
+              { pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/, message: "Số điện thoại không hợp lệ" }
             ]}
           >
             <Input placeholder="Nhập số điện thoại (VD: 0987654321)" />
@@ -1288,7 +1147,7 @@ const FacilityTable = () => {
               {/* Hiển thị ảnh hiện tại */}
               {facilityImages.length > 0 ? (
                 <div className="current-images">
-                  <h4 style={{ marginBottom: 16, color: "#1890ff" }}>
+                  <h4 style={{ marginBottom: 16, color: '#1890ff' }}>
                     Ảnh hiện tại ({facilityImages.length}):
                   </h4>
                   <Row gutter={[16, 16]}>
@@ -1297,25 +1156,19 @@ const FacilityTable = () => {
                         <Card
                           hoverable
                           cover={
-                            <div style={{ height: 120, overflow: "hidden" }}>
+                            <div style={{ height: 120, overflow: 'hidden' }}>
                               <img
                                 src={image.imageUrl}
-                                alt={image.caption || "Facility image"}
+                                alt={image.caption || 'Facility image'}
                                 style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "cover",
-                                  cursor: "pointer",
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  cursor: 'pointer'
                                 }}
-                                onClick={() =>
-                                  handlePreviewImage(
-                                    image.imageUrl,
-                                    image.caption
-                                  )
-                                }
+                                onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
                                 onError={(e) => {
-                                  e.target.src =
-                                    "https://placehold.co/300x200?text=Error+Loading";
+                                  e.target.src = "https://placehold.co/300x200?text=Error+Loading";
                                 }}
                               />
                             </div>
@@ -1323,35 +1176,23 @@ const FacilityTable = () => {
                           actions={[
                             <EyeOutlined
                               key="view"
-                              onClick={() =>
-                                handlePreviewImage(
-                                  image.imageUrl,
-                                  image.caption
-                                )
-                              }
-                              style={{ color: "#1890ff" }}
+                              onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
+                              style={{ color: '#1890ff' }}
                               title="Xem ảnh"
                             />,
                             <DeleteOutlined
                               key="delete"
-                              onClick={() =>
-                                handleDeleteImage(image.imageId, image.caption)
-                              }
-                              style={{ color: "#ff4d4f" }}
+                              onClick={() => handleDeleteImage(image.imageId, image.caption)}
+                              style={{ color: '#ff4d4f' }}
                               title="Xóa ảnh"
-                            />,
+                            />
                           ]}
                           size="small"
                         >
                           <Card.Meta
                             description={
-                              <div
-                                style={{
-                                  fontSize: "12px",
-                                  textAlign: "center",
-                                }}
-                              >
-                                {image.caption || "Không có mô tả"}
+                              <div style={{ fontSize: '12px', textAlign: 'center' }}>
+                                {image.caption || 'Không có mô tả'}
                               </div>
                             }
                           />
@@ -1361,26 +1202,20 @@ const FacilityTable = () => {
                   </Row>
                 </div>
               ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    background: "#fafafa",
-                    borderRadius: "6px",
-                    border: "1px dashed #d9d9d9",
-                  }}
-                >
-                  <p style={{ color: "#999", margin: 0 }}>
-                    Cơ sở này chưa có ảnh nào
-                  </p>
+                <div style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                  background: '#fafafa',
+                  borderRadius: '6px',
+                  border: '1px dashed #d9d9d9'
+                }}>
+                  <p style={{ color: '#999', margin: 0 }}>Cơ sở này chưa có ảnh nào</p>
                 </div>
               )}
 
               {/* Upload ảnh mới */}
               <div className="upload-new-images" style={{ marginTop: 20 }}>
-                <h4 style={{ marginBottom: 12, color: "#52c41a" }}>
-                  Thêm ảnh mới:
-                </h4>
+                <h4 style={{ marginBottom: 12, color: '#52c41a' }}>Thêm ảnh mới:</h4>
                 <Upload
                   listType="picture-card"
                   fileList={uploadFileList}
@@ -1391,13 +1226,10 @@ const FacilityTable = () => {
                   maxCount={8}
                   onPreview={(file) => {
                     // Preview cho file upload mới
-                    const previewUrl =
-                      file.url ||
-                      file.preview ||
-                      URL.createObjectURL(file.originFileObj);
+                    const previewUrl = file.url || file.preview || URL.createObjectURL(file.originFileObj);
                     handlePreviewImage(previewUrl, file.name);
                   }}
-                  // **BỎ DÒNG disabled**
+                // **BỎ DÒNG disabled** 
                 >
                   {uploadFileList.length >= 8 ? null : (
                     <div>
@@ -1406,7 +1238,7 @@ const FacilityTable = () => {
                     </div>
                   )}
                 </Upload>
-                <p style={{ color: "#999", fontSize: "12px", marginTop: 8 }}>
+                <p style={{ color: '#999', fontSize: '12px', marginTop: 8 }}>
                   * Chọn tối đa 8 ảnh mới để thêm vào cơ sở
                 </p>
               </div>
@@ -1414,15 +1246,15 @@ const FacilityTable = () => {
           </Form.Item>
 
           <Form.Item>
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Button onClick={handleEditModalClose}>Hủy</Button>
-              <Button type="primary" htmlType="submit" loading={editLoading}>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <Button onClick={handleEditModalClose}>
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={editLoading}
+              >
                 Cập nhật cơ sở
               </Button>
             </div>
