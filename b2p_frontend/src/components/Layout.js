@@ -27,7 +27,7 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
-          <Route path="/facility-details" element={<FacilityDetails />} />
+          <Route path="/facility-details/:facilityId" element={<FacilityDetails />} />
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>

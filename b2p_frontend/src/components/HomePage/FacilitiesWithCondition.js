@@ -617,7 +617,7 @@ const FacilitiesWithCondition = () => {
                             className="detail-btn"
                             variant="primary"
                             onClick={() =>
-                              navigate(`/facility/${facility.facilityId}`)
+                              navigate(`/facility-details/${facility.facilityId}`)
                             }
                           >
                             <i className="fas fa-eye me-2"></i>

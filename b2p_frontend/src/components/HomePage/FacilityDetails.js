@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './FacilityDetails.scss';
+import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
 import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiService";
+import { parseInt } from 'lodash';
 
 // Constants
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -370,7 +372,7 @@ const Reviews = () => (
 );
 
 // Main Component
-const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with default value
+const FacilityDetails = () => { // Add facilityId prop with default value
   const [modalOpen, setModalOpen] = useState(false);
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -379,6 +381,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
+  const {facilityId} = useParams();
 
   // Fetch facility details on component mount
   useEffect(() => {
@@ -387,7 +390,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       setError(null);
       
       try {
-        const response = await getFacilityDetailsById(facilityId);
+        const response = await getFacilityDetailsById(parseInt(facilityId));
         
         // Assuming the API returns data in response.data format
         // Adjust this based on your actual API response structure
