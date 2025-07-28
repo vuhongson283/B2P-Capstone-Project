@@ -16,6 +16,7 @@ import SliderManagement from "./AdminPage/SliderManagement";
 import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
+import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
 
 const Layout = (props) => {
   return (
@@ -27,31 +28,22 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
-          <Route path="/facility-details" element={<FacilityDetails />} />
+          <Route path="/facility-details/:facilityId" element={<FacilityDetails />} />
         </Route>
 
+        
         <Route path="/court-owner" element={<CourtOwner />}>
           <Route index element={<DashboardField />} />
-          <Route
-            path="/court-owner/search"
-            element={<FacilitiesWithCondition />}
-          />
+          <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
-        </Route>
-        <Route path="/court-owner" element={<CourtOwner />}>
-          <Route
-            path="/court-owner/search"
-            element={<FacilitiesWithCondition />}  
-          />
           <Route path="facility/general" element={<FacilityTable />} />
+          <Route path="facility/time-slots" element={<TimeslotManagement />} />
         </Route>
+
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
-          <Route
-            path="manage-court-categories"
-            element={<ManageCourtCategories />}
-          />
+          <Route path="manage-court-categories" element={<ManageCourtCategories />} />
         </Route>
       </Routes>
 
