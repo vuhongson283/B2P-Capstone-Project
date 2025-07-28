@@ -47,7 +47,7 @@ const FacilitiesRecommend = (props) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getAllFacilitiesByPlayer(1, 12, requestBody);
+      const response = await getAllFacilitiesByPlayer(1, 6, requestBody);
       if (response && response.data.items.length > 0) {
         setFacilities(response.data.items);
       } else {
@@ -191,7 +191,7 @@ const FacilitiesRecommend = (props) => {
                   <Button
                     className="detail-btn"
                     variant="primary"
-                    onClick={() => navigate(`/facility/${facility.facilityId}`)}
+                    onClick={() => navigate(`/facility-details/${facility.facilityId}`)}
                   >
                     <i className="fas fa-eye me-2"></i>
                     <span className="btn-text">Xem chi tiết</span>

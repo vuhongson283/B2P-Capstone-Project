@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Button, Modal } from "react-bootstrap";
-import { getReport, getTotalReport, exportReportToExcel } from "../../services/apiService";
+import {
+  getReport,
+  getTotalReport,
+  exportReportToExcel,
+} from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
 
 const OwnerDashboard = () => {
@@ -49,22 +53,27 @@ const OwnerDashboard = () => {
 
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
-      if (header[0] !== 0x50 || header[1] !== 0x4B || header[2] !== 0x03 || header[3] !== 0x04) {
+      if (
+        header[0] !== 0x50 ||
+        header[1] !== 0x4b ||
+        header[2] !== 0x03 ||
+        header[3] !== 0x04
+      ) {
         throw new Error("Dữ liệu không phải file Excel hợp lệ");
       }
 
       // Tạo blob với MIME type chính xác
       const blob = new Blob([response], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
-      
+
       // Tạo thẻ a ẩn để tải xuống
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'Report_2025-07-27.xlsx'; // Dùng tên file từ server hoặc tự đặt
+      a.download = "Report_2025-07-27.xlsx"; // Dùng tên file từ server hoặc tự đặt
       document.body.appendChild(a);
       a.click();
 
@@ -73,10 +82,9 @@ const OwnerDashboard = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, 100);
-
     } catch (error) {
-      console.error('Lỗi khi xuất Excel:', error);
-      alert('Lỗi: ' + error.message);
+      console.error("Lỗi khi xuất Excel:", error);
+      alert("Lỗi: " + error.message);
     } finally {
       setExportLoading(false);
     }
@@ -89,7 +97,7 @@ const OwnerDashboard = () => {
 
   const BookingDetailModal = ({ booking, show, onHide }) => {
     if (!booking) return null;
-    
+
     return (
       <Modal show={show} onHide={onHide} size="lg">
         <Modal.Header closeButton className="detail-header">
@@ -101,7 +109,9 @@ const OwnerDashboard = () => {
         <Modal.Body className="booking-detail-body">
           <div className="booking-detail-content">
             <div className="detail-section">
-              <h5><i className="fas fa-user me-2"></i>Thông tin khách hàng</h5>
+              <h5>
+                <i className="fas fa-user me-2"></i>Thông tin khách hàng
+              </h5>
               <Row>
                 <Col md={6}>
                   <div className="detail-item">
@@ -123,7 +133,9 @@ const OwnerDashboard = () => {
             </div>
 
             <div className="detail-section">
-              <h5><i className="fas fa-calendar-alt me-2"></i>Thông tin đặt sân</h5>
+              <h5>
+                <i className="fas fa-calendar-alt me-2"></i>Thông tin đặt sân
+              </h5>
               <Row>
                 <Col md={6}>
                   <div className="detail-item">
@@ -132,7 +144,9 @@ const OwnerDashboard = () => {
                   </div>
                   <div className="detail-item">
                     <label>Thời gian đặt:</label>
-                    <span>{new Date(booking.bookingTime).toLocaleString('vi-VN')}</span>
+                    <span>
+                      {new Date(booking.bookingTime).toLocaleString("vi-VN")}
+                    </span>
                   </div>
                 </Col>
                 <Col md={6}>
@@ -149,16 +163,25 @@ const OwnerDashboard = () => {
             </div>
 
             <div className="detail-section">
-              <h5><i className="fas fa-money-bill-wave me-2"></i>Thông tin thanh toán</h5>
+              <h5>
+                <i className="fas fa-money-bill-wave me-2"></i>Thông tin thanh
+                toán
+              </h5>
               <Row>
                 <Col md={6}>
                   <div className="detail-item">
                     <label>Tổng tiền:</label>
-                    <span className="price">{formatPrice(booking.totalPrice)}đ</span>
+                    <span className="price">
+                      {formatPrice(booking.totalPrice)}đ
+                    </span>
                   </div>
                   <div className="detail-item">
                     <label>Trạng thái đặt sân:</label>
-                    <span className={`status-badge ${getStatusClass(booking.bookingStatus)}`}>
+                    <span
+                      className={`status-badge ${getStatusClass(
+                        booking.bookingStatus
+                      )}`}
+                    >
                       {booking.bookingStatus}
                     </span>
                   </div>
@@ -166,11 +189,17 @@ const OwnerDashboard = () => {
                 <Col md={6}>
                   <div className="detail-item">
                     <label>Số tiền đã thanh toán:</label>
-                    <span className="price">{formatPrice(booking.paymentAmount)}đ</span>
+                    <span className="price">
+                      {formatPrice(booking.paymentAmount)}đ
+                    </span>
                   </div>
                   <div className="detail-item">
                     <label>Trạng thái thanh toán:</label>
-                    <span className={`status-badge ${getStatusClass(booking.paymentStatus)}`}>
+                    <span
+                      className={`status-badge ${getStatusClass(
+                        booking.paymentStatus
+                      )}`}
+                    >
                       {booking.paymentStatus}
                     </span>
                   </div>
@@ -179,7 +208,9 @@ const OwnerDashboard = () => {
               {booking.paymentTime && (
                 <div className="detail-item">
                   <label>Thời gian thanh toán:</label>
-                  <span>{new Date(booking.paymentTime).toLocaleString('vi-VN')}</span>
+                  <span>
+                    {new Date(booking.paymentTime).toLocaleString("vi-VN")}
+                  </span>
                 </div>
               )}
             </div>
@@ -208,10 +239,12 @@ const OwnerDashboard = () => {
       <div className="dashboard-header">
         <div>
           <h2 className="dashboard-title">Xin Chào, Nguyễn Văn A</h2>
-          <p className="dashboard-subtitle">Đây là trang web quản lý dành cho chủ sân</p>
+          <p className="dashboard-subtitle">
+            Đây là trang web quản lý dành cho chủ sân
+          </p>
         </div>
-        <Button 
-          variant="success" 
+        <Button
+          variant="success"
           className="export-excel-btn mb-3"
           onClick={handleExportExcel}
           disabled={exportLoading}
@@ -277,9 +310,11 @@ const OwnerDashboard = () => {
       <Card className="recent-bookings-card">
         <Card.Body>
           <div className="card-header">
-            <Card.Title className="section-title">Đơn Đặt Sân Gần Đây</Card.Title>
+            <Card.Title className="section-title">
+              Đơn Đặt Sân Gần Đây
+            </Card.Title>
           </div>
-          
+
           {dashboardData.recentBookings.length > 0 ? (
             <div className="booking-list">
               {dashboardData.recentBookings.map((booking) => (
@@ -302,7 +337,11 @@ const OwnerDashboard = () => {
                       </div>
                     </div>
                     <div className="booking-status">
-                      <div className={`status-badge ${getStatusClass(booking.bookingStatus)}`}>
+                      <div
+                        className={`status-badge ${getStatusClass(
+                          booking.bookingStatus
+                        )}`}
+                      >
                         {booking.bookingStatus}
                       </div>
                       <div className="booking-price">
@@ -311,8 +350,8 @@ const OwnerDashboard = () => {
                     </div>
                   </div>
                   <div className="booking-actions d-flex justify-content-center mt-3">
-                    <Button 
-                      variant="success" 
+                    <Button
+                      variant="success"
                       className="detail-btn"
                       onClick={() => handleViewDetail(booking)}
                     >
@@ -329,7 +368,7 @@ const OwnerDashboard = () => {
         </Card.Body>
       </Card>
 
-      <BookingDetailModal 
+      <BookingDetailModal
         show={showDetailModal}
         onHide={() => setShowDetailModal(false)}
         booking={selectedBooking}
