@@ -97,7 +97,7 @@ const CommonHeader = (props) => {
             <span className="separator mx-2">|</span>
 
             <NavLink
-              to="/courtowner-register"
+              to="/court-owner-policy"
               className={({ isActive }) =>
                 `nav-link px-3 ${isActive ? "active" : ""}`
               }

@@ -16,6 +16,7 @@ import SliderManagement from "./AdminPage/SliderManagement";
 import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
+import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 
 const Layout = (props) => {
   return (
@@ -23,11 +24,15 @@ const Layout = (props) => {
       <Routes>
         <Route path="/" element={<App />}>
           <Route path="/search" element={<FacilitiesWithCondition />} />
-          <Route path="/courtowner-register" element={<CourtOwnerRegister />} />
+          <Route path="/court-owner-register" element={<CourtOwnerRegister />} />
+          <Route path="/court-owner-policy" element={<CourtOwnerPolicy />} />
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
-          <Route path="/facility-details" element={<FacilityDetails />} />
+          <Route
+            path="/facility-details/:facilityId"
+            element={<FacilityDetails />}
+          />
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
@@ -36,12 +41,15 @@ const Layout = (props) => {
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
           />
-          <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
+          <Route
+            path="facilities/:facilityId/courts"
+            element={<CourtManagement />}
+          />
         </Route>
         <Route path="/court-owner" element={<CourtOwner />}>
           <Route
             path="/court-owner/search"
-            element={<FacilitiesWithCondition />}  
+            element={<FacilitiesWithCondition />}
           />
           <Route path="facility/general" element={<FacilityTable />} />
         </Route>
