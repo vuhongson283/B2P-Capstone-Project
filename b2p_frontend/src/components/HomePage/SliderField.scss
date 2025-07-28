@@ -15,11 +15,14 @@
         border-radius: 0 0 20px 20px;
         overflow     : hidden;
         position     : relative;
+        width        : 100%; // 🎯 Ensure full width
+        max-width    : 100%;
 
         .carousel-item {
             height    : 500px;
             position  : relative;
             transition: transform 0.6s ease-in-out;
+            width     : 100%; // 🎯 Ensure full width
 
             .carousel-image-container {
                 position     : relative;
@@ -27,15 +30,18 @@
                 height       : 100%;
                 overflow     : hidden;
                 border-radius: 0 0 20px 20px;
+                display      : block; // 🎯 Ensure proper display
 
                 .carousel-image {
                     width          : 100%;
                     height         : 100%;
-                    object-fit     : cover;
+                    object-fit     : cover; // 🎯 This should fill the container
                     object-position: center;
                     transition     : all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
                     cursor         : pointer;
                     filter         : brightness(0.9);
+                    display        : block; // 🎯 Remove any inline spacing
+                    border-radius  : 0 0 20px 20px; // 🎯 Match container radius
 
                     &:hover {
                         transform: scale(1.08);
@@ -49,6 +55,8 @@
                     left    : 0;
                     right   : 0;
                     bottom  : 0;
+                    width   : 100%; // 🎯 Explicit width
+                    height  : 100%; // 🎯 Explicit height
                     background: linear-gradient(180deg,
                             rgba(0, 0, 0, 0.1) 0%,
                             rgba(0, 0, 0, 0.2) 30%,
@@ -58,7 +66,7 @@
                 }
             }
 
-            // Enhanced caption styling
+            // 🎯 Enhanced caption styling
             .custom-caption {
                 position      : absolute;
                 top           : 50%;
@@ -96,6 +104,12 @@
                     }
                 }
             }
+        }
+
+        // 🎯 Ensure carousel inner takes full width
+        .carousel-inner {
+            width : 100%;
+            height: 100%;
         }
 
         // Enhanced carousel controls
