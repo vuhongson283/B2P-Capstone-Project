@@ -27,7 +27,10 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
-          <Route path="/facility-details" element={<FacilityDetails />} />
+          <Route
+            path="/facility-details/:facilityId"
+            element={<FacilityDetails />}
+          />
         </Route>
 
         <Route path="/court-owner" element={<CourtOwner />}>
@@ -36,12 +39,15 @@ const Layout = (props) => {
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
           />
-          <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
+          <Route
+            path="facilities/:facilityId/courts"
+            element={<CourtManagement />}
+          />
         </Route>
         <Route path="/court-owner" element={<CourtOwner />}>
           <Route
             path="/court-owner/search"
-            element={<FacilitiesWithCondition />}  
+            element={<FacilitiesWithCondition />}
           />
           <Route path="facility/general" element={<FacilityTable />} />
         </Route>

@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import './FacilityDetails.scss';
+import React, { useState, useEffect } from "react";
+import "./FacilityDetails.scss";
 import BookingModal from "./BookingModal.js";
-import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiService";
+import {
+  getFacilityDetailsById,
+  getAvailableSlots,
+} from "../../services/apiService";
+import { useParams } from "react-router-dom";
 
 // Constants
 const TODAY = new Date().toISOString().slice(0, 10);
 const FACILITY_IMAGES = [
-  'https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png',
-  'https://via.placeholder.com/200x150?text=Image+2',
-  'https://via.placeholder.com/200x150?text=Image+3',
+  "https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png",
+  "https://via.placeholder.com/200x150?text=Image+2",
+  "https://via.placeholder.com/200x150?text=Image+3",
 ];
 
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
   const formatTime = (timeString) => {
-    if (!timeString) return '';
+    if (!timeString) return "";
     return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
   };
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
@@ -27,7 +31,9 @@ const FacilityHeader = ({ facilityData }) => (
       <span className="icon">←</span>
     </button>
     <div className="facility-header__content">
-      <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
+      <h1 className="facility-title">
+        {facilityData?.facilityName || "Tên cơ sở"}
+      </h1>
       <div className="owner-name">Tên chủ sân</div>
     </div>
     <button className="btn-icon btn-favorite" aria-label="Add to favorites">
@@ -45,9 +51,9 @@ const ImageCarousel = ({ images }) => {
     if (images && images.length > 0) {
       // Filter out invalid images and sort by order
       const validImages = images
-        .filter(img => img.imageUrl && img.imageUrl.trim() !== '')
+        .filter((img) => img.imageUrl && img.imageUrl.trim() !== "")
         .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map(img => img.imageUrl);
+        .map((img) => img.imageUrl);
 
       // Return valid images if any exist, otherwise fallback to default
       return validImages.length > 0 ? validImages : FACILITY_IMAGES;
@@ -87,7 +93,7 @@ const ImageCarousel = ({ images }) => {
           alt={`Facility view ${currentIndex + 1}`}
           className="carousel__image"
           onError={(e) => {
-            console.error('Image failed to load:', displayImages[currentIndex]);
+            console.error("Image failed to load:", displayImages[currentIndex]);
             // If current image fails and we have fallback images, switch to first fallback
             if (displayImages !== FACILITY_IMAGES) {
               // This will trigger a re-render with fallback images
@@ -110,7 +116,9 @@ const ImageCarousel = ({ images }) => {
           {displayImages.map((_, idx) => (
             <button
               key={idx}
-              className={`carousel__dot ${idx === currentIndex ? 'active' : ''}`}
+              className={`carousel__dot ${
+                idx === currentIndex ? "active" : ""
+              }`}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to image ${idx + 1}`}
             >
@@ -126,7 +134,7 @@ const ImageCarousel = ({ images }) => {
 // Facility Info Component
 const FacilityInfo = ({ facilityData }) => {
   const formatTime = (timeString) => {
-    if (!timeString) return '';
+    if (!timeString) return "";
     return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
   };
 
@@ -136,24 +144,31 @@ const FacilityInfo = ({ facilityData }) => {
       <div className="facility-info__details">
         <div className="info-item">
           <span className="info-label">Địa điểm:</span>
-          <span className="info-value">{facilityData?.location || 'Chưa có thông tin'}</span>
+          <span className="info-value">
+            {facilityData?.location || "Chưa có thông tin"}
+          </span>
         </div>
         <div className="info-item">
           <span className="info-label">Giờ mở cửa:</span>
           <span className="info-value">
             {facilityData?.openTime && facilityData?.closeTime
-              ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
-              : 'Chưa có thông tin'
-            }
+              ? `${formatTime(facilityData.openTime)} - ${formatTime(
+                  facilityData.closeTime
+                )}`
+              : "Chưa có thông tin"}
           </span>
         </div>
         <div className="info-item">
           <span className="info-label">Liên hệ:</span>
-          <span className="info-value">{facilityData?.contact || 'Chưa có thông tin'}</span>
+          <span className="info-value">
+            {facilityData?.contact || "Chưa có thông tin"}
+          </span>
         </div>
         <div className="info-item">
           <span className="info-label">Số loại sân:</span>
-          <span className="info-value">{facilityData?.categories?.length || 0}</span>
+          <span className="info-value">
+            {facilityData?.categories?.length || 0}
+          </span>
         </div>
       </div>
     </section>
@@ -170,7 +185,7 @@ const BookingTable = ({
   onDateChange,
   timeSlots,
   loading,
-  loadingSlots
+  loadingSlots,
 }) => (
   <section className="booking-section">
     <h2 className="booking-section__title">Lịch đặt sân</h2>
@@ -185,7 +200,7 @@ const BookingTable = ({
         >
           {courtCategories.length === 0 && (
             <option value="">
-              {loading ? 'Đang tải...' : 'Không có loại sân'}
+              {loading ? "Đang tải..." : "Không có loại sân"}
             </option>
           )}
           {courtCategories.map((category) => (
@@ -206,7 +221,7 @@ const BookingTable = ({
     </div>
 
     {loadingSlots && (
-      <div style={{ textAlign: 'center', padding: '20px' }}>
+      <div style={{ textAlign: "center", padding: "20px" }}>
         Đang tải lịch trống...
       </div>
     )}
@@ -228,10 +243,13 @@ const BookingTable = ({
             <tr>
               <td>Số sân trống</td>
               {timeSlots.map((slot) => (
-                <td key={slot.timeSlotId} style={{
-                  color: slot.availableCourtCount > 0 ? 'green' : 'red',
-                  fontWeight: 'bold'
-                }}>
+                <td
+                  key={slot.timeSlotId}
+                  style={{
+                    color: slot.availableCourtCount > 0 ? "green" : "red",
+                    fontWeight: "bold",
+                  }}
+                >
                   {slot.availableCourtCount}
                 </td>
               ))}
@@ -242,13 +260,13 @@ const BookingTable = ({
     )}
 
     {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
-      <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+      <div style={{ textAlign: "center", padding: "20px", color: "#666" }}>
         Không có khung giờ nào khả dụng cho loại sân này
       </div>
     )}
 
     {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
-      <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+      <div style={{ textAlign: "center", padding: "20px", color: "#666" }}>
         Vui lòng chọn loại sân để xem lịch trống
       </div>
     )}
@@ -281,7 +299,9 @@ const Reviews = () => (
         </div>
         <div className="review-stars">
           {[...Array(5)].map((_, idx) => (
-            <span key={idx} className="star">★</span>
+            <span key={idx} className="star">
+              ★
+            </span>
           ))}
         </div>
         <p className="review-text">review content</p>
@@ -291,15 +311,17 @@ const Reviews = () => (
 );
 
 // Main Component
-const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with default value
+const FacilityDetails = () => {
+  // Add facilityId prop with default value
   const [modalOpen, setModalOpen] = useState(false);
   const [facilityData, setFacilityData] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDate, setSelectedDate] = useState(TODAY);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
+  const { facilityId } = useParams();
 
   // Fetch facility details on component mount
   useEffect(() => {
@@ -308,7 +330,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       setError(null);
 
       try {
-        const response = await getFacilityDetailsById(facilityId);
+        const response = await getFacilityDetailsById(parseInt(facilityId));
 
         // Assuming the API returns data in response.data format
         // Adjust this based on your actual API response structure
@@ -317,14 +339,16 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
 
           // Set default category to the first available category
           if (response.data.categories && response.data.categories.length > 0) {
-            setSelectedCategory(response.data.categories[0].categoryId.toString());
+            setSelectedCategory(
+              response.data.categories[0].categoryId.toString()
+            );
           }
         } else {
-          setError('Không tìm thấy thông tin cơ sở');
+          setError("Không tìm thấy thông tin cơ sở");
         }
       } catch (error) {
-        console.error('Error fetching facility details:', error);
-        setError('Không thể tải thông tin cơ sở');
+        console.error("Error fetching facility details:", error);
+        setError("Không thể tải thông tin cơ sở");
       } finally {
         setLoading(false);
       }
@@ -345,7 +369,11 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
 
       setLoadingSlots(true);
       try {
-        const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
+        const response = await getAvailableSlots(
+          facilityId,
+          selectedCategory,
+          selectedDate
+        );
 
         // Assuming the API returns data in response.data.data format (based on ApiResponse structure)
         if (response.data && response.data.data) {
@@ -356,7 +384,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
           setTimeSlots([]);
         }
       } catch (error) {
-        console.error('Error fetching available slots:', error);
+        console.error("Error fetching available slots:", error);
         setTimeSlots([]);
         // You might want to show an error message here
       } finally {
@@ -379,12 +407,15 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
 
   if (loading) {
     return (
-      <div className="facility-page" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '50vh'
-      }}>
+      <div
+        className="facility-page"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "50vh",
+        }}
+      >
         <div>Đang tải thông tin cơ sở...</div>
       </div>
     );
@@ -399,13 +430,16 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       </main>
 
       {error && (
-        <div className="error-message" style={{
-          color: 'red',
-          padding: '10px',
-          margin: '10px',
-          backgroundColor: '#fee',
-          borderRadius: '4px'
-        }}>
+        <div
+          className="error-message"
+          style={{
+            color: "red",
+            padding: "10px",
+            margin: "10px",
+            backgroundColor: "#fee",
+            borderRadius: "4px",
+          }}
+        >
           {error}
         </div>
       )}
@@ -423,10 +457,7 @@ const FacilityDetails = ({ facilityId = 7 }) => { // Add facilityId prop with de
       />
       <Reviews />
       {modalOpen && (
-        <BookingModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-        />
+        <BookingModal open={modalOpen} onClose={() => setModalOpen(false)} />
       )}
     </div>
   );

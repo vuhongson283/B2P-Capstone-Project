@@ -42,7 +42,6 @@
                 height       : 4px;
                 background   : linear-gradient(90deg, #28a745, #20c997);
                 border-radius: 2px;
-                animation    : shimmer 2s ease-in-out infinite alternate;
             }
         }
 
@@ -202,6 +201,7 @@
 
                     .facility-info {
                         margin-bottom: 1.5rem;
+                        margin-top   : 0px;
 
                         .info-item {
                             display      : flex;

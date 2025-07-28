@@ -191,7 +191,9 @@ const FacilitiesRecommend = (props) => {
                   <Button
                     className="detail-btn"
                     variant="primary"
-                    onClick={() => navigate(`/facility/${facility.facilityId}`)}
+                    onClick={() =>
+                      navigate(`/facility-details/${facility.facilityId}`)
+                    }
                   >
                     <i className="fas fa-eye me-2"></i>
                     <span className="btn-text">Xem chi tiết</span>
