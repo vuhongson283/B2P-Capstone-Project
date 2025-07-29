@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Button, Modal, Form } from "react-bootstrap";
 import { DatePicker } from "antd";
+const { RangePicker } = DatePicker;
 import {
   getReport,
   getTotalReport,
   exportReportToExcel,
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
-
-const { RangePicker } = DatePicker;
 
 const OwnerDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -57,13 +56,7 @@ const OwnerDashboard = () => {
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
-      const response = await exportReportToExcel(
-        15, 
-        startDate, // Ngày bắt đầu
-        endDate,   // Ngày kết thúc
-        null,      // facilityId (nếu cần)
-        1          // pageNumber
-      );
+      const response = await exportReportToExcel(15, null, null, null, 1, 10);
 
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
@@ -81,17 +74,13 @@ const OwnerDashboard = () => {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      const now = new Date();
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const formattedTime = `${String(now.getHours()).padStart(2, '0')}h${String(now.getMinutes()).padStart(2, '0')}m${String(now.getSeconds()).padStart(2, '0')}s`;
-
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
 
       // Tạo thẻ a ẩn để tải xuống
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`; // Dùng tên file từ server hoặc tự đặt
+      a.download = "Report_2025-07-27.xlsx"; // Dùng tên file từ server hoặc tự đặt
       document.body.appendChild(a);
       a.click();
 

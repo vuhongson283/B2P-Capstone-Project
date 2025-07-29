@@ -182,20 +182,6 @@
         padding: 0.375rem 0.75rem;
       }
     }
-
-    .ant-picker {
-      height: 38px;
-      border-radius: 4px;
-
-      &:hover {
-        border-color: #40a9ff;
-      }
-
-      &.ant-picker-focused {
-        border-color: #40a9ff;
-        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-      }
-    }
   }
 
   .recent-bookings-card {

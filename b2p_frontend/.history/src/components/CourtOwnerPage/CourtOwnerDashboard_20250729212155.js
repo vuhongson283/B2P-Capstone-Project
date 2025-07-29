@@ -57,16 +57,23 @@ const OwnerDashboard = () => {
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
+      // Kiểm tra xem đã chọn ngày chưa
+      if (!startDate || !endDate) {
+        alert("Vui lòng chọn khoảng thời gian để xuất báo cáo");
+        setExportLoading(false);
+        return;
+      }
+
       const response = await exportReportToExcel(
         15, 
-        startDate, // Ngày bắt đầu
-        endDate,   // Ngày kết thúc
-        null,      // facilityId (nếu cần)
-        1          // pageNumber
+        startDate.toDate(), // Chuyển moment object sang Date
+        endDate.toDate(),   // Chuyển moment object sang Date
+        null,      
+        1          
       );
 
       // Kiểm tra magic number
-      const header = new Uint8Array(response.slice(0, 4));
+      const header = new Uint8Array(response.data.slice(0, 4));
       if (
         header[0] !== 0x50 ||
         header[1] !== 0x4b ||
@@ -77,21 +84,27 @@ const OwnerDashboard = () => {
       }
 
       // Tạo blob với MIME type chính xác
-      const blob = new Blob([response], {
+      const blob = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-
-      const now = new Date();
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const formattedTime = `${String(now.getHours()).padStart(2, '0')}h${String(now.getMinutes()).padStart(2, '0')}m${String(now.getSeconds()).padStart(2, '0')}s`;
 
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
 
+      // Format tên file với datetime hiện tại
+      const currentDate = new Date().toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).replace(/[/:]/g, '_');
+
       // Tạo thẻ a ẩn để tải xuống
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`; // Dùng tên file từ server hoặc tự đặt
+      a.download = `Report_${currentDate}.xlsx`;
       document.body.appendChild(a);
       a.click();
 
@@ -139,11 +152,15 @@ const OwnerDashboard = () => {
 
   const handleDateRangeChange = async (dates) => {
     if (dates && dates.length === 2) {
-      const [startDate, endDate] = dates;
+      const [start, end] = dates;
+      // Cập nhật state cho startDate và endDate
+      setStartDate(start);
+      setEndDate(end);
+      
       setLoading(true);
       try {
-        const totalReportResponse = await getTotalReport(15, startDate.toDate(), endDate.toDate());
-        const reportResponse = await getReport(15, startDate.toDate(), endDate.toDate(), null, 1, 10);
+        const totalReportResponse = await getTotalReport(15, start.toDate(), end.toDate());
+        const reportResponse = await getReport(15, start.toDate(), end.toDate(), null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -158,6 +175,10 @@ const OwnerDashboard = () => {
       } finally {
         setLoading(false);
       }
+    } else {
+      // Reset state khi không chọn ngày
+      setStartDate(null);
+      setEndDate(null);
     }
   };
 

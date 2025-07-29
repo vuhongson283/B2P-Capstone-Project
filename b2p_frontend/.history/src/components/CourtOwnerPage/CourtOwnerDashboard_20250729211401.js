@@ -81,17 +81,13 @@ const OwnerDashboard = () => {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      const now = new Date();
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const formattedTime = `${String(now.getHours()).padStart(2, '0')}h${String(now.getMinutes()).padStart(2, '0')}m${String(now.getSeconds()).padStart(2, '0')}s`;
-
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
 
       // Tạo thẻ a ẩn để tải xuống
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`; // Dùng tên file từ server hoặc tự đặt
+      a.download = "Report_2025-07-27.xlsx"; // Dùng tên file từ server hoặc tự đặt
       document.body.appendChild(a);
       a.click();
 
@@ -261,12 +257,6 @@ const OwnerDashboard = () => {
                   </div>
                   <div className="detail-item">
                     <label>Trạng thái thanh toán:</label>
-                    <span
-                      className={`status-badge ${getStatusClass(
-                        booking.paymentStatus
-                      )}`}
-                    >
-                      {booking.paymentStatus}
                     </span>
                   </div>
                 </Col>

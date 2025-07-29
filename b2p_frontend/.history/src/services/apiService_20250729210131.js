@@ -391,15 +391,11 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
-  // Format dates if they exist
-  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
-  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
-
   return axios.get(`Report/Export-Report-CourtOwner`, {
     params: {
       userId,
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
+      startDate,
+      endDate,
       facilityId,
       pageNumber,
     },

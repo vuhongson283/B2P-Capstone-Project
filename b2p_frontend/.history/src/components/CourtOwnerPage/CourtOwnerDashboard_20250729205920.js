@@ -8,8 +8,6 @@ import {
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
 
-const { RangePicker } = DatePicker;
-
 const OwnerDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     totalFacilities: 0,
@@ -57,13 +55,7 @@ const OwnerDashboard = () => {
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
-      const response = await exportReportToExcel(
-        15, 
-        startDate, // Ngày bắt đầu
-        endDate,   // Ngày kết thúc
-        null,      // facilityId (nếu cần)
-        1          // pageNumber
-      );
+      const response = await exportReportToExcel(15, null, null, null, 1, 10);
 
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
@@ -81,17 +73,13 @@ const OwnerDashboard = () => {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      const now = new Date();
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const formattedTime = `${String(now.getHours()).padStart(2, '0')}h${String(now.getMinutes()).padStart(2, '0')}m${String(now.getSeconds()).padStart(2, '0')}s`;
-
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
 
       // Tạo thẻ a ẩn để tải xuống
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`; // Dùng tên file từ server hoặc tự đặt
+      a.download = "Report_2025-07-27.xlsx"; // Dùng tên file từ server hoặc tự đặt
       document.body.appendChild(a);
       a.click();
 
@@ -120,30 +108,6 @@ const OwnerDashboard = () => {
         const selectedDate = date.toDate(); // Chuyển moment object sang Date
         const totalReportResponse = await getTotalReport(15, selectedDate, selectedDate);
         const reportResponse = await getReport(15, selectedDate, selectedDate, null, 1, 10);
-
-        setDashboardData({
-          totalFacilities: totalReportResponse.data.totalFacility || 0,
-          totalCourts: totalReportResponse.data.totalCourt || 0,
-          totalBookings: totalReportResponse.data.totalBooking || 0,
-          totalRevenue: totalReportResponse.data.totalCost || 0,
-          recentBookings: reportResponse.data.items || [],
-        });
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleDateRangeChange = async (dates) => {
-    if (dates && dates.length === 2) {
-      const [startDate, endDate] = dates;
-      setLoading(true);
-      try {
-        const totalReportResponse = await getTotalReport(15, startDate.toDate(), endDate.toDate());
-        const reportResponse = await getReport(15, startDate.toDate(), endDate.toDate(), null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -310,11 +274,12 @@ const OwnerDashboard = () => {
           </p>
         </div>
         <div className="d-flex align-items-center gap-3">
-          <DatePicker.RangePicker
-            onChange={handleDateRangeChange}
-            format="DD/MM/YYYY"
-            placeholder={['Từ ngày', 'Đến ngày']}
-            style={{ width: '300px' }}
+          <DatePicker 
+            onChange={handleDateChange}
+            picker="month"
+            placeholder="Chọn tháng"
+            format="MM/YYYY"
+            style={{ width: 200 }}
           />
           <Button
             variant="success"
