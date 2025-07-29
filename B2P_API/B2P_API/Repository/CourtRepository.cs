@@ -49,8 +49,10 @@ namespace B2P_API.Repository
                 {
                     CourtId = c.CourtId,
                     CourtName = c.CourtName,
+                    CategoryId = c.CategoryId,
                     CategoryName = c.Category != null ? c.Category.CategoryName : null,
                     StatusName = c.Status != null ? c.Status.StatusName : null,
+                    PricePerHour = c.PricePerHour
                 })
                 .ToListAsync();
 
