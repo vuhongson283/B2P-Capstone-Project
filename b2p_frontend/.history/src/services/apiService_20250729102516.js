@@ -427,7 +427,7 @@ const getAdminReport = async (month, year) => {
       }
     });
     console.log('API Response:', response.data);
-    return response;
+    return response.data;
   } catch (error) {
     console.error('Error fetching admin report:', error);
     throw error;

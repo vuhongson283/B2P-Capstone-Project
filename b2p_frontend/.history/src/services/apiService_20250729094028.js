@@ -418,21 +418,7 @@ const getCourtDetail = (courtId) => {
   return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 };
 
-const getAdminReport = async (month, year) => {
-  try {
-    const response = await axios.get(`Report/AdminReport`, {
-      params: {
-        year,
-        month
-      }
-    });
-    console.log('API Response:', response.data);
-    return response;
-  } catch (error) {
-    console.error('Error fetching admin report:', error);
-    throw error;
-  }
-}
+const getAdminReport = 
 
 // ===============================
 // EXPORT ALL
@@ -500,7 +486,6 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
-  getAdminReport,
   getAllCourts,
   addNewCourt,
   updateCourt,

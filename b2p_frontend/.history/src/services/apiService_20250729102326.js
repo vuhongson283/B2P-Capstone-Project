@@ -418,16 +418,16 @@ const getCourtDetail = (courtId) => {
   return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 };
 
-const getAdminReport = async (month, year) => {
+export const getAdminReport = async (month, year) => {
   try {
-    const response = await axios.get(`Report/AdminReport`, {
+    const response = await axios.get(`/api/Report/AdminReport`, {
       params: {
         year,
         month
       }
     });
-    console.log('API Response:', response.data);
-    return response;
+    console.log('API Response:', response.data); // Thêm log để debug
+    return response.data;
   } catch (error) {
     console.error('Error fetching admin report:', error);
     throw error;

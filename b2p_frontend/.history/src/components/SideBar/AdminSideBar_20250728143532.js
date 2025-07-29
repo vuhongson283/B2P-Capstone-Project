@@ -33,7 +33,7 @@ const AdminSideBar = ({
       id: "statistics",
       title: "Thống kê tổng quan",
       icon: "fas fa-chart-line",
-      path: "/admin",
+      path: "/admin/statistics",
     },
     {
       id: "account-management",
