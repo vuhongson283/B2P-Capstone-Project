@@ -52,3 +52,5 @@ yarn-error.log*
 **/coveragereport/
 **/coverage.cobertura.xml
 **/*.DotSettings
+# Bỏ qua tất cả file test report coverage html
+**/coveragereportreportgenerator/
