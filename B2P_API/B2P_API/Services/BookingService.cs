@@ -15,11 +15,13 @@ namespace B2P_API.Services
     {
         private readonly BookingRepository _bookingRepo;
         private readonly SportBookingDbContext _context;
+        private readonly AccountManagementService _accountservice;
 
-        public BookingService(BookingRepository bookingRepo, SportBookingDbContext context)
+        public BookingService(BookingRepository bookingRepo, SportBookingDbContext context, AccountManagementService accountservice)
         {
             _bookingRepo = bookingRepo;
             _context = context;
+            _accountservice = accountservice;
         }
 
 

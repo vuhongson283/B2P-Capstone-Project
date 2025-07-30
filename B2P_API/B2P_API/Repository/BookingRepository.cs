@@ -85,30 +85,23 @@ namespace B2P_API.Repository
                 .Include(b => b.BookingDetails)
                     .ThenInclude(d => d.TimeSlot)
                 .AsQueryable();
-
-            if (userId.HasValue)
-            {
-                bookings = bookings.Where(b => b.UserId == userId.Value);
-            }
-
             if (query.FacilityId.HasValue)
             {
                 bookings = bookings.Where(b =>
-                    b.BookingDetails.Any(d =>
-                        d.Court != null && d.Court.FacilityId == query.FacilityId.Value));
+                    b.BookingDetails.Any(d => d.Court.FacilityId == query.FacilityId.Value));
             }
+            if (userId.HasValue)
+                bookings = bookings.Where(b => b.UserId == userId.Value);
 
             if (query.StatusId.HasValue)
-            {
                 bookings = bookings.Where(b => b.StatusId == query.StatusId.Value);
-            }
 
             switch (query.SortBy?.ToLower())
             {
                 case "checkindate":
                     bookings = query.SortDirection == "asc"
-                        ? bookings.OrderBy(b => b.BookingDetails.Any() ? b.BookingDetails.Min(d => d.CheckInDate) : DateTime.MaxValue)
-                        : bookings.OrderByDescending(b => b.BookingDetails.Any() ? b.BookingDetails.Min(d => d.CheckInDate) : DateTime.MinValue);
+                        ? bookings.OrderBy(b => b.BookingDetails.Min(d => d.CheckInDate))
+                        : bookings.OrderByDescending(b => b.BookingDetails.Min(d => d.CheckInDate));
                     break;
                 case "createdate":
                     bookings = query.SortDirection == "asc"
@@ -116,7 +109,6 @@ namespace B2P_API.Repository
                         : bookings.OrderByDescending(b => b.CreateAt);
                     break;
             }
-
 
             return await bookings
                 .Skip((query.Page - 1) * query.PageSize)
