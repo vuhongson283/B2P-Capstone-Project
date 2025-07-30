@@ -418,10 +418,17 @@ const getCourtDetail = (courtId) => {
   return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 };
 
+//TimeSlotForCourtOwner
+const getTimeSlotsByFacilityId = (facilityId) => {
+  return axios.get(`TimeslotManagement/facility/${facilityId}`);
+};
+
+
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  getTimeSlotsByFacilityId,
   getAllCourtCategories,
   addCourtCategory,
   updateCourtCategory,

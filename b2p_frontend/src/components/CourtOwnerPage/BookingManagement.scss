@@ -1,84 +1,177 @@
 .booking-management {
-    margin-top: -3%;
     min-height: 100vh;
-    background: white;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+    padding: 20px;
 
     // Main container
     .main-container {
         width: 100%;
         background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
 
-        // Header
+        // Header với gradient như trong hình
         .header {
-            background: #52c41a;
-            padding: 20px 24px;
+            background: linear-gradient(135deg, #52c41a 0%, #95de64 50%, #fadb14 100%);
+            padding: 24px 32px;
             color: white;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 18px;
-            font-weight: 500;
-            border-radius: 12px 12px 0 0; // Bo góc trên
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
 
-            .header-icon {
-                font-size: 20px;
+            // Decorative elements
+            &::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -10%;
+                width: 200px;
+                height: 200px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                transform: rotate(45deg);
+            }
+
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: -30%;
+                left: -5%;
+                width: 150px;
+                height: 150px;
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 50%;
+            }
+
+            .header-content {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                position: relative;
+                z-index: 2;
+
+                .header-icon {
+                    font-size: 28px;
+                    background: rgba(255, 255, 255, 0.2);
+                    padding: 12px;
+                    border-radius: 12px;
+                    backdrop-filter: blur(10px);
+                }
+
+                .header-text {
+                    h1 {
+                        margin: 0;
+                        font-size: 24px;
+                        font-weight: 700;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    }
+
+                    .subtitle {
+                        font-size: 14px;
+                        opacity: 0.9;
+                        margin-top: 4px;
+                    }
+                }
+            }
+
+            .header-actions {
+                position: relative;
+                z-index: 2;
+
+                .add-button {
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: white;
+                    border-radius: 10px;
+                    padding: 8px 16px;
+                    font-weight: 500;
+                    backdrop-filter: blur(10px);
+                    transition: all 0.3s ease;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.3);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .anticon {
+                        margin-right: 6px;
+                    }
+                }
             }
         }
 
         // Filters Section
         .filters-section {
-            background: #fafafa;
-            padding: 24px;
-            display: flex;
-            gap: 40px;
-            align-items: center;
-            border-bottom: 1px solid #f0f0f0;
+            background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
+            padding: 32px;
+            border-bottom: 1px solid #e8e8e8;
+
+            .filters-container {
+                display: flex;
+                gap: 32px;
+                align-items: center;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
 
             .filter-item {
                 display: flex;
                 align-items: center;
                 gap: 12px;
+                position: relative;
 
                 .filter-icon {
                     color: #52c41a;
-                    font-size: 16px;
+                    font-size: 18px;
+                    background: #f6ffed;
+                    padding: 8px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(82, 196, 26, 0.15);
                 }
 
                 .filter-label {
-                    font-weight: 500;
+                    font-weight: 600;
                     color: rgba(0, 0, 0, 0.85);
                     min-width: 120px;
+                    font-size: 15px;
                 }
 
                 .filter-select, .filter-date {
                     min-width: 200px;
 
                     .ant-select-selector, .ant-picker {
-                        height: 40px;
-                        border: 1px solid #d9d9d9;
-                        border-radius: 6px;
+                        height: 44px;
+                        border: 2px solid #e8e8e8;
+                        border-radius: 12px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                        transition: all 0.3s ease;
 
                         &:hover {
                             border-color: #52c41a;
+                            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
                         }
                     }
 
                     &.ant-select-focused .ant-select-selector,
                     &.ant-picker-focused {
                         border-color: #52c41a;
-                        box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+                        box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.1);
                     }
                 }
             }
         }
 
-        // Booking Table Container với scroll
+        // Booking Table Container
         .booking-table {
-            width: 95%;
-            margin: 24px;
-            border: 1px solid #e8e8e8;
-            border-radius: 12px;
+            margin: 32px;
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8e8e8;
             
             // Container cho scroll horizontal
             .table-scroll-container {
@@ -87,56 +180,77 @@
                 
                 // Custom scrollbar
                 &::-webkit-scrollbar {
-                    height: 8px;
+                    height: 10px;
                 }
                 
                 &::-webkit-scrollbar-track {
                     background: #f1f1f1;
-                    border-radius: 4px;
+                    border-radius: 6px;
                 }
                 
                 &::-webkit-scrollbar-thumb {
-                    background: #c1c1c1;
-                    border-radius: 4px;
+                    background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+                    border-radius: 6px;
                     
                     &:hover {
-                        background: #a8a8a8;
+                        background: linear-gradient(135deg, #389e0d 0%, #73d13d 100%);
                     }
                 }
             }
 
             // Table Content
             .table-content {
-                min-width: 1200px; // Đảm bảo table không bị co lại quá nhỏ
+                min-width: 1200px;
                 
-                // Table Header
+                // Table Header với gradient
                 .table-header {
-                    display: grid;
-                    grid-template-columns: 200px repeat(8, 1fr);
-                    background: #52c41a;
+                    display: flex;
+                    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+                    position: relative;
+
+                    // Decorative pattern
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Ccircle cx='50' cy='10' r='2'/%3E%3Ccircle cx='10' cy='50' r='2'/%3E%3Ccircle cx='50' cy='50' r='2'/%3E%3C/g%3E%3C/svg%3E");
+                        pointer-events: none;
+                    }
 
                     .header-cell {
                         color: white;
-                        padding: 16px 8px;
+                        padding: 20px 12px;
                         text-align: center;
-                        font-weight: 500;
-                        font-size: 13px;
+                        font-weight: 600;
+                        font-size: 14px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 6px;
-                        border-right: 1px solid rgba(255, 255, 255, 0.2);
+                        gap: 8px;
+                        border-right: 1px solid rgba(255, 255, 255, 0.15);
+                        min-width: 140px;
+                        flex: 1;
+                        position: relative;
+                        z-index: 1;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 
                         &:last-child {
                             border-right: none;
                         }
 
                         &.time-header {
-                            background: rgba(0, 0, 0, 0.1);
-                            font-weight: 600;
+                            background: rgba(0, 0, 0, 0.15);
+                            font-weight: 700;
+                            min-width: 200px;
+                            flex: 0 0 200px;
+                            backdrop-filter: blur(10px);
 
                             .anticon {
-                                font-size: 14px;
+                                font-size: 16px;
+                                margin-right: 4px;
                             }
                         }
                     }
@@ -147,45 +261,71 @@
                     background: white;
 
                     .court-row {
-                        display: grid;
-                        grid-template-columns: 200px repeat(8, 1fr);
-                        border-bottom: 1px solid #f0f0f0;
+                        display: flex;
+                        transition: all 0.3s ease;
+
+                        &:nth-child(even) {
+                            background: #fafafa;
+                        }
+
+                        &:hover {
+                            background: #f0f9ff;
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                        }
 
                         &:last-child {
                             border-bottom: none;
                         }
 
                         .court-cell {
-                            background: #f8f9fa;
-                            padding: 16px 12px;
+                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                            padding: 20px 16px;
                             display: flex;
                             align-items: center;
-                            justify-content: center;
-                            gap: 8px;
-                            font-weight: 500;
+                            justify-content: flex-start;
+                            gap: 12px;
+                            font-weight: 600;
                             color: rgba(0, 0, 0, 0.85);
                             border-right: 1px solid #e8e8e8;
+                            min-width: 200px;
+                            flex: 0 0 200px;
+                            white-space: nowrap;
+                            border-bottom: 1px solid #f0f0f0;
 
                             .anticon {
                                 color: #52c41a;
+                                font-size: 16px;
+                                background: white;
+                                padding: 6px;
+                                border-radius: 6px;
+                                box-shadow: 0 2px 4px rgba(82, 196, 26, 0.15);
+                            }
+
+                            span {
                                 font-size: 14px;
                             }
                         }
 
                         .slot-cell {
-                            padding: 12px 8px;
+                            padding: 16px 12px;
                             text-align: center;
                             cursor: pointer;
-                            transition: all 0.3s ease;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                             font-size: 13px;
-                            font-weight: 500;
-                            min-height: 60px;
+                            font-weight: 600;
+                            min-height: 70px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
                             background: white;
                             border-right: 1px solid #f0f0f0;
+                            border-bottom: 1px solid #f0f0f0;
                             position: relative;
+                            min-width: 140px;
+                            flex: 1;
+                            white-space: nowrap;
+                            overflow: hidden;
 
                             &:last-child {
                                 border-right: none;
@@ -193,45 +333,97 @@
 
                             &.available {
                                 color: #52c41a;
-                                background: #f6ffed;
+                                background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 20%);
+                                border: 1px solid rgba(82, 196, 26, 0.2);
+                                
+                                &::before {
+                                    content: '';
+                                    position: absolute;
+                                    top: 4px;
+                                    right: 4px;
+                                    width: 8px;
+                                    height: 8px;
+                                    background: #52c41a;
+                                    border-radius: 50%;
+                                    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+                                }
 
                                 &:hover {
-                                    background: #e6f7d7;
-                                    transform: translateY(-2px);
-                                    box-shadow: 0 4px 8px rgba(82, 196, 26, 0.15);
-                                    z-index: 1;
+                                    background: linear-gradient(135deg, #d9f7be 0%, #b7eb8f 50%);
+                                    transform: translateY(-3px) scale(1.02);
+                                    box-shadow: 0 8px 25px rgba(82, 196, 26, 0.25);
+                                    z-index: 10;
+                                    border-color: #52c41a;
                                 }
                             }
 
                             &.booked {
-                                background: #fff2f0;
+                                background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 20%);
                                 color: #ff4d4f;
+                                border: 1px solid rgba(255, 77, 79, 0.2);
+
+                                &::before {
+                                    content: '';
+                                    position: absolute;
+                                    top: 4px;
+                                    right: 4px;
+                                    width: 8px;
+                                    height: 8px;
+                                    background: #ff4d4f;
+                                    border-radius: 50%;
+                                    box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+                                }
 
                                 &:hover {
-                                    background: #ffe1dd;
-                                    transform: translateY(-2px);
-                                    box-shadow: 0 4px 8px rgba(255, 77, 79, 0.15);
-                                    z-index: 1;
+                                    background: linear-gradient(135deg, #ffccc7 0%, #ffa39e 50%);
+                                    transform: translateY(-3px) scale(1.02);
+                                    box-shadow: 0 8px 25px rgba(255, 77, 79, 0.25);
+                                    z-index: 10;
+                                    border-color: #ff4d4f;
                                 }
                             }
 
-                            // Thêm border subtle cho từng cell
+                            // Ripple effect
                             &::after {
                                 content: '';
                                 position: absolute;
-                                top: 0;
-                                left: 0;
-                                right: 0;
-                                bottom: 0;
-                                border: 1px solid transparent;
-                                transition: border-color 0.3s ease;
+                                top: 50%;
+                                left: 50%;
+                                width: 0;
+                                height: 0;
+                                background: rgba(82, 196, 26, 0.1);
+                                border-radius: 50%;
+                                transform: translate(-50%, -50%);
+                                transition: width 0.6s, height 0.6s;
                             }
 
-                            &:hover::after {
-                                border-color: currentColor;
-                                border-radius: 4px;
+                            &:active::after {
+                                width: 200px;
+                                height: 200px;
                             }
                         }
+                    }
+                }
+
+                // Loading and Empty States
+                .loading-container,
+                .no-data-container {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 60px;
+                    width: 100%;
+                    color: #999;
+                    background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
+
+                    .ant-spin {
+                        margin-bottom: 16px;
+                    }
+
+                    span {
+                        font-size: 16px;
+                        font-weight: 500;
                     }
                 }
             }
@@ -239,12 +431,48 @@
     }
 }
 
-// Modal styles - UPDATED & IMPROVED
+// Status indicators
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 32px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+
+            &.available {
+                background: #52c41a;
+                box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.2);
+            }
+
+            &.booked {
+                background: #ff4d4f;
+                box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.2);
+            }
+        }
+    }
+}
+
+// Modal styles (giữ nguyên phần modal từ trước)
 .booking-detail-modal {
     .ant-modal-content {
         border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     }
 
     .ant-modal-body {
@@ -263,7 +491,7 @@
 
     .booking-detail {
         .modal-header {
-            background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+            background: linear-gradient(135deg, #52c41a 0%, #73d13d 50%, #fadb14 100%);
             padding: 24px;
             color: white;
             display: flex;
@@ -271,7 +499,7 @@
             align-items: center;
             position: relative;
 
-            // Decorative pattern
+            // Decorative pattern (giữ nguyên)
             &::before {
                 content: '';
                 position: absolute;
@@ -289,6 +517,7 @@
                 font-weight: 600;
                 position: relative;
                 z-index: 1;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
 
             .status-tag {
@@ -301,9 +530,11 @@
                 font-weight: 500;
                 position: relative;
                 z-index: 1;
+                backdrop-filter: blur(10px);
             }
         }
 
+        // Giữ nguyên phần còn lại của modal
         .booking-info {
             padding: 32px 24px 24px;
             background: #fafafa;
@@ -467,7 +698,7 @@
                     }
 
                     &.pending {
-                        color: #faad14;
+                        color: #fadb14;
                     }
                 }
 
@@ -480,7 +711,7 @@
                     }
 
                     &.pending {
-                        color: #faad14;
+                        color: #fadb14;
                     }
                 }
             }
@@ -533,7 +764,7 @@
         }
 
         .ant-divider {
-            display: none; // Ẩn divider vì đã có border-top
+            display: none;
         }
     }
 }
@@ -542,7 +773,7 @@
 .booking-detail-modal {
     .ant-modal {
         .ant-modal-content {
-            animation: modalSlideIn 0.3s ease-out;
+            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
     }
 }
@@ -550,7 +781,7 @@
 @keyframes modalSlideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px) scale(0.95);
+        transform: translateY(-30px) scale(0.9);
     }
     to {
         opacity: 1;
@@ -558,26 +789,29 @@
     }
 }
 
-// Responsive
+// Responsive (giữ nguyên các breakpoints)
 @media (max-width: 1200px) {
     .booking-management {
+        padding: 16px;
+        
         .main-container {
             .booking-table {
-                margin: 16px;
-                width: calc(100% - 32px);
+                margin: 24px;
                 
                 .table-content {
                     min-width: 1000px;
                     
-                    .table-header,
-                    .court-row {
-                        grid-template-columns: 150px repeat(8, 1fr);
-                    }
-                    
-                    .header-cell,
-                    .slot-cell {
+                    .table-header .header-cell,
+                    .table-body .slot-cell {
                         font-size: 12px;
                         padding: 10px 6px;
+                        min-width: 120px;
+                    }
+                    
+                    .table-header .time-header,
+                    .court-cell {
+                        min-width: 160px;
+                        flex: 0 0 160px;
                     }
                 }
             }
@@ -606,37 +840,55 @@
 
 @media (max-width: 768px) {
     .booking-management {
+        padding: 12px;
+        
         .main-container {
-            .filters-section {
+            .header {
+                padding: 20px 24px;
                 flex-direction: column;
-                gap: 20px;
-                align-items: flex-start;
+                gap: 16px;
+                text-align: center;
 
-                .filter-item {
-                    width: 100%;
-                    
-                    .filter-select, .filter-date {
-                        min-width: 250px;
+                .header-content {
+                    .header-text h1 {
+                        font-size: 20px;
+                    }
+                }
+            }
+
+            .filters-section {
+                .filters-container {
+                    flex-direction: column;
+                    gap: 20px;
+                    align-items: flex-start;
+
+                    .filter-item {
+                        width: 100%;
+                        
+                        .filter-select, .filter-date {
+                            min-width: 250px;
+                        }
                     }
                 }
             }
 
             .booking-table {
-                margin: 8px;
-                width: calc(100% - 16px);
+                margin: 16px;
                 
                 .table-content {
                     min-width: 900px;
                     
-                    .table-header,
-                    .court-row {
-                        grid-template-columns: 120px repeat(8, 1fr);
-                    }
-                    
-                    .header-cell,
-                    .slot-cell {
+                    .table-header .header-cell,
+                    .table-body .slot-cell {
                         font-size: 11px;
                         padding: 8px 4px;
+                        min-width: 100px;
+                    }
+                    
+                    .table-header .time-header,
+                    .court-cell {
+                        min-width: 120px;
+                        flex: 0 0 120px;
                     }
                 }
             }
