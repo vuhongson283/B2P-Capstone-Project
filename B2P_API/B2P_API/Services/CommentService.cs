@@ -271,6 +271,8 @@ namespace B2P_API.Services
 
             var commentDtos = comments.Select(c => new CommentResponseDto
             {
+                UserId = c.UserId,
+                UserName = c.User.FullName,
                 CommentId = c.CommentId,
                 BlogId = c.BlogId ?? 0,
                 BlogTitle = c.Blog?.Title ?? "(Không có tiêu đề)",

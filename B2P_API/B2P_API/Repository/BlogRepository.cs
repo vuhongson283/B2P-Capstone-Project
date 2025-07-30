@@ -25,10 +25,12 @@ public class BlogRepository
     {
         return await _context.Blogs
             .Include(b => b.Comments)
-          //  .Include(b => b.Images)    // nếu cần
-          //  .Include(b => b.User)      // nếu cần
+                .ThenInclude(c => c.User) // Lấy thêm thông tin người comment
+                                          //.Include(b => b.Images)    // nếu cần
+                                          //.Include(b => b.User)      // nếu muốn lấy thông tin người viết blog
             .FirstOrDefaultAsync(b => b.BlogId == id);
     }
+
 
 
     public async Task SaveAsync()
