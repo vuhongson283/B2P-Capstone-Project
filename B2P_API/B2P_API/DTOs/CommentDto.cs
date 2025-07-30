@@ -21,6 +21,8 @@ namespace B2P_API.DTOs
 
     public class CommentResponseDto
     {
+        public int? UserId { get; set; }
+        public string UserName { get; set; }
         public int CommentId { get; set; }
         public int BlogId { get; set; }
         public string BlogTitle { get; set; } = null!;
