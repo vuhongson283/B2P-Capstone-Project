@@ -482,6 +482,7 @@ namespace B2P_API.Services
 
             var dtoList = bookings.Select(b => new BookingResponseDto
             {
+                UserId = userId,
                 BookingId = b.BookingId,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
