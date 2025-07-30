@@ -14,7 +14,13 @@ import {
     PlusOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getFacilitiesByCourtOwnerId, getAllCourts, getTimeSlotsByFacilityId } from "../../services/apiService"; // Import API functions
+import {
+    getFacilitiesByCourtOwnerId,
+    getAllCourts,
+    getTimeSlotsByFacilityId,
+    getBookingsByFacilityId,
+    getAccountById // Import hàm mới
+} from "../../services/apiService"; // Import API functions
 
 const { Option } = Select;
 
@@ -25,13 +31,16 @@ const BookingManagement = () => {
     const [timeSlots, setTimeSlots] = useState([]); // Dynamic time slots
     const [selectedFacility, setSelectedFacility] = useState(null);
     const [selectedDate, setSelectedDate] = useState(dayjs());
-    const [bookingData, setBookingData] = useState({});
+    const [bookingData, setBookingData] = useState({}); // Real booking data
+    const [bookings, setBookings] = useState([]); // Raw bookings từ API
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [loading, setLoading] = useState(false);
     const [facilitiesLoading, setFacilitiesLoading] = useState(false);
     const [courtsLoading, setCourtsLoading] = useState(false);
     const [timeSlotsLoading, setTimeSlotsLoading] = useState(false);
+    const [bookingsLoading, setBookingsLoading] = useState(false);
+    const [customerLoading, setCustomerLoading] = useState(false); // Loading cho customer info
 
     // Fixed user ID
     const userId = 13;
@@ -41,16 +50,28 @@ const BookingManagement = () => {
         loadFacilities();
     }, []);
 
-    // Load courts and time slots when facility is selected
+    // Load courts, time slots, and bookings when facility is selected
     useEffect(() => {
         if (selectedFacility) {
             loadCourts(selectedFacility);
             loadTimeSlots(selectedFacility);
+            loadBookings(selectedFacility);
         } else {
             setCourts([]);
             setTimeSlots([]);
+            setBookings([]);
+            setBookingData({});
         }
     }, [selectedFacility]);
+
+    // Reload bookings when date changes
+    useEffect(() => {
+        if (selectedFacility) {
+            loadBookings(selectedFacility);
+        }
+    }, [selectedDate]);
+
+    // ... (giữ nguyên các hàm loadFacilities, loadCourts, loadTimeSlots như cũ)
 
     // Load facilities by court owner ID
     const loadFacilities = async () => {
@@ -122,6 +143,7 @@ const BookingManagement = () => {
 
             if (courtsData && courtsData.length > 0) {
                 setCourts(courtsData);
+                console.log('✅ Courts loaded:', courtsData.map(c => ({ id: c.courtId || c.id, name: c.courtName || c.name })));
             } else {
                 setCourts([]);
                 message.info('Không có sân nào trong cơ sở này');
@@ -193,68 +215,260 @@ const BookingManagement = () => {
         }
     };
 
-    // Mock booking data
-    const mockBookings = {
-        "14_2025-07-30_08:00 - 10:00": {
-            id: "BK001",
-            courtId: 14,
-            courtName: "Sân tennis số 1",
-            timeSlot: "08:00 - 10:00",
-            date: "30/07/2025",
-            customerName: "Nguyễn Văn A",
-            customerPhone: "0901234567",
-            customerEmail: "nguyenvana@email.com",
-            price: 200000,
-            status: "confirmed",
-            paymentStatus: "paid",
-            bookingTime: "28/07/2025 14:30:00"
-        },
-        "27_2025-07-30_15:00 - 17:00": {
-            id: "BK002",
-            courtId: 27,
-            courtName: "Sân Bóng Mini CMT8",
-            timeSlot: "15:00 - 17:00",
-            date: "30/07/2025",
-            customerName: "Trần Thị B",
-            customerPhone: "0907654321",
-            customerEmail: "tranthib@email.com",
-            price: 250000,
-            status: "confirmed",
-            paymentStatus: "pending",
-            bookingTime: "29/07/2025 09:15:00"
+    // Load bookings by facility ID
+    const loadBookings = async (facilityId) => {
+        try {
+            setBookingsLoading(true);
+            console.log('📅 Loading bookings for facilityId:', facilityId);
+            console.log('📅 Selected date:', selectedDate.format('YYYY-MM-DD'));
+
+            const response = await getBookingsByFacilityId(facilityId, 1, 1000);
+
+            console.log('📅 RAW Bookings API Response:', response);
+
+            let bookingsData = [];
+            if (response.data && response.data.items) {
+                bookingsData = response.data.items;
+            }
+
+            console.log('📅 RAW Bookings Data:', bookingsData);
+
+            if (bookingsData && bookingsData.length > 0) {
+                setBookings(bookingsData);
+                processBookingData(bookingsData);
+            } else {
+                setBookings([]);
+                setBookingData({});
+            }
+        } catch (error) {
+            console.error('❌ Error loading bookings:', error);
+            message.error('Không thể tải danh sách đặt sân');
+            setBookings([]);
+            setBookingData({});
+        } finally {
+            setBookingsLoading(false);
         }
     };
 
-    useEffect(() => {
-        setBookingData(mockBookings);
-    }, []);
+    // Process booking data into lookup format - CẬP NHẬT
+    const processBookingData = (bookingsData) => {
+        console.log('🔄 Processing booking data...');
+        console.log('🔄 Total bookings to process:', bookingsData.length);
 
-    const getBookingKey = (courtId, date, timeSlot) => {
-        return `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
+        const processedBookings = {};
+
+        bookingsData.forEach((booking, index) => {
+            try {
+                console.log(`🔄 Processing booking ${index + 1}:`, booking);
+
+                // Parse date from checkInDate
+                let bookingDate;
+                if (booking.checkInDate) {
+                    bookingDate = dayjs(booking.checkInDate);
+                    console.log(`📅 Found checkInDate:`, booking.checkInDate, '→', bookingDate.format('YYYY-MM-DD'));
+                }
+
+                if (!bookingDate || !bookingDate.isValid()) {
+                    console.log('❌ No valid date found for booking:', booking);
+                    return;
+                }
+
+                // Check if booking has slots array
+                if (!booking.slots || !Array.isArray(booking.slots)) {
+                    console.log('❌ No slots array found in booking:', booking);
+                    return;
+                }
+
+                console.log(`📋 Found ${booking.slots.length} slots in booking:`, booking.slots);
+
+                // Process each slot in the booking
+                booking.slots.forEach((slot, slotIndex) => {
+                    try {
+                        console.log(`🔄 Processing slot ${slotIndex + 1}:`, slot);
+
+                        const startTime = slot.startTime || slot.timeStart || slot.fromTime;
+                        const endTime = slot.endTime || slot.timeEnd || slot.toTime;
+                        const courtId = slot.courtId || slot.court_id || slot.id;
+                        const statusId = slot.statusId || slot.status_id || booking.statusId || booking.status_id;
+
+                        console.log(`⏰ Slot times: ${startTime} - ${endTime}`);
+                        console.log(`🏟️ Court ID: ${courtId}`);
+                        console.log(`📊 Status ID: ${statusId}`);
+
+                        if (startTime && endTime && courtId) {
+                            const formatTime = (time) => {
+                                if (!time) return '';
+                                return time.substring(0, 5);
+                            };
+
+                            const timeSlot = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+                            const bookingKey = `${courtId}_${bookingDate.format('YYYY-MM-DD')}_${timeSlot}`;
+
+                            // Check status - look for different status indicators
+                            let isActive = false;
+
+                            if (statusId === 7 || statusId === '7') {
+                                isActive = true;
+                            } else if (booking.status === 'Active' || slot.status === 'Active') {
+                                isActive = true;
+                            } else if (booking.status === 'Paid' || slot.status === 'Paid' ||
+                                booking.status === 'Confirmed' || slot.status === 'Confirmed') {
+                                isActive = true;
+                            }
+
+                            if (isActive) {
+                                console.log('✅ Adding active booking to processed bookings');
+
+                                processedBookings[bookingKey] = {
+                                    id: booking.bookingId || booking.id,
+                                    userId: booking.userId, // Lưu userId để load customer info
+                                    courtId: courtId,
+                                    courtName: slot.courtName || slot.court_name || `Court ${courtId}`,
+                                    timeSlot: timeSlot,
+                                    date: bookingDate.format('DD/MM/YYYY'),
+                                    price: booking.totalPrice || booking.price || 0,
+                                    status: 'confirmed',
+                                    paymentStatus: booking.status === 'Paid' ? 'paid' : 'pending',
+                                    bookingTime: booking.checkInDate || 'N/A',
+                                    statusId: statusId || 7,
+                                    originalStatus: booking.status,
+                                    // Placeholder customer info (sẽ được load khi click)
+                                    customerName: 'Đang tải...',
+                                    customerPhone: 'Đang tải...',
+                                    customerEmail: 'Đang tải...'
+                                };
+
+                                console.log(`✅ Added booking: ${bookingKey}`, processedBookings[bookingKey]);
+                            }
+                        }
+                    } catch (slotError) {
+                        console.error(`❌ Error processing slot ${slotIndex + 1}:`, slot, slotError);
+                    }
+                });
+
+            } catch (error) {
+                console.error(`❌ Error processing booking ${index + 1}:`, booking, error);
+            }
+        });
+
+        console.log('📊 Final processed bookings:', processedBookings);
+        setBookingData(processedBookings);
     };
 
-    const handleSlotClick = (court, timeSlot) => {
+    // Load customer details - HÀM MỚI
+    const loadCustomerDetails = async (userId) => {
+        try {
+            console.log('👤 Loading customer details for userId:', userId);
+            const response = await getAccountById(userId);
+
+            console.log('👤 Customer API Response:', response);
+
+            let customerData = null;
+            if (response.data) {
+                if (response.data.data) {
+                    customerData = response.data.data;
+                } else if (response.data.user) {
+                    customerData = response.data.user;
+                } else {
+                    customerData = response.data;
+                }
+            }
+
+            console.log('👤 Customer Data:', customerData);
+
+            if (customerData) {
+                return {
+                    customerName: customerData.fullName || customerData.name || customerData.userName || 'N/A',
+                    customerPhone: customerData.phoneNumber || customerData.phone || 'N/A',
+                    customerEmail: customerData.email || 'N/A',
+                    customerAvatar: customerData.avatar || customerData.profilePicture || null
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ Error loading customer details:', error);
+            return null;
+        }
+    };
+
+    const getBookingKey = (courtId, date, timeSlot) => {
+        const key = `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
+        return key;
+    };
+
+    // Handle slot click - CẬP NHẬT ĐỂ LOAD CUSTOMER INFO
+    const handleSlotClick = async (court, timeSlot) => {
         const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
         const booking = bookingData[bookingKey];
 
+        console.log('🖱️ Slot clicked:', {
+            court: court.courtName || court.name,
+            timeSlot,
+            date: selectedDate.format('YYYY-MM-DD'),
+            bookingKey,
+            hasBooking: !!booking
+        });
+
         if (booking) {
+            setCustomerLoading(true);
+            setIsModalVisible(true);
+
+            // Set initial booking data
             setSelectedBooking({
                 ...booking,
                 timeSlot,
                 date: selectedDate.format('DD/MM/YYYY')
             });
-            setIsModalVisible(true);
+
+            // Load customer details asynchronously
+            if (booking.userId) {
+                try {
+                    const customerDetails = await loadCustomerDetails(booking.userId);
+
+                    if (customerDetails) {
+                        // Update booking with customer details
+                        setSelectedBooking(prev => ({
+                            ...prev,
+                            ...customerDetails
+                        }));
+                    } else {
+                        // Fallback if customer details not found
+                        setSelectedBooking(prev => ({
+                            ...prev,
+                            customerName: 'Không tìm thấy thông tin',
+                            customerPhone: 'Không tìm thấy thông tin',
+                            customerEmail: 'Không tìm thấy thông tin'
+                        }));
+                    }
+                } catch (error) {
+                    console.error('Error loading customer details:', error);
+                    setSelectedBooking(prev => ({
+                        ...prev,
+                        customerName: 'Lỗi tải thông tin',
+                        customerPhone: 'Lỗi tải thông tin',
+                        customerEmail: 'Lỗi tải thông tin'
+                    }));
+                }
+            }
+
+            setCustomerLoading(false);
+        } else {
+            console.log('🆕 No booking found, could open new booking form');
+            message.info('Slot này đang trống. Có thể tạo đặt sân mới.');
         }
     };
 
     const getSlotStatus = (court, timeSlot) => {
         const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
-        return bookingData[bookingKey] ? 'booked' : 'available';
+        const booking = bookingData[bookingKey];
+        return booking ? 'booked' : 'available';
     };
 
     const closeModal = () => {
         setIsModalVisible(false);
         setSelectedBooking(null);
+        setCustomerLoading(false);
     };
 
     const handleFacilityChange = (value) => {
@@ -263,6 +477,7 @@ const BookingManagement = () => {
     };
 
     const handleDateChange = (date) => {
+        console.log('📅 Date changed to:', date.format('YYYY-MM-DD'));
         setSelectedDate(date);
     };
 
@@ -277,11 +492,6 @@ const BookingManagement = () => {
                             <h1 style={{ color: "white" }}>Quản Lý Đơn Đặt Sân</h1>
                             <div className="subtitle">Theo dõi và quản lý lịch đặt sân hiệu quả</div>
                         </div>
-                    </div>
-                    <div className="header-actions">
-                        <Button className="add-button" icon={<PlusOutlined />}>
-                            Thêm đặt sân
-                        </Button>
                     </div>
                 </div>
 
@@ -324,11 +534,13 @@ const BookingManagement = () => {
                 <div className="status-indicator">
                     <div className="status-item">
                         <div className="status-dot available"></div>
-                        <span>Còn trống</span>
+                        <span>Còn trống ({Object.keys(bookingData).length > 0 ?
+                            courts.length * timeSlots.length - Object.keys(bookingData).length :
+                            courts.length * timeSlots.length} slots)</span>
                     </div>
                     <div className="status-item">
                         <div className="status-dot booked"></div>
-                        <span>Đã được đặt</span>
+                        <span>Đã được đặt ({Object.keys(bookingData).length} slots)</span>
                     </div>
                 </div>
 
@@ -362,10 +574,14 @@ const BookingManagement = () => {
 
                             {/* Table Body */}
                             <div className="table-body">
-                                {courtsLoading ? (
+                                {courtsLoading || bookingsLoading ? (
                                     <div className="loading-container">
                                         <Spin size="large" />
-                                        <span>Đang tải danh sách sân...</span>
+                                        <span>
+                                            {courtsLoading && 'Đang tải danh sách sân...'}
+                                            {bookingsLoading && 'Đang tải thông tin đặt sân...'}
+                                            {courtsLoading && bookingsLoading && 'Đang tải dữ liệu...'}
+                                        </span>
                                     </div>
                                 ) : courts.length === 0 ? (
                                     <div className="no-data-container">
@@ -404,7 +620,7 @@ const BookingManagement = () => {
                 </div>
             </div>
 
-            {/* Modal với gradient header */}
+            {/* Modal với gradient header - CẬP NHẬT CUSTOMER SECTION */}
             <Modal
                 title={null}
                 open={isModalVisible}
@@ -469,24 +685,39 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
+                        {/* CUSTOMER INFO SECTION - CẬP NHẬT */}
                         <div className="customer-info">
                             <h3>Thông tin khách hàng</h3>
                             <div className="customer-details">
-                                <Avatar size={64} icon={<UserOutlined />} className="avatar" />
-                                <div className="customer-data">
-                                    <div className="customer-item">
-                                        <UserOutlined className="customer-icon" />
-                                        <span>{selectedBooking.customerName}</span>
+                                {customerLoading ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px' }}>
+                                        <Spin size="large" />
+                                        <span>Đang tải thông tin khách hàng...</span>
                                     </div>
-                                    <div className="customer-item">
-                                        <PhoneOutlined className="customer-icon" />
-                                        <span>{selectedBooking.customerPhone}</span>
-                                    </div>
-                                    <div className="customer-item">
-                                        <MailOutlined className="customer-icon" />
-                                        <span>{selectedBooking.customerEmail}</span>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <Avatar
+                                            size={64}
+                                            src={selectedBooking.customerAvatar}
+                                            icon={!selectedBooking.customerAvatar && <UserOutlined />}
+                                            className="avatar"
+                                        />
+                                        <div className="customer-data">
+                                            <div className="customer-item">
+                                                <UserOutlined className="customer-icon" />
+                                                <span>{selectedBooking.customerName}</span>
+                                            </div>
+                                            <div className="customer-item">
+                                                <PhoneOutlined className="customer-icon" />
+                                                <span>{selectedBooking.customerPhone}</span>
+                                            </div>
+                                            <div className="customer-item">
+                                                <MailOutlined className="customer-icon" />
+                                                <span>{selectedBooking.customerEmail}</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 

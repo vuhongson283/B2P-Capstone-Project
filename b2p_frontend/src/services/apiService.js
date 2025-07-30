@@ -424,10 +424,31 @@ const getTimeSlotsByFacilityId = (facilityId) => {
 };
 
 
+const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
+  return axios.get(`Booking/court-owner`, {
+    params: {
+      facilityId,
+      pageNumber,
+      pageSize,
+    },
+  });
+};
+const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
+  return axios.get(`Booking`, {
+    params: {
+      userId,
+      Page: page,
+      PageSize: pageSize,
+    },
+  });
+};
+
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  getBookingsByUserId,
+  getBookingsByFacilityId,
   getTimeSlotsByFacilityId,
   getAllCourtCategories,
   addCourtCategory,

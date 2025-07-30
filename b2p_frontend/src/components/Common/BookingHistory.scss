@@ -1,24 +1,23 @@
 .booking-history-page {
   min-height: 100vh;
   background: #f8fafc;
-  padding-top: 0; // Bỏ padding-top để header sát với navigation
+  padding-top: 0;
 
-  // Main Container - Expanded width
+  // Main Container
   .main-container {
-    max-width: 95%; // Tăng từ 1400px lên 95% màn hình
+    max-width: 95%;
     margin: 0 auto;
-    padding: 0 1rem; // Giảm padding để tận dụng không gian
+    padding: 0 1rem;
     
     .page-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); // Gradient đẹp
-      padding: 3rem 0; // Tăng padding để nổi bật
-      margin: 0 -1rem 2rem; // Margin âm để header rộng hơn container
-      border-radius: 0 0 24px 24px; // Bo góc dưới
-      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3); // Shadow đẹp
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      padding: 3rem 0;
+      margin: 0 -1rem 2rem;
+      border-radius: 0 0 24px 24px;
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
       position: relative;
       overflow: hidden;
 
-      // Thêm pattern background
       &::before {
         content: '';
         position: absolute;
@@ -34,29 +33,29 @@
         position: relative;
         z-index: 2;
         text-align: center;
-        max-width: 1600px; // Tăng max-width
+        max-width: 1600px;
         margin: 0 auto;
         padding: 0 2rem;
 
         .page-title {
-          font-size: 3.5rem; // Tăng size
-          font-weight: 900; // Tăng weight
+          font-size: 3.5rem;
+          font-weight: 900;
           color: white;
           margin-bottom: 1rem;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 1.5rem;
-          text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); // Text shadow
+          text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
           .title-icon {
-            font-size: 4rem; // Tăng size icon
+            font-size: 4rem;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
           }
         }
 
         .page-subtitle {
-          font-size: 1.3rem; // Tăng size
+          font-size: 1.3rem;
           color: rgba(255, 255, 255, 0.95);
           max-width: 800px;
           margin: 0 auto;
@@ -65,7 +64,6 @@
         }
       }
 
-      // Thêm decorative elements
       &::after {
         content: '';
         position: absolute;
@@ -80,54 +78,54 @@
     .content-wrapper {
       background: white;
       border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); // Tăng shadow
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(0, 0, 0, 0.05);
       overflow: hidden;
     }
   }
 
-  // Filters Section - Expanded
+  // Filters Section
   .filters-section {
     display: flex;
-    gap: 2rem; // Tăng gap
+    gap: 2rem;
     align-items: center;
     flex-wrap: wrap;
-    padding: 2.5rem; // Tăng padding
+    padding: 2.5rem;
     border-bottom: 1px solid #e2e8f0;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); // Gradient nhẹ
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 
     .search-filter {
-      flex: 2; // Tăng flex để rộng hơn
-      min-width: 400px; // Tăng min-width
+      flex: 2;
+      min-width: 400px;
 
       .search-input-wrapper {
         position: relative;
 
         .search-icon {
           position: absolute;
-          left: 1.5rem; // Tăng khoảng cách
+          left: 1.5rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 22px; // Tăng size
+          width: 22px;
           height: 22px;
           color: #64748b;
         }
 
         .search-input {
           width: 100%;
-          padding: 1.25rem 1.5rem 1.25rem 3.5rem; // Tăng padding
+          padding: 1.25rem 1.5rem 1.25rem 3.5rem;
           border: 2px solid #e2e8f0;
-          border-radius: 16px; // Tăng border-radius
-          font-size: 1.1rem; // Tăng font-size
+          border-radius: 16px;
+          font-size: 1.1rem;
           background: white;
           transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); // Thêm shadow
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
           &:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 16px rgba(0, 0, 0, 0.08);
-            transform: translateY(-1px); // Lift effect
+            transform: translateY(-1px);
           }
 
           &::placeholder {
@@ -139,22 +137,22 @@
 
     .status-filter {
       .status-select {
-        padding: 1.25rem 2rem; // Tăng padding
+        padding: 1.25rem 2rem;
         border: 2px solid #e2e8f0;
-        border-radius: 16px; // Tăng border-radius
-        font-size: 1.1rem; // Tăng font-size
+        border-radius: 16px;
+        font-size: 1.1rem;
         background: white;
         cursor: pointer;
         transition: all 0.3s ease;
-        min-width: 250px; // Tăng min-width
+        min-width: 250px;
         font-weight: 500;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); // Thêm shadow
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
         &:focus {
           outline: none;
           border-color: #667eea;
           box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 16px rgba(0, 0, 0, 0.08);
-          transform: translateY(-1px); // Lift effect
+          transform: translateY(-1px);
         }
       }
     }
@@ -162,58 +160,58 @@
     .results-count {
       span {
         color: #64748b;
-        font-weight: 600; // Tăng weight
+        font-weight: 600;
         background: white;
-        padding: 1.25rem 2rem; // Tăng padding
-        border-radius: 16px; // Tăng border-radius
+        padding: 1.25rem 2rem;
+        border-radius: 16px;
         border: 2px solid #e2e8f0;
         font-size: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); // Thêm shadow
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       }
     }
   }
 
-  // Bookings Section - Enhanced
+  // Bookings Section
   .bookings-section {
-    padding: 2.5rem; // Tăng padding
+    padding: 2.5rem;
 
     .bookings-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem; // Tăng gap
+      gap: 1.5rem;
       margin-bottom: 2rem;
     }
 
     .booking-row {
       background: white;
       border: 1px solid #e2e8f0;
-      border-radius: 20px; // Tăng border-radius
-      padding: 2rem; // Tăng padding
+      border-radius: 20px;
+      padding: 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06); // Tăng shadow
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 
       &:hover {
-        transform: translateX(8px) translateY(-2px); // Tăng effect
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); // Tăng shadow
+        transform: translateX(8px) translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         border-color: #667eea;
       }
 
       .booking-main {
         display: flex;
         align-items: center;
-        gap: 3rem; // Tăng gap
+        gap: 3rem;
         flex: 1;
 
         .booking-id-section {
-          min-width: 140px; // Tăng width
+          min-width: 140px;
 
           .booking-id {
             display: block;
-            font-size: 1.2rem; // Tăng size
-            font-weight: 800; // Tăng weight
+            font-size: 1.2rem;
+            font-weight: 800;
             color: #667eea;
             margin-bottom: 0.25rem;
           }
@@ -227,22 +225,25 @@
         }
 
         .court-info {
-          min-width: 250px; // Tăng width
+          min-width: 250px;
 
           .court-name {
-            font-size: 1.2rem; // Tăng size
-            font-weight: 800; // Tăng weight
+            font-size: 1.2rem;
+            font-weight: 800;
             color: #1e293b;
             margin-bottom: 0.5rem;
           }
 
           .court-type {
-            padding: 0.5rem 1rem; // Tăng padding
-            border-radius: 20px; // Tăng border-radius
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
             font-size: 0.85rem;
-            font-weight: 700; // Tăng weight
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 0.5rem;
             
-            &.type-bóng-đá {
+            &.type-bóng-đá,
+            &.type-sân-bóng-đá-mini {
               background: linear-gradient(135deg, #dcfce7, #bbf7d0);
               color: #166534;
               box-shadow: 0 2px 8px rgba(22, 101, 52, 0.2);
@@ -272,21 +273,36 @@
               box-shadow: 0 2px 8px rgba(21, 94, 117, 0.2);
             }
           }
+
+          .facility-info {
+            margin-top: 0.5rem;
+            
+            small {
+              display: block;
+              color: #64748b;
+              font-size: 0.8rem;
+              font-weight: 500;
+              padding: 0.25rem 0.5rem;
+              background: #f1f5f9;
+              border-radius: 8px;
+              max-width: fit-content;
+            }
+          }
         }
 
         .booking-details {
           display: flex;
-          gap: 2.5rem; // Tăng gap
+          gap: 2.5rem;
           flex: 1;
 
           .detail-item {
             display: flex;
             align-items: center;
-            gap: 0.75rem; // Tăng gap
+            gap: 0.75rem;
             min-width: 0;
 
             .detail-icon {
-              width: 18px; // Tăng size
+              width: 18px;
               height: 18px;
               color: #667eea;
               flex-shrink: 0;
@@ -300,24 +316,24 @@
                 font-size: 0.8rem;
                 color: #64748b;
                 margin-bottom: 0.2rem;
-                font-weight: 600; // Tăng weight
+                font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
               }
 
               .detail-value {
                 display: block;
-                font-size: 1rem; // Tăng size
+                font-size: 1rem;
                 color: #1e293b;
-                font-weight: 700; // Tăng weight
+                font-weight: 700;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
 
                 &.price {
                   color: #059669;
-                  font-weight: 800; // Tăng weight
-                  font-size: 1.1rem; // Tăng size
+                  font-weight: 800;
+                  font-size: 1.1rem;
                 }
               }
             }
@@ -329,21 +345,21 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 1.25rem; // Tăng gap
-        min-width: 180px; // Tăng width
+        gap: 1.25rem;
+        min-width: 180px;
 
         .status-badge {
           display: inline-flex;
           align-items: center;
-          gap: 0.75rem; // Tăng gap
-          padding: 0.75rem 1.25rem; // Tăng padding
-          border-radius: 25px; // Tăng border-radius
-          font-weight: 700; // Tăng weight
+          gap: 0.75rem;
+          padding: 0.75rem 1.25rem;
+          border-radius: 25px;
+          font-weight: 700;
           font-size: 0.85rem;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); // Thêm shadow
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           
           .status-dot {
-            width: 10px; // Tăng size
+            width: 10px;
             height: 10px;
             border-radius: 50%;
           }
@@ -375,29 +391,29 @@
 
         .booking-actions {
           display: flex;
-          gap: 0.75rem; // Tăng gap
+          gap: 0.75rem;
         }
       }
     }
   }
 
-  // Enhanced Buttons
+  // Buttons
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.875rem 1.75rem; // Tăng padding
+    padding: 0.875rem 1.75rem;
     border: none;
-    border-radius: 14px; // Tăng border-radius
-    font-weight: 700; // Tăng weight
+    border-radius: 14px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     text-decoration: none;
-    font-size: 0.9rem; // Tăng size
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); // Thêm shadow
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
     .btn-icon {
-      width: 18px; // Tăng size
+      width: 18px;
       height: 18px;
     }
 
@@ -445,12 +461,51 @@
     }
 
     &.btn-lg {
-      padding: 1.25rem 2.5rem; // Tăng padding
-      font-size: 1.1rem; // Tăng size
+      padding: 1.25rem 2.5rem;
+      font-size: 1.1rem;
+    }
+
+    &.btn-close {
+      background: #64748b;
+      color: white;
+      border: none;
+
+      &:hover {
+        background: #475569;
+        transform: translateY(-2px);
+      }
+    }
+
+    &.btn-action {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+
+        &::before {
+          left: 100%;
+        }
+      }
     }
   }
 
-  // Enhanced Pagination
+  // Pagination
   .pagination-wrapper {
     display: flex;
     justify-content: center;
@@ -459,28 +514,28 @@
     .pagination {
       display: flex;
       align-items: center;
-      gap: 0.75rem; // Tăng gap
+      gap: 0.75rem;
       background: white;
-      padding: 1.5rem; // Tăng padding
-      border-radius: 20px; // Tăng border-radius
+      padding: 1.5rem;
+      border-radius: 20px;
       border: 1px solid #e2e8f0;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); // Tăng shadow
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 
       .pagination-btn {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 1rem 1.5rem; // Tăng padding
+        padding: 1rem 1.5rem;
         border: none;
         background: transparent;
         color: #64748b;
-        border-radius: 12px; // Tăng border-radius
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-weight: 600; // Tăng weight
+        font-weight: 600;
 
         svg {
-          width: 18px; // Tăng size
+          width: 18px;
           height: 18px;
         }
 
@@ -498,20 +553,20 @@
 
       .pagination-numbers {
         display: flex;
-        gap: 0.5rem; // Tăng gap
-        margin: 0 1.5rem; // Tăng margin
+        gap: 0.5rem;
+        margin: 0 1.5rem;
 
         .pagination-number {
-          width: 45px; // Tăng size
+          width: 45px;
           height: 45px;
           border: none;
           background: transparent;
           color: #64748b;
-          border-radius: 12px; // Tăng border-radius
+          border-radius: 12px;
           cursor: pointer;
           transition: all 0.3s ease;
-          font-weight: 700; // Tăng weight
-          font-size: 1rem; // Tăng size
+          font-weight: 700;
+          font-size: 1rem;
 
           &:hover {
             background: #f8fafc;
@@ -522,78 +577,87 @@
           &.active {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            transform: scale(1.15); // Tăng scale
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3); // Thêm shadow
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
           }
         }
       }
     }
   }
 
-  // Enhanced Empty State
+  // Empty State
   .empty-state {
     text-align: center;
-    padding: 5rem 2rem; // Tăng padding
+    padding: 5rem 2rem;
 
     .empty-illustration {
-      margin-bottom: 2.5rem; // Tăng margin
+      margin-bottom: 2.5rem;
 
       .empty-svg {
-        width: 180px; // Tăng size
+        width: 180px;
         height: 180px;
         margin: 0 auto;
       }
     }
 
     .empty-title {
-      font-size: 1.75rem; // Tăng size
+      font-size: 1.75rem;
       color: #1e293b;
       margin-bottom: 1rem;
-      font-weight: 800; // Tăng weight
+      font-weight: 800;
     }
 
     .empty-description {
       color: #64748b;
-      margin-bottom: 2.5rem; // Tăng margin
-      font-size: 1.15rem; // Tăng size
-      max-width: 600px; // Tăng width
+      margin-bottom: 2.5rem;
+      font-size: 1.15rem;
+      max-width: 600px;
       margin-left: auto;
       margin-right: auto;
       line-height: 1.6;
     }
   }
 
-  // Modal Styles - Enhanced
+  // MODAL STYLES - NEW DESIGN
   .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7); // Tăng opacity
+    background: rgba(15, 23, 42, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    padding: 2rem;
-    backdrop-filter: blur(8px); // Tăng blur
+    padding: 1rem;
+    backdrop-filter: blur(12px);
+    animation: overlayFadeIn 0.3s ease-out;
+  }
+
+  @keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .modal-content {
     background: white;
-    border-radius: 28px; // Tăng border-radius
-    max-width: 900px; // Tăng width
+    border-radius: 24px;
+    max-width: 1000px;
     width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 25px 100px rgba(0, 0, 0, 0.3); // Tăng shadow
-    animation: modalSlideIn 0.3s ease-out;
+    max-height: 95vh;
+    overflow: hidden;
+    box-shadow: 
+      0 32px 64px rgba(15, 23, 42, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
   }
 
   @keyframes modalSlideIn {
     from {
       opacity: 0;
-      transform: translateY(-30px) scale(0.9); // Tăng effect
+      transform: translateY(-40px) scale(0.95);
     }
     to {
       opacity: 1;
@@ -602,65 +666,395 @@
   }
 
   .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2.5rem 2.5rem 1.5rem; // Tăng padding
-    border-bottom: 1px solid #e2e8f0;
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9); // Thêm gradient
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+    }
 
     .modal-title {
-      font-size: 1.75rem; // Tăng size
-      font-weight: 800; // Tăng weight
-      color: #1e293b;
+      position: relative;
+      z-index: 1;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: white;
       display: flex;
       align-items: center;
-      gap: 1rem; // Tăng gap
+      gap: 0.75rem;
+      margin: 0;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
       .modal-icon {
-        font-size: 2rem; // Tăng size
+        font-size: 1.75rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
       }
     }
 
     .modal-close {
-      background: none;
-      border: none;
-      padding: 0.75rem; // Tăng padding
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0.5rem;
       cursor: pointer;
-      color: #64748b;
-      border-radius: 12px; // Tăng border-radius
+      color: white;
+      border-radius: 12px;
       transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      z-index: 2;
 
       &:hover {
-        background: #f1f5f9;
-        color: #334155;
-        transform: scale(1.1); // Thêm scale
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
       }
 
       svg {
-        width: 28px; // Tăng size
-        height: 28px;
+        width: 20px;
+        height: 20px;
       }
     }
   }
 
   .modal-body {
-    padding: 2.5rem; // Tăng padding
+    padding: 0;
+    max-height: calc(95vh - 200px);
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #94a3b8;
+      }
+    }
   }
 
   .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1.25rem; // Tăng gap
-    padding: 1.5rem 2.5rem 2.5rem; // Tăng padding
+    padding: 1.5rem 2rem;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
   }
 
-  // Responsive - Enhanced
+  // BOOKING DETAIL CARD - NEW DESIGN
+  .booking-detail-card {
+    .detail-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      padding: 2rem;
+      border-bottom: 1px solid #e2e8f0;
+      position: relative;
+
+      .booking-id-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+
+        .booking-info-left {
+          .booking-id {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            display: block;
+          }
+
+          .booking-created {
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            &::before {
+              content: '📅';
+              font-size: 1rem;
+            }
+          }
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          border-radius: 50px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          border: 2px solid rgba(255, 255, 255, 0.8);
+
+          .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+          }
+
+          &.status-completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            .status-dot { background: rgba(255, 255, 255, 0.9); }
+          }
+
+          &.status-confirmed {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            .status-dot { background: rgba(255, 255, 255, 0.9); }
+          }
+
+          &.status-pending {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            .status-dot { background: rgba(255, 255, 255, 0.9); }
+          }
+
+          &.status-cancelled {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            .status-dot { background: rgba(255, 255, 255, 0.9); }
+          }
+        }
+      }
+    }
+
+    .detail-content {
+      padding: 2rem;
+
+      // Quick Info Cards
+      .quick-info-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+
+        .quick-card {
+          padding: 1.5rem;
+          border-radius: 16px;
+          color: white;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='20' cy='20' r='2'/%3E%3C/g%3E%3C/svg%3E") repeat;
+          }
+
+          .card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            position: relative;
+            z-index: 1;
+          }
+
+          .card-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+          }
+
+          .card-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+          }
+
+          &.time-card {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+          }
+
+          &.price-card {
+            background: linear-gradient(135deg, #10b981, #059669);
+          }
+
+          &.duration-card {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+          }
+        }
+      }
+
+      .detail-section {
+        margin-bottom: 2rem;
+        background: white;
+        border-radius: 20px;
+        padding: 0;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .section-title {
+          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+          padding: 1.5rem 2rem;
+          margin: 0;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #1e293b;
+
+          .section-icon {
+            width: 24px;
+            height: 24px;
+            color: #667eea;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+          }
+        }
+
+        .detail-grid {
+          padding: 2rem;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+
+          .detail-item {
+            position: relative;
+
+            .label {
+              font-size: 0.8rem;
+              font-weight: 700;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 0.75rem;
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+
+              &::before {
+                content: '';
+                width: 3px;
+                height: 12px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                border-radius: 2px;
+              }
+            }
+
+            .value {
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: #1e293b;
+              padding: 1rem 1.5rem;
+              background: #f8fafc;
+              border-radius: 12px;
+              border: 1px solid #e2e8f0;
+              word-break: break-word;
+              min-height: 56px;
+              display: flex;
+              align-items: center;
+              transition: all 0.3s ease;
+
+              &:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+              }
+
+              &.price {
+                background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+                color: #059669;
+                font-weight: 800;
+                font-size: 1.3rem;
+                border-color: #a7f3d0;
+                position: relative;
+
+                &::before {
+                  content: '💰';
+                  margin-right: 0.5rem;
+                  font-size: 1.2rem;
+                }
+              }
+
+              &.court-type {
+                background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+                color: #166534;
+                font-weight: 700;
+                border-color: #86efac;
+                justify-content: center;
+                text-align: center;
+                
+                &::before {
+                  content: '⚽';
+                  margin-right: 0.5rem;
+                  font-size: 1.1rem;
+                }
+              }
+            }
+          }
+        }
+
+        .notes-content {
+          padding: 2rem;
+          background: linear-gradient(135deg, #fefbff, #f8fafc);
+          border-radius: 16px;
+          margin: 1.5rem;
+          border: 1px dashed #cbd5e1;
+          color: #374151;
+          font-size: 1rem;
+          line-height: 1.6;
+          font-style: italic;
+          position: relative;
+
+          &::before {
+            content: '💬';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            opacity: 0.5;
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Design
   @media (max-width: 1400px) {
     .main-container {
-      max-width: 98%; // Tăng thêm trên màn hình nhỏ hơn
+      max-width: 98%;
     }
   }
 
@@ -769,13 +1163,46 @@
     .modal-content {
       border-radius: 20px;
       max-width: 95%;
+      margin: 1rem;
     }
 
     .modal-header,
     .modal-body,
     .modal-footer {
-      padding-left: 2rem;
-      padding-right: 2rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    .booking-detail-card {
+      .detail-header {
+        padding: 1.5rem;
+
+        .booking-id-section {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: stretch;
+
+          .status-badge {
+            align-self: flex-start;
+          }
+        }
+      }
+
+      .detail-content {
+        padding: 1.5rem;
+
+        .quick-info-cards {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .detail-section {
+          .detail-grid {
+            padding: 1.5rem;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+      }
     }
   }
 }

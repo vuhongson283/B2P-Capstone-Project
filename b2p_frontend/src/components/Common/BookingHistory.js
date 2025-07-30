@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './BookingHistory.scss';
+import { message, Spin } from 'antd';
+import {
+    getBookingsByUserId,
+    getAccountById,
+    getCourtDetail
+} from '../../services/apiService';
+import dayjs from 'dayjs';
 
 const BookingHistory = () => {
     const [bookings, setBookings] = useState([]);
@@ -8,96 +15,255 @@ const BookingHistory = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [customerLoading, setCustomerLoading] = useState(false);
     const bookingsPerPage = 8;
 
-    // Sample data
+    const userId = 16;
+
     useEffect(() => {
-        const sampleBookings = [
-            {
-                id: 1,
-                courtName: 'Sân bóng đá mini A1',
-                courtType: 'Bóng đá',
-                date: '2024-01-15',
-                timeSlot: '08:00 - 10:00',
-                duration: '2 giờ',
-                price: 200000,
-                status: 'completed',
-                bookingDate: '2024-01-10',
-                address: 'Quận 1, TP.HCM',
-                contactPhone: '0123456789',
-                paymentMethod: 'Chuyển khoản',
-                notes: 'Yêu cầu sân có mái che'
-            },
-            {
-                id: 2,
-                courtName: 'Sân tennis VIP B2',
-                courtType: 'Tennis',
-                date: '2024-01-20',
-                timeSlot: '14:00 - 16:00',
-                duration: '2 giờ',
-                price: 300000,
-                status: 'confirmed',
-                bookingDate: '2024-01-12',
-                address: 'Quận 3, TP.HCM',
-                contactPhone: '0987654321',
-                paymentMethod: 'Tiền mặt',
-                notes: 'Cần chuẩn bị vợt tennis'
-            },
-            {
-                id: 3,
-                courtName: 'Sân cầu lông C3',
-                courtType: 'Cầu lông',
-                date: '2024-01-25',
-                timeSlot: '18:00 - 20:00',
-                duration: '2 giờ',
-                price: 150000,
-                status: 'pending',
-                bookingDate: '2024-01-14',
-                address: 'Quận 7, TP.HCM',
-                contactPhone: '0369258147',
-                paymentMethod: 'Ví điện tử',
-                notes: 'Đặt sân cho 4 người'
-            },
-            {
-                id: 4,
-                courtName: 'Sân bóng chuyền D4',
-                courtType: 'Bóng chuyền',
-                date: '2024-01-18',
-                timeSlot: '10:00 - 12:00',
-                duration: '2 giờ',
-                price: 180000,
-                status: 'cancelled',
-                bookingDate: '2024-01-08',
-                address: 'Quận 5, TP.HCM',
-                contactPhone: '0741852963',
-                paymentMethod: 'Chuyển khoản',
-                notes: 'Hủy do thời tiết xấu'
-            },
-            {
-                id: 5,
-                courtName: 'Sân pickleball E5',
-                courtType: 'Pickleball',
-                date: '2024-01-30',
-                timeSlot: '16:00 - 18:00',
-                duration: '2 giờ',
-                price: 120000,
-                status: 'confirmed',
-                bookingDate: '2024-01-16',
-                address: 'Quận 2, TP.HCM',
-                contactPhone: '0852741963',
-                paymentMethod: 'Ví điện tử',
-                notes: 'Sân trong nhà có điều hòa'
-            }
-        ];
-        setBookings(sampleBookings);
+        loadBookingHistory();
     }, []);
+
+    const calculateDuration = (startTime, endTime) => {
+        if (!startTime || !endTime) return 'N/A';
+        try {
+            const start = dayjs(`2000-01-01 ${startTime}`);
+            const end = dayjs(`2000-01-01 ${endTime}`);
+            const diffInHours = end.diff(start, 'hour');
+            return `${diffInHours} giờ`;
+        } catch (error) {
+            return 'N/A';
+        }
+    };
+
+    const mapBookingStatus = (apiStatus, statusId) => {
+        if (statusId === 10) {
+            return 'completed';
+        } else if (statusId === 7) {
+            return 'deposit-paid';
+        }
+
+        const statusMap = {
+            'Active': 'confirmed',
+            'Paid': 'deposit-paid',
+            'Confirmed': 'confirmed',
+            'Pending': 'pending',
+            'Cancelled': 'cancelled',
+            'Completed': 'completed'
+        };
+        return statusMap[apiStatus] || 'pending';
+    };
+
+    const getPaymentMethod = (status, statusId) => {
+        if (statusId === 10) {
+            return 'Đã thanh toán đầy đủ';
+        } else if (statusId === 7) {
+            return 'Đã thanh toán cọc';
+        }
+
+        const paymentMap = {
+            'Paid': 'Đã thanh toán cọc',
+            'Active': 'Chuyển khoản',
+            'Confirmed': 'Tiền mặt',
+            'Pending': 'Chưa thanh toán'
+        };
+        return paymentMap[status] || 'N/A';
+    };
+
+    // FIXED loadCourtDetails function
+    const loadCourtDetails = async (courtId) => {
+        try {
+            console.log(`🏟️ [DEBUG] Loading court details for courtId: ${courtId}`);
+
+            const response = await getCourtDetail(courtId);
+            console.log(`📋 [DEBUG] Full response:`, response);
+
+            // Simple extraction based on your log
+            const data = response.data;
+            const result = {
+                facilityName: data.facilityName || 'N/A',
+                facilityAddress: data.location || 'N/A',
+                facilityContact: data.contact || 'N/A',
+                facilityId: data.facilityId || null
+            };
+
+            console.log(`🎯 [DEBUG] Extracted result:`, result);
+            return result;
+
+        } catch (error) {
+            console.error(`❌ [DEBUG] Error:`, error);
+            return {
+                facilityName: 'Error',
+                facilityAddress: 'Error',
+                facilityContact: 'Error',
+                facilityId: null
+            };
+        }
+    };
+
+    const processBookingData = async (bookingsData) => {
+        console.log('🔄 [DEBUG] Processing booking data...', bookingsData);
+        const processedBookings = [];
+
+        for (const booking of bookingsData) {
+            console.log(`📝 [DEBUG] Processing booking:`, booking);
+
+            if (booking.slots && Array.isArray(booking.slots)) {
+                console.log(`🎫 [DEBUG] Found ${booking.slots.length} slots for booking ${booking.bookingId}`);
+
+                for (const slot of booking.slots) {
+                    console.log(`🎫 [DEBUG] Processing slot:`, slot);
+                    console.log(`🏟️ [DEBUG] Court ID from slot: ${slot.courtId}`);
+
+                    const courtDetails = await loadCourtDetails(slot.courtId);
+                    console.log(`🏟️ [DEBUG] Court details loaded:`, courtDetails);
+
+                    const processedBooking = {
+                        id: booking.bookingId || booking.id,
+                        courtId: slot.courtId,
+                        courtName: slot.courtName || `Sân ${slot.courtId}`,
+                        courtType: slot.categoryName || 'Sân thể thao',
+                        date: booking.checkInDate,
+                        timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        duration: calculateDuration(slot.startTime, slot.endTime),
+                        price: booking.totalPrice || 0,
+                        status: mapBookingStatus(booking.status, booking.statusId),
+                        originalStatus: booking.status,
+                        statusId: booking.statusId,
+                        bookingDate: booking.checkInDate,
+                        checkInDate: booking.checkInDate,
+                        userId: booking.userId,
+                        timeSlotId: slot.timeSlotId,
+                        contactPhone: 'N/A',
+                        paymentMethod: getPaymentMethod(booking.status, booking.statusId),
+                        notes: booking.notes || '',
+                        facilityName: courtDetails.facilityName,
+                        facilityAddress: courtDetails.facilityAddress,
+                        facilityContact: courtDetails.facilityContact,
+                        facilityId: courtDetails.facilityId,
+                        customerName: 'Đang tải...',
+                        customerPhone: 'Đang tải...',
+                        customerEmail: 'Đang tải...',
+                        uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`
+                    };
+
+                    console.log(`✅ [DEBUG] Processed booking:`, processedBooking);
+                    processedBookings.push(processedBooking);
+                }
+            } else {
+                console.warn(`⚠️ [DEBUG] No slots found for booking ${booking.bookingId}`);
+            }
+        }
+
+        console.log('✅ [DEBUG] All processed bookings with court details:', processedBookings);
+        return processedBookings;
+    };
+
+    const loadBookingHistory = async () => {
+        try {
+            setLoading(true);
+            console.log('📚 Loading booking history for userId:', userId);
+
+            const response = await getBookingsByUserId(userId, 1, 1000);
+            console.log('📅 Bookings API Response:', response.data);
+
+            let bookingsData = [];
+            if (response.data && response.data.items) {
+                bookingsData = response.data.items;
+            }
+
+            console.log('📅 Raw bookings data:', bookingsData);
+
+            if (bookingsData.length === 0) {
+                message.info('Không có lịch sử đặt sân nào');
+                setBookings([]);
+                return;
+            }
+
+            const processedBookings = await processBookingData(bookingsData);
+            setBookings(processedBookings);
+
+            if (processedBookings.length > 0) {
+                loadCustomerInfoForBookings(processedBookings.slice(0, bookingsPerPage));
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading booking history:', error);
+            message.error('Không thể tải lịch sử đặt sân');
+            setBookings([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadCustomerInfoForBookings = async (bookingsToLoad) => {
+        for (const booking of bookingsToLoad) {
+            if (booking.userId) {
+                try {
+                    const customerInfo = await loadCustomerDetails(booking.userId);
+                    if (customerInfo) {
+                        setBookings(prevBookings =>
+                            prevBookings.map(b =>
+                                b.uniqueKey === booking.uniqueKey
+                                    ? {
+                                        ...b,
+                                        customerName: customerInfo.customerName,
+                                        customerPhone: customerInfo.customerPhone,
+                                        customerEmail: customerInfo.customerEmail,
+                                        contactPhone: customerInfo.customerPhone
+                                    }
+                                    : b
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error loading customer info for booking:', booking.id, error);
+                }
+            }
+        }
+    };
+
+    const loadCustomerDetails = async (userId) => {
+        try {
+            console.log('👤 Loading customer details for userId:', userId);
+            const response = await getAccountById(userId);
+
+            let customerData = null;
+            if (response.data) {
+                if (response.data.data) {
+                    customerData = response.data.data;
+                } else if (response.data.user) {
+                    customerData = response.data.user;
+                } else {
+                    customerData = response.data;
+                }
+            }
+
+            if (customerData) {
+                return {
+                    customerName: customerData.fullName || customerData.name || customerData.userName || 'N/A',
+                    customerPhone: customerData.phoneNumber || customerData.phone || 'N/A',
+                    customerEmail: customerData.email || 'N/A'
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ Error loading customer details:', error);
+            return null;
+        }
+    };
 
     const getStatusText = (status) => {
         const statusMap = {
             'completed': 'Đã hoàn thành',
             'confirmed': 'Đã xác nhận',
             'pending': 'Chờ xác nhận',
-            'cancelled': 'Đã hủy'
+            'cancelled': 'Đã hủy',
+            'deposit-paid': 'Đã thanh toán cọc'
         };
         return statusMap[status] || status;
     };
@@ -107,6 +273,7 @@ const BookingHistory = () => {
     };
 
     const formatPrice = (price) => {
+        if (!price || price === 0) return '0 VNĐ';
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
@@ -114,25 +281,56 @@ const BookingHistory = () => {
     };
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
+        if (!dateString) return 'N/A';
+        try {
+            const date = dayjs(dateString);
+            if (!date.isValid()) return 'N/A';
+            return date.format('DD/MM/YYYY');
+        } catch (error) {
+            return 'N/A';
+        }
     };
 
-    const openModal = (booking) => {
+    const formatDateTime = (dateTimeString) => {
+        if (!dateTimeString) return 'N/A';
+        try {
+            const date = dayjs(dateTimeString);
+            if (!date.isValid()) return 'N/A';
+            return date.format('DD/MM/YYYY [lúc] HH:mm');
+        } catch (error) {
+            return 'N/A';
+        }
+    };
+
+    const openModal = async (booking) => {
         setSelectedBooking(booking);
         setIsModalOpen(true);
+
+        if (booking.customerName === 'Đang tải...' && booking.userId) {
+            setCustomerLoading(true);
+            try {
+                const customerInfo = await loadCustomerDetails(booking.userId);
+                if (customerInfo) {
+                    setSelectedBooking(prev => ({
+                        ...prev,
+                        ...customerInfo,
+                        contactPhone: customerInfo.customerPhone
+                    }));
+                }
+            } catch (error) {
+                console.error('Error loading customer details in modal:', error);
+            } finally {
+                setCustomerLoading(false);
+            }
+        }
     };
 
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedBooking(null);
+        setCustomerLoading(false);
     };
 
-    // Filter bookings
     const filteredBookings = bookings.filter(booking => {
         const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
         const matchesSearch = booking.courtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,37 +338,75 @@ const BookingHistory = () => {
         return matchesStatus && matchesSearch;
     });
 
-    // Sort by booking date (newest first)
-    const sortedBookings = filteredBookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));
+    const sortedBookings = filteredBookings.sort((a, b) => {
+        const dateA = dayjs(a.bookingDate);
+        const dateB = dayjs(b.bookingDate);
+        return dateB.diff(dateA);
+    });
 
-    // Pagination
     const indexOfLastBooking = currentPage * bookingsPerPage;
     const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
     const currentBookings = sortedBookings.slice(indexOfFirstBooking, indexOfLastBooking);
     const totalPages = Math.ceil(filteredBookings.length / bookingsPerPage);
 
+    useEffect(() => {
+        if (currentBookings.length > 0) {
+            const bookingsNeedingCustomerInfo = currentBookings.filter(b => b.customerName === 'Đang tải...');
+            if (bookingsNeedingCustomerInfo.length > 0) {
+                loadCustomerInfoForBookings(bookingsNeedingCustomerInfo);
+            }
+        }
+    }, [currentPage, filteredBookings]);
+
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
     };
 
+    const testCourtDetailAPI = async () => {
+        try {
+            console.log('🧪 Testing court detail API...');
+            const result = await getCourtDetail(18);
+            console.log('🧪 Test result:', result);
+            alert('Check console for result');
+        } catch (error) {
+            console.error('🧪 Test error:', error);
+            alert('Error: ' + error.message);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="booking-history-page">
+                <div className="main-container">
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        minHeight: '400px',
+                        flexDirection: 'column',
+                        gap: '16px'
+                    }}>
+                        <Spin size="large" />
+                        <span>Đang tải lịch sử đặt sân...</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="booking-history-page">
-            {/* Main Content Container */}
             <div className="main-container">
-                <div className="page-header" style={{ marginTop: '4%' }}>
+                <div className="page-header" style={{ marginTop: '2%' }}>
                     <div className="header-content">
-                        <h1 className="page-title">
-                            <span className="title-icon">🏟️</span>
-                            Lịch Sử Đặt Sân
-                        </h1>
+                        <h1 className="page-title">Lịch Sử Đặt Sân</h1>
                         <p className="page-subtitle">
-                            Quản lý và theo dõi tất cả các lần đặt sân của bạn
+                            Quản lý và theo dõi tất cả các lần đặt sân của bạn ({bookings.length} đơn đặt)
                         </p>
                     </div>
                 </div>
 
                 <div className="content-wrapper">
-                    {/* Filters Section */}
                     <div className="filters-section">
                         <div className="search-filter">
                             <div className="search-input-wrapper">
@@ -193,11 +429,12 @@ const BookingHistory = () => {
                                 onChange={(e) => setFilterStatus(e.target.value)}
                                 className="status-select"
                             >
-                                <option value="all">🎯 Tất cả trạng thái</option>
-                                <option value="completed">✅ Đã hoàn thành</option>
-                                <option value="confirmed">🎫 Đã xác nhận</option>
-                                <option value="pending">⏳ Chờ xác nhận</option>
-                                <option value="cancelled">❌ Đã hủy</option>
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="completed">Đã hoàn thành</option>
+                                <option value="deposit-paid">Đã thanh toán cọc</option>
+                                <option value="confirmed">Đã xác nhận</option>
+                                <option value="pending">Chờ xác nhận</option>
+                                <option value="cancelled">Đã hủy</option>
                             </select>
                         </div>
 
@@ -206,13 +443,12 @@ const BookingHistory = () => {
                         </div>
                     </div>
 
-                    {/* Bookings List */}
                     <div className="bookings-section">
                         {currentBookings.length > 0 ? (
                             <>
                                 <div className="bookings-list">
-                                    {currentBookings.map(booking => (
-                                        <div key={booking.id} className="booking-row">
+                                    {currentBookings.map((booking) => (
+                                        <div key={booking.uniqueKey} className="booking-row">
                                             <div className="booking-main">
                                                 <div className="booking-id-section">
                                                     <span className="booking-id">#{booking.id.toString().padStart(4, '0')}</span>
@@ -226,6 +462,9 @@ const BookingHistory = () => {
                                                     <span className={`court-type type-${booking.courtType.toLowerCase().replace(/\s+/g, '-')}`}>
                                                         {booking.courtType}
                                                     </span>
+                                                    <div className="facility-info">
+                                                        <small>{booking.facilityName}</small>
+                                                    </div>
                                                 </div>
 
                                                 <div className="booking-details">
@@ -246,17 +485,6 @@ const BookingHistory = () => {
                                                         <div className="detail-content">
                                                             <span className="detail-label">Thời gian</span>
                                                             <span className="detail-value">{booking.timeSlot}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="detail-item">
-                                                        <svg className="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        </svg>
-                                                        <div className="detail-content">
-                                                            <span className="detail-label">Địa điểm</span>
-                                                            <span className="detail-value">{booking.address}</span>
                                                         </div>
                                                     </div>
 
@@ -290,7 +518,7 @@ const BookingHistory = () => {
                                                         Chi tiết
                                                     </button>
 
-                                                    {booking.status === 'confirmed' && (
+                                                    {booking.status === 'deposit-paid' && (
                                                         <button className="btn btn-danger btn-sm">
                                                             <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -313,7 +541,6 @@ const BookingHistory = () => {
                                     ))}
                                 </div>
 
-                                {/* Pagination */}
                                 {totalPages > 1 && (
                                     <div className="pagination-wrapper">
                                         <div className="pagination">
@@ -380,15 +607,12 @@ const BookingHistory = () => {
                 </div>
             </div>
 
-            {/* Modal Chi tiết đơn - giữ nguyên như cũ */}
+            {/* MODAL */}
             {isModalOpen && selectedBooking && (
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">
-                                <span className="modal-icon">📋</span>
-                                Chi tiết đơn đặt sân
-                            </h2>
+                            <h2 className="modal-title">Chi tiết đơn đặt sân</h2>
                             <button className="modal-close" onClick={closeModal}>
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -400,18 +624,56 @@ const BookingHistory = () => {
                             <div className="booking-detail-card">
                                 <div className="detail-header">
                                     <div className="booking-id-section">
-                                        <span className="booking-id">#{selectedBooking.id.toString().padStart(4, '0')}</span>
+                                        <div className="booking-info-left">
+                                            <span className="booking-id">#{selectedBooking.id.toString().padStart(4, '0')}</span>
+                                            <span className="booking-created">Đặt lúc: {formatDateTime(selectedBooking.bookingDate)}</span>
+                                        </div>
                                         <span className={`status-badge ${getStatusClass(selectedBooking.status)}`}>
                                             <span className="status-dot"></span>
                                             {getStatusText(selectedBooking.status)}
                                         </span>
                                     </div>
-                                    <div className="booking-dates">
-                                        <span className="booking-created">Đặt ngày: {formatDate(selectedBooking.bookingDate)}</span>
-                                    </div>
                                 </div>
 
                                 <div className="detail-content">
+                                    <div className="quick-info-cards">
+                                        <div className="quick-card time-card">
+                                            <div className="card-label">Thời gian</div>
+                                            <div className="card-value">{selectedBooking.timeSlot}</div>
+                                        </div>
+                                        <div className="quick-card price-card">
+                                            <div className="card-label">Tổng tiền</div>
+                                            <div className="card-value">{formatPrice(selectedBooking.price)}</div>
+                                        </div>
+                                        <div className="quick-card duration-card">
+                                            <div className="card-label">Thời lượng</div>
+                                            <div className="card-value">{selectedBooking.duration}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-section">
+                                        <h3 className="section-title">
+                                            <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h1a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                            Thông tin cơ sở
+                                        </h3>
+                                        <div className="detail-grid">
+                                            <div className="detail-item">
+                                                <div className="label">Tên cơ sở</div>
+                                                <div className="value">{selectedBooking.facilityName}</div>
+                                            </div>
+                                            <div className="detail-item">
+                                                <div className="label">Địa chỉ</div>
+                                                <div className="value">{selectedBooking.facilityAddress}</div>
+                                            </div>
+                                            <div className="detail-item">
+                                                <div className="label">Số liên hệ cơ sở</div>
+                                                <div className="value">{selectedBooking.facilityContact}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="detail-section">
                                         <h3 className="section-title">
                                             <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,18 +683,12 @@ const BookingHistory = () => {
                                         </h3>
                                         <div className="detail-grid">
                                             <div className="detail-item">
-                                                <span className="label">Tên sân:</span>
-                                                <span className="value">{selectedBooking.courtName}</span>
+                                                <div className="label">Tên sân</div>
+                                                <div className="value">{selectedBooking.courtName}</div>
                                             </div>
                                             <div className="detail-item">
-                                                <span className="label">Loại sân:</span>
-                                                <span className={`value court-type type-${selectedBooking.courtType.toLowerCase().replace(/\s+/g, '-')}`}>
-                                                    {selectedBooking.courtType}
-                                                </span>
-                                            </div>
-                                            <div className="detail-item">
-                                                <span className="label">Địa chỉ:</span>
-                                                <span className="value">{selectedBooking.address}</span>
+                                                <div className="label">Loại sân</div>
+                                                <div className="value court-type">{selectedBooking.courtType}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -442,24 +698,41 @@ const BookingHistory = () => {
                                             <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v1l-2 13H5L3 10V9a2 2 0 012-2h3z" />
                                             </svg>
-                                            Thông tin đặt sân
+                                            Chi tiết đặt sân
                                         </h3>
                                         <div className="detail-grid">
                                             <div className="detail-item">
-                                                <span className="label">Ngày chơi:</span>
-                                                <span className="value">{formatDate(selectedBooking.date)}</span>
+                                                <div className="label">Ngày chơi</div>
+                                                <div className="value">{formatDate(selectedBooking.date)}</div>
                                             </div>
                                             <div className="detail-item">
-                                                <span className="label">Giờ chơi:</span>
-                                                <span className="value">{selectedBooking.timeSlot}</span>
+                                                <div className="label">Số điện thoại khách</div>
+                                                <div className="value">
+                                                    {customerLoading ? <Spin size="small" /> : selectedBooking.contactPhone}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-section">
+                                        <h3 className="section-title">
+                                            <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            Thông tin khách hàng
+                                        </h3>
+                                        <div className="detail-grid">
+                                            <div className="detail-item">
+                                                <div className="label">Tên khách hàng</div>
+                                                <div className="value">
+                                                    {customerLoading ? <Spin size="small" /> : selectedBooking.customerName}
+                                                </div>
                                             </div>
                                             <div className="detail-item">
-                                                <span className="label">Thời lượng:</span>
-                                                <span className="value">{selectedBooking.duration}</span>
-                                            </div>
-                                            <div className="detail-item">
-                                                <span className="label">Số điện thoại:</span>
-                                                <span className="value">{selectedBooking.contactPhone}</span>
+                                                <div className="label">Email</div>
+                                                <div className="value">
+                                                    {customerLoading ? <Spin size="small" /> : selectedBooking.customerEmail}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -469,16 +742,16 @@ const BookingHistory = () => {
                                             <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                             </svg>
-                                            Thông tin thanh toán
+                                            Thanh toán
                                         </h3>
                                         <div className="detail-grid">
                                             <div className="detail-item">
-                                                <span className="label">Tổng tiền:</span>
-                                                <span className="value price">{formatPrice(selectedBooking.price)}</span>
+                                                <div className="label">Tổng tiền</div>
+                                                <div className="value price">{formatPrice(selectedBooking.price)}</div>
                                             </div>
                                             <div className="detail-item">
-                                                <span className="label">Phương thức:</span>
-                                                <span className="value">{selectedBooking.paymentMethod}</span>
+                                                <div className="label">Trạng Thái</div>
+                                                <div className="value">{selectedBooking.paymentMethod}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -501,16 +774,13 @@ const BookingHistory = () => {
                         </div>
 
                         <div className="modal-footer">
-                            <button className="btn btn-outline" onClick={closeModal}>
-                                Đóng
-                            </button>
                             {selectedBooking.status === 'confirmed' && (
-                                <button className="btn btn-danger">
+                                <button className="btn btn-danger btn-action">
                                     Hủy đặt sân
                                 </button>
                             )}
                             {selectedBooking.status === 'completed' && (
-                                <button className="btn btn-primary">
+                                <button className="btn btn-primary btn-action">
                                     Đặt lại sân này
                                 </button>
                             )}
