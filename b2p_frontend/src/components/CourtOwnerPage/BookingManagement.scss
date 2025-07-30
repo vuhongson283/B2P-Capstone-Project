@@ -6,12 +6,15 @@
     // Main container
     .main-container {
         width: 100%;
+        max-width: none;
+        margin: 0 auto;
         background: white;
         border-radius: 20px;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
         overflow: hidden;
+        min-height: 80vh;
 
-        // Header với gradient như trong hình
+        // Header với gradient - ĐÚNG RỒI
         .header {
             background: linear-gradient(135deg, #52c41a 0%, #95de64 50%, #fadb14 100%);
             padding: 24px 32px;
@@ -21,6 +24,8 @@
             justify-content: space-between;
             position: relative;
             overflow: hidden;
+            border-radius: 20px 20px 0 0;
+            margin: 0;
 
             // Decorative elements
             &::before {
@@ -107,15 +112,16 @@
         // Filters Section
         .filters-section {
             background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
-            padding: 32px;
+            padding: 24px 32px;
             border-bottom: 1px solid #e8e8e8;
+            margin: 0;
 
             .filters-container {
                 display: flex;
                 gap: 32px;
                 align-items: center;
-                max-width: 1200px;
-                margin: 0 auto;
+                max-width: none;
+                margin: 0;
             }
 
             .filter-item {
@@ -165,18 +171,60 @@
             }
         }
 
-        // Booking Table Container
+        // Status indicators
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 32px;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+            .status-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+
+                .status-dot {
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+
+                    &.available {
+                        background: #52c41a;
+                        box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.2);
+                    }
+
+                    &.booked {
+                        background: #ff4d4f;
+                        box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.2);
+                    }
+                }
+            }
+        }
+
+        // Booking Table Container - SỬA: Sử dụng CSS Grid
         .booking-table {
-            margin: 32px;
+            width: 95%;
+            margin: 16px 32px 32px 32px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             border: 1px solid #e8e8e8;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             
             // Container cho scroll horizontal
             .table-scroll-container {
                 overflow-x: auto;
+                overflow-y: visible;
                 max-width: 100%;
+                flex: 1;
                 
                 // Custom scrollbar
                 &::-webkit-scrollbar {
@@ -198,13 +246,14 @@
                 }
             }
 
-            // Table Content
+            // Table Content - SỬA: Sử dụng CSS Grid layout
             .table-content {
-                min-width: 1200px;
+                min-width: 1200px; // Đảm bảo có scroll khi cần
                 
-                // Table Header với gradient
+                // Table Header - SỬA: CSS Grid
                 .table-header {
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr)); // SỬA: Grid columns
                     background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
                     position: relative;
 
@@ -222,7 +271,7 @@
 
                     .header-cell {
                         color: white;
-                        padding: 20px 12px;
+                        padding: 18px 12px;
                         text-align: center;
                         font-weight: 600;
                         font-size: 14px;
@@ -231,8 +280,6 @@
                         justify-content: center;
                         gap: 8px;
                         border-right: 1px solid rgba(255, 255, 255, 0.15);
-                        min-width: 140px;
-                        flex: 1;
                         position: relative;
                         z-index: 1;
                         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -244,8 +291,6 @@
                         &.time-header {
                             background: rgba(0, 0, 0, 0.15);
                             font-weight: 700;
-                            min-width: 200px;
-                            flex: 0 0 200px;
                             backdrop-filter: blur(10px);
 
                             .anticon {
@@ -253,16 +298,28 @@
                                 margin-right: 4px;
                             }
                         }
+
+                        &.loading-header,
+                        &.empty-header {
+                            color: rgba(255, 255, 255, 0.8);
+                            font-style: italic;
+                            grid-column: 2 / -1; // SỬA: Span toàn bộ các cột còn lại
+                        }
                     }
                 }
 
-                // Table Body
+                // Table Body - SỬA: CSS Grid
                 .table-body {
                     background: white;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
 
                     .court-row {
-                        display: flex;
+                        display: grid;
+                        grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr)); // SỬA: Grid columns khớp với header
                         transition: all 0.3s ease;
+                        min-height: 60px;
 
                         &:nth-child(even) {
                             background: #fafafa;
@@ -275,12 +332,15 @@
                         }
 
                         &:last-child {
-                            border-bottom: none;
+                            .court-cell,
+                            .slot-cell {
+                                border-bottom: none;
+                            }
                         }
 
                         .court-cell {
                             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                            padding: 20px 16px;
+                            padding: 16px 12px;
                             display: flex;
                             align-items: center;
                             justify-content: flex-start;
@@ -288,10 +348,8 @@
                             font-weight: 600;
                             color: rgba(0, 0, 0, 0.85);
                             border-right: 1px solid #e8e8e8;
-                            min-width: 200px;
-                            flex: 0 0 200px;
-                            white-space: nowrap;
                             border-bottom: 1px solid #f0f0f0;
+                            white-space: nowrap;
 
                             .anticon {
                                 color: #52c41a;
@@ -308,13 +366,12 @@
                         }
 
                         .slot-cell {
-                            padding: 16px 12px;
+                            padding: 12px 8px;
                             text-align: center;
                             cursor: pointer;
                             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                             font-size: 13px;
                             font-weight: 600;
-                            min-height: 70px;
                             display: flex;
                             align-items: center;
                             justify-content: center;
@@ -322,10 +379,7 @@
                             border-right: 1px solid #f0f0f0;
                             border-bottom: 1px solid #f0f0f0;
                             position: relative;
-                            min-width: 140px;
-                            flex: 1;
                             white-space: nowrap;
-                            overflow: hidden;
 
                             &:last-child {
                                 border-right: none;
@@ -350,8 +404,8 @@
 
                                 &:hover {
                                     background: linear-gradient(135deg, #d9f7be 0%, #b7eb8f 50%);
-                                    transform: translateY(-3px) scale(1.02);
-                                    box-shadow: 0 8px 25px rgba(82, 196, 26, 0.25);
+                                    transform: translateY(-2px) scale(1.01);
+                                    box-shadow: 0 6px 20px rgba(82, 196, 26, 0.25);
                                     z-index: 10;
                                     border-color: #52c41a;
                                 }
@@ -376,8 +430,8 @@
 
                                 &:hover {
                                     background: linear-gradient(135deg, #ffccc7 0%, #ffa39e 50%);
-                                    transform: translateY(-3px) scale(1.02);
-                                    box-shadow: 0 8px 25px rgba(255, 77, 79, 0.25);
+                                    transform: translateY(-2px) scale(1.01);
+                                    box-shadow: 0 6px 20px rgba(255, 77, 79, 0.25);
                                     z-index: 10;
                                     border-color: #ff4d4f;
                                 }
@@ -412,10 +466,11 @@
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
-                    padding: 60px;
+                    padding: 60px 40px;
                     width: 100%;
                     color: #999;
                     background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
+                    flex: 1;
 
                     .ant-spin {
                         margin-bottom: 16px;
@@ -431,43 +486,7 @@
     }
 }
 
-// Status indicators
-.status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 20px 32px;
-    padding: 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        font-weight: 500;
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-
-            &.available {
-                background: #52c41a;
-                box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.2);
-            }
-
-            &.booked {
-                background: #ff4d4f;
-                box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.2);
-            }
-        }
-    }
-}
-
-// Modal styles (giữ nguyên phần modal từ trước)
+// Modal styles - GIỮ NGUYÊN HẾT
 .booking-detail-modal {
     .ant-modal-content {
         border-radius: 16px;
@@ -499,7 +518,6 @@
             align-items: center;
             position: relative;
 
-            // Decorative pattern (giữ nguyên)
             &::before {
                 content: '';
                 position: absolute;
@@ -534,7 +552,6 @@
             }
         }
 
-        // Giữ nguyên phần còn lại của modal
         .booking-info {
             padding: 32px 24px 24px;
             background: #fafafa;
@@ -789,29 +806,27 @@
     }
 }
 
-// Responsive (giữ nguyên các breakpoints)
+// Responsive
 @media (max-width: 1200px) {
     .booking-management {
         padding: 16px;
         
         .main-container {
             .booking-table {
-                margin: 24px;
+                margin: 16px 24px 24px 24px;
                 
                 .table-content {
                     min-width: 1000px;
                     
+                    .table-header,
+                    .court-row {
+                        grid-template-columns: 160px repeat(auto-fit, minmax(120px, 1fr)); // SỬA: Responsive grid
+                    }
+                    
                     .table-header .header-cell,
                     .table-body .slot-cell {
                         font-size: 12px;
-                        padding: 10px 6px;
-                        min-width: 120px;
-                    }
-                    
-                    .table-header .time-header,
-                    .court-cell {
-                        min-width: 160px;
-                        flex: 0 0 160px;
+                        padding: 12px 6px;
                     }
                 }
             }
@@ -873,22 +888,20 @@
             }
 
             .booking-table {
-                margin: 16px;
+                margin: 12px 16px 16px 16px;
                 
                 .table-content {
-                    min-width: 900px;
+                    min-width: 800px;
+                    
+                    .table-header,
+                    .court-row {
+                        grid-template-columns: 120px repeat(auto-fit, minmax(100px, 1fr)); // SỬA: Mobile grid
+                    }
                     
                     .table-header .header-cell,
                     .table-body .slot-cell {
                         font-size: 11px;
-                        padding: 8px 4px;
-                        min-width: 100px;
-                    }
-                    
-                    .table-header .time-header,
-                    .court-cell {
-                        min-width: 120px;
-                        flex: 0 0 120px;
+                        padding: 10px 4px;
                     }
                 }
             }

@@ -274,7 +274,7 @@ const BookingManagement = () => {
                     <div className="header-content">
                         <HomeOutlined className="header-icon" />
                         <div className="header-text">
-                            <h1>Quản Lý Đơn Đặt Sân</h1>
+                            <h1 style={{ color: "white" }}>Quản Lý Đơn Đặt Sân</h1>
                             <div className="subtitle">Theo dõi và quản lý lịch đặt sân hiệu quả</div>
                         </div>
                     </div>

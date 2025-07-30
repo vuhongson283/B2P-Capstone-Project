@@ -170,6 +170,17 @@ const CommonHeader = (props) => {
               <i className="fas fa-map-marker-alt me-1"></i>
               <span className="nav-text">Khu vực</span>
             </NavLink>
+            <NavLink
+              to="/booking-history"
+              className={({ isActive }) => {
+                // 🎯 Khu vực is active only if no specific sport category is selected
+                const isKhuVucActive = isActive && !activeSportCategory;
+                return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
+              }}
+            >
+              <i className="fas fa-map-marker-alt me-1"></i>
+              <span className="nav-text">Lịch Sử Đặt Sân</span>
+            </NavLink>
           </Nav>
           <Nav className="ms-auto align-items-center auth-buttons">
             <button

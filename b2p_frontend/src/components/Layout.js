@@ -18,6 +18,9 @@ import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
+import BookingHistory from "./Common/BookingHistory";
+
+
 
 const Layout = (props) => {
   return (
@@ -30,6 +33,7 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/booking-history" element={<BookingHistory />} />
           <Route
             path="/facility-details/:facilityId"
             element={<FacilityDetails />}
