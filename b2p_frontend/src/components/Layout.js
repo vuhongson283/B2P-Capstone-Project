@@ -15,6 +15,7 @@ import FacilityTable from "./CourtOwnerPage/FacilityTable";
 import SliderManagement from "./AdminPage/SliderManagement";
 import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
+import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 
@@ -40,6 +41,10 @@ const Layout = (props) => {
           <Route
             path="/court-owner/search"
             element={<FacilitiesWithCondition />}
+          />
+          <Route
+            path="/court-owner/booking-management"
+            element={<BookingManagement />}
           />
           <Route
             path="facilities/:facilityId/courts"
