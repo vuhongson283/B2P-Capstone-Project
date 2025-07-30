@@ -38,7 +38,7 @@ namespace B2P_API.Services
             _imageRepository = imageRepository;
         }
 
-        public async Task<ApiResponse<object>> SendPasswordResetOtpByEmailAsync(ForgotPasswordRequestByEmailDto? request)
+        public virtual async Task<ApiResponse<object>> SendPasswordResetOtpByEmailAsync(ForgotPasswordRequestByEmailDto? request)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "Dữ liệu không hợp lệ",
+                        Message = MessagesCodes.MSG_80,
                         Success = false,
                         Status = 400
                     };
@@ -70,7 +70,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_08,
+                        Message = MessagesCodes.MSG_68,
                         Success = false,
                         Status = 400
                     };
@@ -122,7 +122,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Data = null,
-                    Message = "Mã OTP đã được gửi đến email của bạn.",
+                    Message = MessagesCodes.MSG_91,
                     Success = true,
                     Status = 200
                 };
@@ -282,17 +282,6 @@ namespace B2P_API.Services
                         Message = MessagesCodes.MSG_65,
                         Success = false,
                         Status = 404
-                    };
-                }
-
-                if (!request.NewPassword.Equals(request.ConfirmPassword))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_14,
-                        Success = false,
-                        Status = 400
                     };
                 }
 
@@ -568,7 +557,7 @@ namespace B2P_API.Services
                 };
             }
         }
-        public async Task<ApiResponse<object>> SendPasswordResetOtpBySMSAsync(ForgotPasswordRequestBySmsDto? request)
+        public virtual async Task<ApiResponse<object>> SendPasswordResetOtpBySMSAsync(ForgotPasswordRequestBySmsDto? request)
         {
             try
             {
@@ -811,16 +800,6 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!request.NewPassword.Equals(request.ConfirmPassword))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_14,
-                        Success = false,
-                        Status = 400
-                    };
-                }
 
                 user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
                 await _userRepository.UpdateUserAsync(user);
@@ -1351,7 +1330,7 @@ namespace B2P_API.Services
                 };
             }
         }
-        private async Task<bool> IsRealEmailAsync(string email)
+        protected virtual async Task<bool> IsRealEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -1371,7 +1350,7 @@ namespace B2P_API.Services
                 return false;
             }
         }
-        private bool IsValidBankAccount(string accountNumber)
+        protected virtual bool IsValidBankAccount(string accountNumber)
         {
             if (string.IsNullOrWhiteSpace(accountNumber))
                 return false;
@@ -1384,7 +1363,7 @@ namespace B2P_API.Services
 
             return true;
         }
-        private string GenerateSecureOtp()
+        protected virtual string GenerateSecureOtp()
         {
             using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
@@ -1394,7 +1373,7 @@ namespace B2P_API.Services
                 return (randomNumber % 900000 + 100000).ToString(); // 6 digits OTP
             }
         }
-        private bool IsValidPhoneNumber(string phone)
+        protected virtual bool IsValidPhoneNumber(string phone)
         {
             return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0[3-9]\d{8}$");
         }

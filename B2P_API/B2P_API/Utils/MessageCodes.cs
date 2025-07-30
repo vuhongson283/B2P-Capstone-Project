@@ -92,6 +92,15 @@
         public const string MSG_88 = "Người dùng chưa thiết lập mật khẩu";
         public const string MSG_89 = "Người dùng đã có mật khẩu";
         public const string MSG_90 = "ID người dùng không hợp lệ";
+        public const string MSG_91 = "Mã OTP đã được gửi đến email của bạn";
+        public const string MSG_92 = "Email không được để trống";
+        public const string MSG_93 = "Mã OTP không được để trống";
+        public const string MSG_94 = "Mã OTP phải gồm 6 chữ số";
+        public const string MSG_95 = "Mật khẩu mới không được để trống";
+        public const string MSG_96 = "Xác nhận mật khẩu không được để trống";
+        public const string MSG_97 = "";
+        public const string MSG_98 = "";
+        public const string MSG_99 = "";
 
 
 
