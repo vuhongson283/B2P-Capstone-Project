@@ -10,13 +10,13 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
     public class GetAllFacilitiesByPlayerTest
     {
         private readonly Mock<IFacilityRepositoryForUser> _facilityRepoForUserMock;
-        private readonly Mock<IFacilityRepository> _facilityRepoMock;
+        private readonly Mock<IFacilityManageRepository> _facilityRepoMock;
         private readonly FacilityService _service;
 
         public GetAllFacilitiesByPlayerTest()
         {
             _facilityRepoForUserMock = new Mock<IFacilityRepositoryForUser>();
-            _facilityRepoMock = new Mock<IFacilityRepository>();
+            _facilityRepoMock = new Mock<IFacilityManageRepository>();
             _service = new FacilityService(_facilityRepoMock.Object, _facilityRepoForUserMock.Object);
         }
 

@@ -8,10 +8,17 @@ namespace B2P_API.DTOs.ReportDTO
         public int Month { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-
+        public TotalStatsDTO TotalStats { get; set; }
         public MonthlyStatsDTO MonthlyStats { get; set; }
         public List<FacilityStatDTO> TopFacilities { get; set; }
         public List<CourtCategoryStatDTO> PopularCourtCategories { get; set; }
+    }
+
+    public class TotalStatsDTO
+    {
+        public int TotalFacilities { get; set; }
+        public int TotalCourts { get; set; }
+        public int ActiveUsers { get; set; }
     }
     public class MonthlyStatsDTO
     {
@@ -20,9 +27,6 @@ namespace B2P_API.DTOs.ReportDTO
         public decimal? AverageRevenuePerBooking { get; set; }
         public int CompletedBookings { get; set; }
         public int CancelledBookings { get; set; }
-        public int TotalFacilities { get; set; }
-        public int TotalCourts { get; set; }
-        public int ActiveUsers { get; set; }
     }
 
     public class FacilityStatDTO

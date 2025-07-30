@@ -964,7 +964,7 @@ namespace B2P_API.Services
                 return new ApiResponse<UserInfoResponse?>
                 {
                     Data = userInfo,
-                    Message = "Tải thông tin người dùng thành công",
+                    Message = MessagesCodes.MSG_87,
                     Success = true,
                     Status = 200
                 };
@@ -1289,7 +1289,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "UserId không hợp lệ",
+                        Message = MessagesCodes.MSG_90,
                         Success = false,
                         Status = 400
                     };
@@ -1335,7 +1335,7 @@ namespace B2P_API.Services
                         Email = user.Email,
                         Phone = user.Phone
                     },
-                    Message = hasPassword ? "Người dùng đã có mật khẩu" : "Người dùng chưa thiết lập mật khẩu",
+                    Message = hasPassword ? MessagesCodes.MSG_89 : MessagesCodes.MSG_88,
                     Success = true,
                     Status = 200
                 };
@@ -1351,7 +1351,7 @@ namespace B2P_API.Services
                 };
             }
         }
-        public async Task<bool> IsRealEmailAsync(string email)
+        private async Task<bool> IsRealEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -1371,7 +1371,7 @@ namespace B2P_API.Services
                 return false;
             }
         }
-        public bool IsValidBankAccount(string accountNumber)
+        private bool IsValidBankAccount(string accountNumber)
         {
             if (string.IsNullOrWhiteSpace(accountNumber))
                 return false;

@@ -82,6 +82,18 @@
         public const string MSG_78 = "Số trang không hợp lệ";
         public const string MSG_79 = "Tải danh sách kiểu sân thành công. ";
         public const string MSG_80 = "Dữ liệu không hợp lệ";
+        public const string MSG_81 = "ID kiểu sân không hợp lệ";
+        public const string MSG_82 = "Tên kiểu sân không được để trống";
+        public const string MSG_83 = "Không tìm thấy kiểu sân với ID đã cho";
+        public const string MSG_84 = "Cập nhật kiểu sân thành công";
+        public const string MSG_85 = "Xóa kiểu sân thành công";
+        public const string MSG_86 = "Tải kiểu sân thành công";
+        public const string MSG_87 = "Tải thông tin người dùng thành công";
+        public const string MSG_88 = "Người dùng chưa thiết lập mật khẩu";
+        public const string MSG_89 = "Người dùng đã có mật khẩu";
+        public const string MSG_90 = "ID người dùng không hợp lệ";
+
+
 
 
 

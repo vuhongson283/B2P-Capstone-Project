@@ -27,6 +27,7 @@
 
     public class BookingResponseDto
     {
+        public int? UserId { get; set; }
         public int BookingId { get; set; }
         public DateTime CheckInDate { get; set; }
         public decimal TotalPrice { get; set; }

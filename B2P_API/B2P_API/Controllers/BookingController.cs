@@ -34,6 +34,17 @@ namespace B2P_API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("court-owner")]
+        public async Task<IActionResult> GetBookingsForCourtOwner([FromQuery] BookingQueryParameters query)
+        {
+            var result = await _bookingService.GetByUserIdAsync(null,query);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [HttpGet("{bookingId}")]
         public async Task<IActionResult> GetBookingById(int bookingId)
         {

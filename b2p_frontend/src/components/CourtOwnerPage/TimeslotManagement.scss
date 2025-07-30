@@ -1,0 +1,880 @@
+// Variables - Updated color scheme
+$primary-color: #28a745;
+$secondary-color: #ffc107;
+$accent-color: #9acd32;
+$success-color: #52c41a;
+$warning-color: #faad14;
+$error-color: #ff4d4f;
+$info-color: #1890ff;
+$white: #ffffff;
+$light-gray: #f8f9fa;
+$border-color: #e8e8e8;
+$text-primary: #262626;
+$text-secondary: #8c8c8c;
+
+// Gradients
+$gradient-primary: linear-gradient(90deg, #28a745, #ffc107);
+$gradient-card: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+$gradient-background: linear-gradient(to bottom right, #e6f4ea, #f5fffa);
+
+// Shadows
+$shadow-light: 0 2px 8px rgba(40, 167, 69, 0.08);
+$shadow-medium: 0 4px 20px rgba(40, 167, 69, 0.12);
+$shadow-card: 0 6px 24px rgba(0, 0, 0, 0.06);
+
+// Mixins
+@mixin card-style {
+  background: $gradient-card;
+  border-radius: 12px;
+  box-shadow: $shadow-card;
+  border: 1px solid rgba(40, 167, 69, 0.08);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: $shadow-medium;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Main Container
+.timeslot-management {
+  width: 100%;
+  padding: 24px;
+  background: $gradient-background;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+
+  // Page Header
+  .page-header {
+    @include card-style;
+    background: $gradient-primary;
+    color: $white;
+    padding: 32px 40px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    min-height: 100px;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.05)"/></svg>');
+      pointer-events: none;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+
+      .header-icon {
+        font-size: 2rem;
+        margin-right: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: $white;
+      }
+    }
+
+    .header-subtitle {
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+  }
+
+  // Facility Selection Card
+  .facility-selection-card {
+    @include card-style;
+    margin-bottom: 24px;
+
+    .ant-card-body {
+      padding: 24px;
+    }
+
+    .selection-group {
+      .selection-label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: $text-primary;
+        font-size: 14px;
+
+        .label-icon {
+          margin-right: 8px;
+          color: $primary-color;
+        }
+      }
+
+      .facility-select {
+        width: 100%;
+
+        .ant-select-selector {
+          border-radius: 10px !important;
+          border: 2px solid $border-color !important;
+          background-color: $light-gray !important;
+          transition: all 0.3s ease;
+          height: 44px !important;
+          padding: 8px 16px !important;
+
+          &:hover {
+            border-color: $accent-color !important;
+            background-color: white !important;
+            box-shadow: 0 0 0 2px rgba(154, 205, 50, 0.1) !important;
+          }
+        }
+
+        &.ant-select-focused .ant-select-selector {
+          border-color: $primary-color !important;
+          background-color: white !important;
+          box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1) !important;
+        }
+
+        .ant-select-selection-placeholder {
+          color: #999;
+          font-style: italic;
+        }
+
+        .ant-select-selection-item {
+          font-weight: 500;
+          line-height: 28px;
+        }
+      }
+
+      .facility-option {
+        @include flex-between;
+
+        .facility-name {
+          font-weight: 500;
+        }
+
+        .facility-status {
+          font-size: 0.8rem;
+          border-radius: 12px;
+        }
+      }
+    }
+
+    .action-group {
+      text-align: right;
+
+      .add-btn {
+        background: $gradient-primary;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        height: 44px;
+        padding: 0 24px;
+        color: white;
+        font-size: 15px;
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: $shadow-medium;
+          background: linear-gradient(90deg, darken(#28a745, 5%), darken(#ffc107, 5%));
+        }
+      }
+    }
+  }
+
+  // Statistics Card
+  .statistics-card {
+    @include card-style;
+    margin-bottom: 24px;
+
+    .ant-card-body {
+      padding: 24px;
+    }
+
+    .stats-header {
+      margin-bottom: 20px;
+
+      h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: $text-primary;
+        display: flex;
+        align-items: center;
+
+        .stats-icon {
+          margin-right: 8px;
+          color: $primary-color;
+        }
+      }
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 16px;
+      background: linear-gradient(145deg, rgba(40, 167, 69, 0.02), rgba(255, 193, 7, 0.02));
+      border-radius: 10px;
+      border: 1px solid rgba(40, 167, 69, 0.08);
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-light;
+        background: linear-gradient(145deg, rgba(40, 167, 69, 0.05), rgba(255, 193, 7, 0.05));
+      }
+
+      .ant-statistic-title {
+        font-weight: 500;
+        color: $text-secondary;
+        margin-bottom: 8px;
+      }
+
+      .ant-statistic-content {
+        font-weight: 700;
+      }
+    }
+  }
+
+  // Table Card
+  .table-card {
+    @include card-style;
+
+    .ant-card-body {
+      padding: 24px;
+    }
+
+    .table-header {
+      @include flex-between;
+      margin-bottom: 20px;
+
+      h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: $text-primary;
+      }
+
+      .count-tag {
+        font-weight: 500;
+        border-radius: 20px;
+        padding: 4px 12px;
+        background-color: $primary-color;
+        color: white;
+        border: none;
+      }
+    }
+
+    // Table Styles
+    .timeslots-table {
+      .ant-table {
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+      }
+
+      .ant-table-thead > tr > th {
+        background: #e6ffed;
+        color: #1e8449;
+        font-weight: 600;
+        border-bottom: 1px solid #d9f7be;
+        text-align: center;
+        padding: 16px;
+
+        &:first-child {
+          border-radius: 12px 0 0 0;
+        }
+
+        &:last-child {
+          border-radius: 0 12px 0 0;
+        }
+      }
+
+      .ant-table-tbody > tr {
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #f6ffed;
+        }
+
+        > td {
+          padding: 16px;
+          border-bottom: 1px solid $border-color;
+          text-align: center;
+          vertical-align: middle;
+        }
+
+        &:last-child > td {
+          border-bottom: none;
+
+          &:first-child {
+            border-radius: 0 0 0 12px;
+          }
+
+          &:last-child {
+            border-radius: 0 0 12px 0;
+          }
+        }
+      }
+
+      // Custom cell styles
+      .row-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: $gradient-primary;
+        color: $white;
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .time-range {
+        .time-icon {
+          color: $primary-color;
+          margin-right: 8px;
+        }
+
+        .time-text {
+          font-weight: 600;
+          color: $text-primary;
+          font-size: 1rem;
+        }
+
+        .duration {
+          font-size: 0.8rem;
+          color: $text-secondary;
+          margin-top: 2px;
+        }
+      }
+
+      .price-text {
+        font-weight: 600;
+        color: $secondary-color;
+        font-size: 1rem;
+      }
+
+      .description-text {
+        color: $text-secondary;
+        font-style: italic;
+      }
+
+      .status-switch {
+        &.active .ant-switch-inner {
+          background: $success-color;
+        }
+
+        &.inactive .ant-switch-inner {
+          background: $text-secondary;
+        }
+      }
+
+      .action-btn {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+
+        &.edit-btn {
+          color: $info-color;
+          
+          &:hover {
+            background: rgba(24, 144, 255, 0.1);
+            color: $info-color;
+            transform: scale(1.1);
+          }
+        }
+
+        &.delete-btn {
+          color: $error-color;
+          
+          &:hover {
+            background: rgba(255, 77, 79, 0.1);
+            color: $error-color;
+            transform: scale(1.1);
+          }
+        }
+      }
+
+      // Pagination
+      .custom-pagination {
+        margin-top: 24px;
+        text-align: center;
+
+        .ant-pagination-item {
+          border-radius: 8px;
+          border: 1px solid $border-color;
+
+          &:hover {
+            border-color: $primary-color;
+          }
+
+          &.ant-pagination-item-active {
+            background: $primary-color;
+            border-color: $primary-color;
+
+            a {
+              color: $white;
+            }
+          }
+        }
+
+        .ant-pagination-prev,
+        .ant-pagination-next {
+          border-radius: 8px;
+          
+          &:hover {
+            border-color: $primary-color;
+            
+            .ant-pagination-item-link {
+              color: $primary-color;
+            }
+          }
+        }
+      }
+    }
+
+    // Empty State
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+
+      .empty-icon {
+        font-size: 4rem;
+        color: $text-secondary;
+        margin-bottom: 16px;
+      }
+
+      p {
+        margin: 16px 0;
+        color: $text-secondary;
+        font-size: 1.1rem;
+      }
+
+      .ant-btn {
+        border-radius: 10px;
+        font-weight: 600;
+        background: $gradient-primary;
+        border: none;
+        color: white;
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: $shadow-medium;
+        }
+      }
+    }
+  }
+
+  // No Selection Card
+  .no-selection-card {
+    @include card-style;
+
+    .ant-card-body {
+      padding: 60px 24px;
+    }
+
+    .no-selection {
+      text-align: center;
+
+      .no-selection-icon {
+        font-size: 5rem;
+        color: $text-secondary;
+        margin-bottom: 24px;
+      }
+
+      h3 {
+        margin: 0 0 12px 0;
+        font-size: 1.5rem;
+        color: $text-primary;
+      }
+
+      p {
+        margin: 0;
+        color: $text-secondary;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  // Modal Styles
+  .timeslot-modal {
+    .ant-modal-content {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .ant-modal-header {
+      background: $gradient-primary;
+      border: none;
+      padding: 24px 24px 20px;
+
+      .modal-title {
+        color: $white;
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        margin: 0;
+
+        .modal-icon {
+          margin-right: 12px;
+          font-size: 1.4rem;
+        }
+      }
+
+      .ant-modal-close {
+        color: $white;
+        top: 20px;
+        right: 20px;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ant-modal-close-x {
+          width: 44px;
+          height: 44px;
+          line-height: 44px;
+          font-size: 18px;
+          border-radius: 50%;
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: rotate(90deg);
+          }
+        }
+      }
+    }
+
+    .ant-modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: $accent-color;
+        border-radius: 3px;
+
+        &:hover {
+          background: darken($accent-color, 10%);
+        }
+      }
+    }
+
+    .timeslot-form {
+      .ant-form-item-label > label {
+        font-weight: 600;
+        color: $text-primary;
+        font-size: 14px;
+      }
+
+      .ant-form-item-required::before {
+        color: $error-color;
+        margin-right: 4px;
+      }
+
+      // Input styling
+      .ant-input,
+      .ant-input-number,
+      .ant-input-textarea {
+        border-radius: 10px;
+        border: 2px solid $border-color;
+        background-color: $light-gray;
+        transition: all 0.3s ease;
+        min-height: 44px;
+        padding: 12px 16px;
+
+        &:focus,
+        &:hover {
+          border-color: $accent-color;
+          background-color: white;
+          box-shadow: 0 0 0 2px rgba(154, 205, 50, 0.1);
+        }
+
+        &::placeholder {
+          color: #999;
+          font-style: italic;
+        }
+      }
+
+      .time-picker {
+        width: 100%;
+
+        .ant-picker {
+          border-radius: 10px;
+          border: 2px solid $border-color;
+          background-color: $light-gray;
+          height: 44px;
+
+          &:hover {
+            border-color: $accent-color;
+            background-color: white;
+          }
+
+          &.ant-picker-focused {
+            border-color: $primary-color;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+          }
+        }
+      }
+
+      .price-input {
+        .ant-input-number {
+          width: 100%;
+
+          .ant-input-number-input {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+          }
+        }
+
+        .ant-input-number-group-addon {
+          background-color: rgba(40, 167, 69, 0.1);
+          color: $primary-color;
+          font-weight: 600;
+          border: none;
+        }
+      }
+
+      .description-input {
+        textarea {
+          background-color: $light-gray;
+          border: none;
+          border-radius: 10px;
+          resize: vertical;
+          min-height: 80px;
+          padding: 12px 16px;
+
+          &:focus {
+            background-color: white;
+            box-shadow: none;
+          }
+        }
+      }
+
+      .form-actions {
+        margin-bottom: 0;
+        text-align: right;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #f0f0f0;
+
+        .ant-btn {
+          border-radius: 10px;
+          font-weight: 600;
+          height: 44px;
+          padding: 0 24px;
+          min-width: 100px;
+        }
+
+        .ant-btn:not(.ant-btn-primary) {
+          border: 2px solid $border-color;
+          background-color: white;
+          color: #666;
+
+          &:hover {
+            border-color: #d9d9d9;
+            color: #333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        .submit-btn {
+          background: $gradient-primary;
+          border: none;
+          color: white;
+          min-width: 140px;
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+          }
+        }
+      }
+
+      // Form validation styling
+      .ant-form-item-has-error {
+        .ant-input,
+        .ant-input-textarea,
+        .ant-picker {
+          border-color: $error-color !important;
+          background-color: #fff2f0 !important;
+
+          &:focus,
+          &:hover {
+            border-color: $error-color !important;
+            background-color: #fff2f0 !important;
+            box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1) !important;
+          }
+        }
+      }
+
+      .ant-form-item-explain-error {
+        color: $error-color;
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
+
+        &::before {
+          content: "⚠️ ";
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .page-header {
+      padding: 24px;
+
+      .header-title h1 {
+        font-size: 24px;
+      }
+
+      .header-subtitle {
+        font-size: 1rem;
+      }
+    }
+
+    .facility-selection-card,
+    .statistics-card,
+    .table-card {
+      .ant-card-body {
+        padding: 16px;
+      }
+    }
+
+    .facility-selection-card {
+      .action-group {
+        text-align: center;
+        margin-top: 16px;
+      }
+    }
+
+    .stats-header h3 {
+      font-size: 1.1rem;
+    }
+
+    .timeslots-table {
+      .ant-table-thead > tr > th,
+      .ant-table-tbody > tr > td {
+        padding: 12px 8px;
+        font-size: 14px;
+      }
+    }
+
+    .timeslot-modal {
+      .ant-modal-body {
+        padding: 16px;
+      }
+
+      .timeslot-form .form-actions {
+        .ant-btn {
+          width: 100%;
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .page-header .header-title {
+      flex-direction: column;
+      text-align: center;
+
+      .header-icon {
+        margin-right: 0;
+        margin-bottom: 8px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .table-header {
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+  }
+}
+
+// Ant Design component overrides
+.ant-card {
+  border: none;
+}
+
+.ant-table-wrapper {
+  .ant-spin-nested-loading {
+    .ant-spin-container {
+      border-radius: 12px;
+    }
+  }
+}
+
+.ant-switch {
+  &.ant-switch-checked {
+    background: $success-color;
+  }
+}
+
+.ant-tag {
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.ant-select-dropdown {
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.ant-picker-dropdown {
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+// Loading spinner override
+.ant-spin .ant-spin-dot {
+  i {
+    background-color: $primary-color;
+  }
+}
