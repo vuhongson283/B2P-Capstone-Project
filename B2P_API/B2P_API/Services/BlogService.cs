@@ -10,13 +10,15 @@ namespace B2P_API.Services;
 public class BlogService
 {
 
-    private readonly SportBookingDbContext _context;
+ 
     private readonly IBlogRepository _repository;
+    private readonly IAccountManagementRepository _accrepository;
 
-    public BlogService(IBlogRepository repository, SportBookingDbContext context)
+    public BlogService(IBlogRepository repository, IAccountManagementRepository accrepository)
     {
         _repository = repository;
-        _context = context;
+       
+        _accrepository = accrepository;
     }
 
     public async Task<ApiResponse<PagedResponse<BlogResponseDto>>> GetAllAsync(BlogQueryParameters queryParams)
@@ -272,7 +274,8 @@ public class BlogService
 
     public async Task<ApiResponse<Blog>> CreateAsync(CreateBlogDTO dto)
     {
-        var user = await _context.Users.FindAsync(dto.UserId); //chua co repo cua user nen goi db o day, se thay doi sau
+        //var user = await _context.Users.FindAsync(dto.UserId); //chua co repo cua user nen goi db o day, se thay doi sau
+        var user = _accrepository.GetByIdAsync(dto.UserId);
         if (user == null)
         {
             return new ApiResponse<Blog>
