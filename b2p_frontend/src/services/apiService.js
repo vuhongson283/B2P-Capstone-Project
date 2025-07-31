@@ -418,26 +418,38 @@ const getCourtDetail = (courtId) => {
   return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 };
 
-const getAdminReport = async (month, year) => {
-  try {
-    const response = await axios.get(`Report/AdminReport`, {
-      params: {
-        year,
-        month
-      }
-    });
-    console.log('API Response:', response.data);
-    return response;
-  } catch (error) {
-    console.error('Error fetching admin report:', error);
-    throw error;
-  }
-}
+//TimeSlotForCourtOwner
+const getTimeSlotsByFacilityId = (facilityId) => {
+  return axios.get(`TimeslotManagement/facility/${facilityId}`);
+};
+
+
+const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
+  return axios.get(`Booking/court-owner`, {
+    params: {
+      facilityId,
+      pageNumber,
+      pageSize,
+    },
+  });
+};
+const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
+  return axios.get(`Booking`, {
+    params: {
+      userId,
+      Page: page,
+      PageSize: pageSize,
+    },
+  });
+};
 
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  getBookingsByUserId,
+  getBookingsByFacilityId,
+  getTimeSlotsByFacilityId,
   getAllCourtCategories,
   addCourtCategory,
   updateCourtCategory,
@@ -500,7 +512,6 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
-  getAdminReport,
   getAllCourts,
   addNewCourt,
   updateCourt,

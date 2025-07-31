@@ -9,7 +9,7 @@
   .facility-table-card {
     background: white;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible !important;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
@@ -73,10 +73,13 @@
 
     .ant-table-wrapper {
       padding: 0 28px 28px;
+      overflow-x: auto !important; 
+      -webkit-overflow-scrolling: touch;
 
       .ant-table {
         background: white;
-
+        min-width: 1000px !important;
+        
         .ant-table-thead>tr>th {
           background: #e6ffed;
           color: #1e8449;
@@ -171,6 +174,7 @@
   }
 }
 
+// FacilityTable.scss - SỬA LẠI
 $banana-green: #9acd32;
 $banana-green-hover: darken($banana-green, 10%);
 $light-gray: #f8f8f8;
@@ -183,19 +187,18 @@ $error-bg: #fff2f0;
   padding: 24px;
   border-radius: 16px;
 
-  .ant-form-item-label > label {
+  .ant-form-item-label>label {
     font-weight: 600;
     color: #444;
     font-size: 14px;
     margin-bottom: 8px;
-    
+
     &.ant-form-item-required::before {
       color: $error-color;
       margin-right: 4px;
     }
   }
 
-  // Input styling
   .ant-input,
   .ant-input-textarea {
     border-radius: $border-radius;
@@ -219,10 +222,9 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Textarea specific styling
   .ant-input-textarea {
     padding: 0;
-    
+
     textarea {
       padding: 12px 16px;
       background-color: $light-gray;
@@ -230,7 +232,7 @@ $error-bg: #fff2f0;
       border-radius: $border-radius;
       resize: vertical;
       min-height: 80px;
-      
+
       &:focus {
         background-color: white;
         box-shadow: none;
@@ -238,10 +240,9 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Select styling
   .ant-select {
     width: 100%;
-    
+
     .ant-select-selector {
       border-radius: $border-radius !important;
       padding: 8px 16px !important;
@@ -274,7 +275,6 @@ $error-bg: #fff2f0;
       font-weight: 500;
     }
 
-    // Dropdown arrow
     .ant-select-arrow {
       color: #999;
       transition: color 0.3s ease;
@@ -285,18 +285,16 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Time selection row styling
   .time-selection-row {
     display: flex;
     gap: 16px;
-    
+
     .ant-form-item {
       flex: 1;
       margin-bottom: 24px;
     }
   }
 
-  // File input styling
   .custom-file-input {
     display: block;
     padding: 12px 16px;
@@ -343,7 +341,6 @@ $error-bg: #fff2f0;
       }
     }
 
-    // Text after button
     &::after {
       content: "Chọn nhiều ảnh cùng lúc";
       color: #666;
@@ -352,11 +349,10 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Contact field styling
   .contact-field {
     .ant-input {
       padding-left: 50px;
-      
+
       &::before {
         content: "📞";
         position: absolute;
@@ -368,12 +364,11 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Status field with colored options
   .status-select {
     .ant-select-selection-item {
       display: flex;
       align-items: center;
-      
+
       &::before {
         content: "";
         width: 8px;
@@ -385,7 +380,6 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Button container
   .form-actions {
     display: flex;
     gap: 12px;
@@ -395,7 +389,6 @@ $error-bg: #fff2f0;
     border-top: 1px solid #f0f0f0;
   }
 
-  // Cancel button
   .ant-btn:not(.ant-btn-primary) {
     font-weight: 500;
     font-size: 15px;
@@ -419,7 +412,6 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Primary button (Submit)
   .ant-btn-primary {
     font-weight: 600;
     font-size: 15px;
@@ -450,21 +442,21 @@ $error-bg: #fff2f0;
     &.ant-btn-loading {
       background-color: rgba($banana-green, 0.7);
       cursor: not-allowed;
-      
+
       .ant-btn-loading-icon {
         margin-right: 8px;
       }
     }
   }
 
-  // Form validation styling
   .ant-form-item-has-error {
+
     .ant-input,
     .ant-input-textarea,
     .ant-select-selector {
       border-color: $error-color !important;
       background-color: $error-bg !important;
-      
+
       &:focus,
       &:hover {
         border-color: $error-color !important;
@@ -473,7 +465,6 @@ $error-bg: #fff2f0;
       }
     }
 
-    // Textarea error state
     .ant-input-textarea textarea {
       background-color: $error-bg !important;
       border-color: $error-color !important;
@@ -485,20 +476,20 @@ $error-bg: #fff2f0;
     font-size: 13px;
     margin-top: 6px;
     font-weight: 500;
-    
+
     &::before {
       content: "⚠️ ";
       margin-right: 4px;
     }
   }
 
-  // Success state for valid fields
   .ant-form-item-has-success {
+
     .ant-input,
     .ant-input-textarea,
     .ant-select-selector {
       border-color: #52c41a !important;
-      
+
       &:focus,
       &:hover {
         box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.1) !important;
@@ -506,16 +497,14 @@ $error-bg: #fff2f0;
     }
   }
 
-  // Form spacing
   .ant-form-item {
     margin-bottom: 24px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  // Required field indicator
   .ant-form-item-required {
     &::after {
       content: " *";
@@ -525,11 +514,17 @@ $error-bg: #fff2f0;
   }
 }
 
-// Modal container styling
 .ant-modal {
+  .ant-modal-wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
   .ant-modal-content {
+    margin: 0 !important;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible !important;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   }
 
@@ -544,7 +539,7 @@ $error-bg: #fff2f0;
       color: #333;
       display: flex;
       align-items: center;
-      
+
       &::before {
         content: "🏢";
         margin-right: 12px;
@@ -557,19 +552,20 @@ $error-bg: #fff2f0;
     padding: 0;
     max-height: 70vh;
     overflow-y: auto;
-    
+    overflow-x: visible; // ✅ THÊM DÒNG NÀY
+
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #f1f1f1;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #c1c1c1;
       border-radius: 3px;
-      
+
       &:hover {
         background: #a1a1a1;
       }
@@ -600,79 +596,47 @@ $error-bg: #fff2f0;
   }
 }
 
-// Responsive design
-@media (max-width: 768px) {
-  .facility-form {
-    padding: 16px;
-    
-    .time-selection-row {
-      flex-direction: column;
-      gap: 0;
+
+.facility-images-manager {
+  .current-images {
+    h4 {
+      margin-bottom: 12px;
+      color: #1890ff;
+      font-weight: 600;
     }
-    
-    .form-actions {
-      flex-direction: column-reverse;
-      
-      .ant-btn {
-        width: 100%;
+  }
+
+  .upload-new-images {
+    h4 {
+      margin-bottom: 12px;
+      color: #52c41a;
+      font-weight: 600;
+    }
+  }
+
+  .ant-card {
+    .ant-card-cover {
+      border-radius: 6px 6px 0 0;
+    }
+
+    .ant-card-actions {
+      .anticon-eye:hover {
+        color: #40a9ff !important;
+      }
+
+      .anticon-delete:hover {
+        color: #ff7875 !important;
       }
     }
-  }
-  
-  .ant-modal {
-    margin: 16px;
-    
-    .ant-modal-content {
-      margin: 0;
-    }
-    
-    .ant-modal-header {
-      padding: 16px;
-      
-      .ant-modal-title {
-        font-size: 18px;
-      }
+
+    .ant-card-meta-description {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }
-
-// Responsive design
-@media (max-width: 768px) {
-  .facility-form {
-    padding: 16px;
-
-    .ant-input,
-    .ant-input-textarea,
-    .ant-select-selector {
-      font-size: 16px; // Prevent zoom on iOS
-    }
-  }
-}
-.action-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  
-  .delete-icon:hover {
-    color: #cf1322 !important;
-    transform: scale(1.1);
-  }
-  
-  .edit-icon {
-    color: #1890ff;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      color: #096dd9;
-      transform: scale(1.1);
-    }
-  }
-}
-
-// Responsive adjustments
+// ✅ RESPONSIVE - GỘP LẠI THÀNH 1 MEDIA QUERY
 @media (max-width: 768px) {
   .facility-table-wrapper {
     padding: 16px;
@@ -693,6 +657,45 @@ $error-bg: #fff2f0;
           width: 120px;
           height: 90px;
         }
+      }
+    }
+  }
+
+  .facility-form {
+    padding: 16px;
+
+    .time-selection-row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .form-actions {
+      flex-direction: column-reverse;
+
+      .ant-btn {
+        width: 100%;
+      }
+    }
+
+    .ant-input,
+    .ant-input-textarea,
+    .ant-select-selector {
+      font-size: 16px; // Prevent zoom on iOS
+    }
+  }
+
+  .ant-modal {
+    margin: 16px;
+
+    .ant-modal-content {
+      margin: 0;
+    }
+
+    .ant-modal-header {
+      padding: 16px;
+
+      .ant-modal-title {
+        font-size: 18px;
       }
     }
   }

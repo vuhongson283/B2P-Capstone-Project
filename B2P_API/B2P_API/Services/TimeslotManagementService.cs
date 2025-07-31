@@ -1,9 +1,11 @@
 ﻿using B2P_API.DTOs.FacilityDTOs;
+using B2P_API.DTOs.StatuDTOs;
 using B2P_API.DTOs.TimeslotDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
+using Microsoft.AspNetCore.Http;
 
 namespace B2P_API.Services
 {
@@ -99,62 +101,115 @@ namespace B2P_API.Services
             };
         }
 
-        public async Task<ApiResponse<PagedResponse<TimeSlot>>> GetTimeslotByFacilityIdAsync(
+        public async Task<ApiResponse<PagedResponse<GetTimeslotDTO>>> GetTimeslotByFacilityIdAsync(
     int facilityId, int? statusId = null, int pageNumber = 1, int pageSize = 10)
         {
-            if (pageNumber <= 0 || pageSize <= 0)
+            try
             {
-                return new ApiResponse<PagedResponse<TimeSlot>>
+                // ✅ VALIDATION
+                if (facilityId <= 0)
                 {
-                    Success = false,
-                    Status = 400,
-                    Message = "Số trang và kích thước trang phải lớn hơn 0",
-                    Data = null
-                };
-            }
-
-            var all = await _repository.GetByFacilityIdAsync(facilityId);
-
-            if (statusId.HasValue)
-            {
-                all = all.Where(t => t.StatusId == statusId.Value).ToList();
-            }
-
-            if (!all.Any())
-            {
-                return new ApiResponse<PagedResponse<TimeSlot>>
-                {
-                    Success = false,
-                    Status = 404,
-                    Message = "Không tìm thấy TimeSlot nào",
-                    Data = null
-                };
-            }
-
-            var totalItems = all.Count;
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-
-            var items = all
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
-
-            return new ApiResponse<PagedResponse<TimeSlot>>
-            {
-                Success = true,
-                Status = 200,
-                Message = "Lấy TimeSlot thành công",
-                Data = new PagedResponse<TimeSlot>
-                {
-                    CurrentPage = pageNumber,
-                    ItemsPerPage = pageSize,
-                    Items = items,
-                    TotalItems = totalItems,
-                    TotalPages = totalPages
+                    return new ApiResponse<PagedResponse<GetTimeslotDTO>>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Facility ID phải lớn hơn 0",
+                        Data = null
+                    };
                 }
-            };
-        }
 
+                if (pageNumber <= 0 || pageSize <= 0)
+                {
+                    return new ApiResponse<PagedResponse<GetTimeslotDTO>>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Số trang và kích thước trang phải lớn hơn 0",
+                        Data = null
+                    };
+                }
+
+                // ✅ GET DATA TỪ REPOSITORY
+                var all = await _repository.GetByFacilityIdAsync(facilityId);
+
+                // ✅ FILTER BY STATUS
+                if (statusId.HasValue)
+                {
+                    all = all.Where(t => t.StatusId == statusId.Value).ToList();
+                }
+
+                // ✅ EMPTY RESULT
+                if (!all.Any())
+                {
+                    return new ApiResponse<PagedResponse<GetTimeslotDTO>>
+                    {
+                        Success = true,
+                        Status = 200,
+                        Message = "Không có TimeSlot nào cho facility này",
+                        Data = new PagedResponse<GetTimeslotDTO>
+                        {
+                            CurrentPage = pageNumber,
+                            ItemsPerPage = pageSize,
+                            Items = new List<GetTimeslotDTO>(),
+                            TotalItems = 0,
+                            TotalPages = 0
+                        }
+                    };
+                }
+
+                // ✅ PAGINATION
+                var totalItems = all.Count;
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                var pagedTimeSlots = all
+                    .OrderBy(t => t.StartTime)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // ✅ MAP TO DTO - SỬA LẠI CONSISTENT
+                var items = pagedTimeSlots.Select(t => new GetTimeslotDTO
+                {
+                    TimeSlotId = t.TimeSlotId,
+                    FacilityId = t.FacilityId,
+                    StatusId = t.StatusId,
+                    StartTime = t.StartTime?.ToString("HH:mm:ss"), // ✅ FIX: Convert TimeOnly to string
+                    EndTime = t.EndTime?.ToString("HH:mm:ss"),     // ✅ FIX: Consistent format
+                    Discount = t.Discount,
+                    Status = new StatusDto
+                    {
+                        StatusId = t.Status.StatusId,
+                        StatusName = t.Status.StatusName,
+                        StatusDescription = t.Status.StatusDescription
+                    }
+                }).ToList();
+
+                return new ApiResponse<PagedResponse<GetTimeslotDTO>> // ✅ FIX: Correct return type
+                {
+                    Success = true,
+                    Status = 200,
+                    Message = "Lấy TimeSlot thành công",
+                    Data = new PagedResponse<GetTimeslotDTO> // ✅ FIX: Correct DTO type
+                    {
+                        CurrentPage = pageNumber,
+                        ItemsPerPage = pageSize, // ✅ FIX: Correct variable name
+                        Items = items,
+                        TotalItems = totalItems,
+                        TotalPages = totalPages
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<PagedResponse<GetTimeslotDTO>> // ✅ FIX: Correct return type
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Đã có lỗi xảy ra khi lấy TimeSlot",
+                    Data = null
+                };
+            }
+        }
 
         public async Task<ApiResponse<TimeSlot>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId)
         {

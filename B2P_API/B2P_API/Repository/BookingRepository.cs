@@ -1,11 +1,12 @@
 ﻿using B2P_API.DTOs.BookingDTOs;
+using B2P_API.Interface;
 using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace B2P_API.Repository
 {
-    public class BookingRepository
+    public class BookingRepository : IBookingRepository
     {
         private readonly SportBookingDbContext _context;
 
