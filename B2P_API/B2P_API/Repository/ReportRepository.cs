@@ -131,7 +131,15 @@ namespace B2P_API.Repository
             DateTime startDate = reportDate;
             DateTime endDate = startDate.AddMonths(1).AddDays(-1);
 
-            // 1. Thống kê tổng quan tháng
+            // 1. Lấy các thống kê tổng quan không phụ thuộc thời gian trước
+            var totalStats = new TotalStatsDTO
+            {
+                TotalFacilities = await _context.Facilities.CountAsync(),
+                TotalCourts = await _context.Courts.CountAsync(),
+                ActiveUsers = await _context.Users.CountAsync(u => u.StatusId == 1)
+            };
+
+            // 2. Thống kê tổng quan tháng
             var monthlyStats = await _context.Bookings
                 .Where(b => b.CreateAt >= startDate && b.CreateAt <= endDate)
                 .GroupBy(b => 1)
@@ -143,14 +151,11 @@ namespace B2P_API.Repository
                     AverageRevenuePerBooking = g.Where(b => b.StatusId == 10)
                       .Average(b => b.TotalPrice),
                     CompletedBookings = g.Count(b => b.StatusId == 10),
-                    CancelledBookings = g.Count(b => b.StatusId == 9),
-                    TotalFacilities = _context.Facilities.Count(),
-                    TotalCourts = _context.Courts.Count(),
-                    ActiveUsers = _context.Users.Count(u => u.StatusId == 1)
+                    CancelledBookings = g.Count(b => b.StatusId == 9)
                 })
                 .FirstOrDefaultAsync() ?? new MonthlyStatsDTO();
 
-            // 2. Top facility trong tháng
+            // 3. Top facility trong tháng
             var topFacilities = await _context.Facilities
                 .Select(f => new FacilityStatDTO
                 {
@@ -173,9 +178,10 @@ namespace B2P_API.Repository
                 })
                 .Where(f => f.TotalBooking > 0)
                 .OrderByDescending(f => f.TotalRevenue)
+                .Take(3)
                 .ToListAsync();
 
-            // 3. Thống kê loại sân phổ biến
+            // 4. Thống kê loại sân phổ biến
             var popularCourtCategories = await _context.Courts
                 .Select(c => new CourtCategoryStatDTO
                 {
@@ -188,13 +194,14 @@ namespace B2P_API.Repository
                 .Take(3)
                 .ToListAsync();
 
-            // 4. Tổng hợp dữ liệu
+            // 5. Tổng hợp dữ liệu
             var report = new AdminReportDTO
             {
                 Year = reportDate.Year,
                 Month = reportDate.Month,
                 StartDate = startDate,
                 EndDate = endDate,
+                TotalStats = totalStats,
                 MonthlyStats = monthlyStats,
                 TopFacilities = topFacilities,
                 PopularCourtCategories = popularCourtCategories

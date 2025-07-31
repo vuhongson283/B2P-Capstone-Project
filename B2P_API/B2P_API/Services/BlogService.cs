@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs;
+using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repositories;
 using B2P_API.Response;
@@ -8,10 +9,11 @@ namespace B2P_API.Services;
 
 public class BlogService
 {
-    private readonly BlogRepository _repository;
-    private readonly SportBookingDbContext _context;
 
-    public BlogService(BlogRepository repository, SportBookingDbContext context)
+    private readonly SportBookingDbContext _context;
+    private readonly IBlogRepository _repository;
+
+    public BlogService(IBlogRepository repository, SportBookingDbContext context)
     {
         _repository = repository;
         _context = context;

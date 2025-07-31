@@ -23,36 +23,48 @@ const CourtOwnerSideBar = ({
 
   // Mock facilities data - replace with real data
   const [facilities, setFacilities] = useState([
-    { id: 7,
+    {
+      id: 7,
       name: "Cơ sở Cầu Giấy",
       location: "123 Lê Lợi, Q.1",
       contact: "0123456789",
-      statusId: 1 },
-    { id: 8,
-      name: "Cơ sở Quận 1", 
+      statusId: 1
+    },
+    {
+      id: 8,
+      name: "Cơ sở Quận 1",
       location: "234 Trần Hưng Đạo, Q.5",
       contact: "0123456790",
-      statusId: 1 },
-    { id: 9,
+      statusId: 1
+    },
+    {
+      id: 9,
       name: "Cơ sở Quận 7",
       location: "345 Nguyễn Huệ, Q.1",
       contact: "0123456791",
-      statusId: 2 },
-    { id: 10,
+      statusId: 2
+    },
+    {
+      id: 10,
       name: "Cơ sở Thủ Đức",
       location: "456 Cách Mạng Tháng 8, Q.3",
       contact: "0123456792",
-      statusId: 1 },
-    { id: 11,
+      statusId: 1
+    },
+    {
+      id: 11,
       name: "Cơ sở Hòa Lạc",
       location: "567 Pasteur, Q.3",
       contact: "0123456793",
-      statusId: 1 },
-    { id: 12,
+      statusId: 1
+    },
+    {
+      id: 12,
       name: "Cơ sở Đà Nẵng",
       location: "678 Hai Bà Trưng, Q.1",
       contact: "0123456794",
-      statusId: 2 },
+      statusId: 2
+    },
   ]);
 
   // Menu items configuration
@@ -67,7 +79,7 @@ const CourtOwnerSideBar = ({
       id: "order-management",
       title: "Quản lý đơn",
       icon: "fas fa-clipboard-list",
-      path: "/court-owner/search",
+      path: "/court-owner/booking-management",
     },
     {
       id: "facility-management",
@@ -182,9 +194,8 @@ const CourtOwnerSideBar = ({
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${
-            item.hasSubmenu ? "has-submenu" : ""
-          }`}
+          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
+            }`}
           onClick={() => {
             if (item.hasSubmenu) {
               toggleMenu(item.id);
@@ -204,9 +215,8 @@ const CourtOwnerSideBar = ({
 
           {item.hasSubmenu && (!collapsed || isMobile) && (
             <i
-              className={`fas fa-chevron-down submenu-arrow ${
-                isExpanded ? "expanded" : ""
-              }`}
+              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
+                }`}
             ></i>
           )}
         </div>
@@ -245,9 +255,8 @@ const CourtOwnerSideBar = ({
     return facilities.map((facility) => (
       <div
         key={`facility-${facility.id}`}
-        className={`submenu-item ${
-          activeMenu === `facility-${facility.id}` ? "active" : ""
-        }`}
+        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
+          }`}
         onClick={() => {
           handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
           setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
@@ -315,9 +324,8 @@ const CourtOwnerSideBar = ({
               title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
             >
               <i
-                className={`fas ${
-                  collapsed ? "fa-angle-right" : "fa-angle-left"
-                }`}
+                className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"
+                  }`}
               ></i>
             </button>
           )}

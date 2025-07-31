@@ -15,15 +15,17 @@ import FacilityTable from "./CourtOwnerPage/FacilityTable";
 import SliderManagement from "./AdminPage/SliderManagement";
 import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
+import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
-import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
+import BookingHistory from "./Common/BookingHistory";
+
+
 
 const Layout = (props) => {
   return (
     <>
       <Routes>
-        {/* Main App Routes */}
         <Route path="/" element={<App />}>
           <Route path="/search" element={<FacilitiesWithCondition />} />
           <Route path="/court-owner-register" element={<CourtOwnerRegister />} />
@@ -31,27 +33,45 @@ const Layout = (props) => {
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/blog" element={<Blog />} />
-          <Route path="/facility-details/:facilityId" element={<FacilityDetails />} />
+          <Route path="/booking-history" element={<BookingHistory />} />
+          <Route
+            path="/facility-details/:facilityId"
+            element={<FacilityDetails />}
+          />
         </Route>
 
-        {/* Court Owner Routes */}
         <Route path="/court-owner" element={<CourtOwner />}>
           <Route index element={<DashboardField />} />
-          <Route path="search" element={<FacilitiesWithCondition />} />
-          <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
-          <Route path="facility/general" element={<FacilityTable />} />
-          <Route path="facility/time-slots" element={<TimeslotManagement />} />
+          <Route
+            path="/court-owner/search"
+            element={<FacilitiesWithCondition />}
+          />
+          <Route
+            path="/court-owner/booking-management"
+            element={<BookingManagement />}
+          />
+          <Route
+            path="facilities/:facilityId/courts"
+            element={<CourtManagement />}
+          />
         </Route>
-
-        {/* Admin Routes */}
+        <Route path="/court-owner" element={<CourtOwner />}>
+          <Route
+            path="/court-owner/search"
+            element={<FacilitiesWithCondition />}
+          />
+          <Route path="facility/general" element={<FacilityTable />} />
+        </Route>
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
-          <Route path="manage-court-categories" element={<ManageCourtCategories />} />
+          <Route
+            path="manage-court-categories"
+            element={<ManageCourtCategories />}
+          />
         </Route>
       </Routes>
 
-      {/* Toast Notifications */}
       <ToastContainer
         position="top-right"
         autoClose={5000}

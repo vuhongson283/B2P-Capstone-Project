@@ -237,6 +237,7 @@
                         .facility-info {
                             margin-bottom: 1.25rem;
                             margin-top   : 0;
+                            padding      : 10px !important; // 🎯 Add padding to info section
 
                             .info-item {
                                 display        : flex;

@@ -2,14 +2,15 @@
 using B2P_API.Models;
 using B2P_API.Repository;
 using B2P_API.Response;
+using B2P_API.Interface;
 
 namespace B2P_API.Services
 {
     public class CommentService
     {
-        private readonly CommentRepository _repository;
+        private readonly ICommentRepository _repository;
 
-        public CommentService(CommentRepository repository)
+        public CommentService(ICommentRepository repository)
         {
             _repository = repository;
         }
@@ -271,6 +272,8 @@ namespace B2P_API.Services
 
             var commentDtos = comments.Select(c => new CommentResponseDto
             {
+                UserId = c.UserId,
+                UserName = c.User.FullName,
                 CommentId = c.CommentId,
                 BlogId = c.BlogId ?? 0,
                 BlogTitle = c.Blog?.Title ?? "(Không có tiêu đề)",
