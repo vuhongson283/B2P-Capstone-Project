@@ -23,25 +23,25 @@ namespace B2P_API.Controllers
             return StatusCode(response.Status, response);
         }
 
-        [HttpPost("create-new-bank-type")]
-        public async Task<IActionResult> CreateNewBankType([FromBody] CreateBankTypeRequest request)
-        {
-            var response = await _bankAccountService.CreateBankTypeAsync(request);
-            return StatusCode(response.Status, response);
-        }
+        //[HttpPost("create-new-bank-type")]
+        //public async Task<IActionResult> CreateNewBankType([FromBody] CreateBankTypeRequest request)
+        //{
+        //    var response = await _bankAccountService.CreateBankTypeAsync(request);
+        //    return StatusCode(response.Status, response);
+        //}
 
-        [HttpPut("update-bank-type/{id}")]
-        public async Task<IActionResult> UpdateBankType(int id, [FromBody] UpdateBankTypeRequest request)
-        {
-            var response = await _bankAccountService.UpdateBankTypeAsync(id, request);
-            return StatusCode(response.Status, response);
-        }
+        //[HttpPut("update-bank-type/{id}")]
+        //public async Task<IActionResult> UpdateBankType(int id, [FromBody] UpdateBankTypeRequest request)
+        //{
+        //    var response = await _bankAccountService.UpdateBankTypeAsync(id, request);
+        //    return StatusCode(response.Status, response);
+        //}
 
-        [HttpDelete("delete-bank-type/{id}")]
-        public async Task<IActionResult> DeleteBankType(int id)
-        {
-            var response = await _bankAccountService.DeleteBankTypeAsync(id);
-            return StatusCode(response.Status, response);
-        }
+        //[HttpDelete("delete-bank-type/{id}")]
+        //public async Task<IActionResult> DeleteBankType(int id)
+        //{
+        //    var response = await _bankAccountService.DeleteBankTypeAsync(id);
+        //    return StatusCode(response.Status, response);
+        //}
     }
 }

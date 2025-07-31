@@ -237,5 +237,44 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Contains(MessagesCodes.MSG_06, result.Message);
             Assert.Contains("fail", result.Message);
         }
+
+        [Fact(DisplayName = "UTCID15 - NewPassword is null returns 400")]
+        public async Task UTCID15_NewPasswordNull_Returns400()
+        {
+            var userService = CreateUserService();
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = null, ConfirmPassword = "password123" };
+            var result = await userService.ChangePasswordAsync(req);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Mật khẩu mới không được để trống", result.Message);
+        }
+
+        [Fact(DisplayName = "UTCID16 - ConfirmPassword is null returns 400")]
+        public async Task UTCID16_ConfirmPasswordNull_Returns400()
+        {
+            var userService = CreateUserService();
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = null };
+            var result = await userService.ChangePasswordAsync(req);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Xác nhận mật khẩu không được để trống", result.Message);
+        }
+
+        [Fact(DisplayName = "UTCID17 - OldPassword is null returns 400")]
+        public async Task UTCID17_HasPassword_OldPasswordNull_Returns400()
+        {
+            var userService = CreateUserService();
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = null };
+            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
+
+            var result = await userService.ChangePasswordAsync(req);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Mật khẩu cũ không được để trống", result.Message);
+        }
     }
 }
