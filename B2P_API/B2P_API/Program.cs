@@ -84,9 +84,11 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<AccountService>();
 
 builder.Services.AddScoped<BlogRepository>();
+builder.Services.AddScoped<IBlogRepository, BlogRepository>();
 builder.Services.AddScoped<BlogService>();
 
 builder.Services.AddScoped<CommentRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<CommentService>();
 
 builder.Services.AddScoped<CourtRepository>();
@@ -94,6 +96,7 @@ builder.Services.AddScoped<ICourtRepository, CourtRepository>();
 builder.Services.AddScoped<CourtServices>();
 
 builder.Services.AddScoped<BookingRepository>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<BookingService>();
 
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();

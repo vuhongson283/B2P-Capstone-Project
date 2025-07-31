@@ -2,11 +2,12 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using B2P_API.DTOs;
+using B2P_API.Interface;
 
 
 namespace B2P_API.Repository
 {
-    public class CommentRepository
+    public class CommentRepository : ICommentRepository
     {
         private readonly SportBookingDbContext _context;
 

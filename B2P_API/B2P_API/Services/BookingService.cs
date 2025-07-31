@@ -8,16 +8,20 @@ using System.Text.RegularExpressions;
 using DnsClient;
 using System.Net.Mail;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using B2P_API.Interface;
 
 namespace B2P_API.Services
 {
     public class BookingService
     {
-        private readonly BookingRepository _bookingRepo;
+        private readonly IBookingRepository _bookingRepo;
         private readonly SportBookingDbContext _context;
         private readonly AccountManagementService _accountservice;
 
-        public BookingService(BookingRepository bookingRepo, SportBookingDbContext context, AccountManagementService accountservice)
+        public BookingService(
+            IBookingRepository bookingRepo,
+            SportBookingDbContext context,
+            AccountManagementService accountservice)
         {
             _bookingRepo = bookingRepo;
             _context = context;

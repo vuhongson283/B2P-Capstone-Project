@@ -1,9 +1,10 @@
 ﻿using B2P_API.DTOs;
+using B2P_API.Interface;
 using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
 namespace B2P_API.Repositories;
 
-public class BlogRepository
+public class BlogRepository : IBlogRepository
 {
     private readonly SportBookingDbContext _context;
 
