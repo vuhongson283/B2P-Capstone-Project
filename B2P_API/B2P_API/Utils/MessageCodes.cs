@@ -82,6 +82,27 @@
         public const string MSG_78 = "Số trang không hợp lệ";
         public const string MSG_79 = "Tải danh sách kiểu sân thành công. ";
         public const string MSG_80 = "Dữ liệu không hợp lệ";
+        public const string MSG_81 = "ID kiểu sân không hợp lệ";
+        public const string MSG_82 = "Tên kiểu sân không được để trống";
+        public const string MSG_83 = "Không tìm thấy kiểu sân với ID đã cho";
+        public const string MSG_84 = "Cập nhật kiểu sân thành công";
+        public const string MSG_85 = "Xóa kiểu sân thành công";
+        public const string MSG_86 = "Tải kiểu sân thành công";
+        public const string MSG_87 = "Tải thông tin người dùng thành công";
+        public const string MSG_88 = "Người dùng chưa thiết lập mật khẩu";
+        public const string MSG_89 = "Người dùng đã có mật khẩu";
+        public const string MSG_90 = "ID người dùng không hợp lệ";
+        public const string MSG_91 = "Mã OTP đã được gửi đến email của bạn";
+        public const string MSG_92 = "Email không được để trống";
+        public const string MSG_93 = "Mã OTP không được để trống";
+        public const string MSG_94 = "Mã OTP phải gồm 6 chữ số";
+        public const string MSG_95 = "Mật khẩu mới không được để trống";
+        public const string MSG_96 = "Xác nhận mật khẩu không được để trống";
+        public const string MSG_97 = "";
+        public const string MSG_98 = "";
+        public const string MSG_99 = "";
+
+
 
 
 

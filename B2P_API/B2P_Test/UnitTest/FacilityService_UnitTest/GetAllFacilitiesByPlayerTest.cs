@@ -10,13 +10,13 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
     public class GetAllFacilitiesByPlayerTest
     {
         private readonly Mock<IFacilityRepositoryForUser> _facilityRepoForUserMock;
-        private readonly Mock<IFacilityRepository> _facilityRepoMock;
+        private readonly Mock<IFacilityManageRepository> _facilityRepoMock;
         private readonly FacilityService _service;
 
         public GetAllFacilitiesByPlayerTest()
         {
             _facilityRepoForUserMock = new Mock<IFacilityRepositoryForUser>();
-            _facilityRepoMock = new Mock<IFacilityRepository>();
+            _facilityRepoMock = new Mock<IFacilityManageRepository>();
             _service = new FacilityService(_facilityRepoMock.Object, _facilityRepoForUserMock.Object);
         }
 
@@ -252,6 +252,23 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.False(result.Success);
             Assert.Contains(MessagesCodes.MSG_06, result.Message);
             Assert.Contains("Database connection failed", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID07 - Should return 404 when facilities is null (activeFacilities == null)")]
+        public async Task UTCID07_FacilitiesNull_Returns404()
+        {
+            // Arrange
+            var request = new SearchFormRequest { Type = new List<int> { 1 } };
+            _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync((List<Facility>)null);
+
+            // Act
+            var result = await _service.GetAllFacilitiesByPlayer(request, 1, 10);
+
+            // Assert
+            Assert.Equal(404, result.Status);
+            Assert.False(result.Success);
+            Assert.Equal(MessagesCodes.MSG_72, result.Message);
             Assert.Null(result.Data);
         }
     }

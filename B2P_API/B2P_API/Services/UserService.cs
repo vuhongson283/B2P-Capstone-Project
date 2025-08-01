@@ -38,7 +38,7 @@ namespace B2P_API.Services
             _imageRepository = imageRepository;
         }
 
-        public async Task<ApiResponse<object>> SendPasswordResetOtpByEmailAsync(ForgotPasswordRequestByEmailDto? request)
+        public virtual async Task<ApiResponse<object>> SendPasswordResetOtpByEmailAsync(ForgotPasswordRequestByEmailDto? request)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "Dữ liệu không hợp lệ",
+                        Message = MessagesCodes.MSG_80,
                         Success = false,
                         Status = 400
                     };
@@ -70,7 +70,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = MessagesCodes.MSG_08,
+                        Message = MessagesCodes.MSG_68,
                         Success = false,
                         Status = 400
                     };
@@ -122,7 +122,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Data = null,
-                    Message = "Mã OTP đã được gửi đến email của bạn.",
+                    Message = MessagesCodes.MSG_91,
                     Success = true,
                     Status = 200
                 };
@@ -282,17 +282,6 @@ namespace B2P_API.Services
                         Message = MessagesCodes.MSG_65,
                         Success = false,
                         Status = 404
-                    };
-                }
-
-                if (!request.NewPassword.Equals(request.ConfirmPassword))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_14,
-                        Success = false,
-                        Status = 400
                     };
                 }
 
@@ -568,7 +557,7 @@ namespace B2P_API.Services
                 };
             }
         }
-        public async Task<ApiResponse<object>> SendPasswordResetOtpBySMSAsync(ForgotPasswordRequestBySmsDto? request)
+        public virtual async Task<ApiResponse<object>> SendPasswordResetOtpBySMSAsync(ForgotPasswordRequestBySmsDto? request)
         {
             try
             {
@@ -811,16 +800,6 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!request.NewPassword.Equals(request.ConfirmPassword))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_14,
-                        Success = false,
-                        Status = 400
-                    };
-                }
 
                 user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
                 await _userRepository.UpdateUserAsync(user);
@@ -964,7 +943,7 @@ namespace B2P_API.Services
                 return new ApiResponse<UserInfoResponse?>
                 {
                     Data = userInfo,
-                    Message = "Tải thông tin người dùng thành công",
+                    Message = MessagesCodes.MSG_87,
                     Success = true,
                     Status = 200
                 };
@@ -1085,6 +1064,18 @@ namespace B2P_API.Services
                 }
 
                 var today = DateOnly.FromDateTime(DateTime.Today);
+
+                if (updateUserDto.Dob.Value > today)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Ngày sinh không được là ngày tương lai",
+                        Success = false,
+                        Status = 400
+                    };
+                }
+
                 var age = today.Year - updateUserDto.Dob.Value.Year;
                 if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
 
@@ -1094,17 +1085,6 @@ namespace B2P_API.Services
                     {
                         Data = null,
                         Message = "Người dùng phải từ 15 tuổi trở lên",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (updateUserDto.Dob.Value > today)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Ngày sinh không được là ngày tương lai",
                         Success = false,
                         Status = 400
                     };
@@ -1215,17 +1195,8 @@ namespace B2P_API.Services
                         AccountHolder = updateUserDto.AccountHolder,
                         BankTypeId = updateUserDto.BankTypeId.Value
                     };
-                    var createResult = await _bankAccountRepository.AddBankAccountAsync(bankAccount);
-                    if (!createResult)
-                    {
-                        return new ApiResponse<object>
-                        {
-                            Data = null,
-                            Message = "Tạo tài khoản ngân hàng thất bại",
-                            Success = false,
-                            Status = 500
-                        };
-                    }
+                    await _bankAccountRepository.AddBankAccountAsync(bankAccount);
+
                 }
                 else
                 {
@@ -1233,17 +1204,7 @@ namespace B2P_API.Services
                     bankAccount.AccountNumber = updateUserDto.AccountNumber;
                     bankAccount.AccountHolder = updateUserDto.AccountHolder;
                     bankAccount.BankTypeId = updateUserDto.BankTypeId.Value;
-                    var updateResult = await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
-                    if (!updateResult)
-                    {
-                        return new ApiResponse<object>
-                        {
-                            Data = null,
-                            Message = "Cập nhật tài khoản ngân hàng thất bại",
-                            Success = false,
-                            Status = 500
-                        };
-                    }
+                    await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
                 }
             
                 // Update user
@@ -1289,7 +1250,7 @@ namespace B2P_API.Services
                     return new ApiResponse<object>
                     {
                         Data = null,
-                        Message = "UserId không hợp lệ",
+                        Message = MessagesCodes.MSG_90,
                         Success = false,
                         Status = 400
                     };
@@ -1335,7 +1296,7 @@ namespace B2P_API.Services
                         Email = user.Email,
                         Phone = user.Phone
                     },
-                    Message = hasPassword ? "Người dùng đã có mật khẩu" : "Người dùng chưa thiết lập mật khẩu",
+                    Message = hasPassword ? MessagesCodes.MSG_89 : MessagesCodes.MSG_88,
                     Success = true,
                     Status = 200
                 };
@@ -1351,7 +1312,7 @@ namespace B2P_API.Services
                 };
             }
         }
-        public async Task<bool> IsRealEmailAsync(string email)
+        protected virtual async Task<bool> IsRealEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -1371,7 +1332,7 @@ namespace B2P_API.Services
                 return false;
             }
         }
-        public bool IsValidBankAccount(string accountNumber)
+        protected virtual bool IsValidBankAccount(string accountNumber)
         {
             if (string.IsNullOrWhiteSpace(accountNumber))
                 return false;
@@ -1384,7 +1345,7 @@ namespace B2P_API.Services
 
             return true;
         }
-        private string GenerateSecureOtp()
+        protected virtual string GenerateSecureOtp()
         {
             using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
@@ -1394,7 +1355,7 @@ namespace B2P_API.Services
                 return (randomNumber % 900000 + 100000).ToString(); // 6 digits OTP
             }
         }
-        private bool IsValidPhoneNumber(string phone)
+        protected virtual bool IsValidPhoneNumber(string phone)
         {
             return System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0[3-9]\d{8}$");
         }

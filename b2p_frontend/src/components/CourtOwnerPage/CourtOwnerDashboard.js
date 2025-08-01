@@ -31,8 +31,8 @@ const OwnerDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const totalReportResponse = await getTotalReport(15, null, null);
-        const reportResponse = await getReport(15, null, null, null, 1, 10);
+        const totalReportResponse = await getTotalReport(8, null, null);
+        const reportResponse = await getReport(8, null, null, null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -64,7 +64,6 @@ const OwnerDashboard = () => {
         null,      // facilityId (nếu cần)
         1          // pageNumber
       );
-
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
       if (

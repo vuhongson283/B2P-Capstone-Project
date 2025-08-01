@@ -1,11 +1,12 @@
 ﻿using B2P_API.DTOs.BookingDTOs;
+using B2P_API.Interface;
 using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace B2P_API.Repository
 {
-    public class BookingRepository
+    public class BookingRepository : IBookingRepository
     {
         private readonly SportBookingDbContext _context;
 
@@ -116,6 +117,7 @@ namespace B2P_API.Repository
                 .ToListAsync();
         }
 
+
         public Booking? GetById(int id)
         {
             return _context.Bookings
@@ -187,6 +189,80 @@ namespace B2P_API.Repository
 
             return result;
         }
+
+        public async Task<Dictionary<int, TimeSlot>> GetTimeSlotsByIdsAsync(IEnumerable<int> timeSlotIds)
+        {
+            return await _context.TimeSlots
+                .Where(ts => timeSlotIds.Contains(ts.TimeSlotId))
+                .ToDictionaryAsync(ts => ts.TimeSlotId);
+        }
+
+        public async Task<Dictionary<int, Court>> GetCourtsByIdsAsync(IEnumerable<int> courtIds)
+        {
+            return await _context.Courts
+                .Where(c => courtIds.Contains(c.CourtId))
+                .ToDictionaryAsync(c => c.CourtId);
+        }
+
+        public async Task AddBookingAsync(Booking booking)
+        {
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddBookingDetailsAsync(IEnumerable<BookingDetail> details)
+        {
+            _context.BookingDetails.AddRange(details);
+            await _context.SaveChangesAsync();
+        }
+        public async Task<Dictionary<int, TimeSpan>> GetSlotStartTimesByIdsAsync(IEnumerable<int> slotIds)
+        {
+            return await _context.TimeSlots
+                .Where(ts => slotIds.Contains(ts.TimeSlotId) && ts.StartTime.HasValue)
+                .ToDictionaryAsync(
+                    ts => ts.TimeSlotId,
+                    ts => ts.StartTime.Value.ToTimeSpan()
+                );
+        }
+
+        public async Task<Dictionary<int, Court>> GetCourtsWithCategoryAsync()
+        {
+            return await _context.Courts
+                .Include(c => c.Category)
+                .ToDictionaryAsync(c => c.CourtId);
+        }
+
+        public async Task<Dictionary<int, TimeSlot>> GetTimeSlotsAsync()
+        {
+            return await _context.TimeSlots
+                .ToDictionaryAsync(s => s.TimeSlotId);
+        }
+
+        public async Task<Booking?> GetBookingWithDetailsByIdAsync(int bookingId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Status)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.Court)
+                        .ThenInclude(c => c.Category)
+                .Include(b => b.BookingDetails)
+                    .ThenInclude(d => d.TimeSlot)
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
+        }
+        public async Task<Booking?> GetBookingWithDetailsAsync(int bookingId)
+        {
+            return await _context.Bookings
+                .Include(b => b.BookingDetails)
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
+        }
+
+        public async Task<bool> SaveAsync()
+        {
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+
+
 
 
     }

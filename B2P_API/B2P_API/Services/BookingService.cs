@@ -8,18 +8,24 @@ using System.Text.RegularExpressions;
 using DnsClient;
 using System.Net.Mail;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using B2P_API.Interface;
 
 namespace B2P_API.Services
 {
     public class BookingService
     {
-        private readonly BookingRepository _bookingRepo;
-        private readonly SportBookingDbContext _context;
+        private readonly IBookingRepository _bookingRepo;
+        private readonly IAccountManagementRepository _accRepo;
+        private readonly IAccountRepository _accRepo2;
 
-        public BookingService(BookingRepository bookingRepo, SportBookingDbContext context)
+        public BookingService(
+            IBookingRepository bookingRepo,  
+            IAccountManagementRepository accRepo,
+            IAccountRepository accRepo2)
         {
-            _bookingRepo = bookingRepo;
-            _context = context;
+            _bookingRepo = bookingRepo;          
+            _accRepo = accRepo;
+            _accRepo2 = accRepo2;
         }
 
 
@@ -27,24 +33,25 @@ namespace B2P_API.Services
         {
             User user;
 
+            // Kiểm tra user theo Id
             if (request.UserId.HasValue)
             {
-                user = await _context.Users.FindAsync(request.UserId.Value);
+                user = await _accRepo.GetByIdAsync(request.UserId.Value);
                 if (user == null)
                 {
                     return new ApiResponse<object>
                     {
                         Success = false,
                         Status = 404,
-                        Message = "Người dùng không tồn tại",
-                        Data = null
+                        Message = "Người dùng không tồn tại"
                     };
                 }
             }
             else
             {
-                bool isEmailvalid = await IsRealEmailAsync(request.Email);
-                if (!isEmailvalid)
+                // Kiểm tra email hợp lệ
+                bool isEmailValid = await IsRealEmailAsync(request.Email);
+                if (!isEmailValid)
                 {
                     return new ApiResponse<object>
                     {
@@ -54,6 +61,7 @@ namespace B2P_API.Services
                     };
                 }
 
+                // Kiểm tra số điện thoại hợp lệ
                 if (!IsValidPhone(request.Phone))
                 {
                     return new ApiResponse<object>
@@ -64,18 +72,18 @@ namespace B2P_API.Services
                     };
                 }
 
-
+                // Bắt buộc có cả email và số điện thoại
                 if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
                 {
                     return new ApiResponse<object>
                     {
                         Success = false,
                         Status = 400,
-                        Message = "Khách đặt sân phải cung cấp email và số điện thoại",
-                        Data = null
+                        Message = "Khách đặt sân phải cung cấp email và số điện thoại"
                     };
                 }
 
+                // Tạo user mới
                 user = new User
                 {
                     Email = request.Email,
@@ -86,10 +94,10 @@ namespace B2P_API.Services
                     CreateAt = DateTime.UtcNow
                 };
 
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                await _accRepo2.RegisterAccountAsync(user);
             }
 
+            // Gán slot vào sân
             var slotToCourt = await AssignCourtsAsync(request);
             if (slotToCourt == null)
             {
@@ -97,23 +105,19 @@ namespace B2P_API.Services
                 {
                     Success = false,
                     Status = 409,
-                    Message = "Không đủ sân trống để đặt các slot đã chọn",
-                    Data = null
+                    Message = "Không đủ sân trống để đặt các slot đã chọn"
                 };
             }
 
+            // Lấy danh sách time slot và court
             var timeSlotIds = request.TimeSlotIds;
-            var slotList = await _context.TimeSlots
-                .Where(ts => timeSlotIds.Contains(ts.TimeSlotId))
-                .ToDictionaryAsync(ts => ts.TimeSlotId);
+            var slotList = await _bookingRepo.GetTimeSlotsByIdsAsync(timeSlotIds);
 
             var courtIds = slotToCourt.Values.Distinct().ToList();
-            var courtDict = await _context.Courts
-                .Where(c => courtIds.Contains(c.CourtId))
-                .ToDictionaryAsync(c => c.CourtId);
+            var courtDict = await _bookingRepo.GetCourtsByIdsAsync(courtIds);
 
+            // Tính tổng tiền
             decimal total = 0;
-
             foreach (var kvp in slotToCourt)
             {
                 int slotId = kvp.Key;
@@ -123,10 +127,9 @@ namespace B2P_API.Services
                 var court = courtDict[courtId];
 
                 total += (decimal)(slot.Discount ?? court.PricePerHour);
-
             }
 
-
+            // Tạo booking
             var booking = new Booking
             {
                 UserId = user.UserId,
@@ -135,24 +138,21 @@ namespace B2P_API.Services
                 TotalPrice = total,
                 IsDayOff = false
             };
-            _context.Bookings.Add(booking);
-            await _context.SaveChangesAsync();
 
-            foreach (var pair in slotToCourt)
+            await _bookingRepo.AddBookingAsync(booking);
+
+            // Tạo chi tiết đặt sân
+            var details = slotToCourt.Select(pair => new BookingDetail
             {
-                var detail = new BookingDetail
-                {
-                    BookingId = booking.BookingId,
-                    CourtId = pair.Value,
-                    TimeSlotId = pair.Key,
-                    CheckInDate = request.CheckInDate.Date,
-                    StatusId = 1,
-                    CreateAt = DateTime.UtcNow
-                };
-                _context.BookingDetails.Add(detail);
-            }
+                BookingId = booking.BookingId,
+                CourtId = pair.Value,
+                TimeSlotId = pair.Key,
+                CheckInDate = request.CheckInDate.Date,
+                StatusId = 1,
+                CreateAt = DateTime.UtcNow
+            }).ToList();
 
-            await _context.SaveChangesAsync();
+            await _bookingRepo.AddBookingDetailsAsync(details);
 
             return new ApiResponse<object>
             {
@@ -169,17 +169,18 @@ namespace B2P_API.Services
                         email = user?.Email,
                         phone = user?.Phone
                     },
-                    slots = booking.BookingDetails.Select(d => new
+                    slots = details.Select(d => new
                     {
                         timeSlotId = d.TimeSlotId,
-                        startTime = d.TimeSlot?.StartTime,
-                        endTime = d.TimeSlot?.EndTime,
+                        startTime = slotList[d.TimeSlotId].StartTime,
+                        endTime = slotList[d.TimeSlotId].EndTime,
                         courtId = d.CourtId,
-                        courtName = d.Court?.CourtName
+                        courtName = courtDict[d.CourtId].CourtName
                     })
                 }
             };
         }
+
 
 
         /// <summary>
@@ -188,33 +189,32 @@ namespace B2P_API.Services
         /// <returns>Dictionary TimeSlotId -> CourtId nếu thành công, null nếu không thể xếp</returns>
         public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
         {
+            // Lấy thông tin sân và các slot không khả dụng
             var availability = await _bookingRepo.GetCourtAvailabilityAsync(
-    request.FacilityId,
-    request.CategoryId,
-    request.CheckInDate,
-    request.TimeSlotIds
-);
+                request.FacilityId,
+                request.CategoryId,
+                request.CheckInDate,
+                request.TimeSlotIds
+            );
 
-            // 🧠 Lấy StartTime tương ứng với từng TimeSlotId
-            var slotTimes = await _context.TimeSlots
-                .Where(ts => request.TimeSlotIds.Contains(ts.TimeSlotId))
-                .ToDictionaryAsync(ts => ts.TimeSlotId, ts => ts.StartTime);
+            // Lấy thời gian bắt đầu tương ứng với mỗi TimeSlotId
+            var slotTimes = await _bookingRepo.GetSlotStartTimesByIdsAsync(request.TimeSlotIds);
 
-            // 💥 Sort theo StartTime để thuật toán hiểu đúng thứ tự thời gian
+            // Sắp xếp lại TimeSlotIds theo StartTime
             request.TimeSlotIds = request.TimeSlotIds
                 .OrderBy(id => slotTimes[id])
                 .ToList();
 
-            // Chuẩn bị ma trận: hàng = court, cột = slot
+            // Tạo ma trận trạng thái: hàng = sân, cột = slot
             var courtCount = availability.Count;
             var slotCount = request.TimeSlotIds.Count;
 
-            // Map từ TimeSlotId sang index
+            // Ánh xạ slotId => index
             var slotIdToIndex = request.TimeSlotIds
                 .Select((slotId, idx) => new { slotId, idx })
                 .ToDictionary(x => x.slotId, x => x.idx);
 
-            int[,] matrix = new int[courtCount, slotCount]; // 0: trống, -1: đã đặt
+            int[,] matrix = new int[courtCount, slotCount]; // 0 = trống, -1 = đã đặt
 
             for (int i = 0; i < courtCount; i++)
             {
@@ -223,18 +223,15 @@ namespace B2P_API.Services
                 {
                     var slotId = request.TimeSlotIds[j];
                     matrix[i, j] = court.UnavailableSlotIds.Contains(slotId) ? -1 : 0;
-
                 }
             }
 
             // Gọi thuật toán thông minh
             var slotToCourtIndex = TrySmartBooking(matrix, request.TimeSlotIds);
-
             if (slotToCourtIndex == null) return null;
 
-            // Chuyển kết quả index về CourtId
+            // Kết quả ánh xạ slot -> courtId
             var result = new Dictionary<int, int>();
-
             for (int j = 0; j < slotCount; j++)
             {
                 var slotId = request.TimeSlotIds[j];
@@ -243,81 +240,9 @@ namespace B2P_API.Services
             }
 
             return result;
-
         }
 
-        /*  public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
-          {
-              // Lấy danh sách sân thuộc Facility và Category được chỉ định
-              var courts = await _context.Courts
-                  .Where(c => c.FacilityId == request.FacilityId && c.CategoryId == request.CategoryId)
-                  .Select(c => new { c.CourtId })
-                  .ToListAsync();
 
-              if (!courts.Any()) return null;
-
-              var courtIds = courts.Select(c => c.CourtId).ToList();
-
-              // Lấy danh sách các BookingDetail đang chiếm chỗ các slot đó vào ngày đặt
-              var booked = await _context.BookingDetails
-                  .Where(d =>
-                      courtIds.Contains(d.CourtId) &&
-                      d.Booking. == DateOnly.FromDateTime(request.CheckInDate) &&
-                      d.Booking.StatusId != 3 // 3 = đã huỷ
-                  )
-                  .Select(d => new { d.CourtId, d.TimeSlotId })
-                  .ToListAsync();
-
-              // Lấy giờ bắt đầu của các TimeSlot để sắp xếp
-              var timeSlotTimes = await _context.TimeSlots
-                  .Where(ts => request.TimeSlotIds.Contains(ts.TimeSlotId))
-                  .ToDictionaryAsync(ts => ts.TimeSlotId, ts => ts.StartTime);
-
-              // Sắp xếp danh sách TimeSlotIds theo StartTime, giữ nguyên duplicate
-              var sortedTimeSlotIds = request.TimeSlotIds
-                  .OrderBy(id => timeSlotTimes[id])
-                  .ToList();
-
-              int courtCount = courtIds.Count;
-              int slotCount = sortedTimeSlotIds.Count;
-
-              // Tạo ma trận: hàng = sân, cột = yêu cầu slot cụ thể
-              int[,] matrix = new int[courtCount, slotCount];
-
-              for (int i = 0; i < courtCount; i++)
-              {
-                  int courtId = courtIds[i];
-                  var unavailable = booked
-                      .Where(b => b.CourtId == courtId)
-                      .Select(b => b.TimeSlotId)
-                      .ToHashSet();
-
-                  for (int j = 0; j < slotCount; j++)
-                  {
-                      int slotId = sortedTimeSlotIds[j];
-                      matrix[i, j] = unavailable.Contains(slotId) ? -1 : 0;
-                  }
-              }
-
-              // Thử gán slot
-              var result = TrySmartBookingAllowDuplicate(matrix);
-              if (result == null) return null;
-
-              // Map kết quả: mỗi slot cụ thể -> sân
-              var slotToCourtMap = new Dictionary<int, int>();
-              for (int i = 0; i < result.Length; i++)
-              {
-                  int courtIndex = result[i];
-                  if (courtIndex == -1) continue;
-
-                  int slotId = sortedTimeSlotIds[i];
-                  int courtId = courtIds[courtIndex];
-
-                  slotToCourtMap.Add(i, courtId); // Key = thứ tự slot trong danh sách gốc
-              }
-
-              return slotToCourtMap;
-          }*/
 
 
 
@@ -433,55 +358,62 @@ namespace B2P_API.Services
         public async Task<ApiResponse<PagedResponse<BookingResponseDto>>> GetByUserIdAsync(int? userId, BookingQueryParameters queryParams)
         {
             // Validate paging
-            if (queryParams.Page <= 0)
-                return new() { Success = false, Status = 400, Message = "Page phải lớn hơn 0." };
-
-            if (queryParams.PageSize <= 0)
-                return new() { Success = false, Status = 400, Message = "PageSize phải lớn hơn 0." };
+            if (queryParams.Page <= 0 || queryParams.PageSize <= 0)
+            {
+                return new()
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Page và PageSize phải lớn hơn 0."
+                };
+            }
 
             var validSortBy = new[] { "checkindate", "createdate" };
             if (!validSortBy.Contains(queryParams.SortBy?.ToLower()))
+            {
                 return new()
                 {
                     Success = false,
                     Status = 400,
                     Message = $"SortBy không hợp lệ. Chỉ chấp nhận: {string.Join(", ", validSortBy)}"
                 };
+            }
 
             var dir = queryParams.SortDirection?.ToLower();
             if (dir != "asc" && dir != "desc")
+            {
                 return new()
                 {
                     Success = false,
                     Status = 400,
                     Message = "SortDirection không hợp lệ. Chỉ chấp nhận: asc hoặc desc."
                 };
+            }
 
             // Get count
             var totalItems = await _bookingRepo.CountByUserIdAsync(userId, queryParams.StatusId);
             var totalPages = (int)Math.Ceiling(totalItems / (double)queryParams.PageSize);
 
             if (totalPages > 0 && queryParams.Page > totalPages)
+            {
                 return new()
                 {
                     Success = false,
                     Status = 400,
                     Message = $"Page vượt quá số trang tối đa ({totalPages})."
                 };
+            }
 
-            // Get data
+            // Get booking list
             var bookings = await _bookingRepo.GetByUserIdAsync(userId, queryParams);
 
-            // Tải thêm court và timeslot để join tay
-            var courtDict = await _context.Courts
-                .Include(c => c.Category)
-                .ToDictionaryAsync(c => c.CourtId);
-
-            var slotDict = await _context.TimeSlots
-                .ToDictionaryAsync(s => s.TimeSlotId);
+            // 🔁 Lấy Court và Slot qua repository
+            var courtDict = await _bookingRepo.GetCourtsWithCategoryAsync();
+            var slotDict = await _bookingRepo.GetTimeSlotsAsync();
 
             var dtoList = bookings.Select(b => new BookingResponseDto
             {
+                UserId = b.UserId,
                 BookingId = b.BookingId,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
@@ -519,16 +451,10 @@ namespace B2P_API.Services
             };
         }
 
+
         public async Task<ApiResponse<BookingResponseDto>> GetByIdAsync(int bookingId)
         {
-            var booking = await _context.Bookings
-                .Include(b => b.Status)
-                .Include(b => b.BookingDetails)
-                    .ThenInclude(d => d.Court)
-                        .ThenInclude(c => c.Category)
-                .Include(b => b.BookingDetails)
-                    .ThenInclude(d => d.TimeSlot)
-                .FirstOrDefaultAsync(b => b.BookingId == bookingId);
+            var booking = await _bookingRepo.GetBookingWithDetailsByIdAsync(bookingId);
 
             if (booking == null)
             {
@@ -585,7 +511,7 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<string>> MarkBookingCompleteAsync(int bookingId)
         {
-            var booking = _bookingRepo.GetById(bookingId);
+            var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 
             if (booking == null)
             {
@@ -620,7 +546,8 @@ namespace B2P_API.Services
                 };
             }
 
-            var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }; // Ví dụ 1 = Đã đặt, 2 = Đang sử dụng
+            var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
             if (!allowedStatusToComplete.Contains(booking.StatusId))
             {
                 return new ApiResponse<string>
@@ -638,7 +565,17 @@ namespace B2P_API.Services
                 detail.StatusId = 10;
             }
 
-            await _context.SaveChangesAsync();
+            var success = await _bookingRepo.SaveAsync();
+
+            if (!success)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 500,
+                    Message = "Đã xảy ra lỗi khi lưu thay đổi."
+                };
+            }
 
             return new ApiResponse<string>
             {
@@ -647,6 +584,7 @@ namespace B2P_API.Services
                 Message = "Đã đánh dấu booking là hoàn thành thành công."
             };
         }
+
 
         public async Task<ApiResponse<List<TimeSlotAvailability>>> GetTimeSlotAvailabilityAsync(
         int facilityId, int categoryId, DateTime checkInDate)
@@ -663,43 +601,7 @@ namespace B2P_API.Services
             };
         }
 
-        private int[]? TrySmartBookingAllowDuplicate(int[,] matrix)
-        {
-            int courts = matrix.GetLength(0);
-            int slots = matrix.GetLength(1);
-
-            var result = new int[slots];
-            Array.Fill(result, -1);
-
-            var used = new bool[courts]; // đánh dấu sân đã dùng tại từng vòng lặp
-
-            for (int j = 0; j < slots; j++)
-            {
-                bool assigned = false;
-
-                for (int c = 0; c < courts; c++)
-                {
-                    if (matrix[c, j] == 0 && !used[c])
-                    {
-                        result[j] = c;
-                        used[c] = true;
-                        assigned = true;
-                        break;
-                    }
-                }
-
-                if (!assigned)
-                {
-                    // Không tìm được sân phù hợp
-                    return null;
-                }
-
-                // Reset used cho slot tiếp theo (vì mỗi slot là yêu cầu độc lập)
-                Array.Fill(used, false);
-            }
-
-            return result;
-        }
+       
 
     }
 }

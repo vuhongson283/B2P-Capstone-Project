@@ -1,9 +1,10 @@
 ﻿using B2P_API.DTOs;
+using B2P_API.Interface;
 using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
 namespace B2P_API.Repositories;
 
-public class BlogRepository
+public class BlogRepository : IBlogRepository
 {
     private readonly SportBookingDbContext _context;
 
@@ -25,10 +26,12 @@ public class BlogRepository
     {
         return await _context.Blogs
             .Include(b => b.Comments)
-          //  .Include(b => b.Images)    // nếu cần
-          //  .Include(b => b.User)      // nếu cần
+                .ThenInclude(c => c.User) // Lấy thêm thông tin người comment
+                                          //.Include(b => b.Images)    // nếu cần
+                                          //.Include(b => b.User)      // nếu muốn lấy thông tin người viết blog
             .FirstOrDefaultAsync(b => b.BlogId == id);
     }
+
 
 
     public async Task SaveAsync()
