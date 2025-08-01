@@ -291,7 +291,7 @@ const Reviews = () => (
 );
 
 // Main Component
-const FacilityDetails = ({ facilityId = 16 }) => { // Add facilityId prop with default value
+const FacilityDetails = ({ facilityId = 27 }) => { // Add facilityId prop with default value
   const [modalOpen, setModalOpen] = useState(false);
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
