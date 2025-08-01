@@ -22,7 +22,10 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<TimeSlot>> CreateNewTimeSlot(CreateTimeslotRequestDTO request)
         {
-            if(request.StartTime >= request.EndTime)
+            // ✅ Add logging để debug
+            Console.WriteLine($"Creating timeslot: {request.StartTime} - {request.EndTime}");
+
+            if (request.StartTime >= request.EndTime)
             {
                 return new ApiResponse<TimeSlot>
                 {
@@ -32,12 +35,26 @@ namespace B2P_API.Services
                     Data = null
                 };
             }
-            var existingSlot = await _repository.GetByFacilityIdAsync(request.FacilityId);
 
-            bool isOverlapping = existingSlot.Any(slot => 
+            var existingSlot = await _repository.GetByFacilityIdAsync(request.FacilityId);
+            Console.WriteLine($"Found {existingSlot.Count()} existing slots");
+
+            foreach (var slot in existingSlot)
+            {
+                Console.WriteLine($"Existing slot: {slot.StartTime} - {slot.EndTime}");
+                bool overlap = request.StartTime < slot.EndTime && request.EndTime > slot.StartTime;
+                Console.WriteLine($"Overlap check: {overlap}");
+            }
+
+            bool isOverlapping = existingSlot.Any(slot =>
                 request.StartTime < slot.EndTime && request.EndTime > slot.StartTime);
+
+            Console.WriteLine($"Is overlapping: {isOverlapping}");
+
             if (isOverlapping)
             {
+                // ✅ QUAN TRỌNG: RETURN ngay, không tạo data
+                Console.WriteLine("Returning 409 - overlapping detected");
                 return new ApiResponse<TimeSlot>
                 {
                     Success = false,
@@ -47,6 +64,8 @@ namespace B2P_API.Services
                 };
             }
 
+            // ✅ Chỉ tạo khi không trùng
+            Console.WriteLine("Creating new timeslot...");
             var newSlot = new TimeSlot
             {
                 FacilityId = request.FacilityId,
@@ -57,6 +76,8 @@ namespace B2P_API.Services
             };
 
             var created = await _repository.CreateAsync(newSlot);
+            Console.WriteLine($"Created timeslot with ID: {created.TimeSlotId}");
+
             return new ApiResponse<TimeSlot>
             {
                 Success = true,
@@ -211,12 +232,12 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<TimeSlot>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId)
+        public async Task<ApiResponse<UpdateTimeslotDTO>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId)
         {
             var existing = await _repository.GetByIdAsync(timeslotId);
             if (existing == null)
             {
-                return new ApiResponse<TimeSlot>
+                return new ApiResponse<UpdateTimeslotDTO>
                 {
                     Success = false,
                     Status = 404,
@@ -227,7 +248,7 @@ namespace B2P_API.Services
 
             if (request.StartTime >= request.EndTime)
             {
-                return new ApiResponse<TimeSlot>
+                return new ApiResponse<UpdateTimeslotDTO>
                 {
                     Success = false,
                     Status = 400,
@@ -244,7 +265,7 @@ namespace B2P_API.Services
 
             if (isOverlapping)
             {
-                return new ApiResponse<TimeSlot>
+                return new ApiResponse<UpdateTimeslotDTO>
                 {
                     Success = false,
                     Status = 409,
@@ -262,7 +283,7 @@ namespace B2P_API.Services
             var updated = await _repository.UpdateAsync(existing);
             if (updated == null)
             {
-                return new ApiResponse<TimeSlot>
+                return new ApiResponse<UpdateTimeslotDTO>
                 {
                     Success = false,
                     Status = 500,
@@ -271,12 +292,21 @@ namespace B2P_API.Services
                 };
             }
 
-            return new ApiResponse<TimeSlot>
+            // Map sang DTO để tránh circular reference
+            var updateDto = new UpdateTimeslotDTO
+            {
+                StatusId = updated.StatusId,
+                StartTime = updated.StartTime,
+                EndTime = updated.EndTime,
+                Discount = updated.Discount
+            };
+
+            return new ApiResponse<UpdateTimeslotDTO>
             {
                 Success = true,
                 Status = 200,
                 Message = "Cập nhật TimeSlot thành công",
-                Data = updated
+                Data = updateDto
             };
         }
     }
