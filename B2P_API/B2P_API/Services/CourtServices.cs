@@ -23,15 +23,32 @@ namespace B2P_API.Services
 
             var paginatedResult = await _repository.GetAllCourts(req);
 
-            if (paginatedResult.Items == null)
+            // Kiểm tra xem có bất kỳ sân nào thuộc facilityId không
+            if (paginatedResult.TotalItems == 0)
             {
-                return new ApiResponse<PagedResponse<CourtDTO>>
+                // Kiểm tra xem có phải là tìm kiếm theo facilityId không
+                if (!string.IsNullOrEmpty(req.Search) || req.Status.HasValue || req.CategoryId.HasValue)
                 {
-                    Success = false,
-                    Message = "Cơ sở này không tồn tại sân nào trong hệ thống.",
-                    Status = 200,
-                    Data = null
-                };
+                    // Nếu có thêm điều kiện tìm kiếm (Search, Status, CategoryId) nhưng không có kết quả
+                    return new ApiResponse<PagedResponse<CourtDTO>>
+                    {
+                        Success = false,
+                        Message = "Không có kết quả tìm kiếm phù hợp.",
+                        Status = 200,
+                        Data = null
+                    };
+                }
+                else
+                {
+                    // Nếu chỉ tìm theo facilityId mà không có sân nào
+                    return new ApiResponse<PagedResponse<CourtDTO>>
+                    {
+                        Success = false,
+                        Message = "Cơ sở này không tồn tại sân nào trong hệ thống.",
+                        Status = 200,
+                        Data = null
+                    };
+                }
             }
 
             var response = new PagedResponse<CourtDTO>
@@ -40,13 +57,15 @@ namespace B2P_API.Services
                 ItemsPerPage = paginatedResult.ItemsPerPage,
                 TotalItems = paginatedResult.TotalItems,
                 TotalPages = paginatedResult.TotalPages,
-                Items = (paginatedResult.Items)
+                Items = paginatedResult.Items
             };
 
             return new ApiResponse<PagedResponse<CourtDTO>>
             {
                 Success = true,
-                Message = "Sân đã được lấy dữ liệu với phân trang thành công.",
+                Message = paginatedResult.Items.Any()
+                    ? "Sân đã được lấy dữ liệu với phân trang thành công."
+                    : "Không có kết quả tìm kiếm phù hợp.",
                 Status = 200,
                 Data = response
             };
