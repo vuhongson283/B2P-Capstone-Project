@@ -1064,6 +1064,18 @@ namespace B2P_API.Services
                 }
 
                 var today = DateOnly.FromDateTime(DateTime.Today);
+
+                if (updateUserDto.Dob.Value > today)
+                {
+                    return new ApiResponse<object>
+                    {
+                        Data = null,
+                        Message = "Ngày sinh không được là ngày tương lai",
+                        Success = false,
+                        Status = 400
+                    };
+                }
+
                 var age = today.Year - updateUserDto.Dob.Value.Year;
                 if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
 
@@ -1073,17 +1085,6 @@ namespace B2P_API.Services
                     {
                         Data = null,
                         Message = "Người dùng phải từ 15 tuổi trở lên",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (updateUserDto.Dob.Value > today)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Ngày sinh không được là ngày tương lai",
                         Success = false,
                         Status = 400
                     };
@@ -1194,17 +1195,8 @@ namespace B2P_API.Services
                         AccountHolder = updateUserDto.AccountHolder,
                         BankTypeId = updateUserDto.BankTypeId.Value
                     };
-                    var createResult = await _bankAccountRepository.AddBankAccountAsync(bankAccount);
-                    if (!createResult)
-                    {
-                        return new ApiResponse<object>
-                        {
-                            Data = null,
-                            Message = "Tạo tài khoản ngân hàng thất bại",
-                            Success = false,
-                            Status = 500
-                        };
-                    }
+                    await _bankAccountRepository.AddBankAccountAsync(bankAccount);
+
                 }
                 else
                 {
@@ -1212,17 +1204,7 @@ namespace B2P_API.Services
                     bankAccount.AccountNumber = updateUserDto.AccountNumber;
                     bankAccount.AccountHolder = updateUserDto.AccountHolder;
                     bankAccount.BankTypeId = updateUserDto.BankTypeId.Value;
-                    var updateResult = await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
-                    if (!updateResult)
-                    {
-                        return new ApiResponse<object>
-                        {
-                            Data = null,
-                            Message = "Cập nhật tài khoản ngân hàng thất bại",
-                            Success = false,
-                            Status = 500
-                        };
-                    }
+                    await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
                 }
             
                 // Update user
