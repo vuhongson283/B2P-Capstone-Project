@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
 
@@ -119,11 +120,24 @@ const CourtOwnerSideBar = ({
   };
 
   // Handle menu item click
-  const handleMenuClick = (menuId, path) => {
+  // Handle menu item click
+  const handleMenuClick = (menuId, path, item) => {
     setActiveMenu(menuId);
-    if (path) {
+
+    // ✅ Special handling for time-slots
+    if (menuId === "time-slots") {
+      if (facilities.length > 0) {
+        // Navigate to first facility's time-slots
+        navigate(`/court-owner/facility/time-slots/${facilities[0].id}`);
+      } else {
+        // Fallback if no facilities
+        message.warning('Chưa có cơ sở nào để quản lý khung giờ');
+        navigate("/court-owner/facility/general");
+      }
+    } else if (path) {
       navigate(path);
     }
+
     // Close mobile sidebar after navigation
     if (isMobile && onClose) {
       onClose();

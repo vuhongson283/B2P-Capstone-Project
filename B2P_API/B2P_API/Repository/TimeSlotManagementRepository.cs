@@ -22,7 +22,7 @@ namespace B2P_API.Repository
         public async Task<bool> DeleteAsync(int id)
         {
             var data = await GetByIdAsync(id);
-            if (data != null)
+            if (data == null)
             {
                 return false;
             }

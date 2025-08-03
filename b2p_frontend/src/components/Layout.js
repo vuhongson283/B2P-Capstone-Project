@@ -19,6 +19,7 @@ import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
+import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
 
 
 
@@ -61,6 +62,8 @@ const Layout = (props) => {
             element={<FacilitiesWithCondition />}
           />
           <Route path="facility/general" element={<FacilityTable />} />
+          <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
+          <Route path="facility/time-slots" element={<TimeslotManagement />} />
         </Route>
         <Route path="/admin" element={<Admin />}>
           <Route path="accounts" element={<AccountTable />} />
