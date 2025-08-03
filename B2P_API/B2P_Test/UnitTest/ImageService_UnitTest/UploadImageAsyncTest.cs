@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace B2P_Test.UnitTest.ImageServiceTests
+namespace B2P_Test.UnitTest.ImageService_UnitTest
 {
     public class UploadImageAsyncTests
     {

@@ -60,7 +60,12 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
             Assert.Equal("Cập nhật TimeSlot thành công", result.Message);
-            Assert.Equal(timeslotId, result.Data.TimeSlotId);
+
+            // Verify response data
+            Assert.Equal(request.StatusId, result.Data.StatusId);
+            Assert.Equal(request.StartTime, result.Data.StartTime);
+            Assert.Equal(request.EndTime, result.Data.EndTime);
+            Assert.Equal(request.Discount, result.Data.Discount);
         }
 
         [Fact(DisplayName = "UTCID02 - Should return not found when timeslot doesn't exist")]
@@ -189,6 +194,5 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
             Assert.Equal("Cập nhật TimeSlot thất bại", result.Message);
             Assert.Null(result.Data);
         }
-
     }
 }
