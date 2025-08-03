@@ -442,6 +442,33 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
     },
   });
 };
+const getTimeslotsByFacilityId = (
+  facilityId,
+  statusId = null,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const params = new URLSearchParams();
+  if (statusId != null) params.append("statusId", statusId);
+  params.append("pageNumber", pageNumber);
+  params.append("pageSize", pageSize);
+
+  const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
+  return axios.get(url);
+};
+const createTimeslot = (createRequest) => {
+  const url = `TimeslotManagement/create`;
+  return axios.post(url, createRequest);
+};
+const deleteTimeslot = (timeSlotId) => {
+  const url = `TimeslotManagement/delete/${timeSlotId}`;
+  return axios.delete(url);
+};
+const updateTimeslot = (timeSlotId, updateRequest) => {
+  const url = `TimeslotManagement/update/${timeSlotId}`;
+  return axios.put(url, updateRequest);
+};
+
 
 // ===============================
 // EXPORT ALL
@@ -518,4 +545,8 @@ export {
   deleteCourt,
   getCourtDetail,
   registerCourtOwner,
+  getTimeslotsByFacilityId,
+  createTimeslot,
+  deleteTimeslot,
+  updateTimeslot,
 };
