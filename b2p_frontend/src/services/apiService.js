@@ -40,6 +40,10 @@ const deleteCourtCategory = (categoryId) => {
   );
 };
 
+const completeBooking = (bookingId) => {
+  return axios.post(`Booking/${bookingId}/complete`);
+};
+
 // ===============================
 // 📝 BLOG MANAGEMENT
 // ===============================
@@ -442,11 +446,18 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
     },
   });
 };
+const createBookingForCO = (bookingData) => {
+  return axios.post("Booking", bookingData, {  // Sửa thành "api/Booking"
+    validateStatus: () => true,
+  });
+};
 
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  createBookingForCO,
+  completeBooking,
   getBookingsByUserId,
   getBookingsByFacilityId,
   getTimeSlotsByFacilityId,

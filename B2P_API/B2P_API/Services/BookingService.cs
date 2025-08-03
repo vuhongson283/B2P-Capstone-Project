@@ -134,7 +134,7 @@ namespace B2P_API.Services
             {
                 UserId = user.UserId,
                 CreateAt = DateTime.UtcNow,
-                StatusId = 1,
+                StatusId = 7,
                 TotalPrice = total,
                 IsDayOff = false
             };
@@ -415,6 +415,7 @@ namespace B2P_API.Services
             {
                 UserId = b.UserId,
                 BookingId = b.BookingId,
+                CreateDate =b.CreateAt,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
                 Status = b.Status?.StatusName ?? "",
@@ -481,6 +482,7 @@ namespace B2P_API.Services
             {
                 BookingId = booking.BookingId,
                 TotalPrice = booking.TotalPrice ?? 0,
+                CreateDate =booking.CreateAt,
                 CheckInDate = booking.BookingDetails.Min(d => d.CheckInDate),
                 Status = booking.Status?.StatusName ?? "",
                 Slots = booking.BookingDetails.Select(d =>
