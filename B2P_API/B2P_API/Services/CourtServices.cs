@@ -73,15 +73,51 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<CourtDetailDTO>> GetCourtDetail(int courtId)
         {
-            var court = await _repository.GetCourtDetail(courtId);
-
-            return new ApiResponse<CourtDetailDTO>
+            try
             {
-                Success = true,
-                Message = "Lấy thông tin chi tiết sân thành công",
-                Status = 200,
-                Data = court
-            };
+                // Validate input
+                if (courtId <= 0)
+                {
+                    return new ApiResponse<CourtDetailDTO>
+                    {
+                        Success = false,
+                        Message = "ID sân không hợp lệ",
+                        Status = 400,
+                        Data = null
+                    };
+                }
+
+                var court = await _repository.GetCourtDetail(courtId);
+
+                if (court == null)
+                {
+                    return new ApiResponse<CourtDetailDTO>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy thông tin sân",
+                        Status = 404,
+                        Data = null
+                    };
+                }
+
+                return new ApiResponse<CourtDetailDTO>
+                {
+                    Success = true,
+                    Message = "Lấy thông tin chi tiết sân thành công",
+                    Status = 200,
+                    Data = court
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<CourtDetailDTO>
+                {
+                    Success = false,
+                    Message = $"Lỗi hệ thống: {ex.Message}",
+                    Status = 500,
+                    Data = null
+                };
+            }
         }
 
         public async Task<ApiResponse<Court>> CreateCourtAsync(CreateCourt request)
@@ -97,21 +133,14 @@ namespace B2P_API.Services
 
             try
             {
-                await _repository.CreateCourt(request);
+                var createdCourt = await _repository.CreateCourt(request);
 
                 return new ApiResponse<Court>
                 {
                     Success = true,
                     Message = "Sân đã được thêm vào thành công!",
                     Status = 201,
-                    Data = new Court
-                    {
-                        FacilityId = request.FacilityId,
-                        StatusId = 1,
-                        CourtName = request.CourtName,
-                        CategoryId = request.CategoryId,
-                        PricePerHour = request.PricePerHour
-                    }
+                    Data = createdCourt
                 };
             }
             catch (Exception ex)
@@ -174,17 +203,6 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (!court)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "Cập nhật sân thất bại.",
-                        Status = 500,
-                        Data = null
-                    };
-                }
-
                 return new ApiResponse<object>
                 {
                     Success = true,
@@ -208,20 +226,21 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<bool>> DeleteCourt(int userId, int courtId)
         {
-            bool check = _repository.CheckCourtOwner(userId, courtId);
-            if (!check)
+            if (!_repository.CheckCourtOwner(userId, courtId))
             {
                 return new ApiResponse<bool>
                 {
                     Success = false,
                     Message = "Tài khoản không thể xóa sân này vì không phải tài khoản chủ sân.",
-                    Status = 500
+                    Status = 403,
+                    Data = false
                 };
             }
 
             try
             {
-                if (await _repository.DeleteCourt(courtId) == false)
+                var deleteResult = await _repository.DeleteCourt(courtId);
+                if (!deleteResult)
                 {
                     return new ApiResponse<bool>
                     {
@@ -232,16 +251,15 @@ namespace B2P_API.Services
                     };
                 }
 
-                await _repository.DeleteCourt(courtId);
                 return new ApiResponse<bool>
                 {
                     Success = true,
                     Message = "Xóa sân thành công!",
-                    Status = 201,
+                    Status = 200,
                     Data = true
                 };
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new ApiResponse<bool>
                 {
@@ -255,6 +273,16 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<object>> LockCourt(int userId, int courtId, int statusId)
         {
+            if (statusId <= 0)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "StatusId không hợp lệ",
+                    Status = 400,
+                    Data = null
+                };
+            }
             bool check = _repository.CheckCourtOwner(userId, courtId);
             if (!check)
             {
@@ -276,17 +304,6 @@ namespace B2P_API.Services
                         Success = false,
                         Message = "Không tìm thấy sân.",
                         Status = 404,
-                        Data = null
-                    };
-                }
-
-                if (!court)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "Khóa sân thất bại.",
-                        Status = 500,
                         Data = null
                     };
                 }
