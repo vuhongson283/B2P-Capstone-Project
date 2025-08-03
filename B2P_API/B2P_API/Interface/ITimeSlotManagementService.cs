@@ -9,7 +9,7 @@ namespace B2P_API.Interface
     {
         Task<ApiResponse<PagedResponse<GetTimeslotDTO>>> GetTimeslotByFacilityIdAsync(int facilityId, int? statusId = null, int pageNumber = 1, int pageSize = 10);
         Task<ApiResponse<TimeSlot>> CreateNewTimeSlot(CreateTimeslotRequestDTO request);
-        Task<ApiResponse<TimeSlot>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId);
+        Task<ApiResponse<UpdateTimeslotDTO>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId);
         Task<ApiResponse<TimeSlot>> DeleteTimeSlot(int timeslotId);
     }
 }

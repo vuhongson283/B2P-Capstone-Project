@@ -275,7 +275,7 @@ public class BlogService
     public async Task<ApiResponse<Blog>> CreateAsync(CreateBlogDTO dto)
     {
         //var user = await _context.Users.FindAsync(dto.UserId); //chua co repo cua user nen goi db o day, se thay doi sau
-        var user = _accrepository.GetByIdAsync(dto.UserId);
+        var user = await _accrepository.GetByIdAsync(dto.UserId);
         if (user == null)
         {
             return new ApiResponse<Blog>
