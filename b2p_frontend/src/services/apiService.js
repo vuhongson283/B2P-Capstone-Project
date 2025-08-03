@@ -428,6 +428,7 @@ const getTimeSlotsByFacilityId = (facilityId) => {
 };
 
 
+
 const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
   return axios.get(`Booking/court-owner`, {
     params: {
@@ -452,10 +453,43 @@ const createBookingForCO = (bookingData) => {
   });
 };
 
+const createTimeslot = (createRequest) => {
+  const url = `TimeslotManagement/create`;
+  return axios.post(url, createRequest);
+};
+
+const deleteTimeslot = (timeSlotId) => {
+  const url = `TimeslotManagement/delete/${timeSlotId}`;
+  return axios.delete(url);
+};
+
+const updateTimeslot = (timeSlotId, updateRequest) => {
+  const url = `TimeslotManagement/update/${timeSlotId}`;
+  return axios.put(url, updateRequest);
+};
+
+const getTimeslotsByFacilityId = (
+  facilityId,
+  statusId = null,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const params = new URLSearchParams();
+  if (statusId != null) params.append("statusId", statusId);
+  params.append("pageNumber", pageNumber);
+  params.append("pageSize", pageSize);
+
+  const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
+  return axios.get(url);
+};
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  createTimeslot,
+  deleteTimeslot,
+  updateTimeslot,
+  getTimeslotsByFacilityId,
   createBookingForCO,
   completeBooking,
   getBookingsByUserId,
