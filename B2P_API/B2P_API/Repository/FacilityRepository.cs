@@ -1,4 +1,5 @@
 ﻿using B2P_API.DTOs.FacilityDTO;
+using B2P_API.DTOs.RatingDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
 using Microsoft.EntityFrameworkCore;
@@ -30,11 +31,9 @@ namespace B2P_API.Repository
 
             if (facility == null) return null;
 
-            // Lấy open - close time từ TimeSlots
             var openTime = facility.TimeSlots.Any() ? facility.TimeSlots.Min(t => t.StartTime) : null;
             var closeTime = facility.TimeSlots.Any() ? facility.TimeSlots.Max(t => t.EndTime) : null;
 
-            // Lấy danh sách các category mà facility này có qua các court
             var categories = await _context.Courts
                 .Where(c => c.FacilityId == facilityId)
                 .Select(c => c.CategoryId)
@@ -48,6 +47,20 @@ namespace B2P_API.Repository
                           CategoryName = cat.CategoryName
                       })
                 .ToListAsync();
+
+            // Lấy danh sách rating
+            var ratings = await (from r in _context.Ratings
+                                 join b in _context.Bookings on r.BookingId equals b.BookingId
+                                 join bd in _context.BookingDetails on b.BookingId equals bd.BookingId
+                                 join c in _context.Courts on bd.CourtId equals c.CourtId
+                                 where c.FacilityId == facilityId
+                                 select new RatingDto
+                                 {
+                                     RatingId = r.RatingId,
+                                     Stars = r.Stars ?? 0,
+                                     Comment = r.Comment,
+                                     BookingId = r.BookingId ?? 0
+                                 }).ToListAsync();
 
             return new FacilityDetailsDto
             {
@@ -64,9 +77,11 @@ namespace B2P_API.Repository
                     Caption = img.Caption,
                     Order = img.Order
                 }).ToList(),
-                Categories = categories
+                Categories = categories,
+                Ratings = ratings
             };
         }
+
 
     }
 }

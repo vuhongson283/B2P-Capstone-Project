@@ -9,6 +9,7 @@ using DnsClient;
 using System.Net.Mail;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using B2P_API.Interface;
+using B2P_API.DTOs.RatingDTO;
 
 namespace B2P_API.Services
 {
@@ -415,10 +416,11 @@ namespace B2P_API.Services
             {
                 UserId = b.UserId,
                 BookingId = b.BookingId,
-                CreateDate =b.CreateAt,
+                CreateDate = b.CreateAt,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
                 Status = b.Status?.StatusName ?? "",
+
                 Slots = b.BookingDetails.Select(d =>
                 {
                     var court = courtDict.GetValueOrDefault(d.CourtId);
@@ -433,8 +435,17 @@ namespace B2P_API.Services
                         CourtName = court?.CourtName ?? "",
                         CategoryName = court?.Category?.CategoryName ?? ""
                     };
-                }).ToList()
+                }).ToList(),
+
+                Ratings = b.Ratings?.Select(r => new RatingDto
+                {
+                    RatingId = r.RatingId,
+                    Stars = r.Stars ?? 0,
+                    Comment = r.Comment,
+                    BookingId = r.BookingId ?? 0
+                }).ToList() ?? new List<RatingDto>()
             }).ToList();
+
 
             return new ApiResponse<PagedResponse<BookingResponseDto>>
             {
