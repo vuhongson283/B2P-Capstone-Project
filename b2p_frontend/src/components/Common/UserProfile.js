@@ -538,7 +538,7 @@ const UserProfile = (props) => {
     return newErrors;
   };
 
-  // Password validation
+  // Sửa lại function validatePassword trong UserProfile.js
   const validatePassword = () => {
     const newErrors = {};
 
@@ -547,29 +547,31 @@ const UserProfile = (props) => {
       passwordStatus?.RequireOldPassword &&
       !passwordData.oldPassword?.trim()
     ) {
-      newErrors.oldPassword = "Vui lòng nhập mật khẩu cũ";
+      newErrors.oldPassword = "Mật khẩu cũ không được để trống";
     }
 
+    // 🎯 NEW: Validate new password với regex mới từ backend
     if (!passwordData.newPassword?.trim()) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
-    } else if (passwordData.newPassword.length < 8) {
-      newErrors.newPassword = "Mật khẩu phải có ít nhất 8 ký tự";
+    } else {
+      // 🎯 Backend regex: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+      if (!passwordRegex.test(passwordData.newPassword)) {
+        newErrors.newPassword =
+          "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự";
+      }
     }
 
+    // 🎯 Validate confirm password - khớp với backend
     if (!passwordData.confirmPassword?.trim()) {
-      newErrors.confirmPassword = "Vui lòng nhập xác nhận mật khẩu";
+      newErrors.confirmPassword = "Xác nhận mật khẩu không được để trống";
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không trùng khớp";
     }
 
-    // Check if new password is same as old password (chỉ khi có old password)
-    if (
-      passwordStatus?.HasPassword &&
-      passwordStatus?.RequireOldPassword &&
-      passwordData.oldPassword === passwordData.newPassword
-    ) {
-      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu cũ";
-    }
+    // 🎯 REMOVED: Check if new password is same as old password
+    // Backend sẽ handle việc này, frontend không cần check nữa
 
     return newErrors;
   };

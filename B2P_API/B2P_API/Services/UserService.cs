@@ -201,25 +201,14 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.NewPassword.Trim()))
+                if (!Regex.IsMatch(request.NewPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$"))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
-                        Message = "Mật khẩu mới không được để trống",
                         Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (request.NewPassword.Length < 8)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_13,
-                        Success = false,
-                        Status = 400
+                        Message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự",
+                        Status = 400,
+                        Data = null
                     };
                 }
 
@@ -425,25 +414,14 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(changePasswordRequest.NewPassword?.Trim()))
+                if (!Regex.IsMatch(changePasswordRequest.NewPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$"))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
-                        Message = "Mật khẩu mới không được để trống",
                         Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (changePasswordRequest.NewPassword.Length < 8)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Mật khẩu có ít nhất 8 ký tự",
-                        Success = false,
-                        Status = 400
+                        Message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự",
+                        Status = 400,
+                        Data = null
                     };
                 }
 
@@ -712,25 +690,14 @@ namespace B2P_API.Services
                     };
                 }
 
-                if (string.IsNullOrEmpty(request.NewPassword.Trim()))
+                if (!Regex.IsMatch(request.NewPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$"))
                 {
                     return new ApiResponse<object>
                     {
-                        Data = null,
-                        Message = "Mật khẩu mới không được để trống",
                         Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (request.NewPassword.Length < 8)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = MessagesCodes.MSG_13,
-                        Success = false,
-                        Status = 400
+                        Message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự",
+                        Status = 400,
+                        Data = null
                     };
                 }
 
