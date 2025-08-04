@@ -963,134 +963,21 @@ namespace B2P_API.Services
         {
             try
             {
-                // Validate request
-                if (updateUserDto == null)
+                // Validate basic request
+                var basicValidationResult = ValidateBasicRequest(userId, updateUserDto);
+                if (!basicValidationResult.Success)
                 {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Dữ liệu không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
+                    return basicValidationResult;
                 }
 
-                if (userId <= 0)
+                // Validate user data
+                var userValidationResult = await ValidateUserDataAsync(userId, updateUserDto);
+                if (!userValidationResult.Success)
                 {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "UserId không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
+                    return userValidationResult;
                 }
 
-                if (string.IsNullOrEmpty(updateUserDto.FullName.Trim()))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Tên người dùng không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (updateUserDto.FullName.Length > 50)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Tên người dùng không được vượt quá 50 ký tự",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (string.IsNullOrEmpty(updateUserDto.Email))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Email không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (!await IsRealEmailAsync(updateUserDto.Email))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Địa chỉ Email không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (string.IsNullOrEmpty(updateUserDto.Address?.Trim()))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Địa chỉ không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (updateUserDto.Address.Length > 255)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Địa chỉ không được vượt quá 255 ký tự",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (!updateUserDto.Dob.HasValue)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Ngày sinh không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                var today = DateOnly.FromDateTime(DateTime.Today);
-
-                if (updateUserDto.Dob.Value > today)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Ngày sinh không được là ngày tương lai",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                var age = today.Year - updateUserDto.Dob.Value.Year;
-                if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
-
-                if (age < 15)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Người dùng phải từ 15 tuổi trở lên",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-
+                // Get existing user
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 if (user == null)
                 {
@@ -1103,110 +990,16 @@ namespace B2P_API.Services
                     };
                 }
 
-                // Check email exists
-                var existingEmail = await _userRepository.CheckEmailExistedByUserId(userId, updateUserDto.Email);
-                if (existingEmail != null)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Email đã được sử dụng",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
                 // Update user properties
-                user.FullName = updateUserDto.FullName;
-                user.Email = updateUserDto.Email;
-                user.IsMale = updateUserDto.IsMale;
-                user.Address = updateUserDto.Address.Trim();
-                user.Dob = updateUserDto.Dob;
+                UpdateUserProperties(user, updateUserDto);
 
-                updateUserDto.AccountHolder = updateUserDto.AccountHolder?.Trim();
-                updateUserDto.AccountNumber = updateUserDto.AccountNumber.Trim();
-
-                // Validate bank account
-                if (!IsValidBankAccount(updateUserDto.AccountNumber))
+                // Handle bank account update if all required fields are provided
+                var bankAccountResult = await HandleBankAccountUpdateAsync(userId, updateUserDto);
+                if (!bankAccountResult.Success)
                 {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Số tài khoản không hợp lệ,chỉ chứa từ 9-16 ký tự",
-                        Success = false,
-                        Status = 400
-                    };
+                    return bankAccountResult;
                 }
 
-                if (string.IsNullOrEmpty(updateUserDto.AccountHolder))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Tên chủ tài khoản không được để trống",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                if (updateUserDto.AccountHolder.Length > 50)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Tên chủ tài khoản không được vượt quá 50 ký tự",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                //Validate bank type
-                if (updateUserDto.BankTypeId == null || updateUserDto.BankTypeId <=0)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Loại ngân hàng không hợp lệ",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-                var bankType = await _bankAccountRepository.GetBankTypeByIdAsync(updateUserDto.BankTypeId);
-                if (bankType == null)
-                {
-                    return new ApiResponse<object>
-                    {
-                        Data = null,
-                        Message = "Không tìm thấy kiểu ngân hàng đã chọn",
-                        Success = false,
-                        Status = 400
-                    };
-                }
-
-                //Update bank account
-                var bankAccount = await _bankAccountRepository.GetBankAccountsByUserIdAsync(userId);
-                if (bankAccount == null)
-                {
-                    // Create new bank account if it doesn't exist
-                    bankAccount = new BankAccount
-                    {
-                        UserId = userId,
-                        AccountNumber = updateUserDto.AccountNumber,
-                        AccountHolder = updateUserDto.AccountHolder,
-                        BankTypeId = updateUserDto.BankTypeId.Value
-                    };
-                    await _bankAccountRepository.AddBankAccountAsync(bankAccount);
-
-                }
-                else
-                {
-                    // Update existing bank account
-                    bankAccount.AccountNumber = updateUserDto.AccountNumber;
-                    bankAccount.AccountHolder = updateUserDto.AccountHolder;
-                    bankAccount.BankTypeId = updateUserDto.BankTypeId.Value;
-                    await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
-                }
-            
                 // Update user
                 var updatedUserResult = await _userRepository.UpdateUserAsync(user);
                 if (!updatedUserResult)
@@ -1230,7 +1023,6 @@ namespace B2P_API.Services
             }
             catch (Exception ex)
             {
-
                 return new ApiResponse<object>
                 {
                     Data = null,
@@ -1239,6 +1031,190 @@ namespace B2P_API.Services
                     Status = 500
                 };
             }
+        }
+
+        private ApiResponse<object> ValidateBasicRequest(int userId, UpdateUserRequest updateUserDto)
+        {
+            if (updateUserDto == null)
+            {
+                return CreateErrorResponse("Dữ liệu không hợp lệ", 400);
+            }
+
+            if (userId <= 0)
+            {
+                return CreateErrorResponse("UserId không hợp lệ", 400);
+            }
+
+            return CreateSuccessResponse();
+        }
+
+        private async Task<ApiResponse<object>> ValidateUserDataAsync(int userId, UpdateUserRequest updateUserDto)
+        {
+            // Validate FullName
+            if (string.IsNullOrEmpty(updateUserDto.FullName?.Trim()))
+            {
+                return CreateErrorResponse("Tên người dùng không được để trống", 400);
+            }
+
+            if (updateUserDto.FullName.Length > 50)
+            {
+                return CreateErrorResponse("Tên người dùng không được vượt quá 50 ký tự", 400);
+            }
+
+            // Validate Email
+            if (string.IsNullOrEmpty(updateUserDto.Email))
+            {
+                return CreateErrorResponse("Email không được để trống", 400);
+            }
+
+            if (!await IsRealEmailAsync(updateUserDto.Email))
+            {
+                return CreateErrorResponse("Địa chỉ Email không hợp lệ", 400);
+            }
+
+            // Check email exists
+            var existingEmail = await _userRepository.CheckEmailExistedByUserId(userId, updateUserDto.Email);
+            if (existingEmail != null)
+            {
+                return CreateErrorResponse("Email đã được sử dụng", 400);
+            }
+
+            // Validate Address
+            if (string.IsNullOrEmpty(updateUserDto.Address?.Trim()))
+            {
+                return CreateErrorResponse("Địa chỉ không được để trống", 400);
+            }
+
+            if (updateUserDto.Address.Length > 255)
+            {
+                return CreateErrorResponse("Địa chỉ không được vượt quá 255 ký tự", 400);
+            }
+
+            // Validate Date of Birth
+            if (!updateUserDto.Dob.HasValue)
+            {
+                return CreateErrorResponse("Ngày sinh không được để trống", 400);
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (updateUserDto.Dob.Value > today)
+            {
+                return CreateErrorResponse("Ngày sinh không được là ngày tương lai", 400);
+            }
+
+            var age = today.Year - updateUserDto.Dob.Value.Year;
+            if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
+
+            if (age < 15)
+            {
+                return CreateErrorResponse("Người dùng phải từ 15 tuổi trở lên", 400);
+            }
+
+            return CreateSuccessResponse();
+        }
+
+        private void UpdateUserProperties(User user, UpdateUserRequest updateUserDto)
+        {
+            user.FullName = updateUserDto.FullName.Trim();
+            user.Email = updateUserDto.Email;
+            user.IsMale = updateUserDto.IsMale;
+            user.Address = updateUserDto.Address.Trim();
+            user.Dob = updateUserDto.Dob;
+        }
+
+        private async Task<ApiResponse<object>> HandleBankAccountUpdateAsync(int userId, UpdateUserRequest updateUserDto)
+        {
+            // Check if all bank account fields are provided
+            var accountNumber = updateUserDto.AccountNumber?.Trim();
+            var accountHolder = updateUserDto.AccountHolder?.Trim();
+            var bankTypeId = updateUserDto.BankTypeId;
+
+            // If any of the required bank fields is empty, skip bank account update
+            if (string.IsNullOrEmpty(accountNumber) ||
+                string.IsNullOrEmpty(accountHolder) ||
+                bankTypeId == null || bankTypeId <= 0)
+            {
+                return CreateSuccessResponse(); // Skip bank account update
+            }
+
+            // Validate bank account data
+            var bankValidationResult = await ValidateBankAccountDataAsync(accountNumber, accountHolder, bankTypeId.Value);
+            if (!bankValidationResult.Success)
+            {
+                return bankValidationResult;
+            }
+
+            // Update or create bank account
+            var bankAccount = await _bankAccountRepository.GetBankAccountsByUserIdAsync(userId);
+            if (bankAccount == null)
+            {
+                // Create new bank account
+                bankAccount = new BankAccount
+                {
+                    UserId = userId,
+                    AccountNumber = accountNumber,
+                    AccountHolder = accountHolder,
+                    BankTypeId = bankTypeId.Value
+                };
+                await _bankAccountRepository.AddBankAccountAsync(bankAccount);
+            }
+            else
+            {
+                // Update existing bank account
+                bankAccount.AccountNumber = accountNumber;
+                bankAccount.AccountHolder = accountHolder;
+                bankAccount.BankTypeId = bankTypeId.Value;
+                await _bankAccountRepository.UpdateBankAccountAsync(bankAccount);
+            }
+
+            return CreateSuccessResponse();
+        }
+
+        private async Task<ApiResponse<object>> ValidateBankAccountDataAsync(string accountNumber, string accountHolder, int bankTypeId)
+        {
+            // Validate account number
+            if (!IsValidBankAccount(accountNumber))
+            {
+                return CreateErrorResponse("Số tài khoản không hợp lệ, chỉ chứa từ 9-16 ký tự", 400);
+            }
+
+            // Validate account holder
+            if (accountHolder.Length > 50)
+            {
+                return CreateErrorResponse("Tên chủ tài khoản không được vượt quá 50 ký tự", 400);
+            }
+
+            // Validate bank type
+            var bankType = await _bankAccountRepository.GetBankTypeByIdAsync(bankTypeId);
+            if (bankType == null)
+            {
+                return CreateErrorResponse("Không tìm thấy kiểu ngân hàng đã chọn", 400);
+            }
+
+            return CreateSuccessResponse();
+        }
+
+        private ApiResponse<object> CreateErrorResponse(string message, int status)
+        {
+            return new ApiResponse<object>
+            {
+                Data = null,
+                Message = message,
+                Success = false,
+                Status = status
+            };
+        }
+
+        private ApiResponse<object> CreateSuccessResponse()
+        {
+            return new ApiResponse<object>
+            {
+                Data = null,
+                Message = "Success",
+                Success = true,
+                Status = 200
+            };
         }
         public async Task<ApiResponse<object>> CheckPasswordStatusAsync(int userId)
         {
