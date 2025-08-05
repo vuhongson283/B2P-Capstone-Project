@@ -112,6 +112,14 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
+builder.Services.AddScoped<RatingRepository>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<RatingService>();
+
+builder.Services.AddScoped<PaymentRepository>();
+//builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<PaymentService>();
+
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
 
 var app = builder.Build();
