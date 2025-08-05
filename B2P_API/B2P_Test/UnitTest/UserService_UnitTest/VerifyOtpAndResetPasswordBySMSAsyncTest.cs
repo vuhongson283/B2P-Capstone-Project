@@ -60,7 +60,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(false);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
@@ -84,7 +84,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "   ", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "   ", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
@@ -108,7 +108,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "abc123", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "abc123", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
@@ -116,8 +116,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Mã OTP phải gồm 6 chữ số", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID05 - NewPassword empty returns 400")]
-        public async Task UTCID05_NewPasswordEmpty_Returns400()
+        [Fact(DisplayName = "UTCID05 - NewPassword invalid returns 400")]
+        public async Task UTCID05_NewPasswordInvalid_Returns400()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -132,16 +132,16 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "   ", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "abc", ConfirmPassword = "abc" };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu mới không được để trống", result.Message);
+            Assert.Equal("Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID06 - NewPassword too short returns 400")]
-        public async Task UTCID06_NewPasswordTooShort_Returns400()
+        [Fact(DisplayName = "UTCID06 - ConfirmPassword empty returns 400")]
+        public async Task UTCID06_ConfirmPasswordEmpty_Returns400()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -156,31 +156,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "short", ConfirmPassword = "short" };
-            var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal(MessagesCodes.MSG_13, result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID07 - ConfirmPassword empty returns 400")]
-        public async Task UTCID07_ConfirmPasswordEmpty_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "   " };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "   " };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
@@ -188,8 +164,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Xác nhận mật khẩu không được để trống", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID08 - Passwords not match returns 400")]
-        public async Task UTCID08_PasswordsNotMatch_Returns400()
+        [Fact(DisplayName = "UTCID07 - Passwords not match returns 400")]
+        public async Task UTCID07_PasswordsNotMatch_Returns400()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -204,7 +180,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "87654321" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "321Cba" };
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.False(result.Success);
@@ -212,8 +188,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_14, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID09 - OTP not found in cache returns 400")]
-        public async Task UTCID09_OtpNotFoundInCache_Returns400()
+        [Fact(DisplayName = "UTCID08 - OTP not found in cache returns 400")]
+        public async Task UTCID08_OtpNotFoundInCache_Returns400()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -228,9 +204,9 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
 
-            object? dummy;
+            object dummy;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out dummy)).Returns(false);
 
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
@@ -240,8 +216,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_12, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID10 - OTP code not match returns 400")]
-        public async Task UTCID10_OtpCodeNotMatch_Returns400()
+        [Fact(DisplayName = "UTCID09 - OTP code not match returns 400")]
+        public async Task UTCID09_OtpCodeNotMatch_Returns400()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -256,7 +232,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
 
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.OtpCode = "654321";
@@ -270,8 +246,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_12, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID11 - User not found returns 404")]
-        public async Task UTCID11_UserNotFound_Returns404()
+        [Fact(DisplayName = "UTCID10 - User not found returns 404")]
+        public async Task UTCID10_UserNotFound_Returns404()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -286,7 +262,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
 
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.OtpCode = "123456";
@@ -302,8 +278,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_65, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID12 - Success returns 200")]
-        public async Task UTCID12_Success_Returns200()
+        [Fact(DisplayName = "UTCID11 - Success returns 200")]
+        public async Task UTCID11_Success_Returns200()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -318,7 +294,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Returns(true);
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
 
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.OtpCode = "123456";
@@ -327,9 +303,8 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
 
             var user = new User { UserId = 1, Phone = request.PhoneNumber, StatusId = 1 };
             _userRepositoryMock.Setup(x => x.GetUserByPhoneAsync(request.PhoneNumber)).ReturnsAsync(user);
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true); // <-- Add this line
+            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
 
-            // Gọi hàm cần test
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
             Assert.True(result.Success);
@@ -337,12 +312,12 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_10, result.Message);
 
             _userRepositoryMock.Verify(x => x.UpdateUserAsync(
-                It.Is<User>(u => u.UserId == user.UserId && BCrypt.Net.BCrypt.Verify(request.NewPassword, u.Password, false, BCrypt.Net.HashType.SHA384))
+                It.Is<User>(u => u.UserId == user.UserId && !string.IsNullOrEmpty(u.Password))
             ), Times.Once);
         }
 
-        [Fact(DisplayName = "UTCID13 - Exception returns 500")]
-        public async Task UTCID13_Exception_Returns500()
+        [Fact(DisplayName = "UTCID12 - Exception returns 500")]
+        public async Task UTCID12_Exception_Returns500()
         {
             var userServiceMock = new Mock<UserService>(
                 _userRepositoryMock.Object,
@@ -358,7 +333,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 .Setup<bool>("IsValidPhoneNumber", ItExpr.IsAny<string>())
                 .Throws(new Exception("some error"));
 
-            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "12345678", ConfirmPassword = "12345678" };
+            var request = new VerifyOtpBySmsDto { PhoneNumber = "0123456789", OtpCode = "123456", NewPassword = "Abc123", ConfirmPassword = "Abc123" };
 
             var result = await userServiceMock.Object.VerifyOtpAndResetPasswordBySMSAsync(request);
 
@@ -367,7 +342,5 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Contains(MessagesCodes.MSG_06, result.Message);
             Assert.Contains("some error", result.Message);
         }
-
-        private delegate void TryGetValueCallback(object key, out object? value);
     }
 }

@@ -254,14 +254,21 @@ const ForgotPassword = (props) => {
       newErrors.otpCode = "Mã OTP phải gồm 6 chữ số";
     }
 
+    // 🎯 NEW: Validate password với regex mới từ backend
     if (!formData.newPassword.trim()) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = "Mật khẩu phải có ít nhất 8 ký tự";
+    } else {
+      // 🎯 Backend regex: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+      if (!passwordRegex.test(formData.newPassword)) {
+        newErrors.newPassword =
+          "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự";
+      }
     }
 
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+      newErrors.confirmPassword = "Vui lòng nhập xác nhận mật khẩu";
     } else if (formData.newPassword !== formData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không trùng khớp";
     }

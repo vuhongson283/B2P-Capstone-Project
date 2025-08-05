@@ -7,6 +7,8 @@ using B2P_API.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using Xunit;
+using System;
+using System.Threading.Tasks;
 
 namespace B2P_Test.UnitTest.UserService_UnitTest
 {
@@ -18,7 +20,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         private readonly Mock<ISMSService> _smsServiceMock;
         private readonly Mock<IBankAccountRepository> _bankAccountRepositoryMock;
         private readonly Mock<IImageRepository> _imageRepositoryMock;
-        private readonly UserService _service;
 
         public VerifyOtpAndResetPasswordByEmailAsyncTest()
         {
@@ -28,21 +29,26 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             _smsServiceMock = new Mock<ISMSService>();
             _bankAccountRepositoryMock = new Mock<IBankAccountRepository>();
             _imageRepositoryMock = new Mock<IImageRepository>();
+        }
 
-            _service = new UserService(
+        private UserService CreateService(bool emailValidationResult = true)
+        {
+            return new TestableUserServiceForOtpReset(
                 _userRepositoryMock.Object,
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
                 _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
+                _imageRepositoryMock.Object,
+                emailValidationResult
             );
         }
 
         [Fact(DisplayName = "UTCID01 - Null request returns 400")]
-        public async System.Threading.Tasks.Task UTCID01_NullRequest_Returns400()
+        public async Task UTCID01_NullRequest_Returns400()
         {
-            var result = await _service.VerifyOtpAndResetPasswordByEmailAsync(null);
+            var service = CreateService();
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(null);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
@@ -51,17 +57,17 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         }
 
         [Fact(DisplayName = "UTCID02 - Empty email returns 400")]
-        public async System.Threading.Tasks.Task UTCID02_EmptyEmail_Returns400()
+        public async Task UTCID02_EmptyEmail_Returns400()
         {
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
-            var result = await _service.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
@@ -69,22 +75,17 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         }
 
         [Fact(DisplayName = "UTCID03 - Invalid email returns 400")]
-        public async System.Threading.Tasks.Task UTCID03_InvalidEmail_Returns400()
+        public async Task UTCID03_InvalidEmail_Returns400()
         {
-            // Giả lập UserService để IsRealEmailAsync trả về false
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, false);
-
+            var service = CreateService(emailValidationResult: false);
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "fake@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
@@ -92,21 +93,17 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         }
 
         [Fact(DisplayName = "UTCID04 - Empty OTP returns 400")]
-        public async System.Threading.Tasks.Task UTCID04_EmptyOtp_Returns400()
+        public async Task UTCID04_EmptyOtp_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "user@email.com",
                 OtpCode = "",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
@@ -114,188 +111,111 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         }
 
         [Fact(DisplayName = "UTCID05 - OTP format invalid returns 400")]
-        public async System.Threading.Tasks.Task UTCID05_InvalidOtpFormat_Returns400()
+        public async Task UTCID05_InvalidOtpFormat_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "user@email.com",
-                OtpCode = "12",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                OtpCode = "1234",
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Mã OTP phải gồm 6 chữ số", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID06 - Empty new password returns 400")]
-        public async System.Threading.Tasks.Task UTCID06_EmptyNewPassword_Returns400()
+        [Fact(DisplayName = "UTCID06 - New password not meet policy returns 400")]
+        public async Task UTCID06_NewPasswordPolicyFail_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "user@email.com",
                 OtpCode = "123456",
-                NewPassword = "",
-                ConfirmPassword = "password123"
+                NewPassword = "abc123",
+                ConfirmPassword = "abc123"
             };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu mới không được để trống", result.Message);
+            Assert.Equal("Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID07 - Short new password returns 400")]
-        public async System.Threading.Tasks.Task UTCID07_ShortNewPassword_Returns400()
+        [Fact(DisplayName = "UTCID07 - Empty confirm password returns 400")]
+        public async Task UTCID07_EmptyConfirmPassword_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "user@email.com",
                 OtpCode = "123456",
-                NewPassword = "123",
-                ConfirmPassword = "123"
-            };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal(MessagesCodes.MSG_13, result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID08 - Empty confirm password returns 400")]
-        public async System.Threading.Tasks.Task UTCID08_EmptyConfirmPassword_Returns400()
-        {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
-            var request = new VerifyOtpDtoByEmail
-            {
-                Email = "user@email.com",
-                OtpCode = "123456",
-                NewPassword = "password123",
+                NewPassword = "Password123",
                 ConfirmPassword = ""
             };
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Xác nhận mật khẩu không được để trống", result.Message);
         }
 
-        public class OtpCacheValue
+        [Fact(DisplayName = "UTCID08 - New password does not match confirm returns 400")]
+        public async Task UTCID08_PasswordMismatch_Returns400()
         {
-            public string OtpCode { get; set; }
-            public int UserId { get; set; }
-            public string Email { get; set; }
-        }
-
-        [Fact(DisplayName = "UTCID09 - Password mismatch returns 400")]
-        public async Task UTCID09_PasswordMismatch_Returns400()
-        {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "user@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "different"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password456"
             };
-
-            var cacheKey = $"password_reset_otp_{request.Email}";
-            var cacheValue = new OtpCacheValue
-            {
-                OtpCode = "123456",
-                UserId = 1,
-                Email = request.Email
-            };
-
-            object outObj = cacheValue;
-            _cacheMock.Setup(x => x.TryGetValue(cacheKey, out outObj)).Returns(true);
-
-            _userRepositoryMock.Setup(x => x.GetUserByEmailAsync(request.Email)).ReturnsAsync(
-                new User
-                {
-                    Email = request.Email,
-                    Password = "oldpassword",
-                    UserId = 1,
-                    StatusId = 1,
-                    FullName = "User"
-                }
-            );
-
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal(MessagesCodes.MSG_14, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID10 - OTP not in cache returns 400")]
-        public async System.Threading.Tasks.Task UTCID10_OtpNotInCache_Returns400()
+        [Fact(DisplayName = "UTCID09 - OTP not in cache returns 400")]
+        public async Task UTCID09_OtpNotInCache_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
-                Email = "cache@email.com",
+                Email = "missingcache@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
             var cacheKey = $"password_reset_otp_{request.Email}";
             object? cacheValue = null;
             _cacheMock.Setup(x => x.TryGetValue(cacheKey, out cacheValue)).Returns(false);
 
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal(MessagesCodes.MSG_12, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID11 - Wrong OTP returns 400")]
-        public async Task UTCID11_WrongOtp_Returns400()
+        [Fact(DisplayName = "UTCID10 - Wrong OTP returns 400")]
+        public async Task UTCID10_WrongOtp_Returns400()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
-                Email = "cache@email.com",
+                Email = "wrongotp@email.com",
                 OtpCode = "654321",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
             var cacheKey = $"password_reset_otp_{request.Email}";
-
-            // Sử dụng ExpandoObject để tránh lỗi dynamic property
             dynamic cacheValue = new System.Dynamic.ExpandoObject();
             cacheValue.OtpCode = "123456";
             cacheValue.UserId = 1;
@@ -305,28 +225,24 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 x.TryGetValue(cacheKey, out It.Ref<object>.IsAny)
             ).Returns((string key, out object value) => { value = cacheValue; return true; });
 
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal(MessagesCodes.MSG_12, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID12 - User not found returns 404")]
-        public async Task UTCID12_UserNotFound_Returns404()
+        [Fact(DisplayName = "UTCID11 - User not found returns 404")]
+        public async Task UTCID11_UserNotFound_Returns404()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
-                Email = "cache@email.com",
+                Email = "notfound@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
             var cacheKey = $"password_reset_otp_{request.Email}";
             dynamic cacheValue = new System.Dynamic.ExpandoObject();
             cacheValue.OtpCode = "123456";
@@ -339,33 +255,30 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
 
             _userRepositoryMock.Setup(x => x.GetUserByEmailAsync(request.Email)).ReturnsAsync((User?)null);
 
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(404, result.Status);
             Assert.Equal(MessagesCodes.MSG_65, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID13 - Success returns 200")]
-        public async Task UTCID13_Success_Returns200()
+        [Fact(DisplayName = "UTCID12 - Success returns 200")]
+        public async Task UTCID12_Success_Returns200()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "success@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
             var cacheKey = $"password_reset_otp_{request.Email}";
             dynamic cacheValue = new System.Dynamic.ExpandoObject();
             cacheValue.OtpCode = "123456";
             cacheValue.UserId = 1;
             cacheValue.Email = request.Email;
+
             _cacheMock.Setup(x =>
                 x.TryGetValue(cacheKey, out It.Ref<object>.IsAny)
             ).Returns((string key, out object value) => { value = cacheValue; return true; });
@@ -383,7 +296,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             _userRepositoryMock.Setup(x => x.GetUserByEmailAsync(request.Email)).ReturnsAsync(user);
             _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
 
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
@@ -396,21 +309,17 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             _cacheMock.Verify(x => x.Remove(cacheKey), Times.Once);
         }
 
-        [Fact(DisplayName = "UTCID14 - Exception returns 500")]
-        public async Task UTCID14_Exception_Returns500()
+        [Fact(DisplayName = "UTCID13 - Exception returns 500")]
+        public async Task UTCID13_Exception_Returns500()
         {
-            var testService = new TestableUserServiceForOtpReset(
-                _userRepositoryMock.Object, _emailServiceMock.Object, _smsServiceMock.Object,
-                _cacheMock.Object, _bankAccountRepositoryMock.Object, _imageRepositoryMock.Object, true);
-
+            var service = CreateService();
             var request = new VerifyOtpDtoByEmail
             {
                 Email = "error@email.com",
                 OtpCode = "123456",
-                NewPassword = "password123",
-                ConfirmPassword = "password123"
+                NewPassword = "Password123",
+                ConfirmPassword = "Password123"
             };
-
             var cacheKey = $"password_reset_otp_{request.Email}";
             dynamic cacheValue = new System.Dynamic.ExpandoObject();
             cacheValue.OtpCode = "123456";
@@ -422,7 +331,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
 
             _userRepositoryMock.Setup(x => x.GetUserByEmailAsync(request.Email)).ThrowsAsync(new Exception("Database error"));
 
-            var result = await testService.VerifyOtpAndResetPasswordByEmailAsync(request);
+            var result = await service.VerifyOtpAndResetPasswordByEmailAsync(request);
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
@@ -431,7 +340,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         }
     }
 
-    // Class giúp test IsRealEmailAsync
+    // Helper class to override IsRealEmailAsync for testing
     public class TestableUserServiceForOtpReset : UserService
     {
         private readonly bool _emailValidationResult;
