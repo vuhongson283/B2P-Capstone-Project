@@ -17,7 +17,7 @@ namespace B2P_API.Controllers
 		[HttpPost("register-court-owner")]
 		public async Task<IActionResult> Register([FromBody] RegisterAccountRequest request)
 		{
-			var result = await _accountService.RegisterAccountAsync(request);
+			var result = await _accountService.RegisterCourtOwnerAsync(request);
 
 			// Debug log
 			Console.WriteLine($"Returning response: Status={result.Status}, Success={result.Success}, Message={result.Message}");
