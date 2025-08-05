@@ -154,7 +154,13 @@ namespace B2P_API.Services
                 };
             }
 
-            return await _excelExportService.ExportToExcelAsync(reportResponse.Data, "Báo cáo đặt sân");
+            // Sửa thông tin phân trang cho export Excel
+            var reportData = reportResponse.Data;
+            reportData.CurrentPage = 1;
+            reportData.TotalPages = 1;
+            reportData.ItemsPerPage = reportData.Items.Count(); // Số bản ghi thực tế được export
+
+            return await _excelExportService.ExportToExcelAsync(reportData, "Báo cáo đặt sân");
         }
 
 

@@ -40,6 +40,10 @@ const deleteCourtCategory = (categoryId) => {
   );
 };
 
+const completeBooking = (bookingId) => {
+  return axios.post(`Booking/${bookingId}/complete`);
+};
+
 // ===============================
 // 📝 BLOG MANAGEMENT
 // ===============================
@@ -451,6 +455,7 @@ const getTimeSlotsByFacilityId = (facilityId) => {
 };
 
 
+
 const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
   return axios.get(`Booking/court-owner`, {
     params: {
@@ -469,6 +474,27 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
     },
   });
 };
+const createBookingForCO = (bookingData) => {
+  return axios.post("Booking", bookingData, {  // Sửa thành "api/Booking"
+    validateStatus: () => true,
+  });
+};
+
+const createTimeslot = (createRequest) => {
+  const url = `TimeslotManagement/create`;
+  return axios.post(url, createRequest);
+};
+
+const deleteTimeslot = (timeSlotId) => {
+  const url = `TimeslotManagement/delete/${timeSlotId}`;
+  return axios.delete(url);
+};
+
+const updateTimeslot = (timeSlotId, updateRequest) => {
+  const url = `TimeslotManagement/update/${timeSlotId}`;
+  return axios.put(url, updateRequest);
+};
+
 const getTimeslotsByFacilityId = (
   facilityId,
   statusId = null,
@@ -483,24 +509,16 @@ const getTimeslotsByFacilityId = (
   const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
   return axios.get(url);
 };
-const createTimeslot = (createRequest) => {
-  const url = `TimeslotManagement/create`;
-  return axios.post(url, createRequest);
-};
-const deleteTimeslot = (timeSlotId) => {
-  const url = `TimeslotManagement/delete/${timeSlotId}`;
-  return axios.delete(url);
-};
-const updateTimeslot = (timeSlotId, updateRequest) => {
-  const url = `TimeslotManagement/update/${timeSlotId}`;
-  return axios.put(url, updateRequest);
-};
-
-
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  createTimeslot,
+  deleteTimeslot,
+  updateTimeslot,
+  getTimeslotsByFacilityId,
+  createBookingForCO,
+  completeBooking,
   getBookingsByUserId,
   getBookingsByFacilityId,
   getTimeSlotsByFacilityId,
@@ -572,8 +590,4 @@ export {
   deleteCourt,
   getCourtDetail,
   registerCourtOwner,
-  getTimeslotsByFacilityId,
-  createTimeslot,
-  deleteTimeslot,
-  updateTimeslot,
 };
