@@ -291,5 +291,7 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.NotNull(firstItem.TotalPrice);
             Assert.NotNull(firstItem.BookingTime);
         }
+
+
     }
 }

@@ -156,5 +156,195 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             Assert.Equal("Sân B", second.Slots[0].CourtName);
             Assert.Equal("Thường", second.Slots[0].CategoryName);
         }
+
+        [Fact(DisplayName = "GetByUserIdAsync - SortBy là null")]
+        public async Task GetByUserIdAsync_SortByIsNull_Returns400()
+        {
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = null, // SortBy null
+                SortDirection = "asc"
+            };
+
+            var result = await _service.GetByUserIdAsync(1, queryParams);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Contains("SortBy không hợp lệ", result.Message);
+        }
+
+        [Fact(DisplayName = "GetByUserIdAsync - SortDirection là null")]
+        public async Task GetByUserIdAsync_SortDirectionIsNull_Returns400()
+        {
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "checkindate",
+                SortDirection = null // SortDirection null
+            };
+
+            var result = await _service.GetByUserIdAsync(1, queryParams);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Contains("SortDirection không hợp lệ", result.Message);
+        }
+
+        [Fact(DisplayName = "GetByUserIdAsync - Không có booking nào trả về danh sách rỗng")]
+        public async Task GetByUserIdAsync_ReturnsEmpty_WhenNoBookings()
+        {
+            // Arrange
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "checkindate",
+                SortDirection = "asc"
+            };
+
+            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(1, null)).ReturnsAsync(0);
+
+            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(1, queryParams))
+                .ReturnsAsync(new List<Booking>());
+
+            // Act
+            var result = await _service.GetByUserIdAsync(1, queryParams);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(0, result.Data.TotalItems);
+            Assert.Empty(result.Data.Items);
+
+            _bookingRepoMock.Verify(x => x.GetByUserIdAsync(1, queryParams), Times.Once);
+        }
+
+        [Fact(DisplayName = "GetByUserIdAsync - Page > 1 khi không có booking vẫn thành công")]
+        public async Task GetByUserIdAsync_Page2WhenNoBookings_StillReturnsSuccess()
+        {
+            // Arrange
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 2, // Page > 1
+                PageSize = 10,
+                SortBy = "checkindate",
+                SortDirection = "asc"
+            };
+
+            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(1, null)).ReturnsAsync(0);
+            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(1, queryParams))
+                .ReturnsAsync(new List<Booking>());
+
+            // Act
+            var result = await _service.GetByUserIdAsync(1, queryParams);
+
+            // Assert
+            Assert.True(result.Success); // Behavior hiện tại
+            Assert.Equal(0, result.Data.TotalItems);
+            Assert.Empty(result.Data.Items);
+        }
+
+        [Fact(DisplayName = "GetByUserIdAsync - Xử lý khi Court/Slot không tồn tại")]
+        public async Task GetByUserIdAsync_HandlesMissingCourtAndSlot()
+        {
+            // Arrange
+            var userId = 1;
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "checkindate",
+                SortDirection = "asc"
+            };
+
+            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(userId, null)).ReturnsAsync(1);
+
+            // Booking có CourtId và TimeSlotId không tồn tại trong dictionary
+            var bookings = new List<Booking>
+            {
+                new Booking
+                {
+                    BookingId = 1,
+                    UserId = userId,
+                    BookingDetails = new List<BookingDetail>
+                    {
+                        new BookingDetail {
+                            CourtId = 999, // Không tồn tại
+                            TimeSlotId = 999, // Không tồn tại
+                            CheckInDate = DateTime.Now
+                        }
+                    }
+                }
+            };
+            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(userId, queryParams)).ReturnsAsync(bookings);
+
+            // Court và Slot dictionary rỗng
+            _bookingRepoMock.Setup(x => x.GetCourtsWithCategoryAsync()).ReturnsAsync(new Dictionary<int, Court>());
+            _bookingRepoMock.Setup(x => x.GetTimeSlotsAsync()).ReturnsAsync(new Dictionary<int, TimeSlot>());
+
+            // Act
+            var result = await _service.GetByUserIdAsync(userId, queryParams);
+
+            // Assert
+            Assert.True(result.Success);
+            var slot = result.Data.Items.First().Slots.First();
+            Assert.Equal(999, slot.CourtId);
+            Assert.Equal(999, slot.TimeSlotId);
+            Assert.Equal("", slot.CourtName); // Court không tồn tại
+            Assert.Equal("", slot.CategoryName); // Category không tồn tại
+            Assert.Equal(TimeSpan.Zero, slot.StartTime); // Slot không tồn tại
+            Assert.Equal(TimeSpan.Zero, slot.EndTime); // Slot không tồn tại
+        }
+
+        [Fact(DisplayName = "GetByUserIdAsync - Xử lý khi Status là null")]
+        public async Task GetByUserIdAsync_HandlesNullStatus()
+        {
+            // Arrange
+            var userId = 1;
+            var queryParams = new BookingQueryParameters
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "checkindate",
+                SortDirection = "asc"
+            };
+
+            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(userId, null)).ReturnsAsync(1);
+
+            // Booking có Status = null và có ít nhất 1 BookingDetail
+            var bookings = new List<Booking>
+    {
+        new Booking
+        {
+            BookingId = 1,
+            UserId = userId,
+            Status = null, // Status null
+            BookingDetails = new List<BookingDetail>
+            {
+                new BookingDetail {
+                    CourtId = 1,
+                    TimeSlotId = 1,
+                    CheckInDate = DateTime.Now
+                }
+            }
+        }
+    };
+            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(userId, queryParams)).ReturnsAsync(bookings);
+
+            // Mock dữ liệu court và slot
+            _bookingRepoMock.Setup(x => x.GetCourtsWithCategoryAsync())
+                .ReturnsAsync(new Dictionary<int, Court> { { 1, new Court() } });
+            _bookingRepoMock.Setup(x => x.GetTimeSlotsAsync())
+                .ReturnsAsync(new Dictionary<int, TimeSlot> { { 1, new TimeSlot() } });
+
+            // Act
+            var result = await _service.GetByUserIdAsync(userId, queryParams);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal("", result.Data.Items.First().Status); // Status null sẽ trả về empty string
+        }
     }
 }

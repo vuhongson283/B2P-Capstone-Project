@@ -204,5 +204,153 @@ namespace B2P_Test.UnitTest.ImageService_UnitTest
             // Assert
             Assert.Equal(caption, savedImage.Caption);
         }
+
+        [Theory(DisplayName = "UTCID06 - Should handle different image types")]
+        [InlineData("facility", nameof(Image.FacilityId))]
+        [InlineData("blog", nameof(Image.BlogId))]
+        [InlineData("user", nameof(Image.UserId))]
+        [InlineData("slide", nameof(Image.SlideId))]
+        public async Task UTCID06_HandleDifferentImageTypes_SetsCorrectEntityId(string imageType, string expectedPropertyName)
+        {
+            // Arrange
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.FileName).Returns("test.jpg");
+            mockFile.Setup(f => f.Length).Returns(1024);
+            mockFile.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            const int entityId = 1;
+            const string fileId = "drive_file_id";
+            const string imageUrl = "https://drive.google.com/test.jpg";
+            const int nextOrder = 1;
+
+            _driveServiceMock.Setup(x => x.UploadImageAsync(It.IsAny<byte[]>(), It.IsAny<string>()))
+                .ReturnsAsync(fileId);
+
+            _driveServiceMock.Setup(x => x.CreatePublicLinkAsync(fileId))
+                .ReturnsAsync(imageUrl);
+
+            _imageRepoMock.Setup(x => x.GetNextOrderAsync(imageType, entityId))
+                .ReturnsAsync(nextOrder);
+
+            Image createdImage = null;
+            _imageRepoMock.Setup(x => x.CreateAsync(It.IsAny<Image>()))
+                .Callback<Image>(img => createdImage = img)
+                .ReturnsAsync(new Image { ImageId = 1 });
+
+            // Act
+            await _service.UploadImageAsync(mockFile.Object, imageType, entityId);
+
+            // Assert
+            Assert.NotNull(createdImage);
+
+            // Kiểm tra property tương ứng được set
+            var propertyInfo = typeof(Image).GetProperty(expectedPropertyName);
+            Assert.NotNull(propertyInfo);
+            Assert.Equal(entityId, (int)propertyInfo.GetValue(createdImage));
+
+            // Kiểm tra các properties khác
+            Assert.Equal(imageUrl, createdImage.ImageUrl);
+            Assert.Equal(nextOrder, createdImage.Order);
+
+            // Kiểm tra các properties khác null
+            var otherProperties = new[] { "FacilityId", "BlogId", "UserId", "SlideId" }
+                .Where(p => p != expectedPropertyName);
+
+            foreach (var prop in otherProperties)
+            {
+                var otherPropInfo = typeof(Image).GetProperty(prop);
+                Assert.Null(otherPropInfo.GetValue(createdImage));
+            }
+        }
+
+        [Fact(DisplayName = "UTCID07 - Should throw exception for invalid image type")]
+        public async Task UTCID07_InvalidImageType_ThrowsException()
+        {
+            // Arrange
+            var mockFile = new Mock<IFormFile>();
+            const string invalidImageType = "invalid_type";
+            const int entityId = 1;
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.UploadImageAsync(mockFile.Object, invalidImageType, entityId));
+
+            Assert.Contains("Invalid image type", ex.Message);
+
+            // Verify logging was called
+            _loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Error uploading image")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
+        }
+
+        [Fact(DisplayName = "UTCID08 - Should throw exception for invalid image type")]
+        public async Task UTCID08_InvalidImageType_ThrowsException()
+        {
+            // Arrange
+            var mockFile = new Mock<IFormFile>();
+            const string invalidImageType = "invalid_type";
+            const int entityId = 1;
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.UploadImageAsync(mockFile.Object, invalidImageType, entityId));
+
+            // Kiểm tra message chứa cả loại không hợp lệ
+            Assert.Contains($"Invalid image type: {invalidImageType}", ex.Message);
+
+            // Verify logging was called
+            _loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Error uploading image")),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+                Times.Once);
+        }
+
+        [Theory(DisplayName = "UTCID09 - Should accept all valid image types")]
+        [InlineData("facility")]
+        [InlineData("blog")]
+        [InlineData("user")]
+        [InlineData("slide")]
+        [InlineData("FACILITY")] // Test case sensitivity
+        [InlineData("Blog")] // Test mixed case
+        public async Task UTCID09_ValidImageTypes_ShouldNotThrow(string validImageType)
+        {
+            // Arrange
+            var mockFile = new Mock<IFormFile>();
+            mockFile.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            const int entityId = 1;
+            const string fileId = "drive_file_id";
+            const string imageUrl = "https://drive.google.com/test.jpg";
+
+            _driveServiceMock.Setup(x => x.UploadImageAsync(It.IsAny<byte[]>(), It.IsAny<string>()))
+                .ReturnsAsync(fileId);
+
+            _driveServiceMock.Setup(x => x.CreatePublicLinkAsync(fileId))
+                .ReturnsAsync(imageUrl);
+
+            _imageRepoMock.Setup(x => x.GetNextOrderAsync(It.IsAny<string>(), It.IsAny<int>()))
+                .ReturnsAsync(1);
+
+            _imageRepoMock.Setup(x => x.CreateAsync(It.IsAny<Image>()))
+                .ReturnsAsync(new Image { ImageId = 1 });
+
+            // Act
+            var exception = await Record.ExceptionAsync(() =>
+                _service.UploadImageAsync(mockFile.Object, validImageType, entityId));
+
+            // Assert
+            Assert.Null(exception); // Đảm bảo không có exception nào được throw
+        }
     }
 }
