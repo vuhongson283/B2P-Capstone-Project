@@ -491,6 +491,7 @@ namespace B2P_API.Services
 
             var dto = new BookingResponseDto
             {
+                UserId = booking.UserId,
                 BookingId = booking.BookingId,
                 TotalPrice = booking.TotalPrice ?? 0,
                 CreateDate =booking.CreateAt,
