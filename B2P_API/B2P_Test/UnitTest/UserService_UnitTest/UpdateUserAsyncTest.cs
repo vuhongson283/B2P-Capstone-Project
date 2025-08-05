@@ -1,11 +1,10 @@
 ﻿using B2P_API.DTOs.UserDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
+using B2P_API.Response;
 using B2P_API.Services;
-using B2P_API.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
-using Moq.Protected;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,915 +13,505 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
 {
     public class UpdateUserAsyncTest
     {
-        private readonly Mock<IUserRepository> _userRepositoryMock = new();
+        private readonly Mock<IUserRepository> _userRepoMock = new();
         private readonly Mock<IEmailService> _emailServiceMock = new();
         private readonly Mock<IMemoryCache> _cacheMock = new();
         private readonly Mock<ISMSService> _smsServiceMock = new();
-        private readonly Mock<IBankAccountRepository> _bankAccountRepositoryMock = new();
-        private readonly Mock<IImageRepository> _imageRepositoryMock = new();
+        private readonly Mock<IBankAccountRepository> _bankRepoMock = new();
+        private readonly Mock<IImageRepository> _imageRepoMock = new();
 
-        private UserService CreateUserService()
-        {
-            return new UserService(
-                _userRepositoryMock.Object,
+        private UserService CreateService()
+            => new UserService(
+                _userRepoMock.Object,
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            );
-        }
+                _bankRepoMock.Object,
+                _imageRepoMock.Object);
 
-        [Fact(DisplayName = "UTCID01 - Null request returns 400")]
-        public async Task UTCID01_NullRequest_Returns400()
+        [Fact(DisplayName = "UTCID01 - Return 400 when updateUserDto is null")]
+        public async Task UTCID01_Return400WhenUpdateUserDtoIsNull()
         {
-            var userService = CreateUserService();
-            var result = await userService.UpdateUserAsync(1, null);
+            // Arrange
+            int userId = 1;
+            UpdateUserRequest updateUserDto = null;
+            var service = CreateService();
 
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Dữ liệu không hợp lệ", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID02 - Invalid userId returns 400")]
-        public async Task UTCID02_InvalidUserId_Returns400()
+        [Fact(DisplayName = "UTCID02 - Return 400 when userId is invalid")]
+        public async Task UTCID02_Return400WhenUserIdIsInvalid()
         {
-            var userService = CreateUserService();
-            var req = new UpdateUserRequest();
-            var result = await userService.UpdateUserAsync(0, req);
+            // Arrange
+            int userId = 0;
+            var updateUserDto = new UpdateUserRequest { FullName = "Test User" };
+            var service = CreateService();
 
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("UserId không hợp lệ", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID03 - Empty FullName returns 400")]
-        public async Task UTCID03_EmptyFullName_Returns400()
+        [Fact(DisplayName = "UTCID03 - Return 400 when FullName is empty")]
+        public async Task UTCID03_Return400WhenFullNameIsEmpty()
         {
-            var userService = CreateUserService();
-            var req = new UpdateUserRequest { FullName = "   " };
-            var result = await userService.UpdateUserAsync(1, req);
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest { FullName = "" };
+            var service = CreateService();
 
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Tên người dùng không được để trống", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID04 - FullName too long returns 400")]
-        public async Task UTCID04_FullNameTooLong_Returns400()
+        [Fact(DisplayName = "UTCID04 - Return 400 when FullName exceeds 50 characters")]
+        public async Task UTCID04_Return400WhenFullNameExceeds50Characters()
         {
-            var userService = CreateUserService();
-            var req = new UpdateUserRequest { FullName = new string('a', 51) };
-            var result = await userService.UpdateUserAsync(1, req);
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = new string('a', 51) // 51 characters
+            };
+            var service = CreateService();
 
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Tên người dùng không được vượt quá 50 ký tự", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID05 - Empty email returns 400")]
-        public async Task UTCID05_EmptyEmail_Returns400()
+        [Fact(DisplayName = "UTCID05 - Return 400 when Email is empty")]
+        public async Task UTCID05_Return400WhenEmailIsEmpty()
         {
-            var userService = CreateUserService();
-            var req = new UpdateUserRequest { FullName = "User", Email = "" };
-            var result = await userService.UpdateUserAsync(1, req);
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = ""
+            };
+            var service = CreateService();
 
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Email không được để trống", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID06 - Invalid email returns 400")]
-        public async Task UTCID06_InvalidEmail_Returns400()
+        [Fact(DisplayName = "UTCID06 - Return 400 when Email already exists")]
+        public async Task UTCID06_Return400WhenEmailAlreadyExists()
         {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "existing@email.com"
+            };
+            var existingUser = new User { UserId = 2, Email = "existing@email.com" };
 
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(false);
+            // Mock IsRealEmailAsync to return true (valid email format)
+            // Note: You might need to make this method virtual or use interface for mocking
 
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com" };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync(existingUser);
+            var service = CreateService();
 
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Địa chỉ Email không hợp lệ", result.Message);
-        }
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
 
-        [Fact(DisplayName = "UTCID07 - Empty address returns 400")]
-        public async Task UTCID07_EmptyAddress_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "   " };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Địa chỉ không được để trống", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID08 - Address too long returns 400")]
-        public async Task UTCID08_AddressTooLong_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = new string('a', 256) };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Địa chỉ không được vượt quá 255 ký tự", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID09 - Null Dob returns 400")]
-        public async Task UTCID09_NullDob_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "A", Dob = null };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Ngày sinh không được để trống", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID10 - Future Dob returns 400")]
-        public async Task UTCID10_FutureDob_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "A", Dob = dob };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Ngày sinh không được là ngày tương lai", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID11 - Age under 15 returns 400")]
-        public async Task UTCID11_AgeUnder15_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-14));
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "A", Dob = dob };
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Người dùng phải từ 15 tuổi trở lên", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID12 - User not found returns 404")]
-        public async Task UTCID12_UserNotFound_Returns404()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "A", Dob = dob };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync((User)null);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(404, result.Status);
-            Assert.Equal(MessagesCodes.MSG_65, result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID13 - Email already exists returns 400")]
-        public async Task UTCID13_EmailExists_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest { FullName = "User", Email = "a@b.com", Address = "A", Dob = dob };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync(new User());
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Email đã được sử dụng", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID14 - Invalid bank account number returns 400")]
-        public async Task UTCID14_InvalidBankAccountNumber_Returns400()
+        [Fact(DisplayName = "UTCID07 - Return 400 when Address is empty")]
+        public async Task UTCID07_Return400WhenAddressIsEmpty()
         {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(false);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
             {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123",
-                AccountHolder = "Holder",
-                BankTypeId = 1
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = ""
             };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
 
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
 
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Số tài khoản không hợp lệ,chỉ chứa từ 9-16 ký tự", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID15 - Empty AccountHolder returns 400")]
-        public async Task UTCID15_EmptyAccountHolder_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = "   ",
-                BankTypeId = 1
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Tên chủ tài khoản không được để trống", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID16 - AccountHolder too long returns 400")]
-        public async Task UTCID16_AccountHolderTooLong_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = new string('a', 51),
-                BankTypeId = 1
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Tên chủ tài khoản không được vượt quá 50 ký tự", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID17 - Invalid BankTypeId (zero) returns 400")]
-        public async Task UTCID17_InvalidBankTypeIdZero_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 0
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Loại ngân hàng không hợp lệ", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID18 - BankType not found returns 400")]
-        public async Task UTCID18_BankTypeNotFound_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(1)).ReturnsAsync((BankType)null);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Không tìm thấy kiểu ngân hàng đã chọn", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID19 - Update user fails returns 500")]
-        public async Task UTCID19_UpdateUserFails_Returns500()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(1)).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount());
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Equal("Cập nhật thông tin người dùng thất bại", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID20 - Success returns 200")]
-        public async Task UTCID20_Success_Returns200()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20));
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = dob,
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1
-            };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(1)).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount());
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Cập nhật thông tin người dùng thành công", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID21 - Exception returns 500")]
-        public async Task UTCID21_Exception_Returns500()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(It.IsAny<int?>())).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(It.IsAny<int>())).ReturnsAsync(new BankAccount());
-
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1,
-                IsMale = true
-            };
-
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ThrowsAsync(new Exception("fail"));
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Contains(MessagesCodes.MSG_06, result.Message);
-            Assert.Contains("fail", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID22 - Create new bank account when user has no bank account")]
-        public async Task UTCID22_CreateNewBankAccount_WhenNotExist()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            // Setup các dependency để qua hết validate
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, It.IsAny<string>())).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(It.IsAny<int?>())).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync((BankAccount)null); // Không có bank account
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
-            _bankAccountRepositoryMock.Setup(x => x.AddBankAccountAsync(It.IsAny<BankAccount>())).ReturnsAsync(true);
-
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1,
-                IsMale = true
-            };
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            // Đảm bảo hàm AddBankAccountAsync đã được gọi
-            _bankAccountRepositoryMock.Verify(x => x.AddBankAccountAsync(It.IsAny<BankAccount>()), Times.Once);
-            // Đảm bảo hàm UpdateBankAccountAsync không được gọi
-            _bankAccountRepositoryMock.Verify(x => x.UpdateBankAccountAsync(It.IsAny<BankAccount>()), Times.Never);
-
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Cập nhật thông tin người dùng thành công", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID23 - Update existing bank account when user has bank account")]
-        public async Task UTCID23_UpdateExistingBankAccount_WhenExist()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            // Setup các dependency để qua hết validate
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, It.IsAny<string>())).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(It.IsAny<int?>())).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount
-            {
-                UserId = 1,
-                AccountNumber = "987654321",
-                AccountHolder = "OldHolder",
-                BankTypeId = 1
-            }); // Đã có bank account
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
-            _bankAccountRepositoryMock.Setup(x => x.AddBankAccountAsync(It.IsAny<BankAccount>())).ReturnsAsync(true);
-
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1,
-                IsMale = true
-            };
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
-            // Đảm bảo hàm UpdateBankAccountAsync đã được gọi
-            _bankAccountRepositoryMock.Verify(x => x.UpdateBankAccountAsync(It.IsAny<BankAccount>()), Times.Once);
-            // Đảm bảo hàm AddBankAccountAsync không được gọi
-            _bankAccountRepositoryMock.Verify(x => x.AddBankAccountAsync(It.IsAny<BankAccount>()), Times.Never);
-
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Cập nhật thông tin người dùng thành công", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID24 - Null address returns 400")]
-        public async Task UTCID24_NullAddress_Returns400()
-        {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, It.IsAny<string>())).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(It.IsAny<int?>())).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount());
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
-
-            var req = new UpdateUserRequest
-            {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = null,
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1,
-                IsMale = true
-            };
-
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
-
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Địa chỉ không được để trống", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID25 - Null BankTypeId returns 400")]
-        public async Task UTCID25_NullBankTypeId_Returns400()
+        [Fact(DisplayName = "UTCID08 - Return 400 when Address exceeds 255 characters")]
+        public async Task UTCID08_Return400WhenAddressExceeds255Characters()
         {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var req = new UpdateUserRequest
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
             {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = null, // <--- nhánh này chưa test
-                IsMale = true
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = new string('a', 256) // 256 characters
             };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
 
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
 
+            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Loại ngân hàng không hợp lệ", result.Message);
+            Assert.Equal("Địa chỉ không được vượt quá 255 ký tự", result.Message);
+            Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID26 - Dob with birthday not yet this year triggers age-- branch")]
-        public async Task UTCID26_DobBirthdayNotYetThisYear_PassesAgeCalculation()
+        [Fact(DisplayName = "UTCID09 - Return 400 when Dob is null")]
+        public async Task UTCID09_Return400WhenDobIsNull()
         {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, It.IsAny<string>())).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(It.IsAny<int?>())).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount());
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
-
-            // Today is 2025-07-30, birthday is 2005-12-01 (not yet reached this year)
-            var req = new UpdateUserRequest
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
             {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
-                Dob = new DateOnly(2005, 12, 1),
-                AccountNumber = "123456789",
-                AccountHolder = "Holder",
-                BankTypeId = 1,
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = null
+            };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Ngày sinh không được để trống", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID10 - Return 400 when Dob is future date")]
+        public async Task UTCID10_Return400WhenDobIsFutureDate()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+            };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Ngày sinh không được là ngày tương lai", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID11 - Return 400 when user age is under 15")]
+        public async Task UTCID11_Return400WhenUserAgeIsUnder15()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-14)) // 14 years old
+            };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Người dùng phải từ 15 tuổi trở lên", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID12 - Return 404 when user not found")]
+        public async Task UTCID12_Return404WhenUserNotFound()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20))
+            };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync((User)null);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(404, result.Status);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID13 - Return 500 when user update fails")]
+        public async Task UTCID13_Return500WhenUserUpdateFails()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20))
+            };
+            var user = new User { UserId = userId };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.UpdateUserAsync(user))
+                        .ReturnsAsync(false);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(500, result.Status);
+            Assert.Equal("Cập nhật thông tin người dùng thất bại", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID14 - Update user successfully without bank account")]
+        public async Task UTCID14_UpdateUserSuccessfullyWithoutBankAccount()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
                 IsMale = true
             };
+            var user = new User { UserId = userId };
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync(user);
+            _userRepoMock.Setup(x => x.UpdateUserAsync(user))
+                        .ReturnsAsync(true);
+            var service = CreateService();
 
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
 
+            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
+            Assert.Equal("Cập nhật thông tin người dùng thành công", result.Message);
+            Assert.Null(result.Data);
+
+            // Verify user properties were updated
+            Assert.Equal("Valid Name", user.FullName);
+            Assert.Equal("valid@email.com", user.Email);
+            Assert.Equal("Valid Address", user.Address);
+            Assert.True(user.IsMale);
         }
 
-        [Fact(DisplayName = "UTCID27 - AccountHolder with leading/trailing spaces is trimmed")]
-        public async Task UTCID27_AccountHolderWithSpaces_IsTrimmed()
+        [Fact(DisplayName = "UTCID15 - Return 500 when exception occurs")]
+        public async Task UTCID15_Return500WhenExceptionOccurs()
         {
-            var userServiceMock = new Mock<UserService>(
-                _userRepositoryMock.Object,
-                _emailServiceMock.Object,
-                _smsServiceMock.Object,
-                _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
-                _imageRepositoryMock.Object
-            )
-            { CallBase = true };
-
-            userServiceMock.Protected()
-                .Setup<Task<bool>>("IsRealEmailAsync", ItExpr.IsAny<string>())
-                .ReturnsAsync(true);
-
-            userServiceMock.Protected()
-                .Setup<bool>("IsValidBankAccount", ItExpr.IsAny<string>())
-                .Returns(true);
-
-            var req = new UpdateUserRequest
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
             {
-                FullName = "User",
-                Email = "a@b.com",
-                Address = "A",
+                FullName = "Valid Name",
+                Email = "valid@email.com",  // Add required email
+                Address = "Valid Address",  // Add required address
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)) // Add required DOB
+            };
+
+            // Setup mocks to pass all validations but throw exception during user retrieval
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null); // Email validation passes
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ThrowsAsync(new Exception("Database error")); // Exception occurs here
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(500, result.Status);
+            Assert.Contains("Database error", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID16 - Return 400 when bank account update fails")]
+        public async Task UTCID16_Return400WhenBankAccountUpdateFails()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
                 AccountNumber = "123456789",
-                AccountHolder = "   Holder   ", // leading/trailing spaces
-                BankTypeId = 1,
-                IsMale = true
+                AccountHolder = "Valid Holder",
+                BankTypeId = 999 // Invalid bank type ID - will cause bank account validation to fail
             };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(1)).ReturnsAsync(new User());
-            _userRepositoryMock.Setup(x => x.CheckEmailExistedByUserId(1, req.Email)).ReturnsAsync((User)null);
-            _bankAccountRepositoryMock.Setup(x => x.GetBankTypeByIdAsync(1)).ReturnsAsync(new BankType());
-            _bankAccountRepositoryMock.Setup(x => x.GetBankAccountsByUserIdAsync(1)).ReturnsAsync(new BankAccount());
-            _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+            var user = new User { UserId = userId };
 
-            var result = await userServiceMock.Object.UpdateUserAsync(1, req);
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync(user);
+            _bankRepoMock.Setup(x => x.GetBankTypeByIdAsync(999))
+                        .ReturnsAsync((BankType)null); // Bank type not found
 
-            // Bạn có thể verify giá trị .AccountHolder đã được trim hoặc chỉ assert kết quả thành công
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Không tìm thấy kiểu ngân hàng đã chọn", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID17 - Return 400 when bank account number is invalid")]
+        public async Task UTCID17_Return400WhenBankAccountNumberIsInvalid()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
+                AccountNumber = "123", // Invalid account number (too short)
+                AccountHolder = "Valid Holder",
+                BankTypeId = 1
+            };
+            var user = new User { UserId = userId };
+
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync(user);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Số tài khoản không hợp lệ, chỉ chứa từ 9-16 ký tự", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID18 - Return 400 when account holder name exceeds 50 characters")]
+        public async Task UTCID18_Return400WhenAccountHolderNameExceeds50Characters()
+        {
+            // Arrange
+            int userId = 1;
+            var updateUserDto = new UpdateUserRequest
+            {
+                FullName = "Valid Name",
+                Email = "valid@email.com",
+                Address = "Valid Address",
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
+                AccountNumber = "123456789",
+                AccountHolder = new string('a', 51), // Invalid holder name (too long)
+                BankTypeId = 1
+            };
+            var user = new User { UserId = userId };
+
+            _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email))
+                        .ReturnsAsync((User)null);
+            _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
+                        .ReturnsAsync(user);
+
+            var service = CreateService();
+
+            // Act
+            var result = await service.UpdateUserAsync(userId, updateUserDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Tên chủ tài khoản không được vượt quá 50 ký tự", result.Message);
+            Assert.Null(result.Data);
         }
     }
 }

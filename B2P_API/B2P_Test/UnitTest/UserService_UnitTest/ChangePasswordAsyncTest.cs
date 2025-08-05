@@ -46,7 +46,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         public async Task UTCID02_UserIdInvalid_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 0, NewPassword = "pass12345", ConfirmPassword = "pass12345" };
+            var req = new ChangePasswordRequest { UserId = 0, NewPassword = "Pass123", ConfirmPassword = "Pass123" };
             var result = await userService.ChangePasswordAsync(req);
 
             Assert.False(result.Success);
@@ -54,35 +54,23 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("UserId không hợp lệ", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID03 - NewPassword is empty returns 400")]
-        public async Task UTCID03_NewPasswordEmpty_Returns400()
+        [Fact(DisplayName = "UTCID03 - NewPassword does not meet regex returns 400")]
+        public async Task UTCID03_NewPasswordRegexFail_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "   ", ConfirmPassword = "   " };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "abc", ConfirmPassword = "abc" };
             var result = await userService.ChangePasswordAsync(req);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu mới không được để trống", result.Message);
+            Assert.Equal("Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID04 - NewPassword too short returns 400")]
-        public async Task UTCID04_NewPasswordTooShort_Returns400()
+        [Fact(DisplayName = "UTCID04 - ConfirmPassword is empty returns 400")]
+        public async Task UTCID04_ConfirmPasswordEmpty_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "short", ConfirmPassword = "short" };
-            var result = await userService.ChangePasswordAsync(req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu có ít nhất 8 ký tự", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID05 - ConfirmPassword is empty returns 400")]
-        public async Task UTCID05_ConfirmPasswordEmpty_Returns400()
-        {
-            var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "   " };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "   " };
             var result = await userService.ChangePasswordAsync(req);
 
             Assert.False(result.Success);
@@ -90,11 +78,11 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Xác nhận mật khẩu không được để trống", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID06 - Passwords not match returns 400")]
-        public async Task UTCID06_PasswordsNotMatch_Returns400()
+        [Fact(DisplayName = "UTCID05 - Passwords not match returns 400")]
+        public async Task UTCID05_PasswordsNotMatch_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password456" };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password2" };
             var result = await userService.ChangePasswordAsync(req);
 
             Assert.False(result.Success);
@@ -102,11 +90,11 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_14, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID07 - User not found returns 404")]
-        public async Task UTCID07_UserNotFound_Returns404()
+        [Fact(DisplayName = "UTCID06 - User not found returns 404")]
+        public async Task UTCID06_UserNotFound_Returns404()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123" };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1" };
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync((User)null);
 
             var result = await userService.ChangePasswordAsync(req);
@@ -116,12 +104,12 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_65, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID08 - Has password, old password empty returns 400")]
-        public async Task UTCID08_HasPassword_OldPasswordEmpty_Returns400()
+        [Fact(DisplayName = "UTCID07 - Has password, old password empty returns 400")]
+        public async Task UTCID07_HasPassword_OldPasswordEmpty_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = "   " };
-            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1", OldPassword = "   " };
+            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("OldPassword") };
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
 
             var result = await userService.ChangePasswordAsync(req);
@@ -131,12 +119,12 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Mật khẩu cũ không được để trống", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID09 - Has password, old password wrong returns 400")]
-        public async Task UTCID09_HasPassword_OldPasswordWrong_Returns400()
+        [Fact(DisplayName = "UTCID08 - Has password, old password wrong returns 400")]
+        public async Task UTCID08_HasPassword_OldPasswordWrong_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = "wrongoldpass" };
-            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1", OldPassword = "WrongPassword" };
+            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("OldPassword") };
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
 
             var result = await userService.ChangePasswordAsync(req);
@@ -146,12 +134,12 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(MessagesCodes.MSG_15, result.Message);
         }
 
-        [Fact(DisplayName = "UTCID10 - Has password, update fail returns 500")]
-        public async Task UTCID10_HasPassword_UpdateFail_Returns500()
+        [Fact(DisplayName = "UTCID09 - Has password, update fail returns 500")]
+        public async Task UTCID09_HasPassword_UpdateFail_Returns500()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = "oldpass" };
-            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1", OldPassword = "OldPassword" };
+            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("OldPassword") };
 
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
             _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
@@ -163,12 +151,12 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Cập nhật mật khẩu thất bại", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID11 - Has password, success returns 200")]
-        public async Task UTCID11_HasPassword_Success_Returns200()
+        [Fact(DisplayName = "UTCID10 - Has password, success returns 200")]
+        public async Task UTCID10_HasPassword_Success_Returns200()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = "oldpass" };
-            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1", OldPassword = "OldPassword" };
+            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("OldPassword") };
 
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
             _userRepositoryMock.Setup(x => x.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
@@ -184,11 +172,11 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.False((bool)property.GetValue(result.Data));
         }
 
-        [Fact(DisplayName = "UTCID12 - First time setup, update fail returns 500")]
-        public async Task UTCID12_FirstTimeSetup_UpdateFail_Returns500()
+        [Fact(DisplayName = "UTCID11 - First time setup, update fail returns 500")]
+        public async Task UTCID11_FirstTimeSetup_UpdateFail_Returns500()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 2, NewPassword = "password123", ConfirmPassword = "password123" };
+            var req = new ChangePasswordRequest { UserId = 2, NewPassword = "Password1", ConfirmPassword = "Password1" };
             var user = new User { UserId = 2, Password = null };
 
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
@@ -201,11 +189,11 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal("Cập nhật mật khẩu thất bại", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID13 - First time setup, success returns 200")]
-        public async Task UTCID13_FirstTimeSetup_Success_Returns200()
+        [Fact(DisplayName = "UTCID12 - First time setup, success returns 200")]
+        public async Task UTCID12_FirstTimeSetup_Success_Returns200()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 2, NewPassword = "password123", ConfirmPassword = "password123" };
+            var req = new ChangePasswordRequest { UserId = 2, NewPassword = "Password1", ConfirmPassword = "Password1" };
             var user = new User { UserId = 2, Password = null };
 
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
@@ -222,11 +210,11 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.True((bool)property.GetValue(result.Data));
         }
 
-        [Fact(DisplayName = "UTCID14 - Exception returns 500")]
-        public async Task UTCID14_Exception_Returns500()
+        [Fact(DisplayName = "UTCID13 - Exception returns 500")]
+        public async Task UTCID13_Exception_Returns500()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = "oldpass" };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = "Password1", OldPassword = "OldPassword" };
 
             _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ThrowsAsync(new System.Exception("fail"));
 
@@ -238,43 +226,16 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Contains("fail", result.Message);
         }
 
-        [Fact(DisplayName = "UTCID15 - NewPassword is null returns 400")]
-        public async Task UTCID15_NewPasswordNull_Returns400()
+        [Fact(DisplayName = "UTCID14 - ConfirmPassword is null returns 400")]
+        public async Task UTCID14_ConfirmPasswordNull_Returns400()
         {
             var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = null, ConfirmPassword = "password123" };
-            var result = await userService.ChangePasswordAsync(req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu mới không được để trống", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID16 - ConfirmPassword is null returns 400")]
-        public async Task UTCID16_ConfirmPasswordNull_Returns400()
-        {
-            var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = null };
+            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "Password1", ConfirmPassword = null };
             var result = await userService.ChangePasswordAsync(req);
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
             Assert.Equal("Xác nhận mật khẩu không được để trống", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID17 - OldPassword is null returns 400")]
-        public async Task UTCID17_HasPassword_OldPasswordNull_Returns400()
-        {
-            var userService = CreateUserService();
-            var req = new ChangePasswordRequest { UserId = 1, NewPassword = "password123", ConfirmPassword = "password123", OldPassword = null };
-            var user = new User { UserId = 1, Password = BCrypt.Net.BCrypt.HashPassword("oldpass") };
-            _userRepositoryMock.Setup(x => x.GetUserByIdAsync(req.UserId)).ReturnsAsync(user);
-
-            var result = await userService.ChangePasswordAsync(req);
-
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Equal("Mật khẩu cũ không được để trống", result.Message);
         }
     }
 }

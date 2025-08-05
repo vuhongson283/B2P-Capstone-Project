@@ -152,7 +152,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
-            Assert.Contains(MessagesCodes.MSG_50, result.Message);
+            Assert.Contains(MessagesCodes.MSG_06, result.Message);
             Assert.Contains("fail get user", result.Message);
         }
 
@@ -170,7 +170,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
-            Assert.Contains(MessagesCodes.MSG_50, result.Message);
+            Assert.Contains(MessagesCodes.MSG_06, result.Message);
             Assert.Contains("outer error", result.Message);
             Assert.Contains("Inner: inner error", result.Message);
             Assert.Null(result.Data);

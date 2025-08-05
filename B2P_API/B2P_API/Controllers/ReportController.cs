@@ -20,9 +20,6 @@ namespace B2P_API.Controllers
             _excelExportService = excelExportService;
         }
 
-        /// <summary>
-        /// Lấy danh sách báo cáo đặt sân theo phân trang
-        /// </summary>
         [HttpGet("ReportList")]
         public async Task<IActionResult> GetReportList(
             [FromQuery, BindRequired] int userId,
@@ -33,26 +30,15 @@ namespace B2P_API.Controllers
             return StatusCode(response.Status, response);
         }
 
-        /// <summary>
-        /// Xuất báo cáo đặt sân ra Excel (chủ sân)
-        /// </summary>
         [HttpGet("Export-Report-CourtOwner")]
         public async Task<IActionResult> ExportReportToExcelForCourtOwner(
             [FromQuery, BindRequired] int userId,
             DateTime? startDate, DateTime? endDate,
             int? facilityId, int pageNumber = 1)
         {
-            var reportResponse = await _reportService.GetReport(userId, startDate, endDate, facilityId, pageNumber, int.MaxValue);
-            if (!reportResponse.Success)
-            {
-                return StatusCode(reportResponse.Status, reportResponse.Message);
-            }
-
-            var report = reportResponse.Data;
-            report.ItemsPerPage = report.Items.Count();
-
-            var excelResponse = await _excelExportService.ExportToExcelAsync<ReportDTO>(
-                report, "Report");
+            // Dùng method có sẵn trong service
+            var excelResponse = await _reportService.ExportReportToExcel(
+                userId, startDate, endDate, facilityId, pageNumber, int.MaxValue);
 
             if (!excelResponse.Success)
             {
@@ -67,9 +53,6 @@ namespace B2P_API.Controllers
                 fileName);
         }
 
-        /// <summary>
-        /// Lấy tổng hợp báo cáo của người dùng
-        /// </summary>
         [HttpGet("TotalReport")]
         public async Task<IActionResult> GetTotalReport(
             [FromQuery, BindRequired] int userId,
@@ -79,9 +62,7 @@ namespace B2P_API.Controllers
             return StatusCode(response.Status, response);
         }
 
-        /// <summary>
-        /// Lấy báo cáo tổng hợp dành cho admin
-        /// </summary>
+
         [HttpGet("AdminReport")]
         public async Task<IActionResult> GetAdminReport(int? year, int? month)
         {
@@ -89,9 +70,7 @@ namespace B2P_API.Controllers
             return StatusCode(response.Status, response);
         }
 
-        /// <summary>
-        /// Xuất báo cáo tổng hợp dành cho admin ra Excel
-        /// </summary>
+
         [HttpGet("Export-Report-Admin")]
         public async Task<IActionResult> ExportReportToExcelForAdmin(int? year, int? month)
         {
