@@ -132,7 +132,98 @@ namespace B2P_API.Services
 
         public async Task<bool> DeleteImageAsync(int imageId)
         {
-            return await _imageRepository.DeleteAsync(imageId);
+            try
+            {
+                _logger.LogInformation("Starting delete process for image ID: {ImageId}", imageId);
+
+                // Lấy thông tin image từ database trước khi xóa
+                var image = await _imageRepository.GetByIdAsync(imageId);
+                if (image == null)
+                {
+                    _logger.LogWarning("Image not found in database: {ImageId}", imageId);
+                    return false;
+                }
+
+                _logger.LogInformation("Found image in database. URL: {ImageUrl}", image.ImageUrl);
+
+                // Trích xuất fileId từ URL Google Drive
+                var fileId = ExtractFileIdFromUrl(image.ImageUrl);
+                _logger.LogInformation("Extracted file ID: {FileId}", fileId);
+
+                // Xóa file trên Google Drive nếu có fileId
+                if (!string.IsNullOrEmpty(fileId))
+                {
+                    _logger.LogInformation("Attempting to delete from Google Drive...");
+                    var driveDeleteResult = await _googleDriveService.DeleteFileAsync(fileId);
+                    _logger.LogInformation("Google Drive delete result: {Result}", driveDeleteResult);
+
+                    if (!driveDeleteResult)
+                    {
+                        _logger.LogError("Failed to delete file from Google Drive");
+                        return false; // Không xóa database nếu không xóa được trên Drive
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No file ID extracted, skipping Google Drive deletion");
+                }
+
+                // Xóa record trong database
+                _logger.LogInformation("Deleting from database...");
+                var dbDeleteResult = await _imageRepository.DeleteAsync(imageId);
+                _logger.LogInformation("Database delete result: {Result}", dbDeleteResult);
+
+                return dbDeleteResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting image with ID {ImageId}", imageId);
+                return false;
+            }
+        }
+
+        private string ExtractFileIdFromUrl(string imageUrl)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(imageUrl))
+                {
+                    _logger.LogWarning("Image URL is null or empty");
+                    return string.Empty;
+                }
+
+                _logger.LogInformation("Extracting file ID from URL: {ImageUrl}", imageUrl);
+
+                // Xử lý URL dạng: https://drive.google.com/uc?id=FILE_ID
+                if (imageUrl.Contains("drive.google.com/uc?id="))
+                {
+                    var uri = new Uri(imageUrl);
+                    var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    var fileId = query["id"] ?? string.Empty;
+                    _logger.LogInformation("Extracted file ID (uc format): {FileId}", fileId);
+                    return fileId;
+                }
+                // Xử lý URL dạng: https://drive.google.com/file/d/FILE_ID/view
+                else if (imageUrl.Contains("drive.google.com/file/d/"))
+                {
+                    var segments = imageUrl.Split('/');
+                    var index = Array.IndexOf(segments, "d");
+                    if (index >= 0 && index + 1 < segments.Length)
+                    {
+                        var fileId = segments[index + 1];
+                        _logger.LogInformation("Extracted file ID (file/d format): {FileId}", fileId);
+                        return fileId;
+                    }
+                }
+
+                _logger.LogWarning("Could not extract file ID from URL format: {ImageUrl}", imageUrl);
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to extract file ID from URL: {ImageUrl}", imageUrl);
+                return string.Empty;
+            }
         }
 
         public async Task<ApiResponse<object>> UpdateImageAsync(int imageId, UpdateImageRequest request)
@@ -219,7 +310,7 @@ namespace B2P_API.Services
             }
         }
 
-
+        
 
     }
 }

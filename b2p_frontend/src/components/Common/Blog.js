@@ -109,7 +109,7 @@ const Blog = () => {
 
   // Current user info - Updated: 2025-07-26 17:51:24
   const [currentUser] = useState({
-    userId: 26,
+    userId: 15,
     fullName: "DuyQuan226",
     userName: "DuyQuan226",
     avatar:

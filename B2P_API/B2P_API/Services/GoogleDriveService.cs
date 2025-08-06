@@ -70,5 +70,35 @@
             return $"https://drive.google.com/uc?id={fileId}";
         }
 
+        public async Task<bool> DeleteFileAsync(string fileId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(fileId))
+                {
+                    Console.WriteLine("DeleteFileAsync: FileId is null or empty");
+                    return false;
+                }
+
+                Console.WriteLine($"DeleteFileAsync: Attempting to delete file with ID: {fileId}");
+
+                var request = _driveService.Files.Delete(fileId);
+                request.SupportsAllDrives = true; // Thêm dòng này nếu file trong Shared Drive
+                await request.ExecuteAsync();
+
+                Console.WriteLine($"DeleteFileAsync: Successfully deleted file with ID: {fileId}");
+                return true;
+            }
+            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine($"DeleteFileAsync: File not found on Google Drive: {fileId}");
+                return true; // File không tồn tại, coi như đã xóa thành công
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DeleteFileAsync: Error deleting file from Google Drive: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
