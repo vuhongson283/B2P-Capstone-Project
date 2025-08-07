@@ -21,7 +21,7 @@ const UserProfile = (props) => {
   const [passwordStatus, setPasswordStatus] = useState(null);
 
   // Temporary userId - sẽ thay thế bằng userId từ authentication sau
-  const userId = 2;
+  const userId = 4;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
