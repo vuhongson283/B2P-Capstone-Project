@@ -103,8 +103,10 @@ const PartnerRegistration = () => {
 
         if (!formData.password) {
             newErrors.password = 'Mật khẩu là bắt buộc';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+        } else if (formData.password.length < 8 || formData.password.length > 15) {
+            newErrors.password = 'Mật khẩu phải có từ 8-15 ký tự';
+        } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,15}$/.test(formData.password)) {
+            newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường và 1 số';
         }
 
         if (!formData.confirmPassword) {

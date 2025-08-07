@@ -354,14 +354,37 @@ const getReport = (
   pageNumber = 1,
   pageSize = 10
 ) => {
+  // Format dates if they exist
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
   return axios.get(
-    `Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`
+    `Report/ReportList`, {
+      params: {
+        userId,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        facilityId,
+        pageNumber,
+        pageSize
+      }
+    }
   );
 };
 
 const getTotalReport = (userId = 6, startDate, endDate) => {
+  // Format dates if they exist
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
   return axios.get(
-    `Report/TotalReport?userId=${userId}&startDate=${startDate}&endDate=${endDate}`
+    `Report/TotalReport`, {
+      params: {
+        userId,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate
+      }
+    }
   );
 };
 
@@ -372,11 +395,15 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
+  // Format dates if they exist
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
   return axios.get(`Report/Export-Report-CourtOwner`, {
     params: {
       userId,
-      startDate,
-      endDate,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
       facilityId,
       pageNumber,
     },

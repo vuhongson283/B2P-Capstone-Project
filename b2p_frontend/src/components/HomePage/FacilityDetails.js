@@ -6,7 +6,7 @@ import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiSer
 import { parseInt } from 'lodash';
 
 // Constants
-const TODAY = new Date().toISOString().slice(0, 10);
+const TODAY_DATE = new Date().toISOString().slice(0, 10);
 const FACILITY_IMAGES = [
   'https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png',
   'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
@@ -56,6 +56,395 @@ const formatTimeSlot = (startTime, endTime) => {
   };
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 };
+
+// Reviews Modal Component
+const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
+  const [selectedStars, setSelectedStars] = useState('all');
+  
+  // Loại bỏ các rating trùng lặp
+  const uniqueRatings = React.useMemo(() => {
+    if (!ratings || ratings.length === 0) return [];
+    
+    const seen = new Set();
+    return ratings.filter(rating => {
+      const key = `${rating.ratingId}-${rating.bookingId}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [ratings]);
+
+  // Lọc ratings theo số sao được chọn
+  const filteredRatings = React.useMemo(() => {
+    if (selectedStars === 'all') {
+      return uniqueRatings;
+    }
+    return uniqueRatings.filter(rating => rating.stars === parseInt(selectedStars));
+  }, [uniqueRatings, selectedStars]);
+
+  // Tính thống kê
+  const ratingStats = React.useMemo(() => {
+    if (uniqueRatings.length === 0) {
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      };
+    }
+
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let totalStars = 0;
+
+    uniqueRatings.forEach(rating => {
+      const stars = rating.stars;
+      if (stars >= 1 && stars <= 5) {
+        breakdown[stars]++;
+        totalStars += stars;
+      }
+    });
+
+    return {
+      averageRating: Math.round((totalStars / uniqueRatings.length) * 10) / 10,
+      totalReviews: uniqueRatings.length,
+      breakdown
+    };
+  }, [uniqueRatings]);
+
+  // Render stars
+  const renderStars = (starCount) => {
+    return [...Array(5)].map((_, index) => (
+      <span 
+        key={index} 
+        className={`star ${index < starCount ? 'filled' : ''}`}
+        style={{
+          color: index < starCount ? '#fbbf24' : '#e5e7eb'
+        }}
+      >
+        ★
+      </span>
+    ));
+  };
+
+if (!open) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px'
+    }}>
+      <div className="modal-container reviews-modal" onClick={(e) => e.stopPropagation()} style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        width: '90%',
+        maxWidth: '900px',
+        height: '80vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+        overflow: 'hidden'
+      }}>
+        {/* Header */}
+        <div className="modal-header" style={{
+  padding: '24px',
+  borderBottom: '1px solid #e5e7eb',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexDirection: 'column',
+  backgroundColor: '#f8fafc'
+}}>
+          <h2 className="modal-title" style={{
+  margin: 0,
+  fontSize: '20px',
+  fontWeight: '600',
+  color: '#1f2937',
+  textAlign: 'center'
+}}>
+            <span className="title-icon">⭐</span>
+            Tất cả đánh giá - {facilityName}
+          </h2>
+          <button className="modal-close" onClick={onClose} aria-label="Close modal" style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '24px',
+            color: '#6b7280',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            transition: 'all 0.2s ease'
+          }} onMouseOver={(e) => {
+            e.target.style.backgroundColor = '#f3f4f6';
+            e.target.style.color = '#374151';
+          }} onMouseOut={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.color = '#6b7280';
+          }}>
+            ×
+          </button>
+        </div>
+        {/* Content */}
+        <div className="modal-content">
+          {/* Rating Summary */}
+          <div className="reviews-modal-summary">
+            <div className="summary-main">
+                              <div className="rating-display" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}>
+                <span className="rating-value" style={{
+                  fontSize: '32px',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  textAlign: 'center'
+                }}>{ratingStats.averageRating}</span>
+                <div className="rating-stars" style={{
+                  color: '#fbbf24',
+                  fontSize: '20px'
+                }}>
+                  {renderStars(Math.round(ratingStats.averageRating))}
+                </div>
+                <span className="rating-text" style={{
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>({ratingStats.totalReviews} đánh giá)</span>
+              </div>
+            </div>
+
+            {/* Filter by stars */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+  <div className="star-filter" style={{ textAlign: 'center' }}>
+              <label className="filter-label" style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151',
+                marginBottom: '8px',
+                display: 'block'
+              }}>Lọc theo số sao:</label>
+              <div className="filter-buttons" style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap'
+              }}>
+                <button 
+                  className={`filter-btn ${selectedStars === 'all' ? 'active' : ''}`}
+                  onClick={() => setSelectedStars('all')}
+                  style={{
+                    padding: '8px 16px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    backgroundColor: selectedStars === 'all' ? '#3b82f6' : 'white',
+                    color: selectedStars === 'all' ? 'white' : '#374151',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    if (selectedStars !== 'all') {
+                      e.target.style.backgroundColor = '#f3f4f6';
+                      e.target.style.borderColor = '#9ca3af';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (selectedStars !== 'all') {
+                      e.target.style.backgroundColor = 'white';
+                      e.target.style.borderColor = '#d1d5db';
+                    }
+                  }}
+                >
+                  Tất cả ({ratingStats.totalReviews})
+                </button>
+                {[5, 4, 3, 2, 1].map(stars => (
+                  <button 
+                    key={stars}
+                    className={`filter-btn ${selectedStars === stars.toString() ? 'active' : ''}`}
+                    onClick={() => setSelectedStars(stars.toString())}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      backgroundColor: selectedStars === stars.toString() ? '#3b82f6' : 'white',
+                      color: selectedStars === stars.toString() ? 'white' : '#374151',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    onMouseOver={(e) => {
+                      if (selectedStars !== stars.toString()) {
+                        e.target.style.backgroundColor = '#f3f4f6';
+                        e.target.style.borderColor = '#9ca3af';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (selectedStars !== stars.toString()) {
+                        e.target.style.backgroundColor = 'white';
+                        e.target.style.borderColor = '#d1d5db';
+                      }
+                    }}
+                  >
+                    <span style={{ color: '#fbbf24' }}>{stars}★</span> ({ratingStats.breakdown[stars]})
+                  </button>
+                ))}
+              </div>
+            </div>
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="reviews-modal-list">
+            {filteredRatings.length === 0 ? (
+              <div className="empty-reviews">
+                <div className="empty-icon">⭐</div>
+                <p>
+                  {selectedStars === 'all' 
+                    ? 'Chưa có đánh giá nào' 
+                    : `Chưa có đánh giá ${selectedStars} sao nào`
+                  }
+                </p>
+              </div>
+            ) : (
+              filteredRatings.map((rating, index) => (
+                <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-modal-card" style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                  transition: 'all 0.2s ease'
+                }} onMouseOver={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                  e.currentTarget.style.borderColor = '#d1d5db';
+                }} onMouseOut={(e) => {
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}>
+                  <div className="review-modal-card__avatar" style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      backgroundColor: '#3b82f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      flexShrink: 0
+                    }}>
+                      U{rating.bookingId}
+                    </div>
+                    <div className="review-modal-card__content" style={{ flex: 1 }}>
+                      <div className="review-modal-card__header" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px'
+                      }}>
+                        <div className="reviewer-info">
+                          <span className="reviewer-name" style={{
+                            fontWeight: '600',
+                            color: '#1f2937'
+                          }}>Người dùng #{rating.bookingId}</span>
+                          <span className="review-time" style={{
+                            color: '#6b7280',
+                            fontSize: '14px'
+                          }}> • Booking #{rating.bookingId}</span>
+                        </div>
+                        <div className="review-stars" style={{
+                          color: '#fbbf24',
+                          fontSize: '16px'
+                        }}>
+                          {renderStars(rating.stars)}
+                        </div>
+                      </div>
+                      <p className="review-text" style={{
+                        color: '#4b5563',
+                        lineHeight: '1.6',
+                        margin: 0,
+                        fontSize: '15px'
+                      }}>
+                        {rating.comment || 'Không có bình luận'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer" style={{
+          padding: '20px 24px',
+          borderTop: '1px solid #e5e7eb',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: '#f8fafc'
+        }}>
+          <button className="btn-secondary" onClick={onClose} style={{
+            padding: '10px 20px',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            backgroundColor: 'white',
+            color: '#374151',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = '#f3f4f6';
+            e.target.style.borderColor = '#9ca3af';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = 'white';
+            e.target.style.borderColor = '#d1d5db';
+          }}>
+            Đóng
+          </button>
+          
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Constants
+const TODAY = new Date().toISOString().slice(0, 10);
+
+
+
+
 
 // Header Component
 const FacilityHeader = ({ facilityData }) => (
@@ -320,7 +709,7 @@ const BookingTable = ({
             value={selectedDate}
             onChange={(e) => onDateChange(e.target.value)}
             aria-label="Select date"
-            min={TODAY}
+            min={TODAY_DATE}
           />
         </div>
       </div>
@@ -415,124 +804,198 @@ const BookingTable = ({
   </section>
 );
 
-// Reviews Component - Cải tiến
-const Reviews = () => (
-  <section className="reviews-section">
-    <h2 className="reviews-section__title">
-      <span className="title-icon">⭐</span>
-      Đánh giá từ khách hàng
-    </h2>
+// Reviews Component - Cải tiến với dữ liệu thực từ API
+const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
+  // Loại bỏ các rating trùng lặp dựa trên ratingId và bookingId
+  const uniqueRatings = React.useMemo(() => {
+    if (!ratings || ratings.length === 0) return [];
     
-    <div className="rating-summary">
-      <div className="rating-main">
-        <span className="rating-value">4.6</span>
-        <div className="rating-stars">
-          {[...Array(5)].map((_, idx) => (
-            <span key={idx} className="star filled">★</span>
-          ))}
+    const seen = new Set();
+    return ratings.filter(rating => {
+      const key = `${rating.ratingId}-${rating.bookingId}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [ratings]);
+
+  // Tính toán thống kê đánh giá
+  const ratingStats = React.useMemo(() => {
+    if (uniqueRatings.length === 0) {
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      };
+    }
+
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let totalStars = 0;
+
+    uniqueRatings.forEach(rating => {
+      const stars = rating.stars;
+      if (stars >= 1 && stars <= 5) {
+        breakdown[stars]++;
+        totalStars += stars;
+      }
+    });
+
+    const averageRating = totalStars / uniqueRatings.length;
+
+    return {
+      averageRating: Math.round(averageRating * 10) / 10,
+      totalReviews: uniqueRatings.length,
+      breakdown
+    };
+  }, [uniqueRatings]);
+
+  // Render stars dựa trên số sao - FIX: Logic đúng
+  const renderStars = (starCount) => {
+    console.log('Rendering stars for:', starCount); // Debug log
+    return [...Array(5)].map((_, index) => {
+      const isFilled = index < starCount;
+      console.log(`Star ${index + 1}: ${isFilled ? 'filled' : 'empty'}`); // Debug log
+      return (
+        <span 
+          key={index} 
+          className={`star ${isFilled ? 'filled' : ''}`}
+        >
+          ★
+        </span>
+      );
+    });
+  };
+
+  // Nếu không có đánh giá
+  if (uniqueRatings.length === 0) {
+    return (
+      <section className="reviews-section">
+        <h2 className="reviews-section__title">
+          <span className="title-icon">⭐</span>
+          Đánh giá từ khách hàng
+        </h2>
+        
+        <div className="empty-state">
+          <div className="empty-icon">⭐</div>
+          <p>Chưa có đánh giá nào cho cơ sở này</p>
+          <button className="btn-write-review">
+            <span className="btn-icon">📝</span>
+            <span>Viết đánh giá đầu tiên</span>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // Hiển thị tối đa 3 đánh giá gần nhất
+  const displayedReviews = uniqueRatings.slice(0, 3);
+
+  return (
+    <section className="reviews-section">
+      <h2 className="reviews-section__title">
+        <span className="title-icon">⭐</span>
+        Đánh giá từ khách hàng
+      </h2>
+      
+      <div className="rating-summary">
+        <div className="rating-main">
+          <span className="rating-value">{ratingStats.averageRating}</span>
+          <div className="rating-stars">
+            {renderStars(Math.round(ratingStats.averageRating))}
+          </div>
+        </div>
+        
+        <div className="rating-breakdown">
+          <div className="breakdown-header">
+            <span className="total-reviews">{ratingStats.totalReviews} đánh giá</span>
+          </div>
+          <div className="breakdown-list">
+            {[5, 4, 3, 2, 1].map(stars => {
+              const count = ratingStats.breakdown[stars];
+              const percentage = ratingStats.totalReviews > 0 
+                ? Math.round((count / ratingStats.totalReviews) * 100) 
+                : 0;
+              
+              return (
+                <div key={stars} className="breakdown-item">
+                  <span className="star-label">{stars}★</span>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{width: `${percentage}%`}}
+                    ></div>
+                  </div>
+                  <span className="count-label">{count}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
       
-      <div className="rating-breakdown">
-        <div className="breakdown-header">
-          <span className="total-reviews">100 đánh giá</span>
-        </div>
-        <div className="breakdown-list">
-          <div className="breakdown-item">
-            <span className="star-label">5★</span>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{width: '70%'}}></div>
+      <div className="reviews-list">
+        {displayedReviews.map((rating, index) => {
+          console.log(`Review ${index}: ${rating.stars} stars`); // Debug log
+          return (
+            <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-card">
+              <div className="review-card__avatar">
+                <span className="avatar-text">U{rating.bookingId}</span>
+              </div>
+              <div className="review-card__content">
+                <div className="review-card__header">
+                  <div className="reviewer-info">
+                    <span className="reviewer-name">Người dùng #{rating.bookingId}</span>
+                    <span className="review-time">• Booking #{rating.bookingId}</span>
+                  </div>
+                  <div className="review-stars">
+                    {renderStars(rating.stars)}
+                  </div>
+                </div>
+                <p className="review-text">
+                  {rating.comment || 'Không có bình luận'}
+                </p>
+                <div className="review-actions">
+                  <button className="review-action-btn helpful">
+                    <span className="action-icon">👍</span>
+                    <span className="action-text">Hữu ích</span>
+                  </button>
+                  <button className="review-action-btn reply">
+                    <span className="action-icon">💬</span>
+                    <span className="action-text">Trả lời</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            <span className="count-label">70</span>
-          </div>
-          <div className="breakdown-item">
-            <span className="star-label">4★</span>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{width: '20%'}}></div>
-            </div>
-            <span className="count-label">20</span>
-          </div>
-          <div className="breakdown-item">
-            <span className="star-label">3★</span>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{width: '7%'}}></div>
-            </div>
-            <span className="count-label">7</span>
-          </div>
-          <div className="breakdown-item">
-            <span className="star-label">2★</span>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{width: '2%'}}></div>
-            </div>
-            <span className="count-label">2</span>
-          </div>
-          <div className="breakdown-item">
-            <span className="star-label">1★</span>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{width: '1%'}}></div>
-            </div>
-            <span className="count-label">1</span>
-          </div>
-        </div>
+          );
+        })}
       </div>
-    </div>
-    
-    <div className="reviews-list">
-      {[1, 2, 3].map((reviewId) => (
-        <div key={reviewId} className="review-card">
-          <div className="review-card__avatar">
-            <span className="avatar-text">U{reviewId}</span>
-          </div>
-          <div className="review-card__content">
-            <div className="review-card__header">
-              <div className="reviewer-info">
-                <span className="reviewer-name">Người dùng {reviewId}</span>
-                <span className="review-time">• 2 ngày trước</span>
-              </div>
-              <div className="review-stars">
-                {[...Array(5)].map((_, idx) => (
-                  <span key={idx} className="star filled">★</span>
-                ))}
-              </div>
-            </div>
-            <p className="review-text">
-              Sân rất đẹp, cỏ xanh mướt, tiện ích đầy đủ. Nhân viên phục vụ nhiệt tình, 
-              giá cả hợp lý. Sẽ quay lại lần sau!
-            </p>
-            <div className="review-actions">
-              <button className="review-action-btn helpful">
-                <span className="action-icon">👍</span>
-                <span className="action-text">Hữu ích (12)</span>
-              </button>
-              <button className="review-action-btn reply">
-                <span className="action-icon">💬</span>
-                <span className="action-text">Trả lời</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-    
-    <div className="reviews-bottom">
-      <button className="btn-write-review">
-        <span className="btn-icon">📝</span>
-        <span>Viết đánh giá</span>
-      </button>
-      <button className="btn-view-all">
-        <span>Xem tất cả đánh giá</span>
-        <span className="btn-arrow">→</span>
-      </button>
-    </div>
-  </section>
-);
+      
+      <div className="reviews-bottom">
+        <button className="btn-write-review">
+          <span className="btn-icon">📝</span>
+          <span>Viết đánh giá</span>
+        </button>
+        <button 
+          className="btn-view-all"
+          onClick={onOpenReviewsModal}
+        >
+          <span>Xem tất cả đánh giá ({ratingStats.totalReviews})</span>
+          <span className="btn-arrow">→</span>
+        </button>
+      </div>
+    </section>
+  );
+};
 
 // Main Component
 const FacilityDetails = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [selectedDate, setSelectedDate] = useState(TODAY_DATE);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -549,11 +1012,14 @@ const FacilityDetails = () => {
         const response = await getFacilityDetailsById(parseInt(facilityId));
         
         if (response.data) {
-          setFacilityData(response.data);
+          const facilityInfo = response.data;
+          console.log('Facility data with ratings:', facilityInfo);
+          
+          setFacilityData(facilityInfo);
           
           // Set default category to the first available category
-          if (response.data.categories && response.data.categories.length > 0) {
-            setSelectedCategory(response.data.categories[0].categoryId.toString());
+          if (facilityInfo.categories && facilityInfo.categories.length > 0) {
+            setSelectedCategory(facilityInfo.categories[0].categoryId.toString());
           }
         } else {
           setError('Không tìm thấy thông tin cơ sở');
@@ -657,7 +1123,10 @@ const FacilityDetails = () => {
         loadingSlots={loadingSlots}
       />
       
-      <Reviews />
+      <Reviews 
+        ratings={facilityData?.ratings} 
+        onOpenReviewsModal={() => setReviewsModalOpen(true)}
+      />
       
       {modalOpen && (
         <BookingModal 
@@ -667,6 +1136,15 @@ const FacilityDetails = () => {
           selectedDate={selectedDate}
           facilityData={facilityData}
           selectedCategory={selectedCategory}
+        />
+      )}
+
+      {reviewsModalOpen && (
+        <ReviewsModal 
+          open={reviewsModalOpen} 
+          onClose={() => setReviewsModalOpen(false)}
+          ratings={facilityData?.ratings}
+          facilityName={facilityData?.facilityName}
         />
       )}
     </div>
