@@ -1,6 +1,7 @@
 ﻿using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.Interface;
 using B2P_API.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("listCourt/{userId}")]
+        [Authorize]
         public async Task<IActionResult> GetFacilitiesByUser(
     int userId,
     [FromQuery] string? facilityName = null,
@@ -35,7 +37,7 @@ namespace B2P_API.Controllers
                     itemsPerPage
                 );
 
-                return Ok(response); 
+                return Ok(response);
             }
             catch (ArgumentException ex)
             {
@@ -91,7 +93,7 @@ namespace B2P_API.Controllers
         [HttpPost("createFacility")]
         public async Task<IActionResult> CreateCourt([FromBody] CreateFacilityRequest request)
         {
-            
+
             try
             {
                 if (!ModelState.IsValid)
