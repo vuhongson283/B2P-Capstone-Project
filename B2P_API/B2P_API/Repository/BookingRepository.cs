@@ -81,6 +81,7 @@ namespace B2P_API.Repository
         {
             var bookings = _context.Bookings
                 .Include(b => b.Status)
+                .Include(b => b.Ratings)
                 .Include(b => b.BookingDetails)
                     .ThenInclude(d => d.Court).ThenInclude(c => c.Category)
                 .Include(b => b.BookingDetails)

@@ -1,4 +1,5 @@
 ﻿using B2P_API.Models;
+using B2P_API.DTOs;
 
 namespace B2P_API.DTOs.FacilityDTO
 {
@@ -28,6 +29,7 @@ namespace B2P_API.DTOs.FacilityDTO
 
         public List<FImageDto> Images { get; set; }
         public List<CategoryDto> Categories { get; set; }
+        public List<RatingDTO.RatingDto> Ratings { get; set; }
     }
 
     public class FImageDto

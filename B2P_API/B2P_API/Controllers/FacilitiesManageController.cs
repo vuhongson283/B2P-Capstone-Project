@@ -91,7 +91,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("createFacility")]
-        public async Task<IActionResult> CreateCourt([FromBody] CreateFacilityRequest request)
+        public async Task<IActionResult> CreateFacility([FromBody] CreateFacilityRequest request)
         {
 
             try

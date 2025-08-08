@@ -2,11 +2,12 @@
     min-height: 100vh;
     background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
     padding: 20px;
+    overflow: hidden; // ADDED: Prevent page scroll
 
     // Main container
     .main-container {
         width: 100%;
-        max-width: none;
+        max-width: 1400px; // ADDED: Fixed max width
         margin: 0 auto;
         background: white;
         border-radius: 20px;
@@ -14,7 +15,7 @@
         overflow: hidden;
         min-height: 80vh;
 
-        // Header với gradient - ĐÚNG RỒI
+        // Header với gradient
         .header {
             background: linear-gradient(135deg, #52c41a 0%, #95de64 50%, #fadb14 100%);
             padding: 24px 32px;
@@ -78,32 +79,6 @@
                         font-size: 14px;
                         opacity: 0.9;
                         margin-top: 4px;
-                    }
-                }
-            }
-
-            .header-actions {
-                position: relative;
-                z-index: 2;
-
-                .add-button {
-                    background: rgba(255, 255, 255, 0.2);
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    color: white;
-                    border-radius: 10px;
-                    padding: 8px 16px;
-                    font-weight: 500;
-                    backdrop-filter: blur(10px);
-                    transition: all 0.3s ease;
-
-                    &:hover {
-                        background: rgba(255, 255, 255, 0.3);
-                        transform: translateY(-2px);
-                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-                    }
-
-                    .anticon {
-                        margin-right: 6px;
                     }
                 }
             }
@@ -193,133 +168,165 @@
                     width: 12px;
                     height: 12px;
                     border-radius: 50%;
+                    transition: all 0.3s ease;
 
                     &.available {
                         background: #52c41a;
                         box-shadow: 0 0 0 3px rgba(82, 196, 26, 0.2);
                     }
 
-                    &.booked {
-                        background: #ff4d4f;
+                    &.paid {
+                        background: linear-gradient(135deg, #1890ff, #096dd9);
+                        box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.2);
+                    }
+
+                    &.completed {
+                        background: linear-gradient(135deg, #10b981, #059669);
+                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+                    }
+
+                    &.cancelled {
+                        background: linear-gradient(135deg, #ff4d4f, #d9363e);
                         box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.2);
                     }
                 }
             }
         }
 
-        // Booking Table Container - SỬA: Sử dụng CSS Grid
+        // UPDATED: Both horizontal and vertical scroll
         .booking-table {
-            width: 95%;
             margin: 16px 32px 32px 32px;
             border-radius: 16px;
-            overflow: hidden;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             border: 1px solid #e8e8e8;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            
-            // Container cho scroll horizontal
+            background: white;
+            overflow: hidden;
+            // UPDATED: Fixed height with both scrolls
+            height: calc(100vh - 400px);
+            min-height: 400px;
+            max-height: 600px;
+
             .table-scroll-container {
-                overflow-x: auto;
-                overflow-y: visible;
-                max-width: 100%;
-                flex: 1;
+                // UPDATED: Both horizontal and vertical scroll
+                height: 100%;
+                overflow: auto; // CHANGED: Enable both scrolls
+                position: relative;
                 
-                // Custom scrollbar
+                // UPDATED: Custom scrollbar for both directions
                 &::-webkit-scrollbar {
-                    height: 10px;
+                    width: 8px;  // vertical scrollbar width
+                    height: 8px; // horizontal scrollbar height
                 }
                 
                 &::-webkit-scrollbar-track {
                     background: #f1f1f1;
-                    border-radius: 6px;
+                    border-radius: 4px;
                 }
                 
                 &::-webkit-scrollbar-thumb {
-                    background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
-                    border-radius: 6px;
+                    background: #c1c1c1;
+                    border-radius: 4px;
                     
                     &:hover {
-                        background: linear-gradient(135deg, #389e0d 0%, #73d13d 100%);
+                        background: #a8a8a8;
                     }
                 }
+
+                // Corner where scrollbars meet
+                &::-webkit-scrollbar-corner {
+                    background: #f1f1f1;
+                }
+
+                // Firefox
+                scrollbar-width: thin;
+                scrollbar-color: #c1c1c1 #f1f1f1;
             }
 
-            // Table Content - SỬA: Sử dụng CSS Grid layout
             .table-content {
-                min-width: 1200px; // Đảm bảo có scroll khi cần
-                
-                // Table Header - SỬA: CSS Grid
+                // UPDATED: Enable content to exceed container in both directions
+                width: 100%;
+                min-width: max-content;
+                // REMOVED: height: 100% to allow vertical expansion
+                display: flex;
+                flex-direction: column;
+
                 .table-header {
-                    display: grid;
-                    grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr)); // SỬA: Grid columns
+                    // UPDATED: Sticky header that stays on top during vertical scroll
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
                     background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
-                    position: relative;
+                    display: flex;
+                    flex-shrink: 0;
 
-                    // Decorative pattern
-                    &::before {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Ccircle cx='50' cy='10' r='2'/%3E%3Ccircle cx='10' cy='50' r='2'/%3E%3Ccircle cx='50' cy='50' r='2'/%3E%3C/g%3E%3C/svg%3E");
-                        pointer-events: none;
-                    }
-
-                    .header-cell {
-                        color: white;
-                        padding: 18px 12px;
-                        text-align: center;
-                        font-weight: 600;
-                        font-size: 14px;
+                    .header-row {
                         display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-                        border-right: 1px solid rgba(255, 255, 255, 0.15);
-                        position: relative;
-                        z-index: 1;
-                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                        width: 100%;
 
-                        &:last-child {
-                            border-right: none;
-                        }
+                        .header-cell {
+                            color: white;
+                            padding: 18px 16px;
+                            text-align: center;
+                            font-weight: 600;
+                            font-size: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                            border-right: 1px solid rgba(255, 255, 255, 0.15);
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                            white-space: nowrap;
+                            flex-shrink: 0;
+                            
+                            &.time-header {
+                                width: 200px;
+                                min-width: 200px;
+                                max-width: 200px;
+                                // FIXED: Background solid không xuyên thấu
+                                background: linear-gradient(135deg, #389e0d 0%, #52c41a 100%) !important;
+                                font-weight: 700;
+                                position: sticky;
+                                left: 0;
+                                z-index: 15; // INCREASED z-index
+                                // ADDED: Box shadow để tạo depth
+                                box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+                                // ADDED: Border để tách biệt rõ ràng
+                                border-right: 2px solid rgba(255, 255, 255, 0.3) !important;
+                            }
 
-                        &.time-header {
-                            background: rgba(0, 0, 0, 0.15);
-                            font-weight: 700;
-                            backdrop-filter: blur(10px);
+                            &.time-slot {
+                                flex: 1;
+                                min-width: 140px;
+                            }
+
+                            &.loading-header,
+                            &.empty-header {
+                                flex: 1;
+                                min-width: 400px;
+                                color: rgba(255, 255, 255, 0.8);
+                                font-style: italic;
+                            }
+
+                            &:last-child {
+                                border-right: none;
+                            }
 
                             .anticon {
                                 font-size: 16px;
-                                margin-right: 4px;
                             }
-                        }
-
-                        &.loading-header,
-                        &.empty-header {
-                            color: rgba(255, 255, 255, 0.8);
-                            font-style: italic;
-                            grid-column: 2 / -1; // SỬA: Span toàn bộ các cột còn lại
                         }
                     }
                 }
 
-                // Table Body - SỬA: CSS Grid
                 .table-body {
                     background: white;
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
+                    // REMOVED: flex: 1 to allow natural height expansion
+                    overflow: visible;
 
                     .court-row {
-                        display: grid;
-                        grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr)); // SỬA: Grid columns khớp với header
+                        display: flex;
+                        border-bottom: 1px solid #f0f0f0;
                         transition: all 0.3s ease;
-                        min-height: 60px;
 
                         &:nth-child(even) {
                             background: #fafafa;
@@ -327,29 +334,41 @@
 
                         &:hover {
                             background: #f0f9ff;
-                            transform: translateY(-1px);
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
                         }
 
                         &:last-child {
-                            .court-cell,
-                            .slot-cell {
-                                border-bottom: none;
-                            }
+                            border-bottom: none;
                         }
 
                         .court-cell {
-                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                            padding: 16px 12px;
+                            width: 200px;
+                            min-width: 200px;
+                            max-width: 200px;
+                            // FIXED: Background solid cho mọi trường hợp
+                            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+                            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.12);
+                            padding: 16px;
                             display: flex;
                             align-items: center;
-                            justify-content: flex-start;
                             gap: 12px;
                             font-weight: 600;
                             color: rgba(0, 0, 0, 0.85);
-                            border-right: 1px solid #e8e8e8;
-                            border-bottom: 1px solid #f0f0f0;
+                            border-right: 2px solid #d1d5db !important; // STRONGER border
                             white-space: nowrap;
+                            position: sticky;
+                            left: 0;
+                            z-index: 8; // INCREASED z-index
+                            flex-shrink: 0;
+
+                            // FIXED: Override cho even rows với !important
+                            .court-row:nth-child(even) & {
+                                background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%) !important;
+                            }
+
+                            // ADDED: Đảm bảo hover cũng có background solid
+                            .court-row:hover & {
+                                background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+                            }
 
                             .anticon {
                                 color: #52c41a;
@@ -362,10 +381,14 @@
 
                             span {
                                 font-size: 14px;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
                             }
                         }
 
                         .slot-cell {
+                            flex: 1;
+                            min-width: 140px;
                             padding: 12px 8px;
                             text-align: center;
                             cursor: pointer;
@@ -377,7 +400,6 @@
                             justify-content: center;
                             background: white;
                             border-right: 1px solid #f0f0f0;
-                            border-bottom: 1px solid #f0f0f0;
                             position: relative;
                             white-space: nowrap;
 
@@ -385,100 +407,91 @@
                                 border-right: none;
                             }
 
+                            // Status styles
                             &.available {
                                 color: #52c41a;
                                 background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 20%);
                                 border: 1px solid rgba(82, 196, 26, 0.2);
-                                
-                                &::before {
-                                    content: '';
-                                    position: absolute;
-                                    top: 4px;
-                                    right: 4px;
-                                    width: 8px;
-                                    height: 8px;
-                                    background: #52c41a;
-                                    border-radius: 50%;
-                                    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
-                                }
 
                                 &:hover {
                                     background: linear-gradient(135deg, #d9f7be 0%, #b7eb8f 50%);
-                                    transform: translateY(-2px) scale(1.01);
+                                    transform: translateY(-2px) scale(1.02);
                                     box-shadow: 0 6px 20px rgba(82, 196, 26, 0.25);
                                     z-index: 10;
                                     border-color: #52c41a;
                                 }
                             }
 
-                            &.booked {
-                                background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 20%);
+                            &.paid {
+                                background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 20%);
+                                color: #1890ff;
+                                border: 1px solid rgba(24, 144, 255, 0.2);
+                                font-weight: 700;
+
+                                &:hover {
+                                    background: linear-gradient(135deg, #bae7ff 0%, #91d5ff 50%);
+                                    transform: translateY(-2px) scale(1.02);
+                                    box-shadow: 0 6px 20px rgba(24, 144, 255, 0.25);
+                                    z-index: 10;
+                                    border-color: #1890ff;
+                                }
+                            }
+
+                            &.completed {
+                                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                                color: white;
+                                font-weight: 700;
+                                border: 2px solid #059669;
+                                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+
+                                &:hover {
+                                    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                                    transform: translateY(-2px) scale(1.02);
+                                    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+                                    z-index: 10;
+                                }
+                            }
+
+                            &.cancelled {
+                                background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 20%);
                                 color: #ff4d4f;
                                 border: 1px solid rgba(255, 77, 79, 0.2);
-
-                                &::before {
-                                    content: '';
-                                    position: absolute;
-                                    top: 4px;
-                                    right: 4px;
-                                    width: 8px;
-                                    height: 8px;
-                                    background: #ff4d4f;
-                                    border-radius: 50%;
-                                    box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
-                                }
+                                font-weight: 600;
+                                opacity: 0.9;
 
                                 &:hover {
                                     background: linear-gradient(135deg, #ffccc7 0%, #ffa39e 50%);
-                                    transform: translateY(-2px) scale(1.01);
+                                    transform: translateY(-2px) scale(1.02);
                                     box-shadow: 0 6px 20px rgba(255, 77, 79, 0.25);
                                     z-index: 10;
                                     border-color: #ff4d4f;
                                 }
                             }
-
-                            // Ripple effect
-                            &::after {
-                                content: '';
-                                position: absolute;
-                                top: 50%;
-                                left: 50%;
-                                width: 0;
-                                height: 0;
-                                background: rgba(82, 196, 26, 0.1);
-                                border-radius: 50%;
-                                transform: translate(-50%, -50%);
-                                transition: width 0.6s, height 0.6s;
-                            }
-
-                            &:active::after {
-                                width: 200px;
-                                height: 200px;
-                            }
                         }
                     }
-                }
 
-                // Loading and Empty States
-                .loading-container,
-                .no-data-container {
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    padding: 60px 40px;
-                    width: 100%;
-                    color: #999;
-                    background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
-                    flex: 1;
+                    // Loading and Empty States
+                    .loading-container,
+                    .no-data-container {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 60px 40px;
+                        width: 100%;
+                        color: #999;
+                        background: linear-gradient(135deg, #fafafa 0%, #f0f2f5 100%);
 
-                    .ant-spin {
-                        margin-bottom: 16px;
-                    }
+                        > div {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 16px;
 
-                    span {
-                        font-size: 16px;
-                        font-weight: 500;
+                            span {
+                                font-size: 16px;
+                                font-weight: 500;
+                            }
+                        }
                     }
                 }
             }
@@ -486,7 +499,7 @@
     }
 }
 
-// Modal styles - GIỮ NGUYÊN HẾT
+// Modal styles cho booking detail (existing modal)
 .booking-detail-modal {
     .ant-modal-content {
         border-radius: 16px;
@@ -517,17 +530,6 @@
             justify-content: space-between;
             align-items: center;
             position: relative;
-
-            &::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
-                pointer-events: none;
-            }
 
             h2 {
                 margin: 0;
@@ -714,8 +716,16 @@
                         color: #52c41a;
                     }
 
+                    &.deposit {
+                        color: #1890ff;
+                    }
+
                     &.pending {
                         color: #fadb14;
+                    }
+
+                    &.cancelled {
+                        color: #ff4d4f;
                     }
                 }
 
@@ -727,8 +737,16 @@
                         color: #52c41a;
                     }
 
+                    &.deposit {
+                        color: #1890ff;
+                    }
+
                     &.pending {
                         color: #fadb14;
+                    }
+
+                    &.cancelled {
+                        color: #ff4d4f;
                     }
                 }
             }
@@ -777,54 +795,678 @@
                     box-shadow: 0 4px 16px rgba(82, 196, 26, 0.4);
                     transform: translateY(-1px);
                 }
+
+                &.completed {
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    border-color: #059669;
+                    opacity: 0.8;
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, #10b981, #059669);
+                        transform: none;
+                        cursor: not-allowed;
+                    }
+                }
+
+                &.cancelled {
+                    background: linear-gradient(135deg, #ff4d4f, #d9363e);
+                    border-color: #ff4d4f;
+                    opacity: 0.8;
+                    
+                    &:hover {
+                        background: linear-gradient(135deg, #ff4d4f, #d9363e);
+                        transform: none;
+                        cursor: not-allowed;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// NEW: Empty slot modal styles
+.empty-slot-modal {
+    .ant-modal-content {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .ant-modal-body {
+        padding: 0;
+    }
+
+    .ant-modal-close {
+        top: 16px;
+        right: 16px;
+        color: rgba(255, 255, 255, 0.8);
+        
+        &:hover {
+            color: white;
+        }
+    }
+
+    .empty-slot-content {
+        .modal-header {
+            background: linear-gradient(135deg, #52c41a 0%, #73d13d 50%, #fadb14 100%);
+            padding: 24px;
+            color: white;
+            text-align: center;
+            position: relative;
+
+            h2 {
+                margin: 0 0 8px 0;
+                font-size: 20px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .slot-info {
+                font-size: 14px;
+                opacity: 0.9;
+                background: rgba(255, 255, 255, 0.2);
+                padding: 8px 16px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                display: inline-block;
             }
         }
 
-        .ant-divider {
-            display: none;
+        .slot-details {
+            padding: 32px 24px;
+            background: #fafafa;
+
+            .detail-item {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 16px 20px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                border: 1px solid #f0f0f0;
+                margin-bottom: 16px;
+                transition: all 0.3s ease;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                &:hover {
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+                    transform: translateY(-2px);
+                }
+
+                .detail-icon {
+                    background: #f6ffed;
+                    color: #52c41a;
+                    font-size: 18px;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                }
+
+                .detail-content {
+                    flex: 1;
+                    
+                    .label {
+                        font-size: 12px;
+                        color: rgba(0, 0, 0, 0.45);
+                        font-weight: 500;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        margin-bottom: 4px;
+                    }
+
+                    .value {
+                        font-size: 16px;
+                        color: rgba(0, 0, 0, 0.85);
+                        font-weight: 600;
+                        line-height: 1.4;
+                    }
+                }
+            }
+        }
+
+        .empty-slot-actions {
+            padding: 20px 24px 24px;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid #f0f0f0;
+
+            .ant-btn {
+                height: 40px;
+                padding: 0 24px;
+                border-radius: 8px;
+                font-weight: 500;
+                font-size: 14px;
+                border: 1px solid #d9d9d9;
+                
+                &:first-child {
+                    color: rgba(0, 0, 0, 0.65);
+                    
+                    &:hover {
+                        color: #52c41a;
+                        border-color: #52c41a;
+                    }
+                }
+            }
+
+            .mark-court-button {
+                background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+                border: none;
+                color: white;
+                box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+
+                &:hover {
+                    background: linear-gradient(135deg, #389e0d 0%, #52c41a 100%);
+                    box-shadow: 0 4px 16px rgba(82, 196, 26, 0.4);
+                    transform: translateY(-1px);
+                }
+
+                &:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    transform: none;
+                }
+            }
         }
     }
 }
 
-// Animation cho modal
-.booking-detail-modal {
-    .ant-modal {
-        .ant-modal-content {
-            animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+/* ===================== MODERN CREATE BOOKING MODAL ===================== */
+.create-booking-modal-modern {
+    .ant-modal-content {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: none;
+    }
+
+    .ant-modal-body {
+        padding: 0;
+    }
+
+    .ant-modal-close {
+        top: 20px;
+        right: 20px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 18px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        
+        &:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
         }
     }
 }
 
-@keyframes modalSlideIn {
-    from {
+.modern-modal-wrapper {
+    background: white;
+    min-height: 600px;
+    position: relative;
+}
+
+/* Beautiful Modal Header */
+.modern-modal-header {
+    position: relative;
+    padding: 40px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    overflow: hidden;
+
+    .header-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0.1;
+
+        .header-pattern {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 25px 25px, rgba(255, 255, 255, 0.2) 2px, transparent 0),
+                radial-gradient(circle at 75px 75px, rgba(255, 255, 255, 0.1) 2px, transparent 0);
+            background-size: 100px 100px;
+            background-position: 0 0, 50px 50px;
+        }
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        .header-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+
+            .header-icon {
+                font-size: 24px;
+                color: white;
+            }
+        }
+
+        .header-text {
+            flex: 1;
+
+            h2 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                color: white;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            p {
+                margin: 8px 0 0 0;
+                font-size: 16px;
+                color: rgba(255, 255, 255, 0.9);
+                font-weight: 400;
+            }
+        }
+    }
+}
+
+/* Modal Body */
+.modern-modal-body {
+    background: white;
+    padding: 30px;
+    border-radius: 0 0 20px 20px;
+}
+
+.modern-booking-form {
+    .form-section-modern {
+        margin-bottom: 32px;
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f2f5;
+
+            .section-icon {
+                width: 48px;
+                height: 48px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .anticon {
+                    font-size: 20px;
+                    color: white;
+                }
+            }
+
+            .section-title {
+                flex: 1;
+
+                h3 {
+                    margin: 0;
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #1a1a1a;
+                }
+
+                span {
+                    font-size: 14px;
+                    color: #666;
+                    margin-top: 4px;
+                    display: block;
+                }
+            }
+        }
+    }
+
+    .modern-form-item {
+        .ant-form-item-label > label {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+    }
+
+    .modern-select {
+        .ant-select-selector {
+            border-radius: 12px;
+            border: 2px solid #e1e8ed;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            min-height: 50px;
+
+            &:hover {
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            }
+        }
+
+        &.ant-select-focused .ant-select-selector {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .ant-select-selection-placeholder {
+            color: #999;
+            font-size: 16px;
+        }
+    }
+
+    .category-option {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        font-size: 16px;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            margin: 0 -12px;
+            padding: 8px 12px;
+        }
+    }
+
+    .loading-content, .empty-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        color: #999;
+    }
+}
+
+/* Time Slots Grid */
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+
+    .loading-slots, .empty-slots {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #999;
+        gap: 16px;
+
+        .empty-icon {
+            font-size: 48px;
+            color: #ddd;
+        }
+
+        span {
+            font-size: 16px;
+        }
+    }
+
+    .time-slot-card {
+        background: white;
+        border: 2px solid #e1e8ed;
+        border-radius: 16px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+
+            &::before {
+                opacity: 0.05;
+            }
+        }
+
+        &.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+
+            .slot-time {
+                color: white;
+
+                .slot-icon {
+                    color: white;
+                }
+            }
+
+            .check-icon {
+                color: white;
+            }
+        }
+
+        .slot-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+            font-weight: 600;
+            font-size: 14px;
+
+            .slot-icon {
+                font-size: 16px;
+                color: #667eea;
+                transition: color 0.3s ease;
+            }
+        }
+
+        .slot-indicator {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+
+            .check-icon {
+                font-size: 20px;
+                color: white;
+                animation: checkIn 0.3s ease;
+            }
+        }
+    }
+}
+
+@keyframes checkIn {
+    0% {
+        transform: scale(0);
         opacity: 0;
-        transform: translateY(-30px) scale(0.9);
     }
-    to {
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
         opacity: 1;
-        transform: translateY(0) scale(1);
     }
 }
 
-// Responsive
+/* Selected Slots Summary */
+.selected-summary {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+    border-radius: 16px;
+    border: 2px solid #e1e8ed;
+
+    .summary-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        .summary-icon {
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        span {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+    }
+
+    .summary-slots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .summary-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+    }
+}
+
+/* Form Actions */
+.modern-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 2px solid #f0f2f5;
+    margin-top: 32px;
+
+    .cancel-button {
+        height: 48px;
+        padding: 0 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        border: 2px solid #e1e8ed;
+        color: #666;
+        background: white;
+        transition: all 0.3s ease;
+
+        &:hover {
+            color: #667eea;
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+    }
+
+    .submit-button {
+        height: 48px;
+        padding: 0 32px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+
+        &:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .anticon {
+            margin-right: 8px;
+        }
+    }
+}
+
+// Responsive styles
 @media (max-width: 1200px) {
     .booking-management {
         padding: 16px;
         
         .main-container {
+            max-width: 1200px;
+            
             .booking-table {
                 margin: 16px 24px 24px 24px;
+                height: calc(100vh - 450px);
                 
                 .table-content {
-                    min-width: 1000px;
-                    
-                    .table-header,
-                    .court-row {
-                        grid-template-columns: 160px repeat(auto-fit, minmax(120px, 1fr)); // SỬA: Responsive grid
+                    .table-header .header-row .header-cell,
+                    .table-body .court-row .court-cell {
+                        &.time-header,
+                        &.court-cell {
+                            width: 160px;
+                            min-width: 160px;
+                            max-width: 160px;
+                        }
                     }
                     
-                    .table-header .header-cell,
-                    .table-body .slot-cell {
+                    .table-header .header-row .header-cell.time-slot,
+                    .table-body .court-row .slot-cell {
+                        width: 120px;
+                        min-width: 120px;
+                        max-width: 120px;
                         font-size: 12px;
                         padding: 12px 6px;
                     }
@@ -833,21 +1475,23 @@
         }
     }
 
-    .booking-detail-modal {
-        .booking-detail {
-            .booking-info {
-                .info-row {
-                    grid-template-columns: 1fr;
-                    gap: 16px;
-                }
-            }
+    .create-booking-modal-modern {
+        .ant-modal {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    }
 
-            .customer-info {
-                .customer-details {
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                }
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+
+        .time-slot-card {
+            min-height: 70px;
+            padding: 12px;
+
+            .slot-time {
+                font-size: 13px;
             }
         }
     }
@@ -858,6 +1502,8 @@
         padding: 12px;
         
         .main-container {
+            max-width: 100%;
+            
             .header {
                 padding: 20px 24px;
                 flex-direction: column;
@@ -889,17 +1535,24 @@
 
             .booking-table {
                 margin: 12px 16px 16px 16px;
+                height: calc(100vh - 500px);
                 
                 .table-content {
-                    min-width: 800px;
-                    
-                    .table-header,
-                    .court-row {
-                        grid-template-columns: 120px repeat(auto-fit, minmax(100px, 1fr)); // SỬA: Mobile grid
+                    .table-header .header-row .header-cell,
+                    .table-body .court-row .court-cell {
+                        &.time-header,
+                        &.court-cell {
+                            width: 120px;
+                            min-width: 120px;
+                            max-width: 120px;
+                        }
                     }
                     
-                    .table-header .header-cell,
-                    .table-body .slot-cell {
+                    .table-header .header-row .header-cell.time-slot,
+                    .table-body .court-row .slot-cell {
+                        width: 100px;
+                        min-width: 100px;
+                        max-width: 100px;
                         font-size: 11px;
                         padding: 10px 4px;
                     }
@@ -915,41 +1568,108 @@
         }
 
         .booking-detail {
-            .modal-header {
-                padding: 20px;
-                
-                h2 {
-                    font-size: 18px;
+            .booking-info {
+                .info-row {
+                    grid-template-columns: 1fr;
+                    gap: 16px;
                 }
             }
 
-            .booking-info {
-                padding: 20px 16px 16px;
+            .customer-info {
+                .customer-details {
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+            }
+        }
+    }
+
+    .empty-slot-modal {
+        .ant-modal {
+            margin: 16px;
+            max-width: calc(100vw - 32px);
+        }
+
+        .empty-slot-content {
+            .empty-slot-actions {
+                flex-direction: column;
                 
-                .info-row {
-                    gap: 16px;
-                    
-                    .info-item {
-                        padding: 16px;
-                        
-                        .info-content {
-                            .value {
-                                font-size: 14px;
-                                
-                                &.price {
-                                    font-size: 16px;
-                                }
-                            }
-                        }
+                .ant-btn {
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    // Modern create booking modal responsive
+    .create-booking-modal-modern {
+        .ant-modal {
+            margin: 16px;
+            max-width: calc(100vw - 32px);
+            width: calc(100vw - 32px) !important;
+        }
+
+        .modern-modal-header {
+            padding: 30px 20px;
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+
+                .header-text {
+                    h2 {
+                        font-size: 24px;
+                    }
+
+                    p {
+                        font-size: 14px;
                     }
                 }
             }
+        }
 
-            .customer-info,
-            .payment-status,
-            .modal-actions {
-                padding-left: 16px;
-                padding-right: 16px;
+        .modern-modal-body {
+            padding: 20px;
+        }
+
+        .form-section-modern {
+            .section-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+
+                .section-title {
+                    h3 {
+                        font-size: 18px;
+                    }
+                }
+            }
+        }
+
+        .time-slots-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+
+            .time-slot-card {
+                min-height: 60px;
+                padding: 10px;
+
+                .slot-time {
+                    font-size: 12px;
+                }
+            }
+        }
+
+        .modern-form-actions {
+            flex-direction: column;
+            gap: 12px;
+
+            .cancel-button,
+            .submit-button {
+                width: 100%;
+                height: 44px;
             }
         }
     }

@@ -21,7 +21,7 @@ const UserProfile = (props) => {
   const [passwordStatus, setPasswordStatus] = useState(null);
 
   // Temporary userId - sẽ thay thế bằng userId từ authentication sau
-  const userId = 10;
+  const userId = 4;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -492,7 +492,7 @@ const UserProfile = (props) => {
     }
   };
 
-  // Lightweight validation - only basic checks
+  // Updated validation - khớp với backend logic mới
   const validateProfile = () => {
     const newErrors = {};
 
@@ -515,22 +515,30 @@ const UserProfile = (props) => {
       newErrors.dob = "Vui lòng chọn ngày sinh";
     }
 
-    if (!profileData.accountNumber?.trim()) {
-      newErrors.accountNumber = "Vui lòng nhập số tài khoản";
-    }
+    // 🎯 Bank account validation - CHỈ validate khi có đầy đủ thông tin
+    const hasAccountNumber = profileData.accountNumber?.trim();
+    const hasAccountHolder = profileData.accountHolder?.trim();
+    const hasBankTypeId = profileData.bankTypeId && profileData.bankTypeId > 0;
 
-    if (!profileData.accountHolder?.trim()) {
-      newErrors.accountHolder = "Vui lòng nhập tên chủ tài khoản";
-    }
+    // Nếu có ít nhất 1 field bank account được điền, yêu cầu phải điền đầy đủ
+    if (hasAccountNumber || hasAccountHolder || hasBankTypeId) {
+      if (!hasAccountNumber) {
+        newErrors.accountNumber = "Vui lòng nhập số tài khoản";
+      }
 
-    if (!profileData.bankTypeId || profileData.bankTypeId <= 0) {
-      newErrors.bankTypeId = "Vui lòng chọn ngân hàng";
+      if (!hasAccountHolder) {
+        newErrors.accountHolder = "Vui lòng nhập tên chủ tài khoản";
+      }
+
+      if (!hasBankTypeId) {
+        newErrors.bankTypeId = "Vui lòng chọn ngân hàng";
+      }
     }
 
     return newErrors;
   };
 
-  // Password validation
+  // Sửa lại function validatePassword trong UserProfile.js
   const validatePassword = () => {
     const newErrors = {};
 
@@ -539,34 +547,36 @@ const UserProfile = (props) => {
       passwordStatus?.RequireOldPassword &&
       !passwordData.oldPassword?.trim()
     ) {
-      newErrors.oldPassword = "Vui lòng nhập mật khẩu cũ";
+      newErrors.oldPassword = "Mật khẩu cũ không được để trống";
     }
 
+    // 🎯 NEW: Validate new password với regex mới từ backend
     if (!passwordData.newPassword?.trim()) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
-    } else if (passwordData.newPassword.length < 8) {
-      newErrors.newPassword = "Mật khẩu phải có ít nhất 8 ký tự";
+    } else {
+      // 🎯 Backend regex: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
+      if (!passwordRegex.test(passwordData.newPassword)) {
+        newErrors.newPassword =
+          "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số, tối thiểu 6 ký tự";
+      }
     }
 
+    // 🎯 Validate confirm password - khớp với backend
     if (!passwordData.confirmPassword?.trim()) {
-      newErrors.confirmPassword = "Vui lòng nhập xác nhận mật khẩu";
+      newErrors.confirmPassword = "Xác nhận mật khẩu không được để trống";
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không trùng khớp";
     }
 
-    // Check if new password is same as old password (chỉ khi có old password)
-    if (
-      passwordStatus?.HasPassword &&
-      passwordStatus?.RequireOldPassword &&
-      passwordData.oldPassword === passwordData.newPassword
-    ) {
-      newErrors.newPassword = "Mật khẩu mới phải khác mật khẩu cũ";
-    }
+    // 🎯 REMOVED: Check if new password is same as old password
+    // Backend sẽ handle việc này, frontend không cần check nữa
 
     return newErrors;
   };
 
-  // Xử lý cập nhật profile
+  // 🎯 Updated profile update handler - thêm refresh userData sau khi success
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
 
@@ -582,18 +592,29 @@ const UserProfile = (props) => {
     setErrors({});
 
     try {
+      // 🎯 Chỉ gửi bank account data nếu có đầy đủ thông tin (khớp với backend logic)
+      const hasCompleteBank =
+        profileData.accountNumber?.trim() &&
+        profileData.accountHolder?.trim() &&
+        profileData.bankTypeId > 0;
+
       const updateData = {
         fullName: profileData.fullName.trim(),
         email: profileData.email.trim(),
         address: profileData.address.trim(),
         dob: profileData.dob,
-        accountNumber: profileData.accountNumber.trim(),
-        accountHolder: profileData.accountHolder.trim(),
-        bankTypeId: parseInt(profileData.bankTypeId),
         isMale: profileData.isMale,
       };
 
+      // 🎯 Chỉ thêm bank account fields nếu có đầy đủ thông tin
+      if (hasCompleteBank) {
+        updateData.accountNumber = profileData.accountNumber.trim();
+        updateData.accountHolder = profileData.accountHolder.trim();
+        updateData.bankTypeId = parseInt(profileData.bankTypeId);
+      }
+
       console.log("Updating profile with data:", updateData);
+      console.log("Has complete bank info:", hasCompleteBank);
 
       const response = await updateUserProfile(userId, updateData);
 
@@ -618,20 +639,69 @@ const UserProfile = (props) => {
         // Update original email after successful update
         setOriginalEmail(updateData.email);
 
-        // Refresh user data
+        // 🎯 REFRESH USER DATA sau khi cập nhật thành công
         try {
+          console.log("🔄 Refreshing user data after successful update...");
           const userResponse = await getUserById(userId);
+
+          console.log("=== REFRESH USER DATA RESPONSE ===");
+          console.log(JSON.stringify(userResponse, null, 2));
+
           const isRefreshSuccess =
             userResponse?.success === true || userResponse?.Success === true;
-          if (isRefreshSuccess) {
-            const userData = userResponse?.data || userResponse?.Data;
-            setProfileData((prev) => ({
-              ...prev,
-              bankName: userData?.bankName || "",
-            }));
+          const refreshedUserData = userResponse?.data || userResponse?.Data;
+
+          if (isRefreshSuccess && refreshedUserData) {
+            // 🎯 Cập nhật lại toàn bộ profileData với dữ liệu mới từ server
+            let matchedBankTypeId = refreshedUserData.bankTypeId || 0;
+
+            // Tự động khớp bankTypeId từ bankName nếu có (như logic ban đầu)
+            if (refreshedUserData.bankName && bankTypes.length > 0) {
+              const foundBankTypeId = findBankTypeIdByName(
+                refreshedUserData.bankName,
+                bankTypes
+              );
+              if (foundBankTypeId > 0) {
+                matchedBankTypeId = foundBankTypeId;
+                console.log(
+                  `🔄 Re-matched bank "${refreshedUserData.bankName}" with ID: ${foundBankTypeId}`
+                );
+              }
+            }
+
+            setProfileData({
+              fullName: refreshedUserData.fullName || "",
+              email: refreshedUserData.email || "",
+              phone: refreshedUserData.phone || "",
+              isMale:
+                refreshedUserData.isMale !== undefined
+                  ? refreshedUserData.isMale
+                  : true,
+              address: refreshedUserData.address || "",
+              dob: refreshedUserData.dob
+                ? refreshedUserData.dob.split("T")[0]
+                : "",
+              accountNumber: refreshedUserData.accountNumber || "",
+              accountHolder: refreshedUserData.accountHolder || "",
+              bankTypeId: matchedBankTypeId,
+              bankName: refreshedUserData.bankName || "",
+              imageUrl: refreshedUserData.imageUrl || "",
+              imageId: refreshedUserData.imageId || null,
+            });
+
+            // 🎯 Cập nhật lại originalEmail với email mới từ server
+            setOriginalEmail(refreshedUserData.email || "");
+
+            console.log("✅ User data refreshed successfully after update");
+          } else {
+            console.warn(
+              "❌ Could not refresh user data:",
+              userResponse?.message || userResponse?.Message
+            );
           }
         } catch (refreshError) {
-          console.warn("Could not refresh user data:", refreshError);
+          console.error("❌ Error refreshing user data:", refreshError);
+          // Không làm gì cả, chỉ log error - user vẫn thấy success message
         }
       } else {
         // Error case - map to specific fields
@@ -710,12 +780,7 @@ const UserProfile = (props) => {
             setErrors({ accountNumber: errorMessage });
             console.log("✅ Set accountNumber error:", errorMessage);
 
-            // ACCOUNT HOLDER ERRORS
-          } else if (
-            errorMessage.includes("Tên chủ tài khoản không được để trống")
-          ) {
-            setErrors({ accountHolder: errorMessage });
-            console.log("✅ Set accountHolder empty error:", errorMessage);
+            // ACCOUNT HOLDER ERRORS - 🎯 Chỉ còn lỗi length, bỏ empty error
           } else if (
             errorMessage.includes(
               "Tên chủ tài khoản không được vượt quá 50 ký tự"
@@ -1134,77 +1199,85 @@ const UserProfile = (props) => {
               )}
             </div>
 
-            <div className="user-profile__form-row">
-              <div className="user-profile__form-group">
-                <label>
-                  <i className="fas fa-credit-card"></i>
-                  Số tài khoản *
-                </label>
-                <input
-                  type="text"
-                  name="accountNumber"
-                  value={profileData.accountNumber}
-                  onChange={handleProfileChange}
-                  className={errors.accountNumber ? "error" : ""}
-                  placeholder="Nhập số tài khoản"
-                />
-                {errors.accountNumber && (
-                  <span className="error-text">{errors.accountNumber}</span>
-                )}
+            {/* 🎯 Bank Account Section - Updated labels */}
+            <div className="user-profile__bank-section">
+              <h3>Thông tin tài khoản ngân hàng (tùy chọn)</h3>
+              <p className="bank-section-note">
+                Điền đầy đủ thông tin để cập nhật tài khoản ngân hàng
+              </p>
+
+              <div className="user-profile__form-row">
+                <div className="user-profile__form-group">
+                  <label>
+                    <i className="fas fa-credit-card"></i>
+                    Số tài khoản
+                  </label>
+                  <input
+                    type="text"
+                    name="accountNumber"
+                    value={profileData.accountNumber}
+                    onChange={handleProfileChange}
+                    className={errors.accountNumber ? "error" : ""}
+                    placeholder="Nhập số tài khoản (tùy chọn)"
+                  />
+                  {errors.accountNumber && (
+                    <span className="error-text">{errors.accountNumber}</span>
+                  )}
+                </div>
+
+                <div className="user-profile__form-group">
+                  <label>
+                    <i className="fas fa-user-tie"></i>
+                    Tên chủ tài khoản
+                  </label>
+                  <input
+                    type="text"
+                    name="accountHolder"
+                    value={profileData.accountHolder}
+                    onChange={handleProfileChange}
+                    className={errors.accountHolder ? "error" : ""}
+                    placeholder="Nhập tên chủ tài khoản (tùy chọn)"
+                  />
+                  {errors.accountHolder && (
+                    <span className="error-text">{errors.accountHolder}</span>
+                  )}
+                </div>
               </div>
 
               <div className="user-profile__form-group">
                 <label>
-                  <i className="fas fa-user-tie"></i>
-                  Tên chủ tài khoản *
+                  <i className="fas fa-university"></i>
+                  Ngân hàng
                 </label>
-                <input
-                  type="text"
-                  name="accountHolder"
-                  value={profileData.accountHolder}
+                <select
+                  name="bankTypeId"
+                  value={profileData.bankTypeId}
                   onChange={handleProfileChange}
-                  className={errors.accountHolder ? "error" : ""}
-                  placeholder="Nhập tên chủ tài khoản"
-                />
-                {errors.accountHolder && (
-                  <span className="error-text">{errors.accountHolder}</span>
+                  className={errors.bankTypeId ? "error" : ""}
+                >
+                  <option value={0}>Chọn ngân hàng (tùy chọn)</option>
+                  {bankTypes.map((bank) => (
+                    <option key={bank.bankTypeId} value={bank.bankTypeId}>
+                      {bank.bankName}
+                      {bank.description && ` - ${bank.description}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.bankTypeId && (
+                  <span className="error-text">{errors.bankTypeId}</span>
                 )}
+
+                {/* Hiển thị cảnh báo nếu bankName từ server không khớp với danh sách */}
+                {profileData.bankName &&
+                  !isCurrentBankSelectionValid() &&
+                  profileData.bankTypeId === 0 && (
+                    <span className="bank-name-display bank-not-matched">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      Ngân hàng từ hệ thống: "{profileData.bankName}" - Không
+                      tìm thấy trong danh sách
+                    </span>
+                  )}
               </div>
-            </div>
-
-            <div className="user-profile__form-group">
-              <label>
-                <i className="fas fa-university"></i>
-                Ngân hàng *
-              </label>
-              <select
-                name="bankTypeId"
-                value={profileData.bankTypeId}
-                onChange={handleProfileChange}
-                className={errors.bankTypeId ? "error" : ""}
-              >
-                <option value={0}>Chọn ngân hàng</option>
-                {bankTypes.map((bank) => (
-                  <option key={bank.bankTypeId} value={bank.bankTypeId}>
-                    {bank.bankName}
-                    {bank.description && ` - ${bank.description}`}
-                  </option>
-                ))}
-              </select>
-              {errors.bankTypeId && (
-                <span className="error-text">{errors.bankTypeId}</span>
-              )}
-
-              {/* Hiển thị cảnh báo nếu bankName từ server không khớp với danh sách */}
-              {profileData.bankName &&
-                !isCurrentBankSelectionValid() &&
-                profileData.bankTypeId === 0 && (
-                  <span className="bank-name-display bank-not-matched">
-                    <i className="fas fa-exclamation-triangle"></i>
-                    Ngân hàng từ hệ thống: "{profileData.bankName}" - Không tìm
-                    thấy trong danh sách
-                  </span>
-                )}
             </div>
 
             <button

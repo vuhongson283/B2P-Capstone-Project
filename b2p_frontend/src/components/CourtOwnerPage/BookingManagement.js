@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./BookingManagement.scss";
-import { Select, DatePicker, Modal, Button, Tag, Avatar, Divider, Spin, message } from "antd";
+import { Select, DatePicker, Modal, Button, Tag, Avatar, Spin, message, Form, notification } from "antd";
 import {
     CalendarOutlined,
     ClockCircleOutlined,
@@ -12,6 +12,8 @@ import {
     CloseCircleOutlined,
     HomeOutlined,
     PlusOutlined,
+    StopOutlined,
+    AppstoreOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -19,8 +21,11 @@ import {
     getAllCourts,
     getTimeSlotsByFacilityId,
     getBookingsByFacilityId,
-    getAccountById // Import hàm mới
-} from "../../services/apiService"; // Import API functions
+    getAccountById,
+    completeBooking,
+    createBookingForCO,
+    getFacilityDetailsById
+} from "../../services/apiService";
 
 const { Option } = Select;
 
@@ -28,11 +33,12 @@ const BookingManagement = () => {
     // State for facilities and courts data
     const [facilities, setFacilities] = useState([]);
     const [courts, setCourts] = useState([]);
-    const [timeSlots, setTimeSlots] = useState([]); // Dynamic time slots
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [rawTimeSlots, setRawTimeSlots] = useState([]); // Store original timeSlot data with IDs
     const [selectedFacility, setSelectedFacility] = useState(null);
     const [selectedDate, setSelectedDate] = useState(dayjs());
-    const [bookingData, setBookingData] = useState({}); // Real booking data
-    const [bookings, setBookings] = useState([]); // Raw bookings từ API
+    const [bookingData, setBookingData] = useState({});
+    const [bookings, setBookings] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -40,10 +46,119 @@ const BookingManagement = () => {
     const [courtsLoading, setCourtsLoading] = useState(false);
     const [timeSlotsLoading, setTimeSlotsLoading] = useState(false);
     const [bookingsLoading, setBookingsLoading] = useState(false);
-    const [customerLoading, setCustomerLoading] = useState(false); // Loading cho customer info
+    const [customerLoading, setCustomerLoading] = useState(false);
+    const [completingBooking, setCompletingBooking] = useState(false);
+
+    // State for create booking modal
+    const [isCreateBookingModalVisible, setIsCreateBookingModalVisible] = useState(false);
+    const [modalCategories, setModalCategories] = useState([]);
+    const [modalCategoriesLoading, setModalCategoriesLoading] = useState(false);
+    const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
+    const [creatingBooking, setCreatingBooking] = useState(false);
+    const [createBookingForm] = Form.useForm();
+
+    // State for category filter outside table
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
 
     // Fixed user ID
     const userId = 13;
+
+    // HELPER FUNCTIONS FOR STATUS MAPPING
+    const getBookingStatusFromString = (status) => {
+        const statusLower = status?.toLowerCase();
+        switch (statusLower) {
+            case 'paid':
+                return 'paid';
+            case 'completed':
+                return 'completed';
+            case 'cancelled':
+            case 'canceled':
+                return 'cancelled';
+            case 'active':
+                return 'confirmed';
+            default:
+                return 'confirmed';
+        }
+    };
+
+    const getStatusDisplayText = (status, originalStatus) => {
+        switch (status) {
+            case 'paid':
+                return 'Đã thanh toán cọc';
+            case 'completed':
+                return 'Đã hoàn thành';
+            case 'cancelled':
+                return 'Đã hủy';
+            case 'confirmed':
+                return originalStatus === 'Active' ? 'Đã xác nhận' : 'Đã xác nhận';
+            default:
+                return originalStatus || 'Đã xác nhận';
+        }
+    };
+
+    const getPaymentStatusFromId = (statusId) => {
+        switch (statusId) {
+            case 7:
+            case '7':
+            case 10:
+            case '10':
+                return 'paid';
+            default:
+                return 'pending';
+        }
+    };
+
+    // Get timeSlot ID from timeSlot string
+    const getTimeSlotId = (timeSlotString) => {
+        const foundSlot = rawTimeSlots.find(slot => {
+            const startTime = slot.startTime || slot.start || slot.timeStart;
+            const endTime = slot.endTime || slot.end || slot.timeEnd;
+            if (!startTime || !endTime) return false;
+            const formatTime = (time) => (time ? time.substring(0, 5) : '');
+            const formattedSlot = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+            return formattedSlot === timeSlotString;
+        });
+        if (!foundSlot) return 1; // fallback
+        return foundSlot.timeSlotId || foundSlot.id;
+    };
+
+    // Load categories from facility details API
+    const loadModalCategories = async (facilityId) => {
+        try {
+            setModalCategoriesLoading(true);
+            const response = await getFacilityDetailsById(facilityId);
+            if (response && response.success && response.data) {
+                const facilityData = response.data;
+                if (facilityData.categories && Array.isArray(facilityData.categories) && facilityData.categories.length > 0) {
+                    setModalCategories(facilityData.categories);
+                } else {
+                    setModalCategories([]);
+                }
+            } else {
+                setModalCategories([]);
+            }
+        } catch (error) {
+            setModalCategories([]);
+        } finally {
+            setModalCategoriesLoading(false);
+        }
+    };
+
+    // Handle time slot selection
+    const handleTimeSlotToggle = (timeSlot) => {
+        setSelectedTimeSlots(prev => {
+            if (prev.includes(timeSlot)) {
+                return prev.filter(slot => slot !== timeSlot);
+            } else {
+                return [...prev, timeSlot];
+            }
+        });
+    };
+
+    // Check if time slot is selected
+    const isTimeSlotSelected = (timeSlot) => {
+        return selectedTimeSlots.includes(timeSlot);
+    };
 
     // Load facilities when component mounts
     useEffect(() => {
@@ -59,6 +174,7 @@ const BookingManagement = () => {
         } else {
             setCourts([]);
             setTimeSlots([]);
+            setRawTimeSlots([]);
             setBookings([]);
             setBookingData({});
         }
@@ -71,42 +187,38 @@ const BookingManagement = () => {
         }
     }, [selectedDate]);
 
-    // ... (giữ nguyên các hàm loadFacilities, loadCourts, loadTimeSlots như cũ)
+    // Khi đổi cơ sở thì reset filter loại sân về all
+    useEffect(() => {
+        if (selectedFacility) {
+            loadModalCategories(selectedFacility);
+        } else {
+            setModalCategories([]);
+        }
+    }, [selectedFacility]);
 
     // Load facilities by court owner ID
     const loadFacilities = async () => {
         try {
             setFacilitiesLoading(true);
-            console.log('🔍 Loading facilities for userId:', userId);
-
             const response = await getFacilitiesByCourtOwnerId(
                 userId,
-                "", // facilityName
-                null, // statusId
-                1, // currentPage
-                100 // itemsPerPage - get all facilities
+                "",
+                null,
+                1,
+                100
             );
-
-            console.log('📊 Facilities Response:', response.data);
-
             let facilitiesData = [];
             if (response.data && response.data.items) {
                 facilitiesData = response.data.items;
             }
-
             if (facilitiesData && facilitiesData.length > 0) {
                 setFacilities(facilitiesData);
-                // Auto-select first facility
                 const firstFacilityId = facilitiesData[0].facilityId;
                 setSelectedFacility(firstFacilityId);
-                console.log('✅ Auto-selected facility ID:', firstFacilityId);
             } else {
-                message.warning('Không tìm thấy cơ sở nào cho user ID: ' + userId);
                 setFacilities([]);
             }
         } catch (error) {
-            console.error('❌ Error loading facilities:', error);
-            message.error('Không thể tải danh sách cơ sở');
             setFacilities([]);
         } finally {
             setFacilitiesLoading(false);
@@ -117,8 +229,6 @@ const BookingManagement = () => {
     const loadCourts = async (facilityId) => {
         try {
             setCourtsLoading(true);
-            console.log('🏟️ Loading courts for facilityId:', facilityId);
-
             const response = await getAllCourts({
                 pageNumber: 1,
                 pageSize: 100,
@@ -127,9 +237,6 @@ const BookingManagement = () => {
                 status: null,
                 categoryId: null
             });
-
-            console.log('🏟️ Courts Response:', response.data);
-
             let courtsData = [];
             if (response.data) {
                 if (response.data.data) {
@@ -140,17 +247,12 @@ const BookingManagement = () => {
                     courtsData = response.data;
                 }
             }
-
             if (courtsData && courtsData.length > 0) {
                 setCourts(courtsData);
-                console.log('✅ Courts loaded:', courtsData.map(c => ({ id: c.courtId || c.id, name: c.courtName || c.name })));
             } else {
                 setCourts([]);
-                message.info('Không có sân nào trong cơ sở này');
             }
         } catch (error) {
-            console.error('❌ Error loading courts:', error);
-            message.error('Không thể tải danh sách sân');
             setCourts([]);
         } finally {
             setCourtsLoading(false);
@@ -161,15 +263,8 @@ const BookingManagement = () => {
     const loadTimeSlots = async (facilityId) => {
         try {
             setTimeSlotsLoading(true);
-            console.log('⏰ Loading time slots for facilityId:', facilityId);
-
             const response = await getTimeSlotsByFacilityId(facilityId);
-
-            console.log('⏰ Time Slots Response:', response);
-            console.log('⏰ Time Slots Data:', response.data);
-
             let timeSlotsData = [];
-
             if (response.data) {
                 if (response.data.data) {
                     timeSlotsData = response.data.data;
@@ -181,35 +276,22 @@ const BookingManagement = () => {
                     timeSlotsData = response.data.result;
                 }
             }
-
-            console.log('⏰ Processed Time Slots Data:', timeSlotsData);
-
             if (timeSlotsData && timeSlotsData.length > 0) {
-                // Format time slots for display (assuming API returns startTime and endTime)
+                setRawTimeSlots(timeSlotsData);
                 const formattedTimeSlots = timeSlotsData.map(slot => {
-                    // Adjust field names based on your API response structure
                     const startTime = slot.startTime || slot.start || slot.timeStart;
                     const endTime = slot.endTime || slot.end || slot.timeEnd;
-
-                    // Format time (remove seconds if present)
-                    const formatTime = (time) => {
-                        if (!time) return '';
-                        return time.substring(0, 5); // Get HH:MM part
-                    };
-
+                    const formatTime = (time) => (time ? time.substring(0, 5) : '');
                     return `${formatTime(startTime)} - ${formatTime(endTime)}`;
                 });
-
                 setTimeSlots(formattedTimeSlots);
-                console.log('✅ Formatted time slots:', formattedTimeSlots);
             } else {
                 setTimeSlots([]);
-                message.info('Không có khung giờ nào cho cơ sở này');
+                setRawTimeSlots([]);
             }
         } catch (error) {
-            console.error('❌ Error loading time slots:', error);
-            message.error('Không thể tải khung giờ');
             setTimeSlots([]);
+            setRawTimeSlots([]);
         } finally {
             setTimeSlotsLoading(false);
         }
@@ -219,20 +301,11 @@ const BookingManagement = () => {
     const loadBookings = async (facilityId) => {
         try {
             setBookingsLoading(true);
-            console.log('📅 Loading bookings for facilityId:', facilityId);
-            console.log('📅 Selected date:', selectedDate.format('YYYY-MM-DD'));
-
             const response = await getBookingsByFacilityId(facilityId, 1, 1000);
-
-            console.log('📅 RAW Bookings API Response:', response);
-
             let bookingsData = [];
             if (response.data && response.data.items) {
                 bookingsData = response.data.items;
             }
-
-            console.log('📅 RAW Bookings Data:', bookingsData);
-
             if (bookingsData && bookingsData.length > 0) {
                 setBookings(bookingsData);
                 processBookingData(bookingsData);
@@ -241,8 +314,6 @@ const BookingManagement = () => {
                 setBookingData({});
             }
         } catch (error) {
-            console.error('❌ Error loading bookings:', error);
-            message.error('Không thể tải danh sách đặt sân');
             setBookings([]);
             setBookingData({});
         } finally {
@@ -250,119 +321,111 @@ const BookingManagement = () => {
         }
     };
 
-    // Process booking data into lookup format - CẬP NHẬT
+    // Process booking data
     const processBookingData = (bookingsData) => {
-        console.log('🔄 Processing booking data...');
-        console.log('🔄 Total bookings to process:', bookingsData.length);
-
         const processedBookings = {};
-
-        bookingsData.forEach((booking, index) => {
+        bookingsData.forEach((booking) => {
             try {
-                console.log(`🔄 Processing booking ${index + 1}:`, booking);
-
-                // Parse date from checkInDate
                 let bookingDate;
                 if (booking.checkInDate) {
                     bookingDate = dayjs(booking.checkInDate);
-                    console.log(`📅 Found checkInDate:`, booking.checkInDate, '→', bookingDate.format('YYYY-MM-DD'));
                 }
-
-                if (!bookingDate || !bookingDate.isValid()) {
-                    console.log('❌ No valid date found for booking:', booking);
-                    return;
-                }
-
-                // Check if booking has slots array
-                if (!booking.slots || !Array.isArray(booking.slots)) {
-                    console.log('❌ No slots array found in booking:', booking);
-                    return;
-                }
-
-                console.log(`📋 Found ${booking.slots.length} slots in booking:`, booking.slots);
-
-                // Process each slot in the booking
-                booking.slots.forEach((slot, slotIndex) => {
+                if (!bookingDate || !bookingDate.isValid()) return;
+                const isDateMatch = bookingDate.format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD');
+                if (!isDateMatch) return;
+                if (!booking.slots || !Array.isArray(booking.slots)) return;
+                booking.slots.forEach((slot) => {
                     try {
-                        console.log(`🔄 Processing slot ${slotIndex + 1}:`, slot);
-
                         const startTime = slot.startTime || slot.timeStart || slot.fromTime;
                         const endTime = slot.endTime || slot.timeEnd || slot.toTime;
                         const courtId = slot.courtId || slot.court_id || slot.id;
-                        const statusId = slot.statusId || slot.status_id || booking.statusId || booking.status_id;
-
-                        console.log(`⏰ Slot times: ${startTime} - ${endTime}`);
-                        console.log(`🏟️ Court ID: ${courtId}`);
-                        console.log(`📊 Status ID: ${statusId}`);
-
                         if (startTime && endTime && courtId) {
-                            const formatTime = (time) => {
-                                if (!time) return '';
-                                return time.substring(0, 5);
-                            };
-
+                            const formatTime = (time) => (time ? time.substring(0, 5) : '');
                             const timeSlot = `${formatTime(startTime)} - ${formatTime(endTime)}`;
                             const bookingKey = `${courtId}_${bookingDate.format('YYYY-MM-DD')}_${timeSlot}`;
-
-                            // Check status - look for different status indicators
-                            let isActive = false;
-
-                            if (statusId === 7 || statusId === '7') {
-                                isActive = true;
-                            } else if (booking.status === 'Active' || slot.status === 'Active') {
-                                isActive = true;
-                            } else if (booking.status === 'Paid' || slot.status === 'Paid' ||
-                                booking.status === 'Confirmed' || slot.status === 'Confirmed') {
-                                isActive = true;
+                            let shouldDisplay = false;
+                            let finalStatus = 'confirmed';
+                            let mappedStatusId = null;
+                            let paymentStatus = 'pending';
+                            const status = booking.status?.toLowerCase();
+                            if (status === 'paid') {
+                                shouldDisplay = true;
+                                finalStatus = 'paid';
+                                mappedStatusId = 7;
+                                paymentStatus = 'deposit';
+                            } else if (status === 'completed') {
+                                shouldDisplay = true;
+                                finalStatus = 'completed';
+                                mappedStatusId = 10;
+                                paymentStatus = 'paid';
+                            } else if (status === 'cancelled' || status === 'canceled') {
+                                shouldDisplay = true;
+                                finalStatus = 'cancelled';
+                                mappedStatusId = 9;
+                                paymentStatus = 'cancelled';
+                            } else if (status === 'active') {
+                                shouldDisplay = true;
+                                finalStatus = 'confirmed';
+                                mappedStatusId = 1;
+                                paymentStatus = 'pending';
                             }
-
-                            if (isActive) {
-                                console.log('✅ Adding active booking to processed bookings');
-
-                                processedBookings[bookingKey] = {
+                            if (shouldDisplay) {
+                                let bookingTime = 'N/A';
+                                let rawBookingTime = null;
+                                if (booking.createDate) {
+                                    rawBookingTime = booking.createDate;
+                                } else if (booking.createdAt) {
+                                    rawBookingTime = booking.createdAt;
+                                } else {
+                                    rawBookingTime = booking.checkInDate;
+                                }
+                                if (rawBookingTime && rawBookingTime !== 'N/A' && rawBookingTime !== '0001-01-01T00:00:00') {
+                                    try {
+                                        const parsedTime = dayjs(rawBookingTime);
+                                        if (parsedTime.isValid()) {
+                                            bookingTime = parsedTime.format('DD/MM/YYYY HH:mm:ss');
+                                        } else {
+                                            bookingTime = rawBookingTime;
+                                        }
+                                    } catch {
+                                        bookingTime = rawBookingTime;
+                                    }
+                                } else {
+                                    bookingTime = 'Không có thông tin';
+                                }
+                                const processedBooking = {
                                     id: booking.bookingId || booking.id,
-                                    userId: booking.userId, // Lưu userId để load customer info
+                                    userId: booking.userId,
                                     courtId: courtId,
                                     courtName: slot.courtName || slot.court_name || `Court ${courtId}`,
                                     timeSlot: timeSlot,
                                     date: bookingDate.format('DD/MM/YYYY'),
                                     price: booking.totalPrice || booking.price || 0,
-                                    status: 'confirmed',
-                                    paymentStatus: booking.status === 'Paid' ? 'paid' : 'pending',
-                                    bookingTime: booking.checkInDate || 'N/A',
-                                    statusId: statusId || 7,
+                                    status: finalStatus,
+                                    paymentStatus: paymentStatus,
+                                    bookingTime: bookingTime,
+                                    checkInDate: booking.checkInDate,
+                                    statusId: mappedStatusId,
                                     originalStatus: booking.status,
-                                    // Placeholder customer info (sẽ được load khi click)
+                                    rawCreateDate: rawBookingTime,
                                     customerName: 'Đang tải...',
                                     customerPhone: 'Đang tải...',
                                     customerEmail: 'Đang tải...'
                                 };
-
-                                console.log(`✅ Added booking: ${bookingKey}`, processedBookings[bookingKey]);
+                                processedBookings[bookingKey] = processedBooking;
                             }
                         }
-                    } catch (slotError) {
-                        console.error(`❌ Error processing slot ${slotIndex + 1}:`, slot, slotError);
-                    }
+                    } catch { }
                 });
-
-            } catch (error) {
-                console.error(`❌ Error processing booking ${index + 1}:`, booking, error);
-            }
+            } catch { }
         });
-
-        console.log('📊 Final processed bookings:', processedBookings);
         setBookingData(processedBookings);
     };
 
-    // Load customer details - HÀM MỚI
+    // Load customer details
     const loadCustomerDetails = async (userId) => {
         try {
-            console.log('👤 Loading customer details for userId:', userId);
             const response = await getAccountById(userId);
-
-            console.log('👤 Customer API Response:', response);
-
             let customerData = null;
             if (response.data) {
                 if (response.data.data) {
@@ -373,9 +436,6 @@ const BookingManagement = () => {
                     customerData = response.data;
                 }
             }
-
-            console.log('👤 Customer Data:', customerData);
-
             if (customerData) {
                 return {
                     customerName: customerData.fullName || customerData.name || customerData.userName || 'N/A',
@@ -384,56 +444,183 @@ const BookingManagement = () => {
                     customerAvatar: customerData.avatar || customerData.profilePicture || null
                 };
             }
-
             return null;
-        } catch (error) {
-            console.error('❌ Error loading customer details:', error);
+        } catch {
             return null;
         }
     };
 
-    const getBookingKey = (courtId, date, timeSlot) => {
-        const key = `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
-        return key;
+    // Complete booking function
+    const handleCompleteBooking = async () => {
+        if (!selectedBooking || !selectedBooking.id) {
+            message.error('Không tìm thấy thông tin đơn đặt sân');
+            return;
+        }
+        try {
+            setCompletingBooking(true);
+            const response = await completeBooking(selectedBooking.id);
+            const isSuccess =
+                response.status === 200 ||
+                response.status === 201 ||
+                (response.data && response.data.success === true) ||
+                (response.data && response.data.status === 200) ||
+                (response.data && !response.data.error);
+            if (isSuccess) {
+                message.success('Hoàn thành đơn đặt sân thành công!');
+                setSelectedBooking(prev => ({
+                    ...prev,
+                    status: 'completed',
+                    statusId: 10,
+                    paymentStatus: 'paid',
+                    originalStatus: 'Completed'
+                }));
+                const bookingKey = `${selectedBooking.courtId}_${selectedDate.format('YYYY-MM-DD')}_${selectedBooking.timeSlot}`;
+                setBookingData(prev => ({
+                    ...prev,
+                    [bookingKey]: {
+                        ...prev[bookingKey],
+                        status: 'completed',
+                        statusId: 10,
+                        paymentStatus: 'paid',
+                        originalStatus: 'Completed'
+                    }
+                }));
+                setTimeout(() => {
+                    closeModal();
+                }, 1000);
+                if (selectedFacility) {
+                    setTimeout(() => {
+                        loadBookings(selectedFacility);
+                    }, 1500);
+                }
+            } else {
+                const errorMessage =
+                    response.data?.message ||
+                    response.data?.error ||
+                    'Không thể hoàn thành đơn đặt sân';
+                message.error(errorMessage);
+            }
+        } catch (error) {
+            if (error.response) {
+                const errorMessage = error.response.data?.message || 'Lỗi từ server';
+                message.error(`Không thể hoàn thành đơn: ${errorMessage}`);
+            } else if (error.request) {
+                message.error('Lỗi kết nối mạng. Vui lòng thử lại.');
+            } else {
+                message.error('Có lỗi xảy ra. Vui lòng thử lại.');
+            }
+        } finally {
+            setCompletingBooking(false);
+        }
     };
 
-    // Handle slot click - CẬP NHẬT ĐỂ LOAD CUSTOMER INFO
+    // Open create booking modal
+    const openCreateBookingModal = async () => {
+        setSelectedTimeSlots([]);
+        setIsCreateBookingModalVisible(true);
+        if (selectedFacility) {
+            await loadModalCategories(selectedFacility);
+            createBookingForm.setFieldsValue({ categoryId: undefined });
+        } else {
+            message.warning('Vui lòng chọn cơ sở trước');
+        }
+    };
+    useEffect(() => {
+        if (isCreateBookingModalVisible) {
+            createBookingForm.setFieldsValue({ categoryId: undefined });
+        }
+        // eslint-disable-next-line
+    }, [modalCategories]);
+    // Close create booking modal
+    const closeCreateBookingModal = () => {
+        setIsCreateBookingModalVisible(false);
+        createBookingForm.resetFields();
+        setSelectedTimeSlots([]);
+        setCreatingBooking(false);
+    };
+
+    // Handle create booking form submission
+    const handleCreateBooking = async (values) => {
+        try {
+            setCreatingBooking(true);
+            if (selectedTimeSlots.length === 0) {
+                message.error('Vui lòng chọn ít nhất một khung giờ');
+                return;
+            }
+            const timeSlotIds = selectedTimeSlots.map(timeSlot => getTimeSlotId(timeSlot));
+            const checkInDate = selectedDate.format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z';
+            const bookingRequestData = {
+                userId: 16,
+                email: "admin@courtowner.com",
+                phone: "0000000000",
+                checkInDate: checkInDate,
+                timeSlotIds: timeSlotIds,
+                facilityId: selectedFacility,
+                categoryId: values.categoryId
+            };
+            const createResponse = await createBookingForCO(bookingRequestData);
+            const isCreateSuccess =
+                createResponse.status === 200 ||
+                createResponse.status === 201 ||
+                (createResponse.data && createResponse.data.success === true) ||
+                (createResponse.data && createResponse.data.status === 200) ||
+                (createResponse.data && !createResponse.data.error);
+            if (isCreateSuccess) {
+                message.success('Tạo đơn đặt sân thành công!');
+                setTimeout(() => {
+                    closeCreateBookingModal();
+                }, 1000);
+                if (selectedFacility) {
+                    setTimeout(() => {
+                        loadBookings(selectedFacility);
+                    }, 1500);
+                }
+            } else {
+                const errorMessage =
+                    createResponse.data?.message ||
+                    createResponse.data?.error ||
+                    'Không thể tạo đơn đặt sân';
+                message.error(errorMessage);
+            }
+        } catch (error) {
+            if (error.response) {
+                const errorMessage = error.response.data?.message || 'Lỗi từ server';
+                message.error(`Không thể tạo đơn: ${errorMessage}`);
+            } else if (error.request) {
+                message.error('Lỗi kết nối mạng. Vui lòng thử lại.');
+            } else {
+                message.error('Có lỗi xảy ra. Vui lòng thử lại.');
+            }
+        } finally {
+            setCreatingBooking(false);
+        }
+    };
+
+    const getBookingKey = (courtId, date, timeSlot) => {
+        return `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
+    };
+
+    // Handle slot click - CHỈ HIỂN THỊ MODAL CHO SLOT ĐÃ ĐƯỢC ĐẶT
     const handleSlotClick = async (court, timeSlot) => {
         const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
         const booking = bookingData[bookingKey];
-
-        console.log('🖱️ Slot clicked:', {
-            court: court.courtName || court.name,
-            timeSlot,
-            date: selectedDate.format('YYYY-MM-DD'),
-            bookingKey,
-            hasBooking: !!booking
-        });
-
         if (booking) {
             setCustomerLoading(true);
             setIsModalVisible(true);
-
-            // Set initial booking data
             setSelectedBooking({
                 ...booking,
                 timeSlot,
                 date: selectedDate.format('DD/MM/YYYY')
             });
-
-            // Load customer details asynchronously
             if (booking.userId) {
                 try {
                     const customerDetails = await loadCustomerDetails(booking.userId);
-
                     if (customerDetails) {
-                        // Update booking with customer details
                         setSelectedBooking(prev => ({
                             ...prev,
                             ...customerDetails
                         }));
                     } else {
-                        // Fallback if customer details not found
                         setSelectedBooking(prev => ({
                             ...prev,
                             customerName: 'Không tìm thấy thông tin',
@@ -441,8 +628,7 @@ const BookingManagement = () => {
                             customerEmail: 'Không tìm thấy thông tin'
                         }));
                     }
-                } catch (error) {
-                    console.error('Error loading customer details:', error);
+                } catch {
                     setSelectedBooking(prev => ({
                         ...prev,
                         customerName: 'Lỗi tải thông tin',
@@ -451,40 +637,66 @@ const BookingManagement = () => {
                     }));
                 }
             }
-
             setCustomerLoading(false);
-        } else {
-            console.log('🆕 No booking found, could open new booking form');
-            message.info('Slot này đang trống. Có thể tạo đặt sân mới.');
         }
     };
 
+    // Get slot status
     const getSlotStatus = (court, timeSlot) => {
         const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
         const booking = bookingData[bookingKey];
-        return booking ? 'booked' : 'available';
+        if (!booking) return 'available';
+        return booking.status;
+    };
+
+    // Get slot display text
+    const getSlotDisplayText = (status) => {
+        switch (status) {
+            case 'available':
+                return 'Còn trống';
+            case 'paid':
+                return 'Đã Đặt';
+            case 'completed':
+                return 'Đã hoàn thành';
+            case 'cancelled':
+                return 'Đã hủy';
+            default:
+                return 'Đã xác nhận';
+        }
     };
 
     const closeModal = () => {
         setIsModalVisible(false);
         setSelectedBooking(null);
         setCustomerLoading(false);
+        setCompletingBooking(false);
     };
 
     const handleFacilityChange = (value) => {
-        console.log('🔄 Facility changed to:', value);
         setSelectedFacility(value);
     };
 
     const handleDateChange = (date) => {
-        console.log('📅 Date changed to:', date.format('YYYY-MM-DD'));
         setSelectedDate(date);
     };
+
+    // Lọc courts theo loại sân đã chọn
+    const filteredCourts = React.useMemo(() => {
+        if (selectedCategoryFilter === 'all') return courts;
+        // Tìm categoryName từ modalCategories dựa vào categoryId được chọn
+        const selectedCategory = modalCategories.find(
+            cat => String(cat.categoryId) === String(selectedCategoryFilter)
+        );
+        if (!selectedCategory) return [];
+        return courts.filter(
+            court => court.categoryName === selectedCategory.categoryName
+        );
+    }, [courts, selectedCategoryFilter, modalCategories]);
 
     return (
         <div className="booking-management">
             <div className="main-container">
-                {/* Header với gradient đẹp */}
+                {/* Header */}
                 <div className="header">
                     <div className="header-content">
                         <HomeOutlined className="header-icon" />
@@ -495,7 +707,7 @@ const BookingManagement = () => {
                     </div>
                 </div>
 
-                {/* Filters với design mới */}
+                {/* Filters */}
                 <div className="filters-section">
                     <div className="filters-container">
                         <div className="filter-item">
@@ -527,72 +739,123 @@ const BookingManagement = () => {
                                 className="filter-date"
                             />
                         </div>
+
+                        {/* Create Booking Button */}
+                        <div className="filter-item">
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={openCreateBookingModal}
+                                className="mark-court-button"
+                            >
+                                Tạo Đơn
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Status indicators */}
-                <div className="status-indicator">
+                {/* Status indicators + Category Filter */}
+                <div className="status-indicator" style={{ flexWrap: "wrap" }}>
                     <div className="status-item">
                         <div className="status-dot available"></div>
-                        <span>Còn trống ({Object.keys(bookingData).length > 0 ?
-                            courts.length * timeSlots.length - Object.keys(bookingData).length :
-                            courts.length * timeSlots.length} slots)</span>
+                        <span>Còn trống ({courts.length * timeSlots.length - Object.keys(bookingData).length} slots)</span>
                     </div>
                     <div className="status-item">
-                        <div className="status-dot booked"></div>
-                        <span>Đã được đặt ({Object.keys(bookingData).length} slots)</span>
+                        <div className="status-dot paid"></div>
+                        <span>Đã Đặt ({Object.values(bookingData).filter(b => b.status === 'paid').length} slots)</span>
+                    </div>
+                    <div className="status-item">
+                        <div className="status-dot completed"></div>
+                        <span>Đã hoàn thành ({Object.values(bookingData).filter(b => b.status === 'completed').length} slots)</span>
+                    </div>
+                    <div className="status-item">
+                        <div className="status-dot cancelled"></div>
+                        <span>Đã hủy ({Object.values(bookingData).filter(b => b.status === 'cancelled').length} slots)</span>
+                    </div>
+                    {/* Category Filter */}
+                    <div className="category-filter" style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 32 }}>
+                        <span style={{ fontWeight: 500 }}>Loại sân:</span>
+                        <select
+                            style={{
+                                minWidth: 160,
+                                padding: '6px 12px',
+                                borderRadius: 6,
+                                border: '1px solid #d9d9d9',
+                                fontSize: 15,
+                                background: '#fff'
+                            }}
+                            value={selectedCategoryFilter}
+                            onChange={e => setSelectedCategoryFilter(e.target.value)}
+                            disabled={modalCategoriesLoading}
+                        >
+                            <option value="all">Tất cả</option>
+                            {modalCategories.map(category => (
+                                <option key={category.categoryId} value={category.categoryId}>
+                                    {category.categoryName}
+                                </option>
+                            ))}
+                        </select>
+                        {modalCategoriesLoading && <Spin size="small" style={{ marginLeft: 8 }} />}
                     </div>
                 </div>
 
-                {/* Booking Table với design mới */}
-                <div className="booking-table">
+                {/* Booking Table */}
+                <div className="booking-table" style={{ width: "95%" }}>
                     <div className="table-scroll-container">
                         <div className="table-content">
                             {/* Table Header */}
                             <div className="table-header">
-                                <div className="header-cell time-header">
-                                    <ClockCircleOutlined />
-                                    <span>KHUNG GIỜ</span>
-                                </div>
-                                {timeSlotsLoading ? (
-                                    <div className="header-cell loading-header">
-                                        <Spin size="small" />
-                                        <span>Đang tải khung giờ...</span>
+                                <div className="header-row">
+                                    <div className="header-cell time-header">
+                                        <ClockCircleOutlined />
+                                        <span>KHUNG GIỜ</span>
                                     </div>
-                                ) : timeSlots.length === 0 ? (
-                                    <div className="header-cell empty-header">
-                                        <span>Không có khung giờ</span>
-                                    </div>
-                                ) : (
-                                    timeSlots.map(slot => (
-                                        <div key={slot} className="header-cell time-slot">
-                                            {slot}
+                                    {timeSlotsLoading ? (
+                                        <div className="header-cell loading-header">
+                                            <Spin size="small" />
+                                            <span>Đang tải...</span>
                                         </div>
-                                    ))
-                                )}
+                                    ) : timeSlots.length === 0 ? (
+                                        <div className="header-cell empty-header">
+                                            <span>Không có khung giờ</span>
+                                        </div>
+                                    ) : (
+                                        timeSlots.map(slot => (
+                                            <div key={slot} className="header-cell time-slot">
+                                                {slot}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
 
                             {/* Table Body */}
                             <div className="table-body">
                                 {courtsLoading || bookingsLoading ? (
                                     <div className="loading-container">
-                                        <Spin size="large" />
-                                        <span>
-                                            {courtsLoading && 'Đang tải danh sách sân...'}
-                                            {bookingsLoading && 'Đang tải thông tin đặt sân...'}
-                                            {courtsLoading && bookingsLoading && 'Đang tải dữ liệu...'}
-                                        </span>
+                                        <div>
+                                            <Spin size="large" />
+                                            <span>Đang tải dữ liệu...</span>
+                                        </div>
                                     </div>
-                                ) : courts.length === 0 ? (
+                                ) : filteredCourts.length === 0 ? (
                                     <div className="no-data-container">
-                                        <span>{selectedFacility ? 'Không có sân nào trong cơ sở này' : 'Vui lòng chọn cơ sở'}</span>
+                                        <div>
+                                            <span>
+                                                {selectedCategoryFilter === 'all'
+                                                    ? (selectedFacility ? 'Không có sân nào' : 'Vui lòng chọn cơ sở')
+                                                    : 'Không có sân nào thuộc loại này'}
+                                            </span>
+                                        </div>
                                     </div>
                                 ) : timeSlots.length === 0 ? (
                                     <div className="no-data-container">
-                                        <span>Không có khung giờ cho cơ sở này</span>
+                                        <div>
+                                            <span>Không có khung giờ</span>
+                                        </div>
                                     </div>
                                 ) : (
-                                    courts.map((court) => (
+                                    filteredCourts.map((court) => (
                                         <div key={court.courtId || court.id} className="court-row">
                                             <div className="court-cell">
                                                 <HomeOutlined />
@@ -600,14 +863,14 @@ const BookingManagement = () => {
                                             </div>
                                             {timeSlots.map(slot => {
                                                 const status = getSlotStatus(court, slot);
-
                                                 return (
                                                     <div
                                                         key={`${court.courtId || court.id}-${slot}`}
                                                         className={`slot-cell ${status}`}
                                                         onClick={() => handleSlotClick(court, slot)}
+                                                        title={`${court.courtName || court.name} - ${slot}`}
                                                     >
-                                                        {status === 'available' ? 'Còn trống' : 'Đã được đặt'}
+                                                        {getSlotDisplayText(status)}
                                                     </div>
                                                 );
                                             })}
@@ -620,7 +883,7 @@ const BookingManagement = () => {
                 </div>
             </div>
 
-            {/* Modal với gradient header - CẬP NHẬT CUSTOMER SECTION */}
+            {/* Modal for filled slots only */}
             <Modal
                 title={null}
                 open={isModalVisible}
@@ -635,7 +898,7 @@ const BookingManagement = () => {
                         <div className="modal-header">
                             <h2>Chi tiết đặt sân</h2>
                             <div className="status-tag">
-                                {selectedBooking.status === 'confirmed' ? 'Đã xác nhận' : 'Chờ xác nhận'}
+                                {getStatusDisplayText(selectedBooking.status, selectedBooking.originalStatus)}
                             </div>
                         </div>
 
@@ -685,7 +948,7 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
-                        {/* CUSTOMER INFO SECTION - CẬP NHẬT */}
+                        {/* Customer Info Section */}
                         <div className="customer-info">
                             <h3>Thông tin khách hàng</h3>
                             <div className="customer-details">
@@ -721,12 +984,23 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
+                        {/* Payment status display */}
                         <div className="payment-status">
                             <div className="payment-info">
-                                {selectedBooking.paymentStatus === 'paid' ? (
+                                {selectedBooking.paymentStatus === 'deposit' ? (
+                                    <>
+                                        <CheckCircleOutlined className="payment-icon deposit" />
+                                        <span className="payment-text deposit">Đã thanh toán cọc</span>
+                                    </>
+                                ) : selectedBooking.paymentStatus === 'paid' ? (
                                     <>
                                         <CheckCircleOutlined className="payment-icon paid" />
                                         <span className="payment-text paid">Đã thanh toán</span>
+                                    </>
+                                ) : selectedBooking.paymentStatus === 'cancelled' ? (
+                                    <>
+                                        <CloseCircleOutlined className="payment-icon cancelled" />
+                                        <span className="payment-text cancelled">Đã hủy</span>
                                     </>
                                 ) : (
                                     <>
@@ -740,14 +1014,194 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
+                        {/* Modal Actions */}
                         <div className="modal-actions">
                             <Button onClick={closeModal}>Đóng</Button>
-                            <Button type="primary" className="action-button">
-                                Cập nhật
-                            </Button>
+                            {selectedBooking.status === 'paid' ? (
+                                <Button
+                                    type="primary"
+                                    className="action-button"
+                                    onClick={handleCompleteBooking}
+                                    loading={completingBooking}
+                                    icon={<CheckCircleOutlined />}
+                                >
+                                    {completingBooking ? 'Đang hoàn thành...' : 'Hoàn Thành Đơn'}
+                                </Button>
+                            ) : selectedBooking.status === 'completed' ? (
+                                <Button
+                                    type="primary"
+                                    className="action-button completed"
+                                    disabled
+                                    icon={<CheckCircleOutlined />}
+                                >
+                                    Đã Hoàn Thành
+                                </Button>
+                            ) : selectedBooking.status === 'cancelled' ? (
+                                <Button
+                                    type="default"
+                                    className="action-button cancelled"
+                                    disabled
+                                    icon={<StopOutlined />}
+                                >
+                                    Đơn Đã Hủy
+                                </Button>
+                            ) : null}
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Create Booking Modal - IMPROVED DESIGN */}
+            <Modal
+                title={null}
+                open={isCreateBookingModalVisible}
+                onCancel={closeCreateBookingModal}
+                footer={null}
+                width={700}
+                className="create-booking-modal-modern"
+                centered
+                bodyStyle={{ padding: 0 }}
+            >
+                <div className="modern-modal-wrapper">
+                    {/* Beautiful Modal Header */}
+                    <div className="modern-modal-header">
+                        <div className="header-background">
+                            <div className="header-pattern"></div>
+                        </div>
+                        <div className="header-content">
+                            <div className="header-icon-wrapper">
+                                <PlusOutlined className="header-icon" />
+                            </div>
+                            <div className="header-text">
+                                <h2>Tạo Đơn Đặt Sân Mới</h2>
+                                <p>Vui lòng điền thông tin để tạo đơn đặt sân</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Modal Body */}
+                    <div className="modern-modal-body">
+                        <Form
+                            form={createBookingForm}
+                            layout="vertical"
+                            onFinish={handleCreateBooking}
+                            className="modern-booking-form"
+                        >
+                            {/* Category Selection Section */}
+                            <div className="form-section-modern">
+                                <div className="section-header">
+                                    <div className="section-icon">
+                                        <AppstoreOutlined />
+                                    </div>
+                                    <div className="section-title">
+                                        <h3>Loại Sân</h3>
+                                        <span>Chọn loại sân phù hợp</span>
+                                    </div>
+                                </div>
+                                <Form.Item
+                                    name="categoryId"
+                                    label="Loại sân"
+                                    rules={[{ required: true, message: 'Vui lòng chọn loại sân' }]}
+                                    className="form-item-half"
+                                >
+                                    <select
+                                        style={{ width: '100%', padding: 8, borderRadius: 4 }}
+                                        value={createBookingForm.getFieldValue('categoryId') || ''}
+                                        onChange={e => createBookingForm.setFieldsValue({ categoryId: e.target.value })}
+                                    >
+                                        <option value="">Chọn loại sân</option>
+                                        {modalCategories.map(category => (
+                                            <option key={category.categoryId} value={category.categoryId}>
+                                                {category.categoryName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </Form.Item>
+                            </div>
+
+                            {/* Time Slots Selection Section */}
+                            <div className="form-section-modern">
+                                <div className="section-header">
+                                    <div className="section-icon">
+                                        <ClockCircleOutlined />
+                                    </div>
+                                    <div className="section-title">
+                                        <h3>Khung Giờ</h3>
+                                        <span>Chọn các khung giờ muốn đặt</span>
+                                    </div>
+                                </div>
+                                <div className="time-slots-grid">
+                                    {timeSlotsLoading ? (
+                                        <div className="loading-slots">
+                                            <Spin size="large" />
+                                            <span>Đang tải khung giờ...</span>
+                                        </div>
+                                    ) : timeSlots.length === 0 ? (
+                                        <div className="empty-slots">
+                                            <ClockCircleOutlined className="empty-icon" />
+                                            <span>Không có khung giờ nào</span>
+                                        </div>
+                                    ) : (
+                                        timeSlots.map(slot => (
+                                            <div
+                                                key={slot}
+                                                className={`time-slot-card ${isTimeSlotSelected(slot) ? 'selected' : ''}`}
+                                                onClick={() => handleTimeSlotToggle(slot)}
+                                            >
+                                                <div className="slot-time">
+                                                    <ClockCircleOutlined className="slot-icon" />
+                                                    <span>{slot}</span>
+                                                </div>
+                                                <div className="slot-indicator">
+                                                    {isTimeSlotSelected(slot) && (
+                                                        <CheckCircleOutlined className="check-icon" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                {/* Selected Slots Summary */}
+                                {selectedTimeSlots.length > 0 && (
+                                    <div className="selected-summary">
+                                        <div className="summary-header">
+                                            <CheckCircleOutlined className="summary-icon" />
+                                            <span>Đã chọn {selectedTimeSlots.length} khung giờ</span>
+                                        </div>
+                                        <div className="summary-slots">
+                                            {selectedTimeSlots.map(slot => (
+                                                <Tag key={slot} color="blue" className="summary-tag">
+                                                    {slot}
+                                                </Tag>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Form Actions */}
+                            <div className="modern-form-actions">
+                                <Button
+                                    size="large"
+                                    onClick={closeCreateBookingModal}
+                                    className="cancel-button"
+                                >
+                                    Hủy Bỏ
+                                </Button>
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    htmlType="submit"
+                                    loading={creatingBooking}
+                                    icon={<PlusOutlined />}
+                                    className="submit-button"
+                                    disabled={selectedTimeSlots.length === 0}
+                                >
+                                    {creatingBooking ? 'Đang tạo đơn...' : 'Tạo Đơn Đặt Sân'}
+                                </Button>
+                            </div>
+                        </Form>
+                    </div>
+                </div>
             </Modal>
         </div>
     );
