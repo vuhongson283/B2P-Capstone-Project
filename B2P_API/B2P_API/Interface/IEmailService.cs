@@ -4,5 +4,6 @@
     {
         Task SendOtpEmailAsync(string email, string otpCode);
         Task SendEmailAsync(string toEmail, string subject, string body);
+        Task SendOtpEmailForLoginAsync(string email, string otpCode);
     }
 }
