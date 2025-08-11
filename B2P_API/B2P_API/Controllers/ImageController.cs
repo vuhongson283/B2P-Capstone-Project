@@ -84,20 +84,30 @@ namespace B2P_API.Controllers
 
         [HttpPost("upload-blog")]
         public async Task<IActionResult> UploadImageBlog(
-            IFormFile file,
-            [FromForm] int entityId,
-            [FromForm] string? caption = null)
+    List<IFormFile> files,
+    [FromForm] int entityId,
+    [FromForm] string? caption = null)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest(new { message = "No file uploaded" });
+            if (files == null || files.Count == 0)
+                return BadRequest(new { message = "No files uploaded" });
 
-            if (!IsValidImageFile(file))
-                return BadRequest(new { message = "Invalid image format" });
+            foreach (var file in files)
+            {
+                if (!IsValidImageFile(file))
+                    return BadRequest(new { message = $"Invalid image format: {file.FileName}" });
+            }
+
+            var uploadResults = new List<ImageUploadResponse>();
 
             try
             {
-                var result = await _imageService.UploadImageAsync(file, "blog", entityId, caption);
-                return Ok(result);
+                foreach (var file in files)
+                {
+                    var result = await _imageService.UploadImageAsync(file, "blog", entityId, caption);
+                    uploadResults.Add(result);
+                }
+
+                return Ok(uploadResults);
             }
             catch (ArgumentException ex)
             {
@@ -105,7 +115,7 @@ namespace B2P_API.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading image");
+                _logger.LogError(ex, "Error uploading one or more images");
                 return StatusCode(500, new { message = "Upload failed" });
             }
         }

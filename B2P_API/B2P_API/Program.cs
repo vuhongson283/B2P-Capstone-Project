@@ -7,10 +7,14 @@ using B2P_API.Repository;
 using B2P_API.Response;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer; // ✅ Thêm này
+using Microsoft.IdentityModel.Tokens; // ✅ Thêm này
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using B2P_API.Utils;
+using System.Text; // ✅ Thêm này
+using Microsoft.OpenApi.Models; // ✅ Thêm này cho Swagger
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,14 +39,86 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ✅ JWT Authentication Configuration
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwtSettings = builder.Configuration.GetSection("JWT");
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings["AccessSecret"]!)
+        ),
+
+        ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"JWT Token validated for user: {context.Principal?.FindFirst("userId")?.Value}");
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// ✅ Add Authorization
+builder.Services.AddAuthorization();
+
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
-// Swagger
+// Swagger với JWT support
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "B2P API", Version = "v1" });
+
+    // ✅ Thêm JWT Authentication vào Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Caching
 builder.Services.AddMemoryCache();
@@ -53,7 +129,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 
-// Đăng ký các Repository & Service
+builder.Services.AddScoped<JWTHelper>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<AuthService>();
+
+// Đăng ký các Repository & Service (giữ nguyên)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
@@ -66,7 +146,7 @@ builder.Services.AddScoped<CourtCategoryService>();
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
 builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
-builder.Services.AddScoped<FacilityService>(); // Đăng ký trực tiếp class nếu cần resolve cả interface và class
+builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
@@ -128,6 +208,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+
+// ✅ QUAN TRỌNG: Thêm authentication middleware
+app.UseAuthentication(); // ✅ Phải đặt TRƯỚC UseAuthorization
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();
