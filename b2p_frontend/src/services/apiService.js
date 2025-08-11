@@ -482,10 +482,17 @@ const getTimeslotsByFacilityId = (
   const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
   return axios.get(url);
 };
+
+const createRating = (ratingData) => {
+  return axios.post("Ratings", ratingData, {
+    validateStatus: () => true, // Optional, nếu muốn nhận mọi response code
+  });
+};
 // ===============================
 // EXPORT ALL
 // ===============================
 export {
+  createRating,
   createTimeslot,
   deleteTimeslot,
   updateTimeslot,

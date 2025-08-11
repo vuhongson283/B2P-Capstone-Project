@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using B2P_API.Utils;
+using B2P_API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,26 +20,31 @@ var connectionString = builder.Configuration.GetConnectionString("MyCnn");
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
-    options.UseSqlServer(connectionString));
+	options.UseSqlServer(connectionString));
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// **THÊM CORS - Cho phép tất cả (Development)**
+// **THÊM SIGNALR**
+builder.Services.AddSignalR();
+
+// **FIX CORS cho SignalR - Đây là phần quan trọng**
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
+	options.AddPolicy("SignalRPolicy", policy =>
+	{
+		policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+			  .AllowAnyMethod()
+			  .AllowAnyHeader()
+			  .AllowCredentials()
+			  .SetIsOriginAllowed(origin => true); // Cho phép tất cả origins khi dev
+	});
 });
 
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+	.AddJsonOptions(x =>
+		x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -50,12 +56,16 @@ builder.Services.AddMemoryCache();
 // Suppress automatic 400 responses
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+	options.SuppressModelStateInvalidFilter = true;
 });
 
-// Đăng ký các Repository & Service
+// Đăng ký các Repository & Service (giữ nguyên tất cả...)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<RatingRepository>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<RatingService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
@@ -66,7 +76,7 @@ builder.Services.AddScoped<CourtCategoryService>();
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
 builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
-builder.Services.AddScoped<FacilityService>(); // Đăng ký trực tiếp class nếu cần resolve cả interface và class
+builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
@@ -114,16 +124,26 @@ builder.Services.AddScoped<ReportService>();
 
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
 
+builder.Services.AddScoped<IBookingNotificationService, BookingNotificationService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
+
+// **SỬA THỨ TỰ VÀ SỬ DỤNG POLICY CỤ THỂ**
+app.UseCors("SignalRPolicy"); // Sử dụng policy cụ thể thay vì default
+
 app.UseAuthorization();
+
+// **MAP SIGNALR HUB**
+app.MapHub<BookingHub>("/bookingHub");
+
 app.MapControllers();
+
 app.Run();

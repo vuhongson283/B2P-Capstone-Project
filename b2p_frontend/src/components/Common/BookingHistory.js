@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './BookingHistory.scss';
-import { message, Spin } from 'antd';
+import { message, Spin, Rate, Input, Button } from 'antd';
 import {
     getBookingsByUserId,
     getAccountById,
-    getCourtDetail
+    getCourtDetail,
+    createRating
 } from '../../services/apiService';
 import dayjs from 'dayjs';
+
+const { TextArea } = Input;
 
 const BookingHistory = () => {
     const [bookings, setBookings] = useState([]);
@@ -17,8 +20,17 @@ const BookingHistory = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [customerLoading, setCustomerLoading] = useState(false);
-    const bookingsPerPage = 8;
 
+    // Rating states
+    const [ratingData, setRatingData] = useState({
+        rating: 0,
+        comment: ''
+    });
+    const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+    const [hasRated, setHasRated] = useState(false);
+    const [existingRating, setExistingRating] = useState(null);
+
+    const bookingsPerPage = 8;
     const userId = 16;
 
     useEffect(() => {
@@ -71,7 +83,6 @@ const BookingHistory = () => {
         return paymentMap[status] || 'N/A';
     };
 
-    // FIXED loadCourtDetails function
     const loadCourtDetails = async (courtId) => {
         try {
             console.log(`🏟️ [DEBUG] Loading court details for courtId: ${courtId}`);
@@ -79,7 +90,6 @@ const BookingHistory = () => {
             const response = await getCourtDetail(courtId);
             console.log(`📋 [DEBUG] Full response:`, response);
 
-            // Simple extraction based on your log
             const data = response.data;
             const result = {
                 facilityName: data.facilityName || 'N/A',
@@ -147,7 +157,12 @@ const BookingHistory = () => {
                         customerName: 'Đang tải...',
                         customerPhone: 'Đang tải...',
                         customerEmail: 'Đang tải...',
-                        uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`
+                        uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`,
+
+                        // Thông tin rating từ API (nếu có)
+                        hasRated: booking.hasRated || booking.isRated || false,
+                        ratingInfo: booking.rating || booking.ratingData || null,
+                        existingRating: booking.existingRating || null
                     };
 
                     console.log(`✅ [DEBUG] Processed booking:`, processedBooking);
@@ -257,6 +272,68 @@ const BookingHistory = () => {
         }
     };
 
+    // Rating functions
+    const handleRatingSubmit = async () => {
+        if (ratingData.rating === 0) {
+            message.warning('Vui lòng chọn số sao đánh giá');
+            return;
+        }
+
+        try {
+            setIsSubmittingRating(true);
+
+            const ratingPayload = {
+                bookingId: selectedBooking.id,
+                userId: userId,
+                courtId: selectedBooking.courtId,
+                facilityId: selectedBooking.facilityId,
+                rating: ratingData.rating,
+                comment: ratingData.comment.trim(),
+                ratingDate: new Date().toISOString()
+            };
+
+            console.log('📝 Submitting rating:', ratingPayload);
+
+            const response = await createRating(ratingPayload);
+
+            if (response.status === 200 || response.status === 201) {
+                message.success('Đánh giá của bạn đã được gửi thành công!');
+
+                // Set existing rating data để hiển thị
+                setExistingRating({
+                    rating: ratingData.rating,
+                    comment: ratingData.comment,
+                    ratingDate: new Date().toISOString()
+                });
+
+                setHasRated(true);
+                setRatingData({ rating: 0, comment: '' });
+
+                // Cập nhật booking trong state để reflect hasRated = true
+                setBookings(prevBookings =>
+                    prevBookings.map(b =>
+                        b.id === selectedBooking.id
+                            ? { ...b, hasRated: true, ratingInfo: { rating: ratingData.rating, comment: ratingData.comment } }
+                            : b
+                    )
+                );
+            } else {
+                throw new Error('Failed to submit rating');
+            }
+        } catch (error) {
+            console.error('❌ Error submitting rating:', error);
+            message.error('Không thể gửi đánh giá. Vui lòng thử lại!');
+        } finally {
+            setIsSubmittingRating(false);
+        }
+    };
+
+    const resetRatingForm = () => {
+        setRatingData({ rating: 0, comment: '' });
+        setHasRated(false);
+        setExistingRating(null);
+    };
+
     const getStatusText = (status) => {
         const statusMap = {
             'completed': 'Đã hoàn thành',
@@ -305,6 +382,20 @@ const BookingHistory = () => {
     const openModal = async (booking) => {
         setSelectedBooking(booking);
         setIsModalOpen(true);
+        resetRatingForm();
+
+        // Set rating status từ booking data
+        if (booking.status === 'completed') {
+            if (booking.hasRated) {
+                setHasRated(true);
+                setExistingRating(booking.ratingInfo || booking.existingRating);
+                console.log('✅ Booking already rated:', booking.ratingInfo);
+            } else {
+                setHasRated(false);
+                setExistingRating(null);
+                console.log('❌ Booking not rated yet');
+            }
+        }
 
         if (booking.customerName === 'Đang tải...' && booking.userId) {
             setCustomerLoading(true);
@@ -329,20 +420,25 @@ const BookingHistory = () => {
         setIsModalOpen(false);
         setSelectedBooking(null);
         setCustomerLoading(false);
+        resetRatingForm();
     };
 
-    const filteredBookings = bookings.filter(booking => {
-        const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
-        const matchesSearch = booking.courtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            booking.courtType.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesStatus && matchesSearch;
-    });
+    const filteredBookings = useMemo(() => {
+        return bookings.filter(booking => {
+            const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
+            const matchesSearch = booking.courtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                booking.courtType.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesStatus && matchesSearch;
+        });
+    }, [bookings, filterStatus, searchTerm]);
 
-    const sortedBookings = filteredBookings.sort((a, b) => {
-        const dateA = dayjs(a.bookingDate);
-        const dateB = dayjs(b.bookingDate);
-        return dateB.diff(dateA);
-    });
+    const sortedBookings = useMemo(() => {
+        return filteredBookings.sort((a, b) => {
+            const dateA = dayjs(a.bookingDate);
+            const dateB = dayjs(b.bookingDate);
+            return dateB.diff(dateA);
+        });
+    }, [filteredBookings]);
 
     const indexOfLastBooking = currentPage * bookingsPerPage;
     const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
@@ -360,18 +456,6 @@ const BookingHistory = () => {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-    };
-
-    const testCourtDetailAPI = async () => {
-        try {
-            console.log('🧪 Testing court detail API...');
-            const result = await getCourtDetail(18);
-            console.log('🧪 Test result:', result);
-            alert('Check console for result');
-        } catch (error) {
-            console.error('🧪 Test error:', error);
-            alert('Error: ' + error.message);
-        }
     };
 
     if (loading) {
@@ -465,6 +549,11 @@ const BookingHistory = () => {
                                                     <div className="facility-info">
                                                         <small>{booking.facilityName}</small>
                                                     </div>
+                                                    {booking.hasRated && (
+                                                        <div className="rated-indicator">
+                                                            <span className="rated-badge">⭐ Đã đánh giá</span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <div className="booking-details">
@@ -767,6 +856,105 @@ const BookingHistory = () => {
                                             <div className="notes-content">
                                                 {selectedBooking.notes}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* RATING SECTION - CHỈ HIỂN THỊ KHI ĐÃ HOÀN THÀNH */}
+                                    {selectedBooking.status === 'completed' && (
+                                        <div className="detail-section rating-section">
+                                            <h3 className="section-title">
+                                                <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                                </svg>
+                                                Đánh giá dịch vụ
+                                            </h3>
+
+                                            {hasRated || existingRating ? (
+                                                <div className="rating-already-exists">
+                                                    <div className="existing-rating-icon">⭐</div>
+                                                    <h4>Bạn đã đánh giá</h4>
+                                                    <p>Cảm ơn bạn đã đánh giá dịch vụ này trước đó.</p>
+
+                                                    {existingRating && (
+                                                        <div className="existing-rating-details">
+                                                            <div className="existing-rating-stars">
+                                                                <Rate
+                                                                    disabled
+                                                                    value={existingRating.rating || existingRating.stars || 5}
+                                                                    style={{ fontSize: '1.5rem', color: '#fbbf24' }}
+                                                                />
+                                                                <span className="rating-value">
+                                                                    {existingRating.rating || existingRating.stars || 5}/5 sao
+                                                                </span>
+                                                            </div>
+
+                                                            {(existingRating.comment || existingRating.review) && (
+                                                                <div className="existing-rating-comment">
+                                                                    <strong>Nhận xét của bạn:</strong>
+                                                                    <p>"{existingRating.comment || existingRating.review}"</p>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="rating-date">
+                                                                <small>
+                                                                    Đánh giá vào: {formatDateTime(existingRating.ratingDate || existingRating.createdAt || selectedBooking.checkInDate)}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="rating-form">
+                                                    <div className="rating-stars">
+                                                        <label className="rating-label">Đánh giá của bạn:</label>
+                                                        <Rate
+                                                            value={ratingData.rating}
+                                                            onChange={(value) => setRatingData(prev => ({ ...prev, rating: value }))}
+                                                            style={{ fontSize: '2rem', color: '#fbbf24' }}
+                                                            allowHalf={false}
+                                                        />
+                                                        <span className="rating-text">
+                                                            {ratingData.rating > 0 && (
+                                                                <>
+                                                                    {ratingData.rating} {ratingData.rating === 1 ? 'sao' : 'sao'}
+                                                                    {ratingData.rating <= 2 && ' - Không hài lòng'}
+                                                                    {ratingData.rating === 3 && ' - Bình thường'}
+                                                                    {ratingData.rating === 4 && ' - Hài lòng'}
+                                                                    {ratingData.rating === 5 && ' - Rất hài lòng'}
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="rating-comment">
+                                                        <label className="rating-label">Nhận xét của bạn:</label>
+                                                        <TextArea
+                                                            rows={4}
+                                                            placeholder="Chia sẻ trải nghiệm của bạn về cơ sở và dịch vụ..."
+                                                            value={ratingData.comment}
+                                                            onChange={(e) => setRatingData(prev => ({ ...prev, comment: e.target.value }))}
+                                                            maxLength={500}
+                                                            showCount
+                                                        />
+                                                    </div>
+
+                                                    <div className="rating-actions">
+                                                        <Button
+                                                            type="primary"
+                                                            size="large"
+                                                            loading={isSubmittingRating}
+                                                            onClick={handleRatingSubmit}
+                                                            disabled={ratingData.rating === 0}
+                                                            className="rating-submit-btn"
+                                                        >
+                                                            <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                            </svg>
+                                                            Gửi đánh giá
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
