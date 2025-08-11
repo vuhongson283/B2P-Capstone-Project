@@ -354,15 +354,32 @@ const getReport = (
   pageNumber = 1,
   pageSize = 10
 ) => {
-  return axios.get(
-    `Report/ReportList?userId=${userId}&startDate=${startDate}&endDate=${endDate}&facilityId=${facilityId}&pageNumber=${pageNumber}&pageSize=${pageSize}`
-  );
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
+  return axios.get(`Report/ReportList`, {
+    params: {
+      userId,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      facilityId,
+      pageNumber,
+      pageSize
+    }
+  });
 };
 
 const getTotalReport = (userId = 6, startDate, endDate) => {
-  return axios.get(
-    `Report/TotalReport?userId=${userId}&startDate=${startDate}&endDate=${endDate}`
-  );
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
+  return axios.get(`Report/TotalReport`, {
+    params: {
+      userId,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate
+    }
+  });
 };
 
 const exportReportToExcel = (
@@ -372,11 +389,14 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
   return axios.get(`Report/Export-Report-CourtOwner`, {
     params: {
       userId,
-      startDate,
-      endDate,
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
       facilityId,
       pageNumber,
     },
@@ -422,35 +442,26 @@ const getCourtDetail = (courtId) => {
   return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 };
 
-//TimeSlotForCourtOwner
+// ===============================
+// 📅 TIMESLOT MANAGEMENT
+// ===============================
 const getTimeSlotsByFacilityId = (facilityId) => {
   return axios.get(`TimeslotManagement/facility/${facilityId}`);
 };
 
+const getTimeslotsByFacilityId = (
+  facilityId,
+  statusId = null,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const params = new URLSearchParams();
+  if (statusId != null) params.append("statusId", statusId);
+  params.append("pageNumber", pageNumber);
+  params.append("pageSize", pageSize);
 
-
-const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
-  return axios.get(`Booking/court-owner`, {
-    params: {
-      facilityId,
-      pageNumber,
-      pageSize,
-    },
-  });
-};
-const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
-  return axios.get(`Booking`, {
-    params: {
-      userId,
-      Page: page,
-      PageSize: pageSize,
-    },
-  });
-};
-const createBookingForCO = (bookingData) => {
-  return axios.post("Booking", bookingData, {  // Sửa thành "api/Booking"
-    validateStatus: () => true,
-  });
+  const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
+  return axios.get(url);
 };
 
 const createTimeslot = (createRequest) => {
@@ -468,6 +479,7 @@ const updateTimeslot = (timeSlotId, updateRequest) => {
   return axios.put(url, updateRequest);
 };
 
+<<<<<<< HEAD
 const getTimeslotsByFacilityId = (
   facilityId,
   statusId = null,
@@ -488,10 +500,42 @@ const createRating = (ratingData) => {
     validateStatus: () => true, // Optional, nếu muốn nhận mọi response code
   });
 };
+=======
+>>>>>>> Test
 // ===============================
-// EXPORT ALL
+// 📅 BOOKING MANAGEMENT
+// ===============================
+const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
+  return axios.get(`Booking/court-owner`, {
+    params: {
+      facilityId,
+      pageNumber,
+      pageSize,
+    },
+  });
+};
+
+const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
+  return axios.get(`Booking`, {
+    params: {
+      userId,
+      Page: page,
+      PageSize: pageSize,
+    },
+  });
+};
+
+const createBookingForCO = (bookingData) => {
+  return axios.post("Booking", bookingData, {
+    validateStatus: () => true,
+  });
+};
+
+// ===============================
+// ✅ EXPORT ALL (CLEANED UP)
 // ===============================
 export {
+<<<<<<< HEAD
   createRating,
   createTimeslot,
   deleteTimeslot,
@@ -502,51 +546,68 @@ export {
   getBookingsByUserId,
   getBookingsByFacilityId,
   getTimeSlotsByFacilityId,
+=======
+  // Court Category
+>>>>>>> Test
   getAllCourtCategories,
   addCourtCategory,
   updateCourtCategory,
   getCourtCategoryById,
   deleteCourtCategory,
+  
+  // Blog
   getAllBlogs,
   getBlogById,
   createBlog,
   updateBlog,
   deleteBlog,
   getBlogsByUserId,
+  
+  // Comment
   getAllComments,
   createComment,
   updateComment,
   deleteComment,
   getCommentsByUserId,
-  getAllActiveSliders,
-  getAllFacilitiesByPlayer,
-  getAvailableSlots,
-  getFacilityDetailsById,
-  getUserById,
-  updateUserProfile,
-  changePassword,
-  checkPasswordStatus,
-  getAllBankType,
-  getAccountList,
-  getAccountById,
-  banUser,
-  deleteUser,
-  unbanUser,
+  
+  // Image
   getUserImage,
   uploadUserImage,
   updateUserImage,
   uploadslideImage,
   updateSlideImage,
+  uploadBlogImage,
+  getBlogImages,
+  deleteImage,
+  updateImage,
+  
+  // Password Reset
   forgotPasswordByEmail,
   resetPasswordByEmail,
   resendOtpByEmail,
   forgotPasswordBySms,
   resetPasswordBySms,
   resendOtpBySms,
-  uploadBlogImage,
-  getBlogImages,
-  deleteImage,
-  updateImage,
+  
+  // User
+  getUserById,
+  updateUserProfile,
+  changePassword,
+  checkPasswordStatus,
+  
+  // Bank
+  getAllBankType,
+  
+  // Account Management
+  getAccountList,
+  getAccountById,
+  banUser,
+  unbanUser,
+  deleteUser,
+  registerCourtOwner,
+  
+  // Slider
+  getAllActiveSliders,
   getSliderList,
   getSliderById,
   createSlider,
@@ -554,6 +615,11 @@ export {
   deleteSlider,
   activateSlider,
   deactivateSlider,
+  
+  // Facility
+  getAllFacilitiesByPlayer,
+  getAvailableSlots,
+  getFacilityDetailsById,
   getFacilitiesByCourtOwnerId,
   createFacility,
   uploadFacilityImages,
@@ -561,13 +627,29 @@ export {
   updateFacility,
   deleteFacility,
   deleteFacilityImage,
+  
+  // Report
   getReport,
   getTotalReport,
   exportReportToExcel,
+  
+  // Court Management
   getAllCourts,
   addNewCourt,
   updateCourt,
   deleteCourt,
   getCourtDetail,
-  registerCourtOwner,
+  
+  // Timeslot (✅ Fixed duplicates)
+  getTimeSlotsByFacilityId,        // Simple version
+  getTimeslotsByFacilityId,        // Advanced version with pagination
+  createTimeslot,
+  deleteTimeslot,
+  updateTimeslot,
+  
+  // Booking
+  getBookingsByFacilityId,
+  getBookingsByUserId,
+  createBookingForCO,
+  completeBooking,
 };

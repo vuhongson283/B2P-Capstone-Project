@@ -517,7 +517,6 @@ namespace B2P_API.Services
                     Data = new
                     {
                         IsFirstTimeSetup = !hasExistingPassword,
-                        Message = successMessage
                     },
                     Message = successMessage,
                     Success = true,

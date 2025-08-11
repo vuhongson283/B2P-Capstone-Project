@@ -8,8 +8,12 @@ namespace B2P_API.DTOs.CourtManagementDTO
 
         public string? CourtName { get; set; }
 
+        public int? CategoryId { get; set; }
+
         public string? CategoryName { get; set; }
 
         public string? StatusName { get; set; }
+
+        public decimal? PricePerHour { get; set; }
     }
 }

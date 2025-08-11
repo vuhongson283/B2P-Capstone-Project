@@ -65,26 +65,39 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<TotalReportDTO>> GetTotalReport(int userId, DateTime? startDate, DateTime? endDate)
         {
-            var report = await _repository.GetTotalReport(userId, startDate, endDate);
-
-            if (report == null)
+            try
             {
+                var report = await _repository.GetTotalReport(userId, startDate, endDate);
+
+                if (report == null)
+                {
+                    return new ApiResponse<TotalReportDTO>
+                    {
+                        Success = false,
+                        Message = "Không có dữ liệu trong khoảng thời gian đã chọn",
+                        Status = 200,
+                        Data = report
+                    };
+                }
+
                 return new ApiResponse<TotalReportDTO>
                 {
-                    Success = false,
-                    Message = "Không có dữ liệu trong khoảng thời gian đã chọn",
+                    Success = true,
+                    Message = "Lấy dữ liệu báo cáo thành công!",
                     Status = 200,
                     Data = report
                 };
             }
-
-            return new ApiResponse<TotalReportDTO>
+            catch (Exception ex)
             {
-                Success = true,
-                Message = "Lấy dữ liệu báo cáo thành công!",
-                Status = 200,
-                Data = report
-            };
+                return new ApiResponse<TotalReportDTO>
+                {
+                    Success = false,
+                    Message = "Đã xảy ra lỗi trong quá trình lấy báo cáo: " + ex.Message,
+                    Status = 500,
+                    Data = null
+                };
+            }
         }
 
         public async Task<ApiResponse<AdminReportDTO>> GetAdminReportPaged(int? year = null, int? month = null)

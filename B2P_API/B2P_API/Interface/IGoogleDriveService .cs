@@ -4,5 +4,6 @@
     {
         Task<string> UploadImageAsync(byte[] imageBytes, string fileName);
         Task<string> CreatePublicLinkAsync(string fileId);
+        Task<bool> DeleteFileAsync(string fileId);
     }
 }
