@@ -7,36 +7,6 @@ import { getAllFacilitiesByPlayer } from '../../services/apiService'; // Import 
 const NearbyCourts = ({ userLocation }) => {
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // ✅ DATA TEST - CHỈ CÓ STRING ADDRESS
-  const mockFacilities = [
-    {
-      facilityId: 1,
-      facilityName: "Sân bóng Mỹ Đình",
-      location: "Phường Mỹ Đình 1, Quận Nam Từ Liêm, Hà Nội"
-    },
-    {
-      facilityId: 2,
-      facilityName: "Sân bóng Đống Đa",
-      location: "Phường Láng Thượng, Quận Đống Đa, Hà Nội"
-    },
-    {
-      facilityId: 3,
-      facilityName: "Sân Cầu Giấy",
-      location: "Phường Nghĩa Đô, Quận Cầu Giấy, Hà Nội"
-    },
-    {
-      facilityId: 4,
-      facilityName: "Sân Thạch Thất",
-      location: "Tan xa, Huyện Thạch Thất, Thành phố Hà Nội"
-    },
-    {
-      facilityId: 5,
-      facilityName: "Sân Hoàn Kiếm",
-      location: "Phường Hàng Trống, Quận Hoàn Kiếm, Hà Nội"
-    }
-  ];
-
   useEffect(() => {
     if (userLocation) {
       loadNearbyCourts();

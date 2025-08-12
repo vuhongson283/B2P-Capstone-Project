@@ -6,6 +6,7 @@ using B2P_API.Models;
 using B2P_API.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.RegularExpressions;
+using Google.Apis.Auth;
 namespace B2P_API.Services
 {
     public class AuthService
@@ -151,69 +152,52 @@ namespace B2P_API.Services
             {
                 var contact = request.PhoneOrEmail.Trim();
 
-                // Bước 1: Lấy OTP từ cache
+                // Lấy OTP từ cache
                 var cacheKey = $"otp_{contact}_{request.SessionToken}";
                 if (!_cache.TryGetValue(cacheKey, out dynamic? otpData))
                 {
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
-                        Message = "OTP expired or invalid session",
+                        Message = "OTP hết hạn hoặc session không hợp lệ",
                         Status = 400,
                         Data = null
                     };
                 }
 
-                // Bước 2: Kiểm tra OTP có đúng không
+                // Kiểm tra OTP
                 if (otpData.Code != request.Otp)
                 {
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
-                        Message = "Invalid OTP code",
+                        Message = "Mã OTP không đúng",
                         Status = 400,
                         Data = null
                     };
                 }
 
-                // Bước 3: Xóa OTP khỏi cache (đã sử dụng)
+                // Xóa OTP khỏi cache
                 _cache.Remove(cacheKey);
                 _cache.Remove($"otp_rate_limit_{contact}");
 
-                // Bước 4: Tìm user trong database
-                User? user = null;
-                bool isNewUser = false;
-                bool isEmail = otpData.IsEmail;
+                // ✅ USER ĐÃ TỒN TẠI (được tạo trong GoogleLogin hoặc SendOtp)
+                bool isGoogleLogin = otpData.IsGoogleLogin == true;
+                bool isNewUser = otpData.IsNewUser == true;
 
-                if (isEmail)
+                Console.WriteLine($"🔍 Verifying OTP: {contact} (Google: {isGoogleLogin}, New: {isNewUser})");
+
+                // ✅ LẤY USER (CHẮC CHẮN TỒN TẠI)
+                User user = null;
+                if (otpData.UserId != null)
                 {
-                    user = await _authRepository.GetUserByEmailAsync(contact);
+                    // Case 1: Có UserId từ cache (Google login)
+                    user = await _authRepository.GetUserByIdAsync((int)otpData.UserId);
                 }
                 else
                 {
-                    user = await _authRepository.GetUserByPhoneAsync(contact);
-                }
-
-                // Bước 5: Tạo user mới nếu chưa có (Auto Register)
-                if (user == null)
-                {
-                    isNewUser = true;
-                    user = new User
-                    {
-                        Phone = isEmail ? "" : contact,
-                        Email = isEmail ? contact : $"{contact}@b2p.temp",
-                        FullName = isEmail
-                            ? $"User {contact.Split('@')[0]}"
-                            : $"User {contact.Substring(contact.Length - 4)}",
-                        StatusId = 1, // Active
-                        RoleId = 1,   // User role  
-                        CreateAt = DateTime.UtcNow
-                    };
-
-                    await _authRepository.CreateUserAsync(user);
-
-                    // Lấy lại user với đầy đủ thông tin
-                    if (isEmail)
+                    // Case 2: Tìm theo email/phone (regular login)
+                    if (otpData.IsEmail == true)
                     {
                         user = await _authRepository.GetUserByEmailAsync(contact);
                     }
@@ -221,6 +205,28 @@ namespace B2P_API.Services
                     {
                         user = await _authRepository.GetUserByPhoneAsync(contact);
                     }
+
+                    // ✅ TẠO USER CHO REGULAR LOGIN NỀU CHƯA CÓ
+                    if (user == null)
+                    {
+                        isNewUser = true;
+                        user = new User
+                        {
+                            Phone = otpData.IsEmail == true ? "" : contact,
+                            Email = otpData.IsEmail == true ? contact : $"{contact}@b2p.temp",
+                            FullName = otpData.IsEmail == true
+                                ? $"User {contact.Split('@')[0]}"
+                                : $"User {contact.Substring(contact.Length - 4)}",
+                            StatusId = 1,
+                            RoleId = 1,
+                            CreateAt = DateTime.UtcNow
+                        };
+
+                        await _authRepository.CreateUserAsync(user);
+                        user = await _authRepository.GetUserByEmailAsync(contact);
+
+                        Console.WriteLine($"🆕 Created regular user: {contact}");
+                    }
                 }
 
                 if (user == null)
@@ -228,16 +234,16 @@ namespace B2P_API.Services
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
-                        Message = "Failed to create or retrieve user",
+                        Message = "Không thể tìm thấy hoặc tạo user",
                         Status = 500,
                         Data = null
                     };
                 }
 
-                // Bước 6: Generate JWT tokens
+                // ✅ GENERATE JWT TOKENS
                 var tokens = _jwtHelper.GenerateTokens(user);
 
-                // Bước 7: Lưu tokens vào database
+                // Save tokens
                 var userToken = new UserToken
                 {
                     UserId = user.UserId,
@@ -247,7 +253,7 @@ namespace B2P_API.Services
 
                 await _authRepository.SaveUserTokenAsync(userToken);
 
-                // Bước 8: Tạo response
+                // Tạo response
                 var response = new TokenResponseDto
                 {
                     AccessToken = tokens.AccessToken,
@@ -255,24 +261,38 @@ namespace B2P_API.Services
                     ExpiresAt = tokens.ExpiresAt,
                     TokenType = tokens.TokenType,
                     IsNewUser = isNewUser,
+                    // Trong response UserInfoDto:
                     User = new UserInfoDto
                     {
                         UserId = user.UserId,
+
+                        // ✅ Phone empty cho Google users - OK!
                         Phone = user.Phone ?? "",
+
                         FullName = user.FullName ?? "",
                         Email = user.Email ?? "",
                         IsMale = user.IsMale,
                         Dob = user.Dob,
-                        Address = user.Address,
+                        Address = user.Address?.StartsWith("https://") == true ? "" : user.Address,
+                        RoleId = user.RoleId,
                         RoleName = user.Role?.RoleName ?? "User",
-                        CreateAt = user.CreateAt
+                        CreateAt = user.CreateAt,
+
+                        // ✅ THÊM INFO CHO GOOGLE USER
+                        AvatarUrl = user.Address?.StartsWith("https://") == true ? user.Address : null,
+                        IsGoogleUser = string.IsNullOrEmpty(user.Phone), // Simple detection
+                        GoogleId = null // Không cần store GoogleId nữa
                     }
                 };
+
+                string successMessage = isGoogleLogin
+                    ? (isNewUser ? "Tài khoản Google đã được tạo và đăng nhập thành công" : "Đăng nhập Google thành công")
+                    : (isNewUser ? "Tài khoản đã được tạo và đăng nhập thành công" : "Đăng nhập thành công");
 
                 return new ApiResponse<TokenResponseDto>
                 {
                     Success = true,
-                    Message = isNewUser ? "Account created and login successful" : "Login successful",
+                    Message = successMessage,
                     Status = 200,
                     Data = response
                 };
@@ -282,7 +302,7 @@ namespace B2P_API.Services
                 return new ApiResponse<TokenResponseDto>
                 {
                     Success = false,
-                    Message = $"Login failed: {ex.Message}",
+                    Message = $"Đăng nhập thất bại: {ex.Message}",
                     Status = 500,
                     Data = null
                 };
@@ -563,6 +583,148 @@ namespace B2P_API.Services
                 {
                     Success = false,
                     Message = $"Logout failed: {ex.Message}",
+                    Status = 500,
+                    Data = null
+                };
+            }
+        }
+
+        public async Task<ApiResponse<OtpResponseDto>> GoogleLoginAsync(GoogleLoginRequestDto request)
+        {
+            try
+            {
+                // 🔍 Verify Google ID token
+                var payload = await GoogleJsonWebSignature.ValidateAsync(
+                    request.GoogleToken,
+                    new GoogleJsonWebSignature.ValidationSettings()
+                    {
+                        Audience = new[] { "286138081852-t1j086t42d21k5ca6kv351b85tda7qus.apps.googleusercontent.com" }
+                    });
+
+                Console.WriteLine($"✅ Google user verified: {payload.Email}");
+
+                var contact = payload.Email.Trim();
+
+                // Check rate limiting
+                var rateLimitKey = $"otp_rate_limit_{contact}";
+                if (_cache.TryGetValue(rateLimitKey, out _))
+                {
+                    return new ApiResponse<OtpResponseDto>
+                    {
+                        Success = false,
+                        Message = "Vui lòng đợi trước khi yêu cầu OTP khác",
+                        Status = 429,
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK VÀ TẠO USER NGAY TẠI ĐÂY
+                var existingUser = await _authRepository.GetUserByEmailAsync(payload.Email);
+                bool isNewUser = false;
+                User targetUser = existingUser;
+
+                if (existingUser == null)
+                {
+                    isNewUser = true;
+                    targetUser = new User
+                    {
+                        Email = contact,
+                        FullName = payload.Name ?? $"User {contact.Split('@')[0]}",
+                        Phone = "", 
+
+                        IsMale = null, 
+                        RoleId = 3, 
+                        StatusId = 1, // Active
+                        CreateAt = DateTime.UtcNow,
+                        Password = null, // Google users don't have password
+
+                        // ✅ Store avatar URL if needed
+                        Address = payload.Picture // Google profile picture
+                    };
+
+                    Console.WriteLine($"🆕 Creating Google user with empty phone: {contact}");
+
+                    await _authRepository.CreateUserAsync(targetUser);
+                    targetUser = await _authRepository.GetUserByEmailAsync(contact);
+
+                    Console.WriteLine($"✅ Created Google user: {contact} with ID: {targetUser?.UserId}");
+                }
+                else
+                {
+                    Console.WriteLine($"👤 Existing Google user: {contact} with ID: {existingUser.UserId}");
+                }
+
+                // Generate OTP và session token
+                var otp = GenerateOtp();
+                var sessionToken = GenerateSessionToken();
+                var expiresAt = DateTime.UtcNow.AddMinutes(5);
+
+                // ✅ LƯU OTP VÀO CACHE VỚI USER ID ĐÃ CÓ
+                var otpData = new
+                {
+                    Contact = contact,
+                    Code = otp,
+                    SessionToken = sessionToken,
+                    IsEmail = true,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = expiresAt,
+
+                    // ✅ THÔNG TIN GOOGLE + USER ID
+                    IsGoogleLogin = true,
+                    GoogleSubject = payload.Subject,
+                    GoogleName = payload.Name,
+                    GooglePicture = payload.Picture,
+                    IsNewUser = isNewUser,
+                    UserId = targetUser?.UserId // ✅ Đã có UserId
+                };
+
+                _cache.Set($"otp_{contact}_{sessionToken}", otpData, TimeSpan.FromMinutes(5));
+                _cache.Set(rateLimitKey, true, TimeSpan.FromMinutes(1));
+
+                // ✅ GỬI EMAIL OTP
+                try
+                {
+                    await _emailService.SendOtpEmailForLoginAsync(contact, otp);
+                }
+                catch (Exception emailEx)
+                {
+                    // Cleanup cache nếu gửi email thất bại
+                    _cache.Remove($"otp_{contact}_{sessionToken}");
+                    _cache.Remove(rateLimitKey);
+
+                    Console.WriteLine($"❌ Gửi email thất bại: {emailEx.Message}");
+                    return new ApiResponse<OtpResponseDto>
+                    {
+                        Success = false,
+                        Message = "Không thể gửi email xác thực",
+                        Status = 500,
+                        Data = null
+                    };
+                }
+
+                Console.WriteLine($"📧 Đã gửi OTP Google login cho: {contact} (User mới: {isNewUser})");
+
+                return new ApiResponse<OtpResponseDto>
+                {
+                    Success = true,
+                    Message = "OTP đã được gửi đến email Google của bạn",
+                    Status = 200,
+                    Data = new OtpResponseDto
+                    {
+                        SessionToken = sessionToken,
+                        Message = $"Mã OTP đã được gửi đến {MaskContact(contact, true)} để xác thực đăng nhập Google",
+                        MaskedContact = MaskContact(contact, true),
+                        ExpiresAt = expiresAt
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Lỗi Google login: {ex.Message}");
+                return new ApiResponse<OtpResponseDto>
+                {
+                    Success = false,
+                    Message = $"Xác thực Google thất bại: {ex.Message}",
                     Status = 500,
                     Data = null
                 };

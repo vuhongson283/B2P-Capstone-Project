@@ -507,6 +507,48 @@ const createBookingForCO = (bookingData) => {
     validateStatus: () => true,
   });
 };
+//Auth
+const googleLoginAxios = async (googleToken) => {
+  try {
+    const response = await axios.post('/auth/google-login', {
+      googleToken: googleToken
+    }, {
+      timeout: 30000, // ✅ 30 seconds cho Google login
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('✅ Google Login API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Google login API error:', error);
+    throw error;
+  }
+};
+const sendOtpAxios = async (data) => {
+  try {
+    console.log('📡 Calling sendOtp API with data:', data);
+    const response = await axios.post('/auth/send-otp', data);
+    console.log('✅ SendOtp API response:', response.data);
+    return response; // ✅ Return full response
+  } catch (error) {
+    console.error('❌ SendOtp API error:', error);
+    throw error;
+  }
+};
+
+// 🔐 Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
+const verifyOtpAxios = async (data) => {
+  try {
+    console.log('📡 Calling verifyOtp API with data:', data);
+    const response = await axios.post('/auth/verify-otp', data);
+    console.log('✅ VerifyOtp API response:', response.data);
+    return response; // ✅ Return full response
+  } catch (error) {
+    console.error('❌ VerifyOtp API error:', error);
+    throw error;
+  }
+};
 
 // ===============================
 // ✅ EXPORT ALL (CLEANED UP)
@@ -518,7 +560,7 @@ export {
   updateCourtCategory,
   getCourtCategoryById,
   deleteCourtCategory,
-  
+
   // Blog
   getAllBlogs,
   getBlogById,
@@ -526,14 +568,14 @@ export {
   updateBlog,
   deleteBlog,
   getBlogsByUserId,
-  
+
   // Comment
   getAllComments,
   createComment,
   updateComment,
   deleteComment,
   getCommentsByUserId,
-  
+
   // Image
   getUserImage,
   uploadUserImage,
@@ -544,7 +586,7 @@ export {
   getBlogImages,
   deleteImage,
   updateImage,
-  
+
   // Password Reset
   forgotPasswordByEmail,
   resetPasswordByEmail,
@@ -552,16 +594,16 @@ export {
   forgotPasswordBySms,
   resetPasswordBySms,
   resendOtpBySms,
-  
+
   // User
   getUserById,
   updateUserProfile,
   changePassword,
   checkPasswordStatus,
-  
+
   // Bank
   getAllBankType,
-  
+
   // Account Management
   getAccountList,
   getAccountById,
@@ -569,7 +611,7 @@ export {
   unbanUser,
   deleteUser,
   registerCourtOwner,
-  
+
   // Slider
   getAllActiveSliders,
   getSliderList,
@@ -579,7 +621,7 @@ export {
   deleteSlider,
   activateSlider,
   deactivateSlider,
-  
+
   // Facility
   getAllFacilitiesByPlayer,
   getAvailableSlots,
@@ -591,29 +633,33 @@ export {
   updateFacility,
   deleteFacility,
   deleteFacilityImage,
-  
+
   // Report
   getReport,
   getTotalReport,
   exportReportToExcel,
-  
+
   // Court Management
   getAllCourts,
   addNewCourt,
   updateCourt,
   deleteCourt,
   getCourtDetail,
-  
+
   // Timeslot (✅ Fixed duplicates)
   getTimeSlotsByFacilityId,        // Simple version
   getTimeslotsByFacilityId,        // Advanced version with pagination
   createTimeslot,
   deleteTimeslot,
   updateTimeslot,
-  
+
   // Booking
   getBookingsByFacilityId,
   getBookingsByUserId,
   createBookingForCO,
   completeBooking,
+  // Auth
+  googleLoginAxios,
+  verifyOtpAxios,
+  sendOtpAxios
 };

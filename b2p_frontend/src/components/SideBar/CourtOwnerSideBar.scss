@@ -3,11 +3,11 @@
     height: 100vh;
     background: linear-gradient(180deg, #1e8449 0%, #27ae60 100%);
     color: #ecf0f1;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); // Smooth transition
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 1000;
+    z-index: 10000 !important;
     box-shadow: 4px 0 15px rgba(30, 132, 73, 0.2);
     display: flex;
     flex-direction: column;
@@ -15,6 +15,87 @@
 
     &.collapsed {
         width: 70px;
+
+        .menu-item {
+            position: relative;
+
+            &:hover .submenu {
+                display: block !important;
+                position: fixed !important; // ✅ ESCAPE ALL CONTEXTS
+                left: 70px !important; // ✅ From left edge of screen
+                top: var(--submenu-top, 200px) !important; // ✅ Dynamic positioning
+                width: 250px;
+                background: linear-gradient(180deg, #1e8449 0%, #27ae60 100%);
+                border: 1px solid rgba(46, 204, 113, 0.3);
+                border-radius: 0 8px 8px 0;
+                z-index: 2147483647 !important; // ✅ MAX Z-INDEX VALUE
+                backdrop-filter: blur(10px);
+                animation: slideInRight 0.3s ease;
+                margin-left: 0;
+                margin-bottom: 0;
+
+                box-shadow:
+                    4px 0 20px rgba(30, 132, 73, 0.4),
+                    0 0 25px rgba(0, 0, 0, 0.6),
+                    0 8px 35px rgba(30, 132, 73, 0.5) !important;
+
+                &::before {
+                    content: '';
+                    position: absolute;
+                    left: -6px;
+                    top: 15px;
+                    width: 0;
+                    height: 0;
+                    border-top: 6px solid transparent;
+                    border-bottom: 6px solid transparent;
+                    border-right: 6px solid #1e8449;
+                    z-index: 2147483647 !important;
+                }
+            }
+
+            // ✅ Calculate position with CSS custom properties
+            &:nth-child(1):hover {
+                --submenu-top: 120px;
+            }
+
+            // Header + user info height
+            &:nth-child(2):hover {
+                --submenu-top: 180px;
+            }
+
+            // Adjust for each menu item
+            &:nth-child(3):hover {
+                --submenu-top: 240px;
+            }
+
+            // "Quản lý cơ sở" position
+            &:nth-child(4):hover {
+                --submenu-top: 300px;
+            }
+
+            // "Quản lý sân" position
+
+            .menu-link.has-submenu {
+                &::after {
+                    content: '';
+                    position: absolute;
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 4px;
+                    height: 4px;
+                    background: #2ecc71;
+                    border-radius: 50%;
+                    opacity: 0.7;
+                }
+
+                &:hover::after {
+                    opacity: 1;
+                    box-shadow: 0 0 8px #2ecc71;
+                }
+            }
+        }
+
 
         // Header layout when collapsed
         .sidebar__header {
@@ -159,7 +240,6 @@
             }
         }
 
-        // Enhanced Header Controls
         .header-controls {
             display: flex;
             align-items: center;
@@ -262,7 +342,6 @@
                 text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             }
 
-            // Added online indicator
             .online-indicator {
                 position: absolute;
                 bottom: 5px;
@@ -446,7 +525,7 @@
             }
         }
 
-        // Enhanced Submenu Styles
+        // ✅ UPDATED: Enhanced Submenu Styles with hover support
         .submenu {
             background: rgba(0, 0, 0, 0.15);
             border-left: 2px solid rgba(46, 204, 113, 0.6);
@@ -455,6 +534,12 @@
             backdrop-filter: blur(5px);
             margin-bottom: 8px;
             animation: slideDown 0.3s ease;
+            display: none; // ✅ Hidden by default
+
+            // ✅ Show when expanded
+            &.show {
+                display: block;
+            }
 
             .submenu-item {
                 display: flex;
@@ -575,11 +660,14 @@
     }
 }
 
-// Animations
+// ✅ NEW: Animations
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.7;
     }
@@ -590,17 +678,36 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-// Responsive Design
+// ✅ NEW: Slide in animation for hover submenu
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// ✅ UPDATED: Responsive Design with hover support
 @media (max-width: 1200px) {
     .court-owner-sidebar {
         &:not(.mobile-open) {
             width: 70px;
+
+            // ✅ Ensure hover works on tablet
+            .menu-item:hover .submenu {
+                display: block !important;
+            }
         }
 
         &.mobile-open {
@@ -612,14 +719,10 @@
 
 @media (max-width: 768px) {
     .court-owner-sidebar {
-        
-        width: 280px;  // Đảm bảo width cố định
-
-       
+        width: 280px;
     }
 }
 
-// Dark theme and high contrast mode remain the same...
 @media (max-width: 480px) {
     .court-owner-sidebar {
         width: 240px;
@@ -640,7 +743,7 @@
             }
 
             .collapse-btn {
-                width : 28px;
+                width: 28px;
                 height: 28px;
 
                 i {
@@ -653,7 +756,7 @@
             padding: 15px;
 
             .user-avatar {
-                width : 50px;
+                width: 50px;
                 height: 50px;
 
                 .avatar-placeholder {
@@ -670,7 +773,7 @@
                     font-size: 11px;
 
                     i {
-                        width    : 14px;
+                        width: 14px;
                         font-size: 10px;
                     }
                 }
@@ -715,14 +818,14 @@
 
             &.active {
                 border-color: #2ecc71;
-                background  : rgba(0, 0, 0, 0.5);
+                background: rgba(0, 0, 0, 0.5);
             }
         }
 
         .sidebar__navigation {
             &::-webkit-scrollbar-thumb {
                 background: #2ecc71;
-                border    : 1px solid #1e8449;
+                border: 1px solid #1e8449;
             }
         }
 
@@ -742,7 +845,7 @@
     .submenu-arrow,
     .footer-item {
         transition: none !important;
-        animation : none !important;
+        animation: none !important;
     }
 
     .menu-link:hover,

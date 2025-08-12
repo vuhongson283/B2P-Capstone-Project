@@ -7,8 +7,9 @@ import { GiShuttlecock } from "react-icons/gi";
 import { useDispatch, useSelector } from "react-redux";
 import { setSearchFacility } from "../../store/action/searchFacilityAction";
 import { useState, useEffect } from "react";
+import UserInfo from '../Test/UserInfor';
 import "./CommonHeader.scss";
-
+<UserInfo />
 const CommonHeader = (props) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();

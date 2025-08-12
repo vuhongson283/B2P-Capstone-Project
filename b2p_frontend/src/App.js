@@ -2,6 +2,7 @@ import logo from "./logo.svg";
 import "./App.scss";
 import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext"; // ✅ Import AuthProvider
 import CommonHeader from "./components/Header/CommonHeader";
 import { useLocation } from "react-router-dom";
 import SliderField from "./components/HomePage/SliderField";
@@ -10,26 +11,25 @@ import FacilitiesRecommend from "./components/HomePage/FacilitiesRecommend";
 import NearbyCourts from "./components/HomePage/NearbyFacilities";
 import { getCurrentLocation } from "./services/locationService";
 
-const App = (props) => {
+const AppContent = (props) => {
   const location = useLocation();
   const showSliderAndSearch =
     location.pathname === "/" || location.pathname === "/homepage";
   
-  const [userLocation, setUserLocation] = useState(null); // ✅ MOVE lên trên
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     if (showSliderAndSearch) {
-      getUserLocation(); // ✅ ĐỔI TÊN function
+      getUserLocation();
     }
   }, [showSliderAndSearch]);
 
-  // ✅ SỬA function để lưu location vào state
   const getUserLocation = async () => {
     try {
       console.log('🔍 Đang xin permission location...');
       const location = await getCurrentLocation();
       console.log('✅ Lấy vị trí thành công:', location);
-      setUserLocation(location); // ✅ LƯU VÀO STATE
+      setUserLocation(location);
       alert(`Vị trí của bạn: ${location.lat}, ${location.lng}`);
     } catch (error) {
       console.log('❌ Lỗi:', error.message);
@@ -54,7 +54,6 @@ const App = (props) => {
                 <FacilitiesRecommend />
               </div>
 
-              {/* ✅ THÊM NearbyCourts component */}
               {userLocation && (
                 <div className="nearby-facilities-container" style={{ marginTop: '40px' }}>
                   <NearbyCourts userLocation={userLocation} />
@@ -70,6 +69,15 @@ const App = (props) => {
         <CommonFooter />
       </div>
     </div>
+  );
+};
+
+// ✅ Main App component với AuthProvider
+const App = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

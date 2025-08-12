@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -13,14 +14,20 @@ const CourtOwnerSideBar = ({
 }) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
-  const [userInfo, setUserInfo] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "owner@example.com",
-    phone: "0987654321",
-    avatar: "",
-    role: "Court Owner"
-  });
   const navigate = useNavigate();
+  
+  // ✅ Use real user data from AuthContext
+  const { user, isLoggedIn, logout } = useAuth();
+  
+  // ✅ Real user info from AuthContext
+  const userInfo = {
+    fullName: user?.fullName || user?.name || "Court Owner",
+    email: user?.email || "owner@example.com",
+    phone: user?.phone || "Chưa cập nhật",
+    avatar: user?.avatar || user?.picture || "",
+    role: "Chủ sân",
+    userId: user?.userId || user?.id
+  };
 
   // Mock facilities data - replace with real data
   const [facilities, setFacilities] = useState([
@@ -107,7 +114,7 @@ const CourtOwnerSideBar = ({
       title: "Quản lý sân",
       icon: "fas fa-futbol",
       hasSubmenu: true,
-      isDynamic: true, // Dynamic submenu based on facilities
+      isDynamic: true,
     },
   ];
 
@@ -120,17 +127,13 @@ const CourtOwnerSideBar = ({
   };
 
   // Handle menu item click
-  // Handle menu item click
   const handleMenuClick = (menuId, path, item) => {
     setActiveMenu(menuId);
 
-    // ✅ Special handling for time-slots
     if (menuId === "time-slots") {
       if (facilities.length > 0) {
-        // Navigate to first facility's time-slots
         navigate(`/court-owner/facility/time-slots/${facilities[0].id}`);
       } else {
-        // Fallback if no facilities
         message.warning('Chưa có cơ sở nào để quản lý khung giờ');
         navigate("/court-owner/facility/general");
       }
@@ -138,16 +141,24 @@ const CourtOwnerSideBar = ({
       navigate(path);
     }
 
-    // Close mobile sidebar after navigation
     if (isMobile && onClose) {
       onClose();
     }
   };
 
   // Handle logout
-  const handleLogout = () => {
-    // Add logout logic here
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      message.success('Đăng xuất thành công!');
+      navigate("/login");
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Lỗi khi đăng xuất!');
+      localStorage.removeItem('user');
+      navigate("/login");
+    }
+    
     if (isMobile && onClose) {
       onClose();
     }
@@ -195,12 +206,17 @@ const CourtOwnerSideBar = ({
               <span>{userInfo.phone}</span>
             </div>
           </div>
+          {userInfo.userId && (
+            <div className="user-id">
+              <small>ID: {userInfo.userId}</small>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 
-  // Render menu item
+  // ✅ UPDATED: Render menu item with hover support
   const renderMenuItem = (item) => {
     const isActive = activeMenu === item.id;
     const isExpanded = expandedMenus[item.id];
@@ -208,15 +224,22 @@ const CourtOwnerSideBar = ({
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
-            }`}
+          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""}`}
           onClick={() => {
-            if (item.hasSubmenu) {
+            // ✅ Handle collapsed submenu click - navigate to first submenu item
+            if (item.hasSubmenu && collapsed && !isMobile) {
+              const firstSubmenuItem = item.submenu?.[0];
+              if (firstSubmenuItem) {
+                handleMenuClick(firstSubmenuItem.id, firstSubmenuItem.path);
+              }
+            } else if (item.hasSubmenu) {
               toggleMenu(item.id);
             } else {
               handleMenuClick(item.id, item.path);
             }
           }}
+          // ✅ Add tooltip for collapsed state
+          title={collapsed && !isMobile ? item.title : undefined}
         >
           <div className="menu-content">
             <div className="menu-icon-wrapper">
@@ -228,16 +251,13 @@ const CourtOwnerSideBar = ({
           </div>
 
           {item.hasSubmenu && (!collapsed || isMobile) && (
-            <i
-              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
-                }`}
-            ></i>
+            <i className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""}`}></i>
           )}
         </div>
 
-        {/* Render submenu */}
-        {item.hasSubmenu && isExpanded && (!collapsed || isMobile) && (
-          <div className="submenu">
+        {/* ✅ UPDATED: Always render submenu for hover effect */}
+        {item.hasSubmenu && (
+          <div className={`submenu ${(!collapsed || isMobile) && isExpanded ? 'show' : ''}`}>
             {item.isDynamic
               ? renderDynamicSubmenu()
               : renderStaticSubmenu(item.submenu)}
@@ -264,16 +284,16 @@ const CourtOwnerSideBar = ({
   };
 
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
+  
   // Render dynamic submenu
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (
       <div
         key={`facility-${facility.id}`}
-        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
-          }`}
+        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""}`}
         onClick={() => {
           handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
-          setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
+          setSelectedFacilityId(facility.id);
         }}
       >
         <i className="fas fa-map-marker-alt"></i>
@@ -284,7 +304,6 @@ const CourtOwnerSideBar = ({
       </div>
     ));
   };
-
 
   // Generate sidebar classes
   const getSidebarClasses = () => {
@@ -303,7 +322,7 @@ const CourtOwnerSideBar = ({
 
   return (
     <div className={getSidebarClasses()}>
-      {/* Header with Toggle Button */}
+      {/* Header */}
       <div className="sidebar__header">
         <div className="logo-section">
           <div className="logo-icon-wrapper">
@@ -317,9 +336,7 @@ const CourtOwnerSideBar = ({
           )}
         </div>
 
-        {/* Toggle/Close Button */}
         <div className="header-controls">
-          {/* Close button for mobile */}
           {isMobile && (
             <button
               className="collapse-btn mobile-close"
@@ -330,17 +347,13 @@ const CourtOwnerSideBar = ({
             </button>
           )}
 
-          {/* Toggle button for desktop/tablet */}
           {!isMobile && onToggleCollapse && (
             <button
               className="collapse-btn desktop-toggle"
               onClick={onToggleCollapse}
               title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
             >
-              <i
-                className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"
-                  }`}
-              ></i>
+              <i className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"}`}></i>
             </button>
           )}
         </div>
