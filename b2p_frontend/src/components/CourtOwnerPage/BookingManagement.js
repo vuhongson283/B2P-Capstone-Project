@@ -376,14 +376,6 @@ const BookingManagement = () => {
 
                         console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to PAID status`);
                     }
-
-                    // Backup reload sau 2 giây
-                    setTimeout(() => {
-                        if (selectedFacility) {
-                            console.log('🔄 LOCAL UI: Backup reload booking data...');
-                            loadBookings(selectedFacility);
-                        }
-                    }, 2000);
                 }
             }
         };
