@@ -382,6 +382,22 @@ const getTotalReport = (userId = 6, startDate, endDate) => {
   });
 };
 
+const getAdminReport = async (month, year) => {
+  try {
+    const response = await axios.get(`Report/AdminReport`, {
+      params: {
+        year,
+        month
+      }
+    });
+    console.log('API Response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Error fetching admin report:', error);
+    throw error;
+  }
+}
+
 const exportReportToExcel = (
   userId = 6,
   startDate,
@@ -595,6 +611,7 @@ export {
   // Report
   getReport,
   getTotalReport,
+  getAdminReport,
   exportReportToExcel,
   
   // Court Management
