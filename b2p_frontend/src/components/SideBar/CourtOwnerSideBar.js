@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -20,53 +21,28 @@ const CourtOwnerSideBar = ({
     avatar: "",
     role: "Court Owner"
   });
+  const [facilities, setFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Mock facilities data - replace with real data
-  const [facilities, setFacilities] = useState([
-    {
-      id: 7,
-      name: "Cơ sở Cầu Giấy",
-      location: "123 Lê Lợi, Q.1",
-      contact: "0123456789",
-      statusId: 1
-    },
-    {
-      id: 8,
-      name: "Cơ sở Quận 1",
-      location: "234 Trần Hưng Đạo, Q.5",
-      contact: "0123456790",
-      statusId: 1
-    },
-    {
-      id: 9,
-      name: "Cơ sở Quận 7",
-      location: "345 Nguyễn Huệ, Q.1",
-      contact: "0123456791",
-      statusId: 2
-    },
-    {
-      id: 10,
-      name: "Cơ sở Thủ Đức",
-      location: "456 Cách Mạng Tháng 8, Q.3",
-      contact: "0123456792",
-      statusId: 1
-    },
-    {
-      id: 11,
-      name: "Cơ sở Hòa Lạc",
-      location: "567 Pasteur, Q.3",
-      contact: "0123456793",
-      statusId: 1
-    },
-    {
-      id: 12,
-      name: "Cơ sở Đà Nẵng",
-      location: "678 Hai Bà Trưng, Q.1",
-      contact: "0123456794",
-      statusId: 2
-    },
-  ]);
+  useEffect(() => {
+    // Fetch facilities data on component mount
+    const fetchFacilities = async () => {
+      try {
+        const response = await getFacilitiesByCourtOwnerId(6);
+        if (response.data && response.data.items) {
+          setFacilities(response.data.items);
+        }
+      } catch (error) {
+        console.error("Error fetching facilities:", error);
+        message.error("Không thể tải danh sách cơ sở");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFacilities();
+  }, []);
 
   // Menu items configuration
   const menuItems = [
@@ -266,21 +242,30 @@ const CourtOwnerSideBar = ({
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
   // Render dynamic submenu
   const renderDynamicSubmenu = () => {
+    if (loading) {
+      return <div className="submenu-loading">Đang tải...</div>;
+    }
+
+    if (facilities.length === 0) {
+      return <div className="submenu-empty">Không có cơ sở nào</div>;
+    }
+
     return facilities.map((facility) => (
       <div
-        key={`facility-${facility.id}`}
-        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
-          }`}
+        key={`facility-${facility.facilityId}`}
+        className={`submenu-item ${activeMenu === `facility-${facility.facilityId}` ? "active" : ""}`}
         onClick={() => {
-          handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
-          setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
+          handleMenuClick(
+            `facility-${facility.facilityId}`,
+            `/court-owner/facilities/${facility.facilityId}/courts`
+          );
+          setSelectedFacilityId(facility.facilityId);
         }}
       >
-        <i className="fas fa-map-marker-alt"></i>
-        <div className="facility-info">
-          <span className="facility-name">{facility.name}</span>
-          <span className="facility-location">{facility.location}</span>
+        <div className="submenu-icon-wrapper">
+          <i className="fas fa-map-marker-alt"></i>
         </div>
+        <span>{facility.facilityName || facility.name}</span>
       </div>
     ));
   };

@@ -8,6 +8,7 @@ import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
 import CourtOwner from "./CourtOwnerPage/CourtOwner";
 import Admin from "./AdminPage/Admin";
+import AdminDashboard from "./AdminPage/AdminDashboard";
 import AccountTable from "./AdminPage/AccountTable";
 import ManageCourtCategories from "./AdminPage/ManageCourtCategories";
 import Blog from "./Common/Blog";
@@ -66,6 +67,7 @@ const Layout = (props) => {
           <Route path="facility/time-slots" element={<TimeslotManagement />} />
         </Route>
         <Route path="/admin" element={<Admin />}>
+        <Route index element={<AdminDashboard />} />
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
           <Route
