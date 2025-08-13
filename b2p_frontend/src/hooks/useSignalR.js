@@ -14,7 +14,7 @@ export const useSignalR = (options = {}) => {
     } = options;
 
     const previousFacilityId = useRef(null);
-    const isInitialized = useRef(false);
+    const localHandlersRef = useRef({}); // ✅ Store local handlers
 
     // Show notification helper
     const showBookingNotification = useCallback((notif) => {
@@ -31,28 +31,28 @@ export const useSignalR = (options = {}) => {
                 notification.success({
                     ...config,
                     description: `Đơn đặt sân mới: ${notif.courtName} - ${notif.timeSlot}`,
-                    message: '🆕 Đơn đặt sân mới',
+                    message: '🆕 Đơn đặt sân mới (Local)',
                 });
                 break;
             case 'updated':
                 notification.info({
                     ...config,
                     description: `Đơn đặt sân đã được cập nhật: ${notif.courtName} - ${notif.timeSlot}`,
-                    message: '📝 Cập nhật đặt sân',
+                    message: '📝 Cập nhật đặt sân (Local)',
                 });
                 break;
             case 'completed':
                 notification.success({
                     ...config,
                     description: `Đơn đặt sân đã hoàn thành: ${notif.courtName} - ${notif.timeSlot}`,
-                    message: '✅ Hoàn thành đặt sân',
+                    message: '✅ Hoàn thành đặt sân (Local)',
                 });
                 break;
             case 'cancelled':
                 notification.warning({
                     ...config,
                     description: `Đơn đặt sân đã bị hủy: ${notif.courtName} - ${notif.timeSlot}`,
-                    message: '❌ Hủy đặt sân',
+                    message: '❌ Hủy đặt sân (Local)',
                 });
                 break;
             default:
@@ -60,28 +60,12 @@ export const useSignalR = (options = {}) => {
         }
     }, [showNotifications]);
 
-    // Initialize SignalR connection
     useEffect(() => {
-        if (isInitialized.current) return;
-
-        const initializeSignalR = async () => {
-            try {
-                const connected = await signalRService.startConnection();
-                if (!connected) {
-                    message.warning('Không thể kết nối real-time. Một số tính năng có thể bị hạn chế.');
-                }
-            } catch (error) {
-                console.error('Failed to initialize SignalR:', error);
-                message.error('Lỗi kết nối real-time');
-            }
+        const ensureConnection = async () => {
+            await signalRService.ensureConnection();
         };
 
-        initializeSignalR();
-        isInitialized.current = true;
-
-        return () => {
-            signalRService.stopConnection();
-        };
+        ensureConnection();
     }, []);
 
     // Handle facility group changes
@@ -114,57 +98,122 @@ export const useSignalR = (options = {}) => {
         }
     }, [facilityId]);
 
-    // Setup event handlers
+    // ✅ FIXED: Setup LOCAL callbacks without interfering with SignalR handlers
     useEffect(() => {
-        const handleBookingCreated = (notification) => {
-            showBookingNotification(notification);
-            onBookingCreated?.(notification);
+        // ✅ Only register if we have specific callbacks
+        if (!onBookingCreated && !onBookingUpdated && !onBookingCompleted && !onBookingCancelled && !onConnectionChanged) {
+            console.log('🔄 LOCAL: No callbacks provided, skipping');
+            return;
+        }
+
+        console.log('📝 LOCAL: Setting up local callbacks...');
+
+        // ✅ Create wrapper functions that call both global and local
+        const createCombinedHandler = (eventName, localCallback) => {
+            return (notification) => {
+                // ✅ ALWAYS call local callback for component-specific logic
+                if (localCallback) {
+                    console.log(`🔔 LOCAL: ${eventName} received!`, notification);
+                    localCallback(notification);
+                }
+            };
         };
 
-        const handleBookingUpdated = (notification) => {
-            showBookingNotification(notification);
-            onBookingUpdated?.(notification);
-        };
+        // ✅ Store local handlers
+        if (onBookingCreated) {
+            localHandlersRef.current.onBookingCreated = createCombinedHandler('Booking created', (notification) => {
+                showBookingNotification(notification);
+                onBookingCreated(notification);
+            });
+        }
 
-        const handleBookingCompleted = (notification) => {
-            showBookingNotification(notification);
-            onBookingCompleted?.(notification);
-        };
+        if (onBookingUpdated) {
+            localHandlersRef.current.onBookingUpdated = createCombinedHandler('Booking updated', (notification) => {
+                showBookingNotification(notification);
+                onBookingUpdated(notification);
+            });
+        }
 
-        const handleBookingCancelled = (notification) => {
-            showBookingNotification(notification);
-            onBookingCancelled?.(notification);
-        };
+        if (onBookingCompleted) {
+            localHandlersRef.current.onBookingCompleted = createCombinedHandler('Booking completed', (notification) => {
+                showBookingNotification(notification);
+                onBookingCompleted(notification);
+            });
+        }
 
-        const handleConnectionChanged = (isConnected) => {
-            if (isConnected) {
-                message.success('Kết nối real-time thành công', 2);
-            } else {
-                message.warning('Mất kết nối real-time', 2);
-            }
-            onConnectionChanged?.(isConnected);
-        };
+        if (onBookingCancelled) {
+            localHandlersRef.current.onBookingCancelled = createCombinedHandler('Booking cancelled', (notification) => {
+                showBookingNotification(notification);
+                onBookingCancelled(notification);
+            });
+        }
 
-        const handleError = (error) => {
-            message.error(`Lỗi real-time: ${error}`, 3);
-        };
+        if (onConnectionChanged) {
+            localHandlersRef.current.onConnectionChanged = (isConnected) => {
+                console.log('🔗 LOCAL: Connection changed:', isConnected);
+                if (isConnected) {
+                    message.success('Kết nối real-time thành công', 2);
+                } else {
+                    message.warning('Mất kết nối real-time', 2);
+                }
+                onConnectionChanged(isConnected);
+            };
+        }
 
-        // Register event handlers
-        signalRService.on('onBookingCreated', handleBookingCreated);
-        signalRService.on('onBookingUpdated', handleBookingUpdated);
-        signalRService.on('onBookingCompleted', handleBookingCompleted);
-        signalRService.on('onBookingCancelled', handleBookingCancelled);
-        signalRService.on('onConnectionChanged', handleConnectionChanged);
-        signalRService.on('onError', handleError);
+        // ✅ HOOK INTO EXISTING SIGNALR EVENTS instead of overriding
+        const originalOnMessage = signalRService.connection?.on;
+        if (originalOnMessage && localHandlersRef.current.onBookingCreated) {
+            // Add additional listener for BookingCreated
+            signalRService.connection.on('BookingCreated', localHandlersRef.current.onBookingCreated);
+        }
+
+        if (originalOnMessage && localHandlersRef.current.onBookingUpdated) {
+            signalRService.connection.on('BookingUpdated', localHandlersRef.current.onBookingUpdated);
+        }
+
+        if (originalOnMessage && localHandlersRef.current.onBookingCompleted) {
+            signalRService.connection.on('BookingCompleted', localHandlersRef.current.onBookingCompleted);
+        }
+
+        if (originalOnMessage && localHandlersRef.current.onBookingCancelled) {
+            signalRService.connection.on('BookingCancelled', localHandlersRef.current.onBookingCancelled);
+        }
+
+        // ✅ For connection changes, add to SignalR service handlers
+        if (localHandlersRef.current.onConnectionChanged) {
+            const originalConnectionHandler = signalRService.eventHandlers.onConnectionChanged;
+            signalRService.eventHandlers.onConnectionChanged = (isConnected) => {
+                // Call original first
+                if (originalConnectionHandler) {
+                    originalConnectionHandler(isConnected);
+                }
+                // Then call local
+                localHandlersRef.current.onConnectionChanged(isConnected);
+            };
+        }
+
+        console.log('✅ LOCAL: Local callbacks setup complete');
 
         return () => {
-            // Cleanup event handlers
-            signalRService.off('onBookingCreated');
-            signalRService.off('onBookingUpdated');
-            signalRService.off('onBookingCompleted');
-            signalRService.off('onBookingCancelled');
-            signalRService.off('onConnectionChanged');
-            signalRService.off('onError');
+            console.log('🧹 LOCAL: Cleaning up local callbacks...');
+
+            // ✅ Remove local SignalR connection event listeners
+            if (signalRService.connection && localHandlersRef.current.onBookingCreated) {
+                signalRService.connection.off('BookingCreated', localHandlersRef.current.onBookingCreated);
+            }
+            if (signalRService.connection && localHandlersRef.current.onBookingUpdated) {
+                signalRService.connection.off('BookingUpdated', localHandlersRef.current.onBookingUpdated);
+            }
+            if (signalRService.connection && localHandlersRef.current.onBookingCompleted) {
+                signalRService.connection.off('BookingCompleted', localHandlersRef.current.onBookingCompleted);
+            }
+            if (signalRService.connection && localHandlersRef.current.onBookingCancelled) {
+                signalRService.connection.off('BookingCancelled', localHandlersRef.current.onBookingCancelled);
+            }
+
+            // ✅ Don't restore connection handler - let global keep working
+            localHandlersRef.current = {};
+            console.log('✅ LOCAL: Local cleanup complete (global preserved)');
         };
     }, [
         onBookingCreated,

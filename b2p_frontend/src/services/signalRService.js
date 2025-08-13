@@ -9,6 +9,9 @@ class SignalRService {
         this.reconnectInterval = 5000;
         this.eventHandlers = {};
         this.isEnabled = false;
+        this.joinedGroups = new Set();
+        this.currentUserId = null;
+        this.keepAliveInterval = null; // ✅ ADD
         this.initializeConnection();
     }
 
@@ -26,11 +29,9 @@ class SignalRService {
 
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl(hubUrl, {
-                // Cấu hình cho localhost HTTPS
                 skipNegotiation: false,
                 transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
                 accessTokenFactory: () => {
-                    // Thêm token nếu API cần authentication
                     return localStorage.getItem('authToken') || localStorage.getItem('token') || '';
                 }
             })
@@ -39,7 +40,7 @@ class SignalRService {
                     if (retryContext.previousRetryCount < 3) {
                         return Math.min(1000 * Math.pow(2, retryContext.previousRetryCount), 30000);
                     } else {
-                        return null; // Stop reconnecting
+                        return null;
                     }
                 }
             })
@@ -52,13 +53,12 @@ class SignalRService {
     setupEventHandlers() {
         if (!this.connection || !this.isEnabled) return;
 
-        // Connection events
         this.connection.onclose((error) => {
             this.isConnected = false;
+            this.joinedGroups.clear();
             console.log('SignalR connection closed:', error);
             this.eventHandlers.onConnectionChanged?.(false);
 
-            // Chỉ reconnect nếu không phải lỗi SSL hoặc network
             if (error && !this.isNetworkError(error)) {
                 this.handleReconnection();
             }
@@ -67,17 +67,18 @@ class SignalRService {
         this.connection.onreconnecting((error) => {
             console.log('SignalR reconnecting:', error);
             this.isConnected = false;
+            this.joinedGroups.clear();
             this.eventHandlers.onConnectionChanged?.(false);
         });
 
-        this.connection.onreconnected(() => {
+        this.connection.onreconnected(async () => {
             console.log('SignalR reconnected successfully');
             this.isConnected = true;
             this.reconnectAttempts = 0;
+            await this.rejoinAllGroups();
             this.eventHandlers.onConnectionChanged?.(true);
         });
 
-        // Booking events - theo tên từ backend .NET
         this.connection.on('BookingCreated', (notification) => {
             console.log('📅 New booking created:', notification);
             this.eventHandlers.onBookingCreated?.(notification);
@@ -98,13 +99,11 @@ class SignalRService {
             this.eventHandlers.onBookingCancelled?.(notification);
         });
 
-        // Generic booking update
         this.connection.on('ReceiveBookingUpdate', (notification) => {
             console.log('🔄 Received booking update:', notification);
             this.eventHandlers.onBookingUpdated?.(notification);
         });
 
-        // Error handling
         this.connection.on('Error', (error) => {
             console.error('SignalR hub error:', error);
             this.eventHandlers.onError?.(error);
@@ -136,13 +135,16 @@ class SignalRService {
                 this.reconnectAttempts = 0;
                 console.log('✅ SignalR connected successfully!');
                 this.eventHandlers.onConnectionChanged?.(true);
+
+                // ✅ Start keep-alive
+                this.startKeepAlive();
+
                 return true;
             }
             return this.isConnected;
         } catch (error) {
             console.error('❌ Failed to start SignalR connection:', error);
 
-            // Nếu là lỗi network, disable SignalR
             if (this.isNetworkError(error)) {
                 console.log('Network error detected, disabling SignalR temporarily...');
                 this.isEnabled = false;
@@ -161,6 +163,7 @@ class SignalRService {
             try {
                 await this.connection.stop();
                 this.isConnected = false;
+                this.joinedGroups.clear();
                 console.log('SignalR connection stopped');
                 this.eventHandlers.onConnectionChanged?.(false);
             } catch (error) {
@@ -187,11 +190,69 @@ class SignalRService {
         }, delay);
     }
 
-    // Join facility group để nhận updates cho facility cụ thể
+    // ✅ ADD THIS METHOD
+    async joinUserFacilities(facilityIds) {
+        if (!this.connection || !this.isConnected || !this.isEnabled || !Array.isArray(facilityIds)) {
+            return;
+        }
+
+        try {
+            for (const facilityId of facilityIds) {
+                if (!this.joinedGroups.has(`facility_${facilityId}`)) {
+                    await this.connection.invoke('JoinFacilityGroup', facilityId);
+                    this.joinedGroups.add(`facility_${facilityId}`);
+                    console.log(`📍 Joined facility group: ${facilityId}`);
+
+                    // Small delay between joins
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            console.log(`✅ Joined ${facilityIds.length} facility groups`);
+        } catch (error) {
+            console.error('Error joining facility groups:', error);
+        }
+    }
+
+    // ✅ ADD THIS METHOD  
+    async leaveAllFacilityGroups() {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            return;
+        }
+
+        try {
+            const facilityGroups = Array.from(this.joinedGroups).filter(group => group.startsWith('facility_'));
+
+            for (const group of facilityGroups) {
+                const facilityId = group.replace('facility_', '');
+                try {
+                    await this.connection.invoke('LeaveFacilityGroup', facilityId);
+                    this.joinedGroups.delete(group);
+                    console.log(`📤 Left facility group: ${facilityId}`);
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                } catch (error) {
+                    console.warn(`⚠️ Could not leave facility group ${facilityId}:`, error.message);
+                    this.joinedGroups.delete(group);
+                }
+            }
+        } catch (error) {
+            console.error('Error leaving facility groups:', error);
+            const facilityGroups = Array.from(this.joinedGroups).filter(group => group.startsWith('facility_'));
+            facilityGroups.forEach(group => this.joinedGroups.delete(group));
+        }
+    }
+
     async joinFacilityGroup(facilityId) {
         if (this.connection && this.isConnected && this.isEnabled) {
+            const groupKey = `facility_${facilityId}`;
+            if (this.joinedGroups.has(groupKey)) {
+                console.log(`Already joined facility group: ${facilityId}`);
+                return;
+            }
+
             try {
                 await this.connection.invoke('JoinFacilityGroup', facilityId);
+                this.joinedGroups.add(groupKey);
                 console.log(`📍 Joined facility group: ${facilityId}`);
             } catch (error) {
                 console.error('Error joining facility group:', error);
@@ -199,11 +260,11 @@ class SignalRService {
         }
     }
 
-    // Leave facility group
     async leaveFacilityGroup(facilityId) {
         if (this.connection && this.isConnected && this.isEnabled) {
             try {
                 await this.connection.invoke('LeaveFacilityGroup', facilityId);
+                this.joinedGroups.delete(`facility_${facilityId}`);
                 console.log(`📤 Left facility group: ${facilityId}`);
             } catch (error) {
                 console.error('Error leaving facility group:', error);
@@ -211,7 +272,29 @@ class SignalRService {
         }
     }
 
-    // Event handler registration
+    async rejoinAllGroups() {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            return;
+        }
+
+        const groupsToRejoin = Array.from(this.joinedGroups);
+        this.joinedGroups.clear();
+
+        try {
+            for (const group of groupsToRejoin) {
+                if (group.startsWith('facility_')) {
+                    const facilityId = group.replace('facility_', '');
+                    await this.joinFacilityGroup(facilityId);
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            console.log(`✅ Rejoined ${groupsToRejoin.length} groups after reconnection`);
+        } catch (error) {
+            console.error('Error rejoining groups:', error);
+        }
+    }
+
     on(event, handler) {
         this.eventHandlers[event] = handler;
     }
@@ -220,7 +303,6 @@ class SignalRService {
         delete this.eventHandlers[event];
     }
 
-    // Getters
     get connectionState() {
         return this.connection?.state || signalR.HubConnectionState.Disconnected;
     }
@@ -233,7 +315,44 @@ class SignalRService {
         return this.isEnabled;
     }
 
-    // Send update to other clients
+    get joinedGroupsInfo() {
+        return Array.from(this.joinedGroups);
+    }
+    async ensureConnection() {
+        if (!this.isEnabled) {
+            return false;
+        }
+
+        if (!this.isConnected || this.connection.state === signalR.HubConnectionState.Disconnected) {
+            console.log('🔄 Ensuring SignalR connection...');
+            return await this.startConnection();
+        }
+
+        return true;
+    }
+
+    // ✅ ADD: Keep connection alive
+    startKeepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+        }
+
+        this.keepAliveInterval = setInterval(async () => {
+            if (this.isEnabled && this.connection) {
+                if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+                    console.log('🔄 Keep-alive: Reconnecting...');
+                    await this.startConnection();
+                }
+            }
+        }, 10000); // Check every 10 seconds
+    }
+
+    stopKeepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
+        }
+    }
     async sendBookingUpdate(notification) {
         if (this.connection && this.isConnected && this.isEnabled) {
             try {
@@ -247,18 +366,18 @@ class SignalRService {
         }
     }
 
-    // Get connection info for debugging
     getConnectionInfo() {
         return {
             isEnabled: this.isEnabled,
             isConnected: this.isConnected,
             connectionState: this.connectionState,
             reconnectAttempts: this.reconnectAttempts,
-            hubUrl: process.env.REACT_APP_SIGNALR_HUB_URL
+            hubUrl: process.env.REACT_APP_SIGNALR_HUB_URL,
+            joinedGroups: this.joinedGroupsInfo,
+            currentUserId: this.currentUserId
         };
     }
 }
 
-// Export singleton instance
 export const signalRService = new SignalRService();
 export default signalRService;
