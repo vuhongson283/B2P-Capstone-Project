@@ -1,9 +1,9 @@
 import axios from "../utils/axiosCustomize";
 axios.defaults.timeout = 5000;
 
-// ===============================
-// 🏟️ COURT CATEGORY MANAGEMENT
-// ===============================
+/* ===============================
+   🏟️ COURT CATEGORY MANAGEMENT
+================================ */
 const getAllCourtCategories = (search, pageNumber, pageSize) => {
   return axios.get(
     `CourtCategory/get-all-court-categories?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`
@@ -13,9 +13,7 @@ const getAllCourtCategories = (search, pageNumber, pageSize) => {
 const addCourtCategory = async (categoryName) => {
   try {
     const response = await axios.post(
-      `CourtCategory/add-court-category?cateName=${encodeURIComponent(
-        categoryName
-      )}`
+      `CourtCategory/add-court-category?cateName=${encodeURIComponent(categoryName)}`
     );
     return response;
   } catch (error) {
@@ -29,24 +27,20 @@ const updateCourtCategory = (categoryData) => {
 };
 
 const getCourtCategoryById = (categoryId) => {
-  return axios.get(
-    `CourtCategory/get-court-category-by-id?categoryId=${categoryId}`
-  );
+  return axios.get(`CourtCategory/get-court-category-by-id?categoryId=${categoryId}`);
 };
 
 const deleteCourtCategory = (categoryId) => {
-  return axios.delete(
-    `CourtCategory/delete-court-category?categoryId=${categoryId}`
-  );
+  return axios.delete(`CourtCategory/delete-court-category?categoryId=${categoryId}`);
 };
 
 const completeBooking = (bookingId) => {
   return axios.post(`Booking/${bookingId}/complete`);
 };
 
-// ===============================
-// 📝 BLOG MANAGEMENT
-// ===============================
+/* ===============================
+   📝 BLOG MANAGEMENT
+================================ */
 const getAllBlogs = (queryParams = {}) => {
   const {
     search = "",
@@ -70,8 +64,7 @@ const getAllBlogs = (queryParams = {}) => {
 const getBlogById = (blogId) => axios.get(`Blog/${blogId}`);
 const createBlog = (blogData) => axios.post("Blog", blogData);
 const updateBlog = (blogId, blogData) => axios.put(`Blog/${blogId}`, blogData);
-const deleteBlog = (blogId, userId) =>
-  axios.delete(`Blog/${blogId}?userId=${userId}`);
+const deleteBlog = (blogId, userId) => axios.delete(`Blog/${blogId}?userId=${userId}`);
 
 const getBlogsByUserId = (userId, queryParams = {}) => {
   const {
@@ -93,9 +86,9 @@ const getBlogsByUserId = (userId, queryParams = {}) => {
   });
 };
 
-// ===============================
-// 💬 COMMENT MANAGEMENT
-// ===============================
+/* ===============================
+   💬 COMMENT MANAGEMENT
+================================ */
 const getAllComments = (queryParams = {}) => {
   const {
     search = "",
@@ -117,8 +110,7 @@ const getAllComments = (queryParams = {}) => {
 };
 
 const createComment = (commentData) => axios.post("Comment", commentData);
-const updateComment = (commentId, commentData) =>
-  axios.put(`Comment/${commentId}`, commentData);
+const updateComment = (commentId, commentData) => axios.put(`Comment/${commentId}`, commentData);
 const deleteComment = (commentId, userId, roleId) =>
   axios.delete(`Comment/${commentId}?userId=${userId}&roleId=${roleId}`);
 
@@ -142,9 +134,9 @@ const getCommentsByUserId = (userId, queryParams = {}) => {
   });
 };
 
-// ===============================
-// 🖼️ IMAGE MANAGEMENT
-// ===============================
+/* ===============================
+   🖼️ IMAGE MANAGEMENT
+================================ */
 const getUserImage = (userId) => axios.get(`Image/user/${userId}`);
 
 const uploadUserImage = (file, userId, caption = null) => {
@@ -201,11 +193,10 @@ const uploadBlogImage = (file, blogId, caption = null) => {
 const getBlogImages = (blogId) => axios.get(`Image/blog/${blogId}`);
 const deleteImage = (imageId) => axios.delete(`Image/${imageId}`);
 
-// ===============================
-// 🔒 PASSWORD RESET
-// ===============================
-const forgotPasswordByEmail = (email) =>
-  axios.post("User/forgot-password-by-email", { email });
+/* ===============================
+   🔒 PASSWORD RESET
+================================ */
+const forgotPasswordByEmail = (email) => axios.post("User/forgot-password-by-email", { email });
 const resetPasswordByEmail = (email, otpCode, newPassword, confirmPassword) => {
   return axios.post("User/reset-password-by-email", {
     email,
@@ -214,17 +205,10 @@ const resetPasswordByEmail = (email, otpCode, newPassword, confirmPassword) => {
     confirmPassword,
   });
 };
-const resendOtpByEmail = (email) =>
-  axios.post("User/resend-otp-by-email", { email });
+const resendOtpByEmail = (email) => axios.post("User/resend-otp-by-email", { email });
 
-const forgotPasswordBySms = (phoneNumber) =>
-  axios.post("User/forgot-password-by-sms", { phoneNumber });
-const resetPasswordBySms = (
-  phoneNumber,
-  otpCode,
-  newPassword,
-  confirmPassword
-) => {
+const forgotPasswordBySms = (phoneNumber) => axios.post("User/forgot-password-by-sms", { phoneNumber });
+const resetPasswordBySms = (phoneNumber, otpCode, newPassword, confirmPassword) => {
   return axios.post("User/reset-password-by-sms", {
     phoneNumber,
     otpCode,
@@ -232,72 +216,54 @@ const resetPasswordBySms = (
     confirmPassword,
   });
 };
-const resendOtpBySms = (phoneNumber) =>
-  axios.post("User/resend-otp-by-sms", { phoneNumber });
+const resendOtpBySms = (phoneNumber) => axios.post("User/resend-otp-by-sms", { phoneNumber });
 
-// ===============================
-// 📋 USER MANAGEMENT
-// ===============================
-const getUserById = (userId) =>
-  axios.get(`User/get-user-by-id?userId=${userId}`);
-const updateUserProfile = (userId, body) =>
-  axios.put(`User/update-user?userId=${userId}`, body);
+/* ===============================
+   📋 USER MANAGEMENT
+================================ */
+const getUserById = (userId) => axios.get(`User/get-user-by-id?userId=${userId}`);
+const updateUserProfile = (userId, body) => axios.put(`User/update-user?userId=${userId}`, body);
 const changePassword = (body) => axios.put(`User/change-password`, body);
-const checkPasswordStatus = (userId) =>
-  axios.get(`User/check-password-status/${userId}`);
+const checkPasswordStatus = (userId) => axios.get(`User/check-password-status/${userId}`);
 
-// ===============================
-// 🏦 BANK TYPE
-// ===============================
+/* ===============================
+   🏦 BANK TYPE
+================================ */
 const getAllBankType = (search, pageNumber, pageSize) => {
-  return axios.get(
-    `BankType/get-all-bank-type?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`
-  );
+  return axios.get(`BankType/get-all-bank-type?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
 };
 
-// ===============================
-// 🧑‍💼 ACCOUNT MANAGEMENT
-// ===============================
-const getAccountList = (data) =>
-  axios.post("AccountManagement/account-list", data);
-const getAccountById = (userId) =>
-  axios.get(`AccountManagement/get-user/${userId}`);
+/* ===============================
+   🧑‍💼 ACCOUNT MANAGEMENT
+================================ */
+const getAccountList = (data) => axios.post("AccountManagement/account-list", data);
+const getAccountById = (userId) => axios.get(`AccountManagement/get-user/${userId}`);
 const banUser = (userId) => axios.put(`AccountManagement/${userId}/ban`);
 const unbanUser = (userId) => axios.put(`AccountManagement/${userId}/unban`);
 const deleteUser = (userId) => axios.delete(`AccountManagement/${userId}`);
 
 const registerCourtOwner = (payload) => {
-  return axios.post("Account/register-court-owner", payload, {
-    validateStatus: () => true,
-  });
+  return axios.post("Account/register-court-owner", payload, { validateStatus: () => true });
 };
 
-// ===============================
-// 🖼️ SLIDER MANAGEMENT
-// ===============================
+/* ===============================
+   🖼️ SLIDER MANAGEMENT
+================================ */
 const getAllActiveSliders = (pageNumber, pageSize) => {
-  return axios.get(
-    `SliderManagement/get-all-active-sliders/${pageNumber}/${pageSize}`
-  );
+  return axios.get(`SliderManagement/get-all-active-sliders/${pageNumber}/${pageSize}`);
 };
 
-const getSliderList = (data) =>
-  axios.post("SliderManagement/slider-list", data);
-const getSliderById = (slideId) =>
-  axios.get(`SliderManagement/get-slider/${slideId}`);
-const createSlider = (sliderData) =>
-  axios.post("SliderManagement/create-slider", sliderData);
-const updateSlider = (slideId, sliderData) =>
-  axios.put(`SliderManagement/${slideId}`, sliderData);
+const getSliderList = (data) => axios.post("SliderManagement/slider-list", data);
+const getSliderById = (slideId) => axios.get(`SliderManagement/get-slider/${slideId}`);
+const createSlider = (sliderData) => axios.post("SliderManagement/create-slider", sliderData);
+const updateSlider = (slideId, sliderData) => axios.put(`SliderManagement/${slideId}`, sliderData);
 const deleteSlider = (slideId) => axios.delete(`SliderManagement/${slideId}`);
-const activateSlider = (slideId) =>
-  axios.put(`SliderManagement/${slideId}/activate`);
-const deactivateSlider = (slideId) =>
-  axios.put(`SliderManagement/${slideId}/deactivate`);
+const activateSlider = (slideId) => axios.put(`SliderManagement/${slideId}/activate`);
+const deactivateSlider = (slideId) => axios.put(`SliderManagement/${slideId}/deactivate`);
 
-// ===============================
-// 🏟️ FACILITY + COURT + REPORT
-// ===============================
+/* ===============================
+   🏟️ FACILITY + COURT + REPORT
+================================ */
 const getAllFacilitiesByPlayer = (pageNumber, pageSize, body) => {
   return axios.post(
     `Facilities/get-all-facility-by-player?pageNumber=${pageNumber}&pageSize=${pageSize}`,
@@ -311,8 +277,7 @@ const getAvailableSlots = (facilityId, categoryId, checkInDate) => {
   );
 };
 
-const getFacilityDetailsById = (facilityId) =>
-  axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
+const getFacilityDetailsById = (facilityId) => axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
 
 const getFacilitiesByCourtOwnerId = (
   courtOwnerId,
@@ -331,19 +296,15 @@ const getFacilitiesByCourtOwnerId = (
   return axios.get(url);
 };
 
-const createFacility = (facilityData) =>
-  axios.post(`FacilitiesManage/createFacility`, facilityData);
+const createFacility = (facilityData) => axios.post(`FacilitiesManage/createFacility`, facilityData);
 const uploadFacilityImages = (formData) =>
   axios.post(`Image/upload-facility`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 60000,
   });
-const getFacilityById = (facilityId) =>
-  axios.get(`FacilitiesManage/getFacilityById/${facilityId}`);
-const updateFacility = (facilityId, updateData) =>
-  axios.put(`FacilitiesManage/updateFacility/${facilityId}`, updateData);
-const deleteFacility = (facilityId) =>
-  axios.delete(`FacilitiesManage/${facilityId}`);
+const getFacilityById = (facilityId) => axios.get(`FacilitiesManage/getFacilityById/${facilityId}`);
+const updateFacility = (facilityId, updateData) => axios.put(`FacilitiesManage/updateFacility/${facilityId}`, updateData);
+const deleteFacility = (facilityId) => axios.delete(`FacilitiesManage/${facilityId}`);
 const deleteFacilityImage = (imageId) => axios.delete(`Image/${imageId}`);
 
 const getReport = (
@@ -364,8 +325,8 @@ const getReport = (
       endDate: formattedEndDate,
       facilityId,
       pageNumber,
-      pageSize
-    }
+      pageSize,
+    },
   });
 };
 
@@ -374,11 +335,7 @@ const getTotalReport = (userId = 6, startDate, endDate) => {
   const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
 
   return axios.get(`Report/TotalReport`, {
-    params: {
-      userId,
-      startDate: formattedStartDate,
-      endDate: formattedEndDate
-    }
+    params: { userId, startDate: formattedStartDate, endDate: formattedEndDate },
   });
 };
 
@@ -393,13 +350,7 @@ const exportReportToExcel = (
   const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
 
   return axios.get(`Report/Export-Report-CourtOwner`, {
-    params: {
-      userId,
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
-      facilityId,
-      pageNumber,
-    },
+    params: { userId, startDate: formattedStartDate, endDate: formattedEndDate, facilityId, pageNumber },
     responseType: "arraybuffer",
   });
 };
@@ -417,9 +368,7 @@ const getAllCourts = (params) => {
   });
 };
 
-const addNewCourt = (courtData) => {
-  return axios.post("CourtManagement/CreateCourt", courtData);
-};
+const addNewCourt = (courtData) => axios.post("CourtManagement/CreateCourt", courtData);
 
 const updateCourt = (courtData, userId = 6) => {
   return axios.put(`CourtManagement/UpdateCourt?userId=${userId}`, {
@@ -433,18 +382,14 @@ const updateCourt = (courtData, userId = 6) => {
 };
 
 const deleteCourt = (courtId, userId = 6) => {
-  return axios.delete(
-    `CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`
-  );
+  return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
 };
 
-const getCourtDetail = (courtId) => {
-  return axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
-};
+const getCourtDetail = (courtId) => axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 
-// ===============================
-// 📅 TIMESLOT MANAGEMENT
-// ===============================
+/* ===============================
+   📅 TIMESLOT MANAGEMENT
+================================ */
 const getTimeSlotsByFacilityId = (facilityId) => {
   return axios.get(`TimeslotManagement/facility/${facilityId}`);
 };
@@ -459,58 +404,36 @@ const getTimeslotsByFacilityId = (
   if (statusId != null) params.append("statusId", statusId);
   params.append("pageNumber", pageNumber);
   params.append("pageSize", pageSize);
-
-  const url = `TimeslotManagement/facility/${facilityId}?${params.toString()}`;
-  return axios.get(url);
+  return axios.get(`TimeslotManagement/facility/${facilityId}?${params.toString()}`);
 };
 
-const createTimeslot = (createRequest) => {
-  const url = `TimeslotManagement/create`;
-  return axios.post(url, createRequest);
+const createTimeslot = (createRequest) => axios.post(`TimeslotManagement/create`, createRequest);
+const deleteTimeslot = (timeSlotId) => axios.delete(`TimeslotManagement/delete/${timeSlotId}`);
+const updateTimeslot = (timeSlotId, updateRequest) => axios.put(`TimeslotManagement/update/${timeSlotId}`, updateRequest);
+
+// Bổ sung vì bạn export createRating
+const createRating = (ratingData) => {
+  return axios.post("Ratings", ratingData, { validateStatus: () => true });
 };
 
-const deleteTimeslot = (timeSlotId) => {
-  const url = `TimeslotManagement/delete/${timeSlotId}`;
-  return axios.delete(url);
-};
-
-const updateTimeslot = (timeSlotId, updateRequest) => {
-  const url = `TimeslotManagement/update/${timeSlotId}`;
-  return axios.put(url, updateRequest);
-};
-
-// ===============================
-// 📅 BOOKING MANAGEMENT
-// ===============================
+/* ===============================
+   📅 BOOKING MANAGEMENT
+================================ */
 const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
-  return axios.get(`Booking/court-owner`, {
-    params: {
-      facilityId,
-      pageNumber,
-      pageSize,
-    },
-  });
+  return axios.get(`Booking/court-owner`, { params: { facilityId, pageNumber, pageSize } });
 };
 
 const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
-  return axios.get(`Booking`, {
-    params: {
-      userId,
-      Page: page,
-      PageSize: pageSize,
-    },
-  });
+  return axios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
 };
 
 const createBookingForCO = (bookingData) => {
-  return axios.post("Booking", bookingData, {
-    validateStatus: () => true,
-  });
+  return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
 
-// ===============================
-// ✅ EXPORT ALL (CLEANED UP)
-// ===============================
+/* ===============================
+   ✅ EXPORT ALL
+================================ */
 export {
   // Court Category
   getAllCourtCategories,
@@ -518,7 +441,7 @@ export {
   updateCourtCategory,
   getCourtCategoryById,
   deleteCourtCategory,
-  
+
   // Blog
   getAllBlogs,
   getBlogById,
@@ -526,14 +449,14 @@ export {
   updateBlog,
   deleteBlog,
   getBlogsByUserId,
-  
+
   // Comment
   getAllComments,
   createComment,
   updateComment,
   deleteComment,
   getCommentsByUserId,
-  
+
   // Image
   getUserImage,
   uploadUserImage,
@@ -544,32 +467,32 @@ export {
   getBlogImages,
   deleteImage,
   updateImage,
-  
-  // Password Reset
+
+  // Password
   forgotPasswordByEmail,
   resetPasswordByEmail,
   resendOtpByEmail,
   forgotPasswordBySms,
   resetPasswordBySms,
   resendOtpBySms,
-  
+
   // User
   getUserById,
   updateUserProfile,
   changePassword,
   checkPasswordStatus,
-  
+
   // Bank
   getAllBankType,
-  
-  // Account Management
+
+  // Account
   getAccountList,
   getAccountById,
   banUser,
   unbanUser,
   deleteUser,
   registerCourtOwner,
-  
+
   // Slider
   getAllActiveSliders,
   getSliderList,
@@ -579,8 +502,8 @@ export {
   deleteSlider,
   activateSlider,
   deactivateSlider,
-  
-  // Facility
+
+  // Facility & Reports
   getAllFacilitiesByPlayer,
   getAvailableSlots,
   getFacilityDetailsById,
@@ -591,26 +514,25 @@ export {
   updateFacility,
   deleteFacility,
   deleteFacilityImage,
-  
-  // Report
   getReport,
   getTotalReport,
   exportReportToExcel,
-  
-  // Court Management
+
+  // Courts
   getAllCourts,
   addNewCourt,
   updateCourt,
   deleteCourt,
   getCourtDetail,
-  
-  // Timeslot (✅ Fixed duplicates)
-  getTimeSlotsByFacilityId,        // Simple version
-  getTimeslotsByFacilityId,        // Advanced version with pagination
+
+  // Timeslot
+  getTimeSlotsByFacilityId,
+  getTimeslotsByFacilityId,
   createTimeslot,
   deleteTimeslot,
   updateTimeslot,
-  
+  createRating,
+
   // Booking
   getBookingsByFacilityId,
   getBookingsByUserId,

@@ -7,14 +7,11 @@ using B2P_API.Repository;
 using B2P_API.Response;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer; // ✅ Thêm này
-using Microsoft.IdentityModel.Tokens; // ✅ Thêm này
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using B2P_API.Utils;
-using System.Text; // ✅ Thêm này
-using Microsoft.OpenApi.Models; // ✅ Thêm này cho Swagger
+using B2P_API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,102 +20,35 @@ var connectionString = builder.Configuration.GetConnectionString("MyCnn");
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
-    options.UseSqlServer(connectionString));
+	options.UseSqlServer(connectionString));
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// **THÊM CORS - Cho phép tất cả (Development)**
+// **THÊM SIGNALR**
+builder.Services.AddSignalR();
+
+// **FIX CORS cho SignalR - Đây là phần quan trọng**
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
+	options.AddPolicy("SignalRPolicy", policy =>
+	{
+		policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+			  .AllowAnyMethod()
+			  .AllowAnyHeader()
+			  .AllowCredentials()
+			  .SetIsOriginAllowed(origin => true); // Cho phép tất cả origins khi dev
+	});
 });
-
-// ✅ JWT Authentication Configuration
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    var jwtSettings = builder.Configuration.GetSection("JWT");
-
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["AccessSecret"]!)
-        ),
-
-        ClockSkew = TimeSpan.Zero
-    };
-
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine($"JWT Token validated for user: {context.Principal?.FindFirst("userId")?.Value}");
-            return Task.CompletedTask;
-        }
-    };
-});
-
-// ✅ Add Authorization
-builder.Services.AddAuthorization();
 
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+	.AddJsonOptions(x =>
+		x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
-// Swagger với JWT support
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "B2P API", Version = "v1" });
-
-    // ✅ Thêm JWT Authentication vào Swagger
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 // Caching
 builder.Services.AddMemoryCache();
@@ -126,16 +56,16 @@ builder.Services.AddMemoryCache();
 // Suppress automatic 400 responses
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+	options.SuppressModelStateInvalidFilter = true;
 });
 
-builder.Services.AddScoped<JWTHelper>();
-builder.Services.AddScoped<IAuthRepository, AuthRepository>();
-builder.Services.AddScoped<AuthService>();
-
-// Đăng ký các Repository & Service (giữ nguyên)
+// Đăng ký các Repository & Service (giữ nguyên tất cả...)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<RatingRepository>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<RatingService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
@@ -192,26 +122,28 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
-builder.Services.AddScoped<RatingRepository>();
-builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-builder.Services.AddScoped<RatingService>();
-
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
+
+builder.Services.AddScoped<IBookingNotificationService, BookingNotificationService>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
 
-// ✅ QUAN TRỌNG: Thêm authentication middleware
-app.UseAuthentication(); // ✅ Phải đặt TRƯỚC UseAuthorization
+// **SỬA THỨ TỰ VÀ SỬ DỤNG POLICY CỤ THỂ**
+app.UseCors("SignalRPolicy"); // Sử dụng policy cụ thể thay vì default
+
 app.UseAuthorization();
 
+// **MAP SIGNALR HUB**
+app.MapHub<BookingHub>("/bookingHub");
+
 app.MapControllers();
+
 app.Run();
