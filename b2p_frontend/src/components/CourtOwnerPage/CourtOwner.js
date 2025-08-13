@@ -4,12 +4,37 @@ import "./CourtOwner.scss";
 import { Outlet } from "react-router-dom";
 import { Button } from "antd";
 import { MenuOutlined } from "@ant-design/icons";
+// ✅ COMMENT OUT TEMPORARILY
+// import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
+// import NotificationBell from "../../components/NotificationBell";
+// import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
+
+// const USER_ID = 13;
 
 const CourtOwner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // ✅ COMMENT OUT TEMPORARILY
+  // const [facilityIds, setFacilityIds] = useState([]);
+
+  // ✅ COMMENT OUT TEMPORARILY
+  // useEffect(() => {
+  //   const loadFacilities = async () => {
+  //     try {
+  //       const response = await getFacilitiesByCourtOwnerId(USER_ID, "", null, 1, 100);
+  //       const facilities = response.data?.items || [];
+  //       const ids = facilities.map(f => f.facilityId);
+  //       setFacilityIds(ids);
+  //       console.log('🏢 Loaded facility IDs for global notifications:', ids);
+  //     } catch (error) {
+  //       console.error('❌ Error loading facilities for notifications:', error);
+  //     }
+  //   };
+
+  //   loadFacilities();
+  // }, []);
 
   // Check screen size and set responsive states
   useEffect(() => {
@@ -22,12 +47,10 @@ const CourtOwner = () => {
       setIsMobile(mobile);
       setIsTablet(tablet);
 
-      // Auto-close mobile sidebar when resizing to desktop/tablet
       if (!mobile && sidebarOpen) {
         setSidebarOpen(false);
       }
 
-      // Auto-collapse on tablet, expand on desktop
       if (tablet) {
         setSidebarCollapsed(true);
       } else if (desktop) {
@@ -52,7 +75,6 @@ const CourtOwner = () => {
     setSidebarOpen(false);
   };
 
-  // Generate dynamic classes for container
   const getContainerClasses = () => {
     const classes = ["court-owner-container"];
 
@@ -63,7 +85,6 @@ const CourtOwner = () => {
     return classes.join(" ");
   };
 
-  // Generate dynamic classes for sidebar
   const getSidebarClasses = () => {
     const classes = ["court-owner-sidebar"];
 
@@ -79,6 +100,8 @@ const CourtOwner = () => {
   };
 
   return (
+    // ✅ COMMENT OUT TEMPORARILY - Remove GlobalNotificationProvider wrapper
+    // <GlobalNotificationProvider userId={USER_ID} facilityIds={facilityIds}>
     <div className={getContainerClasses()}>
       {/* Mobile Menu Toggle */}
       {isMobile && (
@@ -100,6 +123,19 @@ const CourtOwner = () => {
         />
       )}
 
+      {/* ✅ COMMENT OUT TEMPORARILY - Remove NotificationBell */}
+      {/* <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          zIndex: 10002,
+        }}>
+          <NotificationBell />
+        </div> */}
+
+      <div>
+        Buồi
+      </div>
       <div className={getSidebarClasses()}>
         <CourtOwnerSideBar
           onClose={closeSidebar}
@@ -135,6 +171,7 @@ const CourtOwner = () => {
         />
       )}
     </div>
+    // </GlobalNotificationProvider>
   );
 };
 

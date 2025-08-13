@@ -311,8 +311,16 @@ const BookingManagement = () => {
         // FIX: Cleanup old notifications first
         cleanupOldNotifications();
 
+        // ✅ Kiểm tra xem facility có thuộc về user không
+        const isUserFacility = facilities.some(f => f.facilityId === notification.facilityId);
+        if (!isUserFacility) {
+            console.log('⏭️ Facility không thuộc về user hiện tại, bỏ qua notification');
+            return;
+        }
+
         // FIX: Create unique notification ID
         const notificationId = `booking-created-${notification.bookingId || Date.now()}-${notification.facilityId}-${notification.timeSlot}`;
+
         const dateText =
             notification.date ||
             (notification.checkInDate && dayjs(notification.checkInDate).isValid()
@@ -320,10 +328,10 @@ const BookingManagement = () => {
                 : '');
 
         const timeText =
-            notification.timeSlot // ưu tiên khung giờ đầy đủ
+            notification.timeSlot
             || (notification.checkInTime && notification.checkOutTime
                 ? `${notification.checkInTime} - ${notification.checkOutTime}`
-                : notification.checkInTime || ''); // fallback
+                : notification.checkInTime || '');
 
         const hasAmount =
             typeof notification.totalAmount === 'number' && !Number.isNaN(notification.totalAmount);
@@ -337,12 +345,23 @@ const BookingManagement = () => {
         // FIX: Mark as shown
         shownNotifications.current.add(notificationId);
 
-        // 1. Hiển thị thông báo
+        // ✅ Tìm tên facility từ danh sách
+        const facilityInfo = facilities.find(f => f.facilityId === notification.facilityId);
+        const facilityName = facilityInfo?.facilityName || 'Cơ sở';
+
+        // ✅ Kiểm tra xem có đang ở facility này không
+        const isCurrentFacility = notification.facilityId === selectedFacility;
+        const facilityIndicator = isCurrentFacility ? '📍 (Đang xem)' : '🏢';
+
+        // 1. Hiển thị thông báo với thông tin facility
         const notificationContent = (
             <div
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
-                    setNotificationBookingDetail(notification);
+                    setNotificationBookingDetail({
+                        ...notification,
+                        facilityName: facilityName
+                    });
                     setIsNotificationDetailVisible(true);
                     antdNotification.destroy(notificationId);
                 }}
@@ -352,10 +371,10 @@ const BookingManagement = () => {
                     alignItems: 'center',
                     marginBottom: '8px',
                     fontWeight: 'bold',
-                    color: '#52c41a'
+                    color: isCurrentFacility ? '#52c41a' : '#1890ff'
                 }}>
                     <CalendarOutlined style={{ marginRight: '8px', fontSize: '16px' }} />
-                    Đơn đặt sân mới
+                    {facilityIndicator} Đơn đặt sân mới - {facilityName}
                 </div>
                 <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
                     <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
@@ -368,11 +387,21 @@ const BookingManagement = () => {
                             <strong>Tổng tiền:</strong> {Number(notification.totalAmount).toLocaleString('vi-VN')} VND
                         </div>
                     )}
+                    {!isCurrentFacility && (
+                        <div style={{
+                            marginTop: '4px',
+                            fontSize: '12px',
+                            color: '#fa8c16',
+                            fontStyle: 'italic'
+                        }}>
+                            ⚠️ Từ cơ sở khác - Click để xem chi tiết
+                        </div>
+                    )}
                 </div>
                 <div style={{
                     marginTop: '8px',
                     fontSize: '12px',
-                    color: '#1890ff',
+                    color: isCurrentFacility ? '#52c41a' : '#1890ff',
                     fontStyle: 'italic'
                 }}>
                     💡 Click để xem chi tiết
@@ -383,21 +412,21 @@ const BookingManagement = () => {
         antdNotification.success({
             key: notificationId,
             message: notificationContent,
-            duration: 8,
+            duration: isCurrentFacility ? 8 : 10,
             placement: 'topRight',
             style: {
-                width: '400px',
-                borderLeft: '4px solid #52c41a'
+                width: '420px',
+                borderLeft: isCurrentFacility ? '4px solid #52c41a' : '4px solid #1890ff'
             }
         });
 
-        // 2. Cập nhật trực tiếp state của booking data
-        if (notification.facilityId === selectedFacility) {
+        // 2. ✅ Chỉ cập nhật state nếu đang ở đúng facility và đúng ngày
+        if (isCurrentFacility) {
             const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
             const currentDate = selectedDate;
 
-            if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
-                console.log('📱 Updating slot status directly...');
+            if (notificationDate.isValid() && notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
+                console.log('📱 Updating slot status directly for current facility and date...');
 
                 const timeSlot = notification.timeSlot;
                 const courtId = notification.courtId;
@@ -432,16 +461,27 @@ const BookingManagement = () => {
                     console.log(`✅ Slot ${timeSlot} updated to PAID status`);
                 }
 
-                // Backup reload sau 2 giây
                 setTimeout(() => {
-                    if (selectedFacility) {
+                    if (selectedFacility === notification.facilityId) {
                         console.log('🔄 Backup reload booking data...');
                         loadBookings(selectedFacility);
                     }
                 }, 200);
+            } else {
+                console.log('📅 Notification is for different date, only showing notification');
             }
+        } else {
+            console.log('🏢 Notification from different facility, only showing notification');
         }
-    }, [selectedFacility, selectedDate, loadBookings, cleanupOldNotifications]);
+
+        // 3. ✅ Log analytics
+        console.log(`📊 Booking Analytics: 
+        - Facility: ${facilityName} (ID: ${notification.facilityId})
+        - Current Facility: ${isCurrentFacility ? 'Yes' : 'No'}
+        - Will Update UI: ${isCurrentFacility ? 'Yes' : 'No'}
+    `);
+
+    }, [selectedFacility, selectedDate, loadBookings, cleanupOldNotifications, facilities]);
 
     const handleSignalRBookingUpdated = useCallback((notification) => {
         console.log('🔔 SignalR: Booking updated received!', notification);
@@ -546,14 +586,20 @@ const BookingManagement = () => {
     }, []);
 
     // SignalR integration
+    const facilityIds = useMemo(() => {
+        return facilities.map(f => f.facilityId);
+    }, [facilities]);
+
+    // ✅ UPDATED: SignalR integration - Listen to ALL user facilities
     const { isConnected, connectionState, sendBookingUpdate } = useSignalR({
-        facilityId: selectedFacility,
+        facilityIds: facilityIds,  // ✅ Listen to ALL facilities
+        userId: USER_ID,           // ✅ For future user-specific features
         onBookingCreated: handleSignalRBookingCreated,
         onBookingUpdated: handleSignalRBookingUpdated,
         onBookingCompleted: handleSignalRBookingUpdated,
         onBookingCancelled: handleSignalRBookingUpdated,
         onConnectionChanged: handleConnectionChanged,
-        showNotifications: false
+        showNotifications: false   // We handle notifications manually
     });
 
     // FIX: Cleanup notifications when component unmounts or facility changes

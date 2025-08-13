@@ -5,6 +5,8 @@ import signalRService from '../services/signalRService';
 export const useSignalR = (options = {}) => {
     const {
         facilityId,
+        facilityIds = [],
+        userId = null, // ✅ Keep for future use but don't use for now
         onBookingCreated,
         onBookingUpdated,
         onBookingCompleted,
@@ -13,8 +15,9 @@ export const useSignalR = (options = {}) => {
         showNotifications = true
     } = options;
 
-    const previousFacilityId = useRef(null);
+    const previousFacilityIds = useRef([]);
     const isInitialized = useRef(false);
+    const cleanupRef = useRef(null); // ✅ Track cleanup function
 
     // Show notification helper
     const showBookingNotification = useCallback((notif) => {
@@ -60,7 +63,7 @@ export const useSignalR = (options = {}) => {
         }
     }, [showNotifications]);
 
-    // Initialize SignalR connection
+    // ✅ FIXED: Initialize SignalR connection only once globally
     useEffect(() => {
         if (isInitialized.current) return;
 
@@ -79,40 +82,78 @@ export const useSignalR = (options = {}) => {
         initializeSignalR();
         isInitialized.current = true;
 
-        return () => {
+        // ✅ Only cleanup on page unload, not component unmount
+        const handlePageUnload = () => {
             signalRService.stopConnection();
         };
-    }, []);
 
-    // Handle facility group changes
-    useEffect(() => {
-        const handleFacilityChange = async () => {
-            // Leave previous facility group
-            if (previousFacilityId.current !== null) {
-                await signalRService.leaveFacilityGroup(previousFacilityId.current);
-            }
+        window.addEventListener('beforeunload', handlePageUnload);
 
-            // Join new facility group
-            if (facilityId !== null && facilityId !== undefined) {
-                await signalRService.joinFacilityGroup(facilityId);
-                previousFacilityId.current = facilityId;
-            }
+        cleanupRef.current = () => {
+            window.removeEventListener('beforeunload', handlePageUnload);
         };
 
-        if (signalRService.connected) {
-            handleFacilityChange();
-        } else {
-            // Wait for connection to be established
-            const checkConnection = setInterval(() => {
-                if (signalRService.connected) {
-                    handleFacilityChange();
-                    clearInterval(checkConnection);
-                }
-            }, 1000);
+        return cleanupRef.current;
+    }, []);
 
-            return () => clearInterval(checkConnection);
-        }
-    }, [facilityId]);
+    // ✅ UPDATED: Handle facility changes with better debouncing
+    useEffect(() => {
+        const handleFacilityChanges = async () => {
+            const currentFacilityIds = facilityIds.length > 0 ? facilityIds : (facilityId ? [facilityId] : []);
+            const prevFacilityIds = previousFacilityIds.current;
+
+            // ✅ Skip if no change
+            if (JSON.stringify(currentFacilityIds.sort()) === JSON.stringify(prevFacilityIds.sort())) {
+                return;
+            }
+
+            console.log(`🔄 Facility IDs changed: [${prevFacilityIds.join(', ')}] -> [${currentFacilityIds.join(', ')}]`);
+
+            // Leave old facility groups that are no longer needed
+            const toLeave = prevFacilityIds.filter(id => !currentFacilityIds.includes(id));
+            for (const id of toLeave) {
+                await signalRService.leaveFacilityGroup(id);
+                console.log(`📤 Left facility group: ${id}`);
+            }
+
+            // Join new facility groups
+            const toJoin = currentFacilityIds.filter(id => !prevFacilityIds.includes(id));
+
+            if (toJoin.length > 0) {
+                await signalRService.joinUserFacilities(toJoin);
+            }
+
+            // Update previous state
+            previousFacilityIds.current = [...currentFacilityIds];
+
+            console.log(`🔗 Active facility groups: [${currentFacilityIds.join(', ')}]`);
+        };
+
+        // ✅ Add delay to ensure connection is stable
+        const timeoutId = setTimeout(() => {
+            if (signalRService.connected) {
+                handleFacilityChanges();
+            } else {
+                // Wait for connection to be established
+                const checkConnection = setInterval(() => {
+                    if (signalRService.connected) {
+                        handleFacilityChanges();
+                        clearInterval(checkConnection);
+                    }
+                }, 1000);
+
+                // Cleanup interval after 10 seconds
+                setTimeout(() => clearInterval(checkConnection), 10000);
+            }
+        }, 200);
+
+        return () => clearTimeout(timeoutId);
+    }, [facilityId, facilityIds]);
+
+    // ✅ REMOVED: User group handling since backend doesn't support it
+    // useEffect(() => {
+    //     // Remove user group logic
+    // }, [userId]);
 
     // Setup event handlers
     useEffect(() => {
@@ -158,7 +199,7 @@ export const useSignalR = (options = {}) => {
         signalRService.on('onError', handleError);
 
         return () => {
-            // Cleanup event handlers
+            // ✅ Only cleanup event handlers, not the connection
             signalRService.off('onBookingCreated');
             signalRService.off('onBookingUpdated');
             signalRService.off('onBookingCompleted');
@@ -179,6 +220,7 @@ export const useSignalR = (options = {}) => {
         isConnected: signalRService.connected,
         connectionState: signalRService.connectionState,
         sendBookingUpdate: signalRService.sendBookingUpdate.bind(signalRService),
+        getConnectionInfo: () => signalRService.getConnectionInfo(),
     };
 };
 
