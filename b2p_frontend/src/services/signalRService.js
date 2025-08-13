@@ -11,6 +11,7 @@ class SignalRService {
         this.isEnabled = false;
         this.joinedGroups = new Set();
         this.currentUserId = null;
+        this.keepAliveInterval = null; // ✅ ADD
         this.initializeConnection();
     }
 
@@ -134,6 +135,10 @@ class SignalRService {
                 this.reconnectAttempts = 0;
                 console.log('✅ SignalR connected successfully!');
                 this.eventHandlers.onConnectionChanged?.(true);
+
+                // ✅ Start keep-alive
+                this.startKeepAlive();
+
                 return true;
             }
             return this.isConnected;
@@ -185,6 +190,7 @@ class SignalRService {
         }, delay);
     }
 
+    // ✅ ADD THIS METHOD
     async joinUserFacilities(facilityIds) {
         if (!this.connection || !this.isConnected || !this.isEnabled || !Array.isArray(facilityIds)) {
             return;
@@ -192,9 +198,14 @@ class SignalRService {
 
         try {
             for (const facilityId of facilityIds) {
-                await this.connection.invoke('JoinFacilityGroup', facilityId);
-                this.joinedGroups.add(`facility_${facilityId}`);
-                console.log(`📍 Joined facility group: ${facilityId}`);
+                if (!this.joinedGroups.has(`facility_${facilityId}`)) {
+                    await this.connection.invoke('JoinFacilityGroup', facilityId);
+                    this.joinedGroups.add(`facility_${facilityId}`);
+                    console.log(`📍 Joined facility group: ${facilityId}`);
+
+                    // Small delay between joins
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
             }
             console.log(`✅ Joined ${facilityIds.length} facility groups`);
         } catch (error) {
@@ -202,11 +213,46 @@ class SignalRService {
         }
     }
 
+    // ✅ ADD THIS METHOD  
+    async leaveAllFacilityGroups() {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            return;
+        }
+
+        try {
+            const facilityGroups = Array.from(this.joinedGroups).filter(group => group.startsWith('facility_'));
+
+            for (const group of facilityGroups) {
+                const facilityId = group.replace('facility_', '');
+                try {
+                    await this.connection.invoke('LeaveFacilityGroup', facilityId);
+                    this.joinedGroups.delete(group);
+                    console.log(`📤 Left facility group: ${facilityId}`);
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                } catch (error) {
+                    console.warn(`⚠️ Could not leave facility group ${facilityId}:`, error.message);
+                    this.joinedGroups.delete(group);
+                }
+            }
+        } catch (error) {
+            console.error('Error leaving facility groups:', error);
+            const facilityGroups = Array.from(this.joinedGroups).filter(group => group.startsWith('facility_'));
+            facilityGroups.forEach(group => this.joinedGroups.delete(group));
+        }
+    }
+
     async joinFacilityGroup(facilityId) {
         if (this.connection && this.isConnected && this.isEnabled) {
+            const groupKey = `facility_${facilityId}`;
+            if (this.joinedGroups.has(groupKey)) {
+                console.log(`Already joined facility group: ${facilityId}`);
+                return;
+            }
+
             try {
                 await this.connection.invoke('JoinFacilityGroup', facilityId);
-                this.joinedGroups.add(`facility_${facilityId}`);
+                this.joinedGroups.add(groupKey);
                 console.log(`📍 Joined facility group: ${facilityId}`);
             } catch (error) {
                 console.error('Error joining facility group:', error);
@@ -239,6 +285,8 @@ class SignalRService {
                 if (group.startsWith('facility_')) {
                     const facilityId = group.replace('facility_', '');
                     await this.joinFacilityGroup(facilityId);
+
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
             }
             console.log(`✅ Rejoined ${groupsToRejoin.length} groups after reconnection`);
@@ -270,7 +318,41 @@ class SignalRService {
     get joinedGroupsInfo() {
         return Array.from(this.joinedGroups);
     }
+    async ensureConnection() {
+        if (!this.isEnabled) {
+            return false;
+        }
 
+        if (!this.isConnected || this.connection.state === signalR.HubConnectionState.Disconnected) {
+            console.log('🔄 Ensuring SignalR connection...');
+            return await this.startConnection();
+        }
+
+        return true;
+    }
+
+    // ✅ ADD: Keep connection alive
+    startKeepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+        }
+
+        this.keepAliveInterval = setInterval(async () => {
+            if (this.isEnabled && this.connection) {
+                if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+                    console.log('🔄 Keep-alive: Reconnecting...');
+                    await this.startConnection();
+                }
+            }
+        }, 10000); // Check every 10 seconds
+    }
+
+    stopKeepAlive() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
+        }
+    }
     async sendBookingUpdate(notification) {
         if (this.connection && this.isConnected && this.isEnabled) {
             try {
