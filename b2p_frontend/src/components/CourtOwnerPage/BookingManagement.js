@@ -112,6 +112,8 @@ const BookingManagement = () => {
         switch (statusLower) {
             case 'paid':
                 return 'paid';
+            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+                return 'Chưa thanh toán';
             case 'completed':
                 return 'completed';
             case 'cancelled':
@@ -130,6 +132,8 @@ const BookingManagement = () => {
                 return 'Đã thanh toán cọc';
             case 'completed':
                 return 'Đã hoàn thành';
+            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+                return 'Chưa thanh toán';
             case 'cancelled':
                 return 'Đã hủy';
             case 'confirmed':
@@ -144,13 +148,15 @@ const BookingManagement = () => {
             case 'available':
                 return 'Còn trống';
             case 'paid':
-                return 'Đã Đặt';
+                return 'Đã Cọc';
+            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+                return 'Chưa thanh toán';
             case 'completed':
                 return 'Đã hoàn thành';
             case 'cancelled':
                 return 'Đã hủy';
             default:
-                return 'Đã xác nhận';
+                return 'Chưa thanh toán';
         }
     }, []);
 
@@ -336,7 +342,6 @@ const BookingManagement = () => {
         const handleGlobalBookingCreated = (notification) => {
             console.log('🔔 LOCAL UI: Global booking created received!', notification);
 
-            // Cập nhật UI slots
             if (notification.facilityId === selectedFacility) {
                 const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
                 const currentDate = selectedDate;
@@ -350,20 +355,52 @@ const BookingManagement = () => {
                     if (courtId && timeSlot) {
                         const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
 
+                        // ✅ FIX: Lấy status thực từ notification
+                        const actualStatus = getBookingStatusFromString(notification.status);
+
+                        console.log('🔍 DEBUG: Notification status:', notification.status);
+                        console.log('🔍 DEBUG: Mapped status:', actualStatus);
+
+                        // ✅ FIX: Map đúng status thay vì hardcode
+                        let paymentStatus = 'pending';
+                        let statusId = 8;
+                        let originalStatus = notification.status || 'Unpaid';
+
+                        switch (actualStatus) {
+                            case 'paid':
+                                paymentStatus = 'deposit';
+                                statusId = 7;
+                                break;
+                            case 'completed':
+                                paymentStatus = 'paid';
+                                statusId = 10;
+                                break;
+                            case 'cancelled':
+                                paymentStatus = 'cancelled';
+                                statusId = 9;
+                                break;
+                            case 'unpaid':
+                            default:
+                                paymentStatus = 'pending';
+                                statusId = 8;
+                                break;
+                        }
+
                         const newBooking = {
                             id: notification.bookingId || Date.now(),
-                            userId: CUSTOMER_USER_ID,
+                            userId: notification.userId,
                             courtId: courtId,
                             courtName: notification.courtName || 'Sân thể thao',
                             timeSlot: timeSlot,
                             date: currentDate.format('DD/MM/YYYY'),
                             price: notification.totalAmount || 0,
-                            status: 'paid',
-                            paymentStatus: 'deposit',
+                            // ✅ FIX: Sử dụng actualStatus thay vì hardcode 'paid'
+                            status: actualStatus,
+                            paymentStatus: paymentStatus,
                             bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
                             checkInDate: currentDate.format('YYYY-MM-DD'),
-                            statusId: 7,
-                            originalStatus: 'Paid',
+                            statusId: statusId,
+                            originalStatus: originalStatus,
                             customerName: notification.customerName || 'Admin',
                             customerPhone: notification.customerPhone || 'N/A',
                             customerEmail: notification.customerEmail || 'N/A'
@@ -374,16 +411,8 @@ const BookingManagement = () => {
                             [bookingKey]: newBooking
                         }));
 
-                        console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to PAID status`);
+                        console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${actualStatus.toUpperCase()} status`);
                     }
-
-                    // Backup reload sau 2 giây
-                    setTimeout(() => {
-                        if (selectedFacility) {
-                            console.log('🔄 LOCAL UI: Backup reload booking data...');
-                            loadBookings(selectedFacility);
-                        }
-                    }, 2000);
                 }
             }
         };
@@ -568,21 +597,58 @@ const BookingManagement = () => {
 
     const loadCustomerDetails = useCallback(async (userId) => {
         try {
+            if (!userId || userId === 0 || userId === '0') {
+                return {
+                    customerName: 'Khách hàng không xác định',
+                    customerPhone: 'Không có thông tin',
+                    customerEmail: 'Không có thông tin',
+                    customerAvatar: null
+                };
+            }
+
+            // ✅ Gọi API không cần token
             const response = await getAccountById(userId);
-            const customerData = response.data?.data || response.data?.user || response.data;
+
+            let customerData = null;
+            if (response?.data?.data) {
+                customerData = response.data.data;
+            } else if (response?.data) {
+                customerData = response.data;
+            }
 
             if (customerData) {
                 return {
-                    customerName: customerData.fullName || customerData.name || customerData.userName || 'N/A',
-                    customerPhone: customerData.phoneNumber || customerData.phone || 'N/A',
-                    customerEmail: customerData.email || 'N/A',
-                    customerAvatar: customerData.avatar || customerData.profilePicture || null
+                    customerName: customerData.fullName ||
+                        customerData.name ||
+                        customerData.userName ||
+                        customerData.displayName ||
+                        customerData.email?.split('@')[0] ||
+                        `User #${userId}`,
+                    customerPhone: customerData.phoneNumber ||
+                        customerData.phone ||
+                        'Chưa cập nhật',
+                    customerEmail: customerData.email ||
+                        'Chưa cập nhật',
+                    customerAvatar: customerData.avatar ||
+                        customerData.profilePicture ||
+                        null
+                };
+            } else {
+                return {
+                    customerName: `User ID: ${userId}`,
+                    customerPhone: 'Không có dữ liệu',
+                    customerEmail: 'Không có dữ liệu',
+                    customerAvatar: null
                 };
             }
-            return null;
+
         } catch (error) {
-            console.error('Error loading customer details:', error);
-            return null;
+            return {
+                customerName: `User ID: ${userId}`,
+                customerPhone: 'Lỗi tải thông tin',
+                customerEmail: 'Lỗi tải thông tin',
+                customerAvatar: null
+            };
         }
     }, []);
 
@@ -612,6 +678,11 @@ const BookingManagement = () => {
 
         if (!booking) return;
 
+        // ✅ DEBUG: Log toàn bộ booking object
+        console.log('🔍 DEBUG: Full booking object:', JSON.stringify(booking, null, 2));
+        console.log('🔍 DEBUG: booking.userId:', booking.userId);
+        console.log('🔍 DEBUG: booking.userId type:', typeof booking.userId);
+
         updateLoading('customer', true);
         setIsModalVisible(true);
         setSelectedBooking({
@@ -620,12 +691,25 @@ const BookingManagement = () => {
             date: selectedDate.format('DD/MM/YYYY')
         });
 
-        if (booking.userId) {
+        // ✅ DEBUG: Kiểm tra userId trước khi gọi API
+        if (booking.userId && booking.userId !== 0 && booking.userId !== '0') {
             try {
+                console.log('🔍 DEBUG: Calling getAccountById with userId:', booking.userId);
+
+                const response = await getAccountById(booking.userId);
+                console.log('🔍 DEBUG: getAccountById response:', JSON.stringify(response, null, 2));
+
                 const customerDetails = await loadCustomerDetails(booking.userId);
+                console.log('🔍 DEBUG: Processed customer details:', customerDetails);
+
                 if (customerDetails) {
-                    setSelectedBooking(prev => prev ? { ...prev, ...customerDetails } : null);
+                    setSelectedBooking(prev => prev ? {
+                        ...prev,
+                        ...customerDetails
+                    } : null);
+                    console.log('✅ Customer details loaded successfully');
                 } else {
+                    console.log('⚠️ No customer details returned');
                     setSelectedBooking(prev => prev ? {
                         ...prev,
                         customerName: 'Không tìm thấy thông tin',
@@ -634,6 +718,8 @@ const BookingManagement = () => {
                     } : null);
                 }
             } catch (error) {
+                console.error('❌ Error loading customer details:', error);
+                console.error('❌ Error response:', error.response?.data);
                 setSelectedBooking(prev => prev ? {
                     ...prev,
                     customerName: 'Lỗi tải thông tin',
@@ -641,7 +727,16 @@ const BookingManagement = () => {
                     customerEmail: 'Lỗi tải thông tin'
                 } : null);
             }
+        } else {
+            console.log('⚠️ Invalid userId:', booking.userId);
+            setSelectedBooking(prev => prev ? {
+                ...prev,
+                customerName: 'Admin (Court Owner)',
+                customerPhone: CUSTOMER_PHONE || '0000000000',
+                customerEmail: CUSTOMER_EMAIL || 'admin@courtowner.com'
+            } : null);
         }
+
         updateLoading('customer', false);
     }, [bookingData, selectedDate, getBookingKey, loadCustomerDetails, updateLoading]);
 
@@ -847,6 +942,7 @@ const BookingManagement = () => {
 
         return {
             available: totalSlots - bookingValues.length,
+            unpaid: bookingValues.filter(b => b.status === 'unpaid').length,    // ✅ THÊM
             paid: bookingValues.filter(b => b.status === 'paid').length,
             completed: bookingValues.filter(b => b.status === 'completed').length,
             cancelled: bookingValues.filter(b => b.status === 'cancelled').length,
@@ -1065,7 +1161,11 @@ const BookingManagement = () => {
                     </div>
                     <div className="status-item">
                         <div className="status-dot paid"></div>
-                        <span>Đã Đặt ({bookingStatusCounts.paid} slots)</span>
+                        <span>Đã Cọc ({bookingStatusCounts.paid} slots)</span>
+                    </div>
+                    <div className="status-item">
+                        <div className="status-dot unpaid"></div>
+                        <span>Chưa thanh toán ({bookingStatusCounts.unpaid} slots)</span>
                     </div>
                     <div className="status-item">
                         <div className="status-dot completed"></div>

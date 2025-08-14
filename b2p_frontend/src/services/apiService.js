@@ -1,5 +1,7 @@
 import axios from "../utils/axiosCustomize";
-axios.defaults.timeout = 5000;
+
+// ✅ TĂNG TIMEOUT từ 5 giây lên 20 giây
+axios.defaults.timeout = 20000;
 
 /* ===============================
    🏟️ COURT CATEGORY MANAGEMENT
@@ -237,7 +239,27 @@ const getAllBankType = (search, pageNumber, pageSize) => {
    🧑‍💼 ACCOUNT MANAGEMENT
 ================================ */
 const getAccountList = (data) => axios.post("AccountManagement/account-list", data);
-const getAccountById = (userId) => axios.get(`AccountManagement/get-user/${userId}`);
+
+// ✅ SỬA: Thêm error handling và timeout riêng cho getAccountById
+const getAccountById = async (userId) => {
+  try {
+    console.log(`🔍 API Call: AccountManagement/get-user/${userId}`);
+    const response = await axios.get(`AccountManagement/get-user/${userId}`, {
+      timeout: 15000 // ✅ 15 giây riêng cho API này
+    });
+    console.log('✅ API Success:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ getAccountById Error:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      url: error.config?.url
+    });
+    throw error;
+  }
+};
+
 const banUser = (userId) => axios.put(`AccountManagement/${userId}/ban`);
 const unbanUser = (userId) => axios.put(`AccountManagement/${userId}/unban`);
 const deleteUser = (userId) => axios.delete(`AccountManagement/${userId}`);

@@ -451,6 +451,21 @@
                                     z-index: 10;
                                 }
                             }
+                              &.unpaid {
+        background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 20%) !important;
+        color: #ff4d4f !important;
+        border: 1px solid rgba(255, 77, 79, 0.3) !important;
+        font-weight: 600 !important;
+
+        &:hover {
+            background: linear-gradient(135deg, #ffccc7 0%, #ffa39e 50%) !important;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(255, 77, 79, 0.25);
+            z-index: 10;
+            border-color: #ff4d4f !important;
+            cursor: pointer;
+        }
+    }
 
                             &.cancelled {
                                 background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 20%);

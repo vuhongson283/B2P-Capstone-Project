@@ -7,7 +7,7 @@ NProgress.configure({
 });
 const instance = axios.create({
   baseURL: "https://localhost:7227/api/",
-  timeout: 10000, // Tăng từ 1000 lên 10000ms
+  timeout: 20000, // Tăng từ 1000 lên 10000ms
 });
 // Add a request interceptor
 instance.interceptors.request.use(

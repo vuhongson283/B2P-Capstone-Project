@@ -135,7 +135,7 @@ namespace B2P_API.Services
             {
                 UserId = user.UserId,
                 CreateAt = DateTime.UtcNow,
-                StatusId = 7,
+                StatusId = 8,
                 TotalPrice = total,
                 IsDayOff = false
             };

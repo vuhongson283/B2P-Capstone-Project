@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
 import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiService";
 import { parseInt } from 'lodash';
+import signalRService from '../../services/signalRService';
 
 // Constants
 const TODAY_DATE = new Date().toISOString().slice(0, 10);
@@ -17,42 +18,31 @@ const FACILITY_IMAGES = [
 // Helper function to convert Google Drive share link to viewable image link
 const convertGoogleDriveLink = (url) => {
   if (!url) return null;
-  
-  // Method 1: Extract file ID from various Google Drive URL formats
+
   let fileId = null;
-  
-  // Format: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+
   const shareMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (shareMatch) {
     fileId = shareMatch[1];
   }
-  
-  // Format: https://drive.google.com/open?id=FILE_ID
+
   const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (openMatch) {
     fileId = openMatch[1];
   }
-  
+
   if (fileId) {
-    // Direct download link (works for public images)
     return `https://drive.google.com/uc?export=download&id=${fileId}`;
   }
-  
-  // If not a Google Drive link, return as is
-  return url;
-};
 
-// Helper function to validate image URLs
-const isValidImageUrl = (url) => {
-  if (!url) return false;
-  return true;
+  return url;
 };
 
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
+    return timeString.substring(0, 5);
   };
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 };
@@ -60,11 +50,10 @@ const formatTimeSlot = (startTime, endTime) => {
 // Reviews Modal Component
 const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
   const [selectedStars, setSelectedStars] = useState('all');
-  
-  // Loại bỏ các rating trùng lặp
+
   const uniqueRatings = React.useMemo(() => {
     if (!ratings || ratings.length === 0) return [];
-    
+
     const seen = new Set();
     return ratings.filter(rating => {
       const key = `${rating.ratingId}-${rating.bookingId}`;
@@ -76,7 +65,6 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     });
   }, [ratings]);
 
-  // Lọc ratings theo số sao được chọn
   const filteredRatings = React.useMemo(() => {
     if (selectedStars === 'all') {
       return uniqueRatings;
@@ -84,7 +72,6 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     return uniqueRatings.filter(rating => rating.stars === parseInt(selectedStars));
   }, [uniqueRatings, selectedStars]);
 
-  // Tính thống kê
   const ratingStats = React.useMemo(() => {
     if (uniqueRatings.length === 0) {
       return {
@@ -112,11 +99,10 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     };
   }, [uniqueRatings]);
 
-  // Render stars
   const renderStars = (starCount) => {
     return [...Array(5)].map((_, index) => (
-      <span 
-        key={index} 
+      <span
+        key={index}
         className={`star ${index < starCount ? 'filled' : ''}`}
         style={{
           color: index < starCount ? '#fbbf24' : '#e5e7eb'
@@ -127,7 +113,7 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     ));
   };
 
-if (!open) return null;
+  if (!open) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{
@@ -154,23 +140,22 @@ if (!open) return null;
         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         overflow: 'hidden'
       }}>
-        {/* Header */}
         <div className="modal-header" style={{
-  padding: '24px',
-  borderBottom: '1px solid #e5e7eb',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexDirection: 'column',
-  backgroundColor: '#f8fafc'
-}}>
+          padding: '24px',
+          borderBottom: '1px solid #e5e7eb',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          backgroundColor: '#f8fafc'
+        }}>
           <h2 className="modal-title" style={{
-  margin: 0,
-  fontSize: '20px',
-  fontWeight: '600',
-  color: '#1f2937',
-  textAlign: 'center'
-}}>
+            margin: 0,
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#1f2937',
+            textAlign: 'center'
+          }}>
             <span className="title-icon">⭐</span>
             Tất cả đánh giá - {facilityName}
           </h2>
@@ -198,12 +183,11 @@ if (!open) return null;
             ×
           </button>
         </div>
-        {/* Content */}
+
         <div className="modal-content">
-          {/* Rating Summary */}
           <div className="reviews-modal-summary">
             <div className="summary-main">
-                              <div className="rating-display" style={{
+              <div className="rating-display" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
@@ -229,98 +213,72 @@ if (!open) return null;
               </div>
             </div>
 
-            {/* Filter by stars */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-  <div className="star-filter" style={{ textAlign: 'center' }}>
-              <label className="filter-label" style={{
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '8px',
-                display: 'block'
-              }}>Lọc theo số sao:</label>
-              <div className="filter-buttons" style={{
-                display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap'
-              }}>
-                <button 
-                  className={`filter-btn ${selectedStars === 'all' ? 'active' : ''}`}
-                  onClick={() => setSelectedStars('all')}
-                  style={{
-                    padding: '8px 16px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    backgroundColor: selectedStars === 'all' ? '#3b82f6' : 'white',
-                    color: selectedStars === 'all' ? 'white' : '#374151',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    if (selectedStars !== 'all') {
-                      e.target.style.backgroundColor = '#f3f4f6';
-                      e.target.style.borderColor = '#9ca3af';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (selectedStars !== 'all') {
-                      e.target.style.backgroundColor = 'white';
-                      e.target.style.borderColor = '#d1d5db';
-                    }
-                  }}
-                >
-                  Tất cả ({ratingStats.totalReviews})
-                </button>
-                {[5, 4, 3, 2, 1].map(stars => (
-                  <button 
-                    key={stars}
-                    className={`filter-btn ${selectedStars === stars.toString() ? 'active' : ''}`}
-                    onClick={() => setSelectedStars(stars.toString())}
+              <div className="star-filter" style={{ textAlign: 'center' }}>
+                <label className="filter-label" style={{
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '8px',
+                  display: 'block'
+                }}>Lọc theo số sao:</label>
+                <div className="filter-buttons" style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap'
+                }}>
+                  <button
+                    className={`filter-btn ${selectedStars === 'all' ? 'active' : ''}`}
+                    onClick={() => setSelectedStars('all')}
                     style={{
                       padding: '8px 16px',
                       border: '1px solid #d1d5db',
                       borderRadius: '8px',
-                      backgroundColor: selectedStars === stars.toString() ? '#3b82f6' : 'white',
-                      color: selectedStars === stars.toString() ? 'white' : '#374151',
+                      backgroundColor: selectedStars === 'all' ? '#3b82f6' : 'white',
+                      color: selectedStars === 'all' ? 'white' : '#374151',
                       cursor: 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    onMouseOver={(e) => {
-                      if (selectedStars !== stars.toString()) {
-                        e.target.style.backgroundColor = '#f3f4f6';
-                        e.target.style.borderColor = '#9ca3af';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (selectedStars !== stars.toString()) {
-                        e.target.style.backgroundColor = 'white';
-                        e.target.style.borderColor = '#d1d5db';
-                      }
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    <span style={{ color: '#fbbf24' }}>{stars}★</span> ({ratingStats.breakdown[stars]})
+                    Tất cả ({ratingStats.totalReviews})
                   </button>
-                ))}
+                  {[5, 4, 3, 2, 1].map(stars => (
+                    <button
+                      key={stars}
+                      className={`filter-btn ${selectedStars === stars.toString() ? 'active' : ''}`}
+                      onClick={() => setSelectedStars(stars.toString())}
+                      style={{
+                        padding: '8px 16px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '8px',
+                        backgroundColor: selectedStars === stars.toString() ? '#3b82f6' : 'white',
+                        color: selectedStars === stars.toString() ? 'white' : '#374151',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <span style={{ color: '#fbbf24' }}>{stars}★</span> ({ratingStats.breakdown[stars]})
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
             </div>
           </div>
 
-          {/* Reviews List */}
           <div className="reviews-modal-list">
             {filteredRatings.length === 0 ? (
               <div className="empty-reviews">
                 <div className="empty-icon">⭐</div>
                 <p>
-                  {selectedStars === 'all' 
-                    ? 'Chưa có đánh giá nào' 
+                  {selectedStars === 'all'
+                    ? 'Chưa có đánh giá nào'
                     : `Chưa có đánh giá ${selectedStars} sao nào`
                   }
                 </p>
@@ -335,12 +293,6 @@ if (!open) return null;
                   backgroundColor: '#ffffff',
                   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
                   transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#d1d5db';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
                 }}>
                   <div className="review-modal-card__avatar" style={{
                     display: 'flex',
@@ -402,7 +354,6 @@ if (!open) return null;
           </div>
         </div>
 
-        {/* Footer */}
         <div className="modal-footer" style={{
           padding: '20px 24px',
           borderTop: '1px solid #e5e7eb',
@@ -421,30 +372,14 @@ if (!open) return null;
             fontSize: '14px',
             fontWeight: '500',
             transition: 'all 0.2s ease'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.backgroundColor = '#f3f4f6';
-            e.target.style.borderColor = '#9ca3af';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.backgroundColor = 'white';
-            e.target.style.borderColor = '#d1d5db';
           }}>
             Đóng
           </button>
-          
         </div>
       </div>
     </div>
   );
 };
-
-// Constants
-const TODAY = new Date().toISOString().slice(0, 10);
-
-
-
-
 
 // Header Component
 const FacilityHeader = ({ facilityData }) => (
@@ -468,47 +403,36 @@ const FacilityHeader = ({ facilityData }) => (
 const ImageCarousel = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState(new Set());
-  
-  // Process facility images - convert Google Drive links and handle all URLs
+
   const displayImages = React.useMemo(() => {
-    console.log('Raw images from API:', images);
-    
     if (images && images.length > 0) {
-      // Process all images, convert Google Drive links
       const processedImages = images
         .filter(img => {
           const hasUrl = img.imageUrl && img.imageUrl.trim() !== '';
-          console.log(`Image ${img.imageId}: ${img.imageUrl} - Has URL: ${hasUrl}`);
           return hasUrl;
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(img => {
           const originalUrl = img.imageUrl;
           const convertedUrl = convertGoogleDriveLink(originalUrl);
-          console.log(`Converting: ${originalUrl} → ${convertedUrl}`);
           return convertedUrl;
         })
         .filter(url => url && !failedImages.has(url));
-      
-      console.log('Processed images:', processedImages);
-      
+
       if (processedImages.length > 0) {
         return processedImages;
       }
     }
-    
-    // No valid images from API, use default images
-    console.log('No images from API, using fallback images');
+
     return FACILITY_IMAGES;
   }, [images, failedImages]);
-  
-  // Reset current index if it's out of bounds
+
   React.useEffect(() => {
     if (currentIndex >= displayImages.length) {
       setCurrentIndex(0);
     }
   }, [displayImages.length, currentIndex]);
-  
+
   const navigateImage = (direction) => {
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex + direction;
@@ -517,13 +441,11 @@ const ImageCarousel = ({ images }) => {
   };
 
   const handleImageError = (failedUrl) => {
-    console.error('Image failed to load:', failedUrl);
-    
     setFailedImages(prev => new Set([...prev, failedUrl]));
-    
+
     if (displayImages[currentIndex] === failedUrl) {
       const remainingImages = displayImages.filter(url => !failedImages.has(url) && url !== failedUrl);
-      
+
       if (remainingImages.length === 0) {
         setCurrentIndex(0);
       } else {
@@ -538,8 +460,8 @@ const ImageCarousel = ({ images }) => {
   return (
     <div className="carousel">
       {displayImages.length > 1 && (
-        <button 
-          className="carousel__btn carousel__btn--prev" 
+        <button
+          className="carousel__btn carousel__btn--prev"
           onClick={() => navigateImage(-1)}
           aria-label="Previous image"
         >
@@ -548,12 +470,11 @@ const ImageCarousel = ({ images }) => {
       )}
       <div className="carousel__container">
         <div className="carousel__image-wrapper">
-          <img 
-            src={displayImages[currentIndex]} 
-            alt={`Facility view ${currentIndex + 1}`} 
+          <img
+            src={displayImages[currentIndex]}
+            alt={`Facility view ${currentIndex + 1}`}
             className="carousel__image"
             onError={() => handleImageError(displayImages[currentIndex])}
-            onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
           />
           <div className="carousel__overlay">
             <div className="carousel__image-counter">
@@ -563,8 +484,8 @@ const ImageCarousel = ({ images }) => {
         </div>
       </div>
       {displayImages.length > 1 && (
-        <button 
-          className="carousel__btn carousel__btn--next" 
+        <button
+          className="carousel__btn carousel__btn--next"
           onClick={() => navigateImage(1)}
           aria-label="Next image"
         >
@@ -601,15 +522,15 @@ const FacilityInfo = ({ facilityData }) => {
       value: facilityData?.location || 'Chưa có thông tin'
     },
     {
-      icon: '🕐', 
+      icon: '🕐',
       label: 'Giờ hoạt động',
-      value: facilityData?.openTime && facilityData?.closeTime 
+      value: facilityData?.openTime && facilityData?.closeTime
         ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
         : 'Chưa có thông tin'
     },
     {
       icon: '📞',
-      label: 'Số điện thoại', 
+      label: 'Số điện thoại',
       value: facilityData?.contact || 'Chưa có thông tin'
     },
     {
@@ -656,16 +577,16 @@ const FacilityInfo = ({ facilityData }) => {
 };
 
 // Booking Table Component
-const BookingTable = ({ 
-  onOpenModal, 
-  courtCategories, 
-  selectedCategory, 
-  onCategoryChange, 
+const BookingTable = ({
+  onOpenModal,
+  courtCategories,
+  selectedCategory,
+  onCategoryChange,
   selectedDate,
   onDateChange,
   timeSlots,
   loading,
-  loadingSlots 
+  loadingSlots
 }) => (
   <section className="booking-section">
     <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
@@ -676,9 +597,9 @@ const BookingTable = ({
             <span className="label-icon">🏟️</span>
             Chọn loại sân
           </label>
-          <select 
+          <select
             id="category-select"
-            className="form-select" 
+            className="form-select"
             aria-label="Select facility type"
             value={selectedCategory}
             onChange={(e) => onCategoryChange(e.target.value)}
@@ -696,7 +617,7 @@ const BookingTable = ({
             ))}
           </select>
         </div>
-        
+
         <div className="control-group">
           <label htmlFor="date-select" className="control-label">
             <span className="label-icon">📅</span>
@@ -714,13 +635,13 @@ const BookingTable = ({
         </div>
       </div>
     </div>
-    
+
     {loadingSlots && (
       <div className="loading-state">
         Đang tải lịch trống...
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length > 0 && (
       <div className="table-container">
         <div className="table-responsive">
@@ -747,8 +668,8 @@ const BookingTable = ({
                   Số sân trống
                 </td>
                 {timeSlots.map((slot) => (
-                  <td 
-                    key={slot.timeSlotId} 
+                  <td
+                    key={slot.timeSlotId}
                     className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'}`}
                   >
                     <div className="availability-info">
@@ -763,7 +684,7 @@ const BookingTable = ({
             </tbody>
           </table>
         </div>
-        
+
         <div className="table-legend">
           <div className="legend-item">
             <div className="legend-color available"></div>
@@ -776,24 +697,24 @@ const BookingTable = ({
         </div>
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
       <div className="empty-state">
         <div className="empty-icon">📅</div>
         <p>Không có khung giờ nào khả dụng cho loại sân này</p>
       </div>
     )}
-    
+
     {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
       <div className="empty-state">
         <div className="empty-icon">🏟️</div>
         <p>Vui lòng chọn loại sân để xem lịch trống</p>
       </div>
     )}
-    
+
     <div className="booking-action">
-      <button 
-        className="btn-primary btn-booking" 
+      <button
+        className="btn-primary btn-booking"
         onClick={onOpenModal}
         disabled={!selectedCategory || timeSlots.length === 0}
       >
@@ -804,12 +725,11 @@ const BookingTable = ({
   </section>
 );
 
-// Reviews Component - Cải tiến với dữ liệu thực từ API
+// Reviews Component
 const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
-  // Loại bỏ các rating trùng lặp dựa trên ratingId và bookingId
   const uniqueRatings = React.useMemo(() => {
     if (!ratings || ratings.length === 0) return [];
-    
+
     const seen = new Set();
     return ratings.filter(rating => {
       const key = `${rating.ratingId}-${rating.bookingId}`;
@@ -821,7 +741,6 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
     });
   }, [ratings]);
 
-  // Tính toán thống kê đánh giá
   const ratingStats = React.useMemo(() => {
     if (uniqueRatings.length === 0) {
       return {
@@ -851,15 +770,12 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
     };
   }, [uniqueRatings]);
 
-  // Render stars dựa trên số sao - FIX: Logic đúng
   const renderStars = (starCount) => {
-    console.log('Rendering stars for:', starCount); // Debug log
     return [...Array(5)].map((_, index) => {
       const isFilled = index < starCount;
-      console.log(`Star ${index + 1}: ${isFilled ? 'filled' : 'empty'}`); // Debug log
       return (
-        <span 
-          key={index} 
+        <span
+          key={index}
           className={`star ${isFilled ? 'filled' : ''}`}
         >
           ★
@@ -868,7 +784,6 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
     });
   };
 
-  // Nếu không có đánh giá
   if (uniqueRatings.length === 0) {
     return (
       <section className="reviews-section">
@@ -876,7 +791,7 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
           <span className="title-icon">⭐</span>
           Đánh giá từ khách hàng
         </h2>
-        
+
         <div className="empty-state">
           <div className="empty-icon">⭐</div>
           <p>Chưa có đánh giá nào cho cơ sở này</p>
@@ -889,7 +804,6 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
     );
   }
 
-  // Hiển thị tối đa 3 đánh giá gần nhất
   const displayedReviews = uniqueRatings.slice(0, 3);
 
   return (
@@ -898,7 +812,7 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
         <span className="title-icon">⭐</span>
         Đánh giá từ khách hàng
       </h2>
-      
+
       <div className="rating-summary">
         <div className="rating-main">
           <span className="rating-value">{ratingStats.averageRating}</span>
@@ -906,7 +820,7 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
             {renderStars(Math.round(ratingStats.averageRating))}
           </div>
         </div>
-        
+
         <div className="rating-breakdown">
           <div className="breakdown-header">
             <span className="total-reviews">{ratingStats.totalReviews} đánh giá</span>
@@ -914,17 +828,17 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
           <div className="breakdown-list">
             {[5, 4, 3, 2, 1].map(stars => {
               const count = ratingStats.breakdown[stars];
-              const percentage = ratingStats.totalReviews > 0 
-                ? Math.round((count / ratingStats.totalReviews) * 100) 
+              const percentage = ratingStats.totalReviews > 0
+                ? Math.round((count / ratingStats.totalReviews) * 100)
                 : 0;
-              
+
               return (
                 <div key={stars} className="breakdown-item">
                   <span className="star-label">{stars}★</span>
                   <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{width: `${percentage}%`}}
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${percentage}%` }}
                     ></div>
                   </div>
                   <span className="count-label">{count}</span>
@@ -934,10 +848,9 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
           </div>
         </div>
       </div>
-      
+
       <div className="reviews-list">
         {displayedReviews.map((rating, index) => {
-          console.log(`Review ${index}: ${rating.stars} stars`); // Debug log
           return (
             <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-card">
               <div className="review-card__avatar">
@@ -971,13 +884,13 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
           );
         })}
       </div>
-      
+
       <div className="reviews-bottom">
         <button className="btn-write-review">
           <span className="btn-icon">📝</span>
           <span>Viết đánh giá</span>
         </button>
-        <button 
+        <button
           className="btn-view-all"
           onClick={onOpenReviewsModal}
         >
@@ -1000,24 +913,94 @@ const FacilityDetails = () => {
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
-  const {facilityId} = useParams();
+  const { facilityId } = useParams();
+
+  // ✅ Fetch available slots function for SignalR updates
+  const fetchAvailableSlots = useCallback(async () => {
+    if (!selectedCategory || !selectedDate || !facilityId) {
+      setTimeSlots([]);
+      return;
+    }
+
+    setLoadingSlots(true);
+    try {
+      const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
+
+      if (response.data && response.data.data) {
+        setTimeSlots(response.data.data);
+      } else if (response.data) {
+        setTimeSlots(response.data);
+      } else {
+        setTimeSlots([]);
+      }
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [facilityId, selectedCategory, selectedDate]);
+
+  // ✅ SignalR setup for real-time slot updates
+  useEffect(() => {
+    const initializeSignalR = async () => {
+      if (!signalRService.connected) {
+        await signalRService.startConnection();
+      }
+
+      if (facilityId && signalRService.connected) {
+        await signalRService.joinFacilityGroup(parseInt(facilityId));
+      }
+    };
+
+    const handleBookingUpdate = (notification) => {
+      if (notification?.facilityId === parseInt(facilityId)) {
+        if (selectedCategory && selectedDate) {
+          setTimeout(() => {
+            fetchAvailableSlots();
+          }, 500);
+        }
+      }
+    };
+
+    // Listen to all possible SignalR event names
+    const eventNames = [
+      'onBookingCreated', 'BookingCreated', 'bookingCreated',
+      'onBookingUpdated', 'BookingUpdated', 'bookingUpdated',
+      'onBookingCompleted', 'BookingCompleted', 'bookingCompleted',
+      'onBookingCancelled', 'BookingCancelled', 'bookingCancelled',
+    ];
+
+    eventNames.forEach(eventName => {
+      signalRService.on(eventName, handleBookingUpdate);
+    });
+
+    initializeSignalR();
+
+    return () => {
+      eventNames.forEach(eventName => {
+        signalRService.off(eventName);
+      });
+
+      if (facilityId && signalRService.connected) {
+        signalRService.leaveFacilityGroup(parseInt(facilityId));
+      }
+    };
+  }, [facilityId, selectedCategory, selectedDate, fetchAvailableSlots]);
 
   // Fetch facility details on component mount
   useEffect(() => {
     const fetchFacilityDetails = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await getFacilityDetailsById(parseInt(facilityId));
-        
+
         if (response.data) {
           const facilityInfo = response.data;
-          console.log('Facility data with ratings:', facilityInfo);
-          
           setFacilityData(facilityInfo);
-          
-          // Set default category to the first available category
+
           if (facilityInfo.categories && facilityInfo.categories.length > 0) {
             setSelectedCategory(facilityInfo.categories[0].categoryId.toString());
           }
@@ -1037,35 +1020,9 @@ const FacilityDetails = () => {
     }
   }, [facilityId]);
 
-  // Fetch available slots when category or date changes
   useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      if (!selectedCategory || !selectedDate || !facilityId) {
-        setTimeSlots([]);
-        return;
-      }
-
-      setLoadingSlots(true);
-      try {
-        const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
-        
-        if (response.data && response.data.data) {
-          setTimeSlots(response.data.data);
-        } else if (response.data) {
-          setTimeSlots(response.data);
-        } else {
-          setTimeSlots([]);
-        }
-      } catch (error) {
-        console.error('Error fetching available slots:', error);
-        setTimeSlots([]);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
     fetchAvailableSlots();
-  }, [facilityId, selectedCategory, selectedDate]);
+  }, [fetchAvailableSlots]);
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
@@ -1106,12 +1063,13 @@ const FacilityDetails = () => {
   return (
     <div className="facility-page">
       <FacilityHeader facilityData={facilityData} />
+
       <main className="facility-main">
         <ImageCarousel images={facilityData?.images} />
         <FacilityInfo facilityData={facilityData} />
       </main>
-      
-      <BookingTable 
+
+      <BookingTable
         onOpenModal={() => setModalOpen(true)}
         courtCategories={facilityData?.categories || []}
         selectedCategory={selectedCategory}
@@ -1122,26 +1080,30 @@ const FacilityDetails = () => {
         loading={loading}
         loadingSlots={loadingSlots}
       />
-      
-      <Reviews 
-        ratings={facilityData?.ratings} 
+
+      <Reviews
+        ratings={facilityData?.ratings}
         onOpenReviewsModal={() => setReviewsModalOpen(true)}
       />
-      
+
       {modalOpen && (
-        <BookingModal 
-          open={modalOpen} 
+        <BookingModal
+          open={modalOpen}
           onClose={() => setModalOpen(false)}
           timeSlots={timeSlots}
           selectedDate={selectedDate}
           facilityData={facilityData}
           selectedCategory={selectedCategory}
+          onBookingSuccess={() => {
+            fetchAvailableSlots();
+            setModalOpen(false);
+          }}
         />
       )}
 
       {reviewsModalOpen && (
-        <ReviewsModal 
-          open={reviewsModalOpen} 
+        <ReviewsModal
+          open={reviewsModalOpen}
           onClose={() => setReviewsModalOpen(false)}
           ratings={facilityData?.ratings}
           facilityName={facilityData?.facilityName}

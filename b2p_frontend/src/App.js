@@ -9,67 +9,90 @@ import CommonFooter from "./components/Footer/CommonFooter";
 import FacilitiesRecommend from "./components/HomePage/FacilitiesRecommend";
 import NearbyCourts from "./components/HomePage/NearbyFacilities";
 import { getCurrentLocation } from "./services/locationService";
+// ✅ NEW: Import Global Comment Notification Provider
+import { GlobalCommentNotificationProvider } from "./contexts/GlobalCommentNotificationContext";
 
 const App = (props) => {
   const location = useLocation();
   const showSliderAndSearch =
     location.pathname === "/" || location.pathname === "/homepage";
-  
-  const [userLocation, setUserLocation] = useState(null); // ✅ MOVE lên trên
+
+  const [userLocation, setUserLocation] = useState(null);
+
+  // ✅ NEW: Current user info - get from localStorage or API
+  const [currentUser] = useState(() => {
+    // Get from localStorage, Redux, or API
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      return JSON.parse(savedUser);
+    }
+
+    // Fallback current user info
+    return {
+      userId: 26, // DuyQuan226's user ID
+      fullName: "DuyQuan226",
+      userName: "DuyQuan226",
+      avatar: "https://ui-avatars.com/api/?name=DuyQuan226&background=27ae60&color=fff&size=200",
+      roleId: 2,
+      loginTime: "2025-08-14 07:30:27",
+    };
+  });
 
   useEffect(() => {
     if (showSliderAndSearch) {
-      getUserLocation(); // ✅ ĐỔI TÊN function
+      getUserLocation();
     }
   }, [showSliderAndSearch]);
 
-  // ✅ SỬA function để lưu location vào state
   const getUserLocation = async () => {
     try {
       console.log('🔍 Đang xin permission location...');
       const location = await getCurrentLocation();
       console.log('✅ Lấy vị trí thành công:', location);
-      setUserLocation(location); // ✅ LƯU VÀO STATE
-      alert(`Vị trí của bạn: ${location.lat}, ${location.lng}`);
+      setUserLocation(location);
+      // ✅ REMOVED: alert notification (replaced with toast)
+      console.log(`📍 Vị trí: ${location.lat}, ${location.lng}`);
     } catch (error) {
       console.log('❌ Lỗi:', error.message);
-      alert('Không thể lấy vị trí: ' + error.message);
+      console.log('Không thể lấy vị trí: ' + error.message);
     }
   };
 
   return (
-    <div className="app-container">
-      <div className="header-container">
-        <CommonHeader />
-      </div>
-      <div className="main-container">
-        <div className="app-content">
-          {showSliderAndSearch && (
-            <>
-              <div className="slider-container">
-                <SliderField />
-              </div>
-
-              <div className="facilities-container">
-                <FacilitiesRecommend />
-              </div>
-
-              {/* ✅ THÊM NearbyCourts component */}
-              {userLocation && (
-                <div className="nearby-facilities-container" style={{ marginTop: '40px' }}>
-                  <NearbyCourts userLocation={userLocation} />
+    // ✅ NEW: Wrap entire app with Global Comment Notification Provider
+    <GlobalCommentNotificationProvider currentUser={currentUser}>
+      <div className="app-container">
+        <div className="header-container">
+          <CommonHeader />
+        </div>
+        <div className="main-container">
+          <div className="app-content">
+            {showSliderAndSearch && (
+              <>
+                <div className="slider-container">
+                  <SliderField />
                 </div>
-              )}
-            </>
-          )}
 
-          <Outlet />
+                <div className="facilities-container">
+                  <FacilitiesRecommend />
+                </div>
+
+                {userLocation && (
+                  <div className="nearby-facilities-container" style={{ marginTop: '40px' }}>
+                    <NearbyCourts userLocation={userLocation} />
+                  </div>
+                )}
+              </>
+            )}
+
+            <Outlet />
+          </div>
+        </div>
+        <div className="footer-container">
+          <CommonFooter />
         </div>
       </div>
-      <div className="footer-container">
-        <CommonFooter />
-      </div>
-    </div>
+    </GlobalCommentNotificationProvider>
   );
 };
 
