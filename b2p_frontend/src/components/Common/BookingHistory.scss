@@ -387,6 +387,12 @@
             color: #dc2626;
             .status-dot { background: #ef4444; }
           }
+
+          &.status-deposit-paid {
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #3730a3;
+            .status-dot { background: #6366f1; }
+          }
         }
 
         .booking-actions {
@@ -502,6 +508,18 @@
           left: 100%;
         }
       }
+    }
+
+    &:focus-visible {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
     }
   }
 
@@ -839,6 +857,12 @@
             color: white;
             .status-dot { background: rgba(255, 255, 255, 0.9); }
           }
+
+          &.status-deposit-paid {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            .status-dot { background: rgba(255, 255, 255, 0.9); }
+          }
         }
       }
     }
@@ -1048,6 +1072,185 @@
           }
         }
       }
+
+      // RATING SECTION STYLES
+      .rating-section {
+        .rating-form {
+          padding: 2rem;
+
+          .rating-stars {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #fef9e7, #fef3c7);
+            border-radius: 16px;
+            border: 1px solid #fbbf24;
+
+            .rating-label {
+              display: block;
+              font-size: 1.1rem;
+              font-weight: 700;
+              color: #92400e;
+              margin-bottom: 1rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+
+            .ant-rate {
+              font-size: 2.5rem !important;
+              margin-bottom: 1rem;
+              
+              .ant-rate-star {
+                margin-right: 0.5rem;
+                
+                &:hover .ant-rate-star-first,
+                &:hover .ant-rate-star-second {
+                  color: #fbbf24 !important;
+                }
+
+                &-first,
+                &-second {
+                  color: #fbbf24 !important;
+                }
+
+                &-full .ant-rate-star-first,
+                &-full .ant-rate-star-second {
+                  color: #fbbf24 !important;
+                }
+              }
+            }
+
+            .rating-text {
+              display: block;
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: #92400e;
+              margin-top: 0.5rem;
+            }
+          }
+
+          .rating-comment {
+            margin-bottom: 2rem;
+
+            .rating-label {
+              display: block;
+              font-size: 1rem;
+              font-weight: 700;
+              color: #374151;
+              margin-bottom: 1rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+
+            .ant-input {
+              border-radius: 12px !important;
+              border: 2px solid #e5e7eb !important;
+              padding: 1rem !important;
+              font-size: 1rem !important;
+              transition: all 0.3s ease !important;
+
+              &:focus,
+              &:focus-within {
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1) !important;
+              }
+            }
+
+            .ant-input-data-count {
+              color: #64748b;
+              font-size: 0.875rem;
+            }
+          }
+
+          .rating-actions {
+            text-align: center;
+
+            .rating-submit-btn {
+              background: linear-gradient(135deg, #667eea, #764ba2) !important;
+              border: none !important;
+              border-radius: 16px !important;
+              padding: 0.75rem 2rem !important;
+              height: auto !important;
+              font-size: 1.1rem !important;
+              font-weight: 700 !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              gap: 0.5rem !important;
+              box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3) !important;
+              transition: all 0.3s ease !important;
+
+              &:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4) !important;
+              }
+
+              &:disabled {
+                opacity: 0.6 !important;
+                cursor: not-allowed !important;
+                transform: none !important;
+              }
+
+              .btn-icon {
+                width: 18px;
+                height: 18px;
+              }
+
+              .ant-btn-loading-icon {
+                .anticon {
+                  color: white !important;
+                }
+              }
+            }
+          }
+        }
+
+        .rating-success {
+          padding: 3rem 2rem;
+          text-align: center;
+          background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+          border-radius: 16px;
+          border: 1px solid #10b981;
+
+          .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounceIn 0.6s ease-out;
+          }
+
+          h4 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #065f46;
+            margin-bottom: 1rem;
+          }
+
+          p {
+            font-size: 1.1rem;
+            color: #047857;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+          }
+        }
+      }
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
@@ -1200,6 +1403,37 @@
             padding: 1.5rem;
             grid-template-columns: 1fr;
             gap: 1.5rem;
+          }
+        }
+
+        // Mobile responsive for rating
+        .rating-section {
+          .rating-form {
+            padding: 1.5rem;
+
+            .rating-stars {
+              padding: 1.5rem;
+
+              .ant-rate {
+                font-size: 2rem !important;
+              }
+            }
+          }
+
+          .rating-success {
+            padding: 2rem 1.5rem;
+
+            .success-icon {
+              font-size: 3rem;
+            }
+
+            h4 {
+              font-size: 1.3rem;
+            }
+
+            p {
+              font-size: 1rem;
+            }
           }
         }
       }

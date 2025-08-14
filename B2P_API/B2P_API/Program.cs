@@ -25,20 +25,23 @@ builder.Services.AddDbContext<SportBookingDbContext>(options =>
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// **THÊM CORS - Cho phép tất cả (Development)**
+// THÊM SIGNALR
+builder.Services.AddSignalR();
+
+// FIX CORS cho SignalR - Dùng policy cụ thể
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddPolicy("SignalRPolicy", policy =>
     {
-        builder.WithOrigins(
-                   "http://localhost:3000",     // React dev
-                   "https://localhost:3000",    // React dev HTTPS
-                   "http://localhost:3001",     // Nếu có port khác
-                   "https://yourdomain.com"     // Production domain
-               )
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:3001",
+                "https://yourdomain.com")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin => true); // Cho phép mọi origin (chỉ khi DEV)
     });
 });
 
@@ -60,11 +63,13 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 
-builder.Services.AddSignalR();
-
-// Đăng ký các Repository & Service
+// Đăng ký các Repository & Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<RatingRepository>();
+builder.Services.AddScoped<IRatingRepository, RatingRepository>();
+builder.Services.AddScoped<RatingService>();
 
 builder.Services.AddScoped<ISliderManagementRepository, SliderManagementRepository>();
 builder.Services.AddScoped<SliderManagementService>();
@@ -75,7 +80,7 @@ builder.Services.AddScoped<CourtCategoryService>();
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
 builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
 builder.Services.AddScoped<IFacilityService, FacilityService>();
-builder.Services.AddScoped<FacilityService>(); // Đăng ký trực tiếp class nếu cần resolve cả interface và class
+builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IImageService, ImageService>();
@@ -115,38 +120,28 @@ builder.Services.AddScoped<BankAccountService>();
 builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
 
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
-ExcelPackage.License.SetNonCommercialPersonal("B2P");
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
-builder.Services.AddScoped<RatingRepository>();
-builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-builder.Services.AddScoped<RatingService>();
-
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<VNPayService>();
 
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
-
-
-// Configure ZaloPay settings
-builder.Services.Configure<ZaloPayConfig>(
-    builder.Configuration.GetSection("ZaloPay"));
-
-// Register HttpClient for ZaloPay với custom configuration
+builder.Services.Configure<ZaloPayConfig>(builder.Configuration.GetSection("ZaloPay"));
 builder.Services.AddHttpClient<ZaloPayService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Add("User-Agent", "ZaloPayAPI/1.0");
 });
-
-// Register ZaloPay service
 builder.Services.AddScoped<ZaloPayService>();
 
+builder.Services.AddScoped<IBookingNotificationService, BookingNotificationService>();
+
 var app = builder.Build();
-app.MapHub<BookingHub>("/bookinghub");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -154,8 +149,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
-// Add security headers
+app.UseCors("SignalRPolicy"); // Áp dụng policy cụ thể
+
+// Security headers
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
@@ -164,7 +160,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Add request logging middleware (optional - for debugging)
+// Request logging middleware
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -172,6 +168,7 @@ app.Use(async (context, next) =>
     await next();
     logger.LogInformation($"Response: {context.Response.StatusCode}");
 });
+
 // Health check endpoint
 app.MapGet("/health", () => new
 {
@@ -179,6 +176,10 @@ app.MapGet("/health", () => new
     status = "running",
     timestamp = DateTimeOffset.UtcNow
 });
+
 app.UseAuthorization();
+
 app.MapControllers();
+app.MapHub<BookingHub>("/bookinghub");
+
 app.Run();

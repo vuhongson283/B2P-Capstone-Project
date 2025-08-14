@@ -55,6 +55,17 @@ namespace B2P_API.Services
             }
             else
             {
+                // Bắt buộc có cả email và số điện thoại
+                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
+                {
+                    return new ApiResponse<object>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Khách đặt sân phải cung cấp email và số điện thoại"
+                    };
+                }
+
                 // Kiểm tra email hợp lệ
                 bool isEmailValid = await IsRealEmailAsync(request.Email);
                 if (!isEmailValid)
@@ -75,17 +86,6 @@ namespace B2P_API.Services
                         Success = false,
                         Status = 400,
                         Message = "Số điện thoại không hợp lệ"
-                    };
-                }
-
-                // Bắt buộc có cả email và số điện thoại
-                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
-                {
-                    return new ApiResponse<object>
-                    {
-                        Success = false,
-                        Status = 400,
-                        Message = "Khách đặt sân phải cung cấp email và số điện thoại"
                     };
                 }
 

@@ -47,5 +47,18 @@ namespace B2P_API.Services
 
             await SendEmailAsync(email, subject, body);
         }
+
+        public async Task SendOtpEmailForLoginAsync(string email, string otpCode)
+        {
+            var subject = "Mã OTP đăng nhập B2P";
+            var body = $@"
+                <h2>Xác thực đăng nhập</h2>
+                <p>Mã OTP của bạn là: <strong>{otpCode}</strong></p>
+                <p>Mã này có hiệu lực trong 5 phút.</p>
+                <p>Nếu bạn không yêu cầu đăng nhập, vui lòng bỏ qua email này.</p>
+            ";
+
+            await SendEmailAsync(email, subject, body);
+        }
     }
 }
