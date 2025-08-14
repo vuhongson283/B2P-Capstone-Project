@@ -49,7 +49,7 @@ const StripePayment = () => {
     // Format card number with spaces
     const formatCardNumber = (value) => {
         const cleaned = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-        const matches = cleaned.match(/\d{4,16}/g);
+        const matches = cleaned.match(/\d{0,16}/g);
         const match = matches && matches[0] || '';
         const parts = [];
         for (let i = 0, len = match.length; i < len; i += 4) {
