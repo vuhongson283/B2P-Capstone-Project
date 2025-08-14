@@ -536,8 +536,7 @@ const sendOtpAxios = async (data) => {
     throw error;
   }
 };
-
-// 🔐 Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
+// Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
 const verifyOtpAxios = async (data) => {
   try {
     console.log('📡 Calling verifyOtp API with data:', data);
@@ -546,6 +545,17 @@ const verifyOtpAxios = async (data) => {
     return response; // ✅ Return full response
   } catch (error) {
     console.error('❌ VerifyOtp API error:', error);
+    throw error;
+  }
+};
+const loginAxios = async (data) => {
+  try {
+    console.log('📡 Calling login API with data:', data);
+    const response = await axios.post('/auth/login', data);
+    console.log('✅ Login API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Login API error:', error);
     throw error;
   }
 };
@@ -661,5 +671,6 @@ export {
   // Auth
   googleLoginAxios,
   verifyOtpAxios,
-  sendOtpAxios
+  sendOtpAxios,
+  loginAxios
 };

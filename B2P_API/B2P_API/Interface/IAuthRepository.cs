@@ -10,7 +10,8 @@ namespace B2P_API.Interface
         Task<User?> GetUserByIdAsync(int userId);
         Task<int> CreateUserAsync(User user);
         Task UpdateUserVerificationAsync(int userId);
-
+        Task<User> GetUserByEmailOrPhoneAsync(string emailOrPhone);
+        Task<bool> VerifyUserPasswordAsync(int userId, string password);
         // JWT Token operations
         Task SaveUserTokenAsync(UserToken userToken);
         Task<UserToken?> GetUserTokenByRefreshTokenAsync(string refreshToken);

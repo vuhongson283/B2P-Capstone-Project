@@ -83,10 +83,15 @@ builder.Services.AddAuthentication(options =>
 // ✅ Add Authorization
 builder.Services.AddAuthorization();
 
-// Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+
+        // ✅ CHỈ DÙNG CÁC OPTIONS CÓ SẴN:
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.WriteIndented = true; // For debugging
+    });
 
 // Swagger với JWT support
 builder.Services.AddEndpointsApiExplorer();

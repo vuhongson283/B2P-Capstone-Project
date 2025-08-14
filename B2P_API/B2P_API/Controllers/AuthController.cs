@@ -256,7 +256,11 @@ namespace B2P_API.Controllers
 
                 Console.WriteLine($"🎯 Google login result: Success = {result.Success}, Status = {result.Status}");
 
+                // IMPORTANT: Return the entire result object, not just result.Data
                 return StatusCode(result.Status, result);
+
+                // WRONG: return StatusCode(result.Status, result.Data);
+
             }
             catch (Exception ex)
             {
@@ -266,6 +270,43 @@ namespace B2P_API.Controllers
                 {
                     Success = false,
                     Message = "Lỗi server trong quá trình Google login",
+                    Status = 500,
+                    Data = null
+                });
+            }
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Dữ liệu đầu vào không hợp lệ",
+                        Status = 400,
+                        Data = ModelState
+                    });
+                }
+
+                Console.WriteLine($"🔑 Login request for: {request.PhoneOrEmail}");
+
+                var result = await _authService.LoginAsync(request);
+
+                Console.WriteLine($"🎯 Login result: Success = {result.Success}, Status = {result.Status}");
+
+                return StatusCode(result.Status, result);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Login controller error: {ex.Message}");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Lỗi server trong quá trình đăng nhập",
                     Status = 500,
                     Data = null
                 });
