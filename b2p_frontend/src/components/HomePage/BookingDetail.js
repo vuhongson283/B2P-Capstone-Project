@@ -28,7 +28,8 @@ export default function BookingDetail({
     const navigate = useNavigate(); // Hook để điều hướng
     const [formData, setFormData] = useState({
         phone: '',
-        email: ''
+        email: '',
+        paymentMethod: 'domestic' // Thêm phương thức thanh toán mặc định
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +39,8 @@ export default function BookingDetail({
         if (open) {
             setFormData({
                 phone: '',
-                email: ''
+                email: '',
+                paymentMethod: 'domestic'
             });
             setErrors({});
         }
@@ -88,6 +90,11 @@ export default function BookingDetail({
             newErrors.email = 'Vui lòng nhập email';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Email không hợp lệ';
+        }
+
+        // Payment method validation
+        if (!formData.paymentMethod) {
+            newErrors.paymentMethod = 'Vui lòng chọn phương thức thanh toán';
         }
 
         setErrors(newErrors);
@@ -157,6 +164,7 @@ export default function BookingDetail({
             console.log('selectedSlots:', selectedSlots);
             console.log('facilityId:', facilityId);
             console.log('categoryId:', categoryId);
+            console.log('paymentMethod:', formData.paymentMethod);
 
             // Chuẩn bị dữ liệu theo đúng thứ tự API yêu cầu
             const apiData = {
@@ -193,6 +201,7 @@ export default function BookingDetail({
                     redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
                     callbackUrl: window.location.origin + "/payment-callback", // URL callback
                     appUser: formData.phone,
+                    paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
                     embedData: {
                         bookingid: bookingId.toString()
                     }
@@ -230,7 +239,6 @@ export default function BookingDetail({
                         fromBooking: true
                     }
                 });
-
 
             } else {
                 throw new Error(result?.message || 'Đặt sân thất bại');
@@ -279,8 +287,10 @@ export default function BookingDetail({
                     </button>
                 </div>
 
-                {/* Booking Summary */}
-                <div className="booking-summary-section">
+                {/* Scrollable Content */}
+                <div className="modal-content">
+                    {/* Booking Summary */}
+                    <div className="booking-summary-section">
                     <h3 className="section-title">
                         <span className="section-icon">📊</span>
                         Thông tin đặt sân
@@ -377,6 +387,63 @@ export default function BookingDetail({
                         <span className="note-icon">ℹ️</span>
                         Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
                     </div>
+                </div>
+
+                {/* Payment Method Section */}
+                <div className="payment-method-section">
+                    <h3 className="section-title">
+                        <span className="section-icon">💳</span>
+                        Phương thức thanh toán
+                    </h3>
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="paymentMethod">
+                            <span className="label-icon">🏦</span>
+                            Cổng thanh toán *
+                        </label>
+                        <select
+                            id="paymentMethod"
+                            className={`form-input form-select ${errors.paymentMethod ? 'error' : ''}`}
+                            value={formData.paymentMethod}
+                            onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                        >
+                            <option value="">-- Chọn cổng thanh toán --</option>
+                            <option value="domestic">
+                                🏧 Cổng thanh toán nội địa (ZaloPay, MoMo, VietQR)
+                            </option>
+                            <option value="international">
+                                🌍 Cổng thanh toán quốc tế (Visa, Mastercard, PayPal)
+                            </option>
+                        </select>
+                        {errors.paymentMethod && (
+                            <span className="error-message">{errors.paymentMethod}</span>
+                        )}
+                    </div>
+
+                    {/* Payment Method Info */}
+                    {formData.paymentMethod && (
+                        <div className="payment-info">
+                            {formData.paymentMethod === 'domestic' ? (
+                                <div className="payment-detail">
+                                    <span className="info-icon">🏧</span>
+                                    <div className="info-content">
+                                        <strong>Cổng thanh toán nội địa</strong>
+                                        <p>Hỗ trợ: ZaloPay, MoMo, VietQR, Internet Banking các ngân hàng Việt Nam</p>
+                                        <p>✅ Phí giao dịch thấp • ✅ Thanh toán nhanh chóng</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="payment-detail">
+                                    <span className="info-icon">🌍</span>
+                                    <div className="info-content">
+                                        <strong>Cổng thanh toán quốc tế</strong>
+                                        <p>Hỗ trợ: Visa, Mastercard, American Express, PayPal</p>
+                                        <p>✅ Thanh toán toàn cầu • ✅ Bảo mật cao</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
                 </div>
 
                 {/* Footer */}

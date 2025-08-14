@@ -161,7 +161,7 @@ namespace B2P_API.Repository
                 .Where(bd =>
                     courtIds.Contains(bd.CourtId) &&
                     bd.CheckInDate.Date == checkInDate.Date &&
-                    bd.StatusId != 7
+                    bd.StatusId != 9
                 )
                 .GroupBy(bd => bd.TimeSlotId)
                 .Select(g => new
