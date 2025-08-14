@@ -449,8 +449,99 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
   return axios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
 };
 
+// ✅ THÊM: getBookingById (thiếu trong file của bạn)
+const getBookingById = (bookingId) => {
+  return axios.get(`Booking/${bookingId}`);
+};
+
 const createBookingForCO = (bookingData) => {
   return axios.post("Booking", bookingData, { validateStatus: () => true });
+};
+
+// ✅ THÊM: createBookingForPlayer (thiếu trong file của bạn)
+const createBookingForPlayer = (bookingData) => {
+  return axios.post("Booking", bookingData, { validateStatus: () => true });
+};
+
+// ✅ THÊM: createPaymentOrder (thiếu trong file của bạn)
+const createPaymentOrder = (paymentData) => {
+  return axios.post("Payment/create-order", paymentData, { validateStatus: () => true });
+};
+
+/* ===============================
+   🔐 AUTH SERVICES (THÊM MỚI)
+================================ */
+// ✅ THÊM: googleLoginAxios
+const googleLoginAxios = async (googleToken) => {
+  try {
+    const response = await axios.post('/auth/google-login', {
+      googleToken: googleToken
+    }, {
+      timeout: 30000, // ✅ 30 seconds cho Google login
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('✅ Google Login API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Google login API error:', error);
+    throw error;
+  }
+};
+const sendOtpAxios = async (data) => {
+  try {
+    console.log('📡 Calling sendOtp API with data:', data);
+    const response = await axios.post('/auth/send-otp', data);
+    console.log('✅ SendOtp API response:', response.data);
+    return response; // ✅ Return full response
+  } catch (error) {
+    console.error('❌ SendOtp API error:', error);
+    throw error;
+  }
+};
+// Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
+const verifyOtpAxios = async (data) => {
+  try {
+    console.log('📡 Calling verifyOtp API with data:', data);
+    const response = await axios.post('/auth/verify-otp', data);
+    console.log('✅ VerifyOtp API response:', response.data);
+    return response; // ✅ Return full response
+  } catch (error) {
+    console.error('❌ VerifyOtp API error:', error);
+    throw error;
+  }
+};
+const loginAxios = async (data) => {
+  try {
+    console.log('📡 Calling login API with data:', data);
+    const response = await axios.post('/auth/login', data);
+    console.log('✅ Login API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Login API error:', error);
+    throw error;
+  }
+};
+
+// ✅ THÊM: getAdminReport (thiếu trong file của bạn)
+const getAdminReport = (
+  startDate,
+  endDate,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
+  return axios.get(`Report/AdminReport`, {
+    params: {
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      pageNumber,
+      pageSize,
+    },
+  });
 };
 
 /* ===============================
@@ -539,6 +630,7 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
+  getAdminReport, // ✅ THÊM MỚI
 
   // Courts
   getAllCourts,
@@ -558,6 +650,15 @@ export {
   // Booking
   getBookingsByFacilityId,
   getBookingsByUserId,
+  getBookingById, // ✅ THÊM MỚI
   createBookingForCO,
+  createBookingForPlayer, // ✅ THÊM MỚI
+  createPaymentOrder, // ✅ THÊM MỚI
   completeBooking,
+
+  // Auth (THÊM MỚI)
+  googleLoginAxios, // ✅ THÊM MỚI
+  verifyOtpAxios, // ✅ THÊM MỚI
+  sendOtpAxios, // ✅ THÊM MỚI
+  loginAxios // ✅ THÊM MỚI
 };
