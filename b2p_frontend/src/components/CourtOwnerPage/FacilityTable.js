@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from '../../context/AuthContext';
 import {
   Table,
   Button,
@@ -49,7 +50,13 @@ const cleanAddressForDisplay = (address) => {
 
 const FacilityTable = () => {
   const { Option } = Select;
-
+  const { userId, isLoggedIn } = useAuth();
+   const getCourtOwnerId = () => {
+    if (isLoggedIn && userId) {
+      return userId;
+    }
+    return 8;
+  };
   // ✅ STATES CHO ĐỊA CHỈ API
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -86,18 +93,7 @@ const FacilityTable = () => {
     total: 0,
   });
 
-  const getCourtOwnerId = () => {
-    const courtOwnerData = localStorage.getItem("courtOwner");
-    if (courtOwnerData) {
-      try {
-        const parsed = JSON.parse(courtOwnerData);
-        return parsed.id;
-      } catch (error) {
-        console.error("Error parsing courtOwner data:", error);
-      }
-    }
-    return 8; // fallback ID
-  };
+  
 
   // ✅ FETCH PROVINCES
   const fetchProvinces = async () => {
@@ -1128,7 +1124,7 @@ const FacilityTable = () => {
               <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1890ff' }}>
                 📍 Địa chỉ đầy đủ:
               </div>
-              
+
               <div style={{ color: '#333' }}>
                 {cleanAddressForDisplay(buildAddress(
                   form.getFieldValue('detailAddress') || '',
