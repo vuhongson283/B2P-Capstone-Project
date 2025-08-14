@@ -9,7 +9,11 @@
         public bool? IsMale { get; set; }
         public DateOnly? Dob { get; set; }
         public string? Address { get; set; }
+        public int RoleId { get; set; }
         public string RoleName { get; set; } = string.Empty;
         public DateTime ? CreateAt { get; set; }
+        public string? AvatarUrl { get; set; }
+        public bool IsGoogleUser { get; set; }
+        public string? GoogleId { get; set; }
     }
 }

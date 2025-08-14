@@ -22,7 +22,6 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<TimeSlot>> CreateNewTimeSlot(CreateTimeslotRequestDTO request)
         {
-            // ✅ Add logging để debug
             Console.WriteLine($"Creating timeslot: {request.StartTime} - {request.EndTime}");
 
             if (request.StartTime >= request.EndTime)
@@ -53,7 +52,6 @@ namespace B2P_API.Services
 
             if (isOverlapping)
             {
-                // ✅ QUAN TRỌNG: RETURN ngay, không tạo data
                 Console.WriteLine("Returning 409 - overlapping detected");
                 return new ApiResponse<TimeSlot>
                 {
@@ -64,7 +62,6 @@ namespace B2P_API.Services
                 };
             }
 
-            // ✅ Chỉ tạo khi không trùng
             Console.WriteLine("Creating new timeslot...");
             var newSlot = new TimeSlot
             {

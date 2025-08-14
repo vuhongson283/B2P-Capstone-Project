@@ -218,5 +218,99 @@ namespace B2P_API.Controllers
                 }
             });
         }
+        /// <summary>
+        /// Đăng nhập bằng Google OAuth - Gửi OTP để xác thực
+        /// </summary>
+        /// <param name="request">Google ID token từ frontend</param>
+        /// <returns>Thông tin OTP session</returns>
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Dữ liệu request không hợp lệ",
+                        Status = 400,
+                        Data = ModelState
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.GoogleToken))
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Google token là bắt buộc",
+                        Status = 400,
+                        Data = null
+                    });
+                }
+
+                Console.WriteLine($"🔑 Nhận Google login request");
+
+                var result = await _authService.GoogleLoginAsync(request);
+
+                Console.WriteLine($"🎯 Google login result: Success = {result.Success}, Status = {result.Status}");
+
+                // IMPORTANT: Return the entire result object, not just result.Data
+                return StatusCode(result.Status, result);
+
+                // WRONG: return StatusCode(result.Status, result.Data);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Lỗi Google login controller: {ex.Message}");
+
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Lỗi server trong quá trình Google login",
+                    Status = 500,
+                    Data = null
+                });
+            }
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Dữ liệu đầu vào không hợp lệ",
+                        Status = 400,
+                        Data = ModelState
+                    });
+                }
+
+                Console.WriteLine($"🔑 Login request for: {request.PhoneOrEmail}");
+
+                var result = await _authService.LoginAsync(request);
+
+                Console.WriteLine($"🎯 Login result: Success = {result.Success}, Status = {result.Status}");
+
+                return StatusCode(result.Status, result);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Login controller error: {ex.Message}");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Lỗi server trong quá trình đăng nhập",
+                    Status = 500,
+                    Data = null
+                });
+            }
+        }
     }
 }
