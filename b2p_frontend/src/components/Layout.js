@@ -4,6 +4,7 @@ import App from "../App";
 import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import FacilityDetails from "./HomePage/FacilityDetails";
+import BookingProcess from "./HomePage/BookingProcess";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
 import CourtOwner from "./CourtOwnerPage/CourtOwner";
@@ -44,6 +45,12 @@ const Layout = (props) => {
           <Route
             path="facility-details/:facilityId"
             element={<FacilityDetails />}
+          />
+          <Route
+            path="/bookingprocess"
+            element={
+              <BookingProcess />
+            }
           />
         </Route>
 

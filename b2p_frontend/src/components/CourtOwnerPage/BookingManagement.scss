@@ -1336,7 +1336,9 @@
         opacity: 1;
     }
 }
-
+.ant-message {
+    display: none !important;
+}
 /* Selected Slots Summary */
 .selected-summary {
     margin-top: 20px;
@@ -1647,7 +1649,19 @@
                 }
             }
         }
+.notification-booking-detail .detail-item {
+    margin-bottom: 8px;
+}
 
+
+.notification-booking-detail .ant-statistic-title {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.notification-booking-detail .ant-card {
+    margin-bottom: 8px;
+}
         .time-slots-grid {
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 10px;
