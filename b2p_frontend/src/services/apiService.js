@@ -447,8 +447,24 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
     },
   });
 };
+
+const getBookingById = (bookingId) => {
+  return axios.get(`Booking/${bookingId}`);
+};  
 const createBookingForCO = (bookingData) => {
-  return axios.post("Booking", bookingData, {  // Sửa thành "api/Booking"
+  return axios.post("Booking", bookingData, {  
+    validateStatus: () => true,
+  });
+};
+
+const createBookingForPlayer = (bookingData) => {
+  return axios.post("Booking", bookingData, {
+    validateStatus: () => true,
+  });
+};
+
+const createPaymentOrder = (paymentData) => {
+  return axios.post("Payment/create-order", paymentData, {
     validateStatus: () => true,
   });
 };
@@ -563,4 +579,7 @@ export {
   deleteCourt,
   getCourtDetail,
   registerCourtOwner,
+  createBookingForPlayer,
+  createPaymentOrder,
+  getBookingById,
 };

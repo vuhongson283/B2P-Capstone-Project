@@ -25,11 +25,11 @@ export default function BookingModal({
   timeSlots = [], 
   selectedDate, 
   facilityData,
-  selectedCategory 
+  selectedCategory,
+  onProceedToDetail // New prop để chuyển sang BookingDetail
 }) {
   const [selectedSlots, setSelectedSlots] = useState({});
   const [quantities, setQuantities] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset state when modal opens/closes or timeSlots change
   useEffect(() => {
@@ -144,31 +144,36 @@ export default function BookingModal({
     return category ? category.categoryName : '';
   };
 
-  // Handle booking submission
-  const handleBooking = async () => {
-    setIsSubmitting(true);
-    try {
-      // TODO: Implement booking API call
-      console.log('Booking data:', {
+  // Handle proceed to booking detail
+  const handleProceedToDetail = () => {
+    if (selectedSlotsCount === 0) {
+      alert('Vui lòng chọn ít nhất một khung giờ!');
+      return;
+    }
+
+    // Tạo danh sách ID của các slot đã chọn
+    const listSlotId = Object.keys(selectedSlots)
+      .filter(slotId => selectedSlots[slotId])
+      .map(slotId => parseInt(slotId));
+
+    console.log('Selected slots:', selectedSlots);
+    console.log('List slot IDs:', listSlotId);
+
+    // Đóng modal hiện tại và chuyển sang BookingDetail
+    onClose();
+    
+    // Gọi callback để mở BookingDetail với dữ liệu cần thiết
+    if (onProceedToDetail) {
+      onProceedToDetail({
         facilityId: facilityData?.facilityId,
         categoryId: selectedCategory,
-        date: selectedDate,
-        slots: selectedSlots,
-        quantities: quantities,
-        totalPrice
+        listSlotId: listSlotId, // Thêm danh sách ID slot đã chọn
+        totalPrice,
+        selectedSlots,
+        quantities,
+        selectedDate,
+        facilityData
       });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Show success message or redirect
-      alert('Đặt sân thành công!');
-      onClose();
-    } catch (error) {
-      console.error('Booking error:', error);
-      alert('Có lỗi xảy ra khi đặt sân!');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -302,59 +307,39 @@ export default function BookingModal({
             </div>
           )}
         </div>
-        
+
         {/* Footer */}
         <div className="modal-footer">
           <div className="booking-summary">
-            <div className="summary-row">
-              <span className="summary-label">
-                <span className="summary-icon">🕐</span>
-                Số khung giờ: 
-              </span>
-              <span className="summary-value">{selectedSlotsCount}</span>
-            </div>
-            <div className="summary-row">
-              <span className="summary-label">
-                <span className="summary-icon">🏟️</span>
-                Tổng số sân: 
-              </span>
-              <span className="summary-value">{totalCourts}</span>
-            </div>
-            <div className="summary-row total">
-              <span className="summary-label">
-                <span className="summary-icon">💰</span>
-                Tổng tiền: 
-              </span>
-              <span className="summary-value total-price">
-                {formatCurrency(totalPrice)}
-              </span>
+            <div className="summary-info">
+              <div className="summary-item">
+                <span className="summary-label">Khung giờ đã chọn:</span>
+                <span className="summary-value">{selectedSlotsCount}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Tổng số sân:</span>
+                <span className="summary-value">{totalCourts}</span>
+              </div>
+              <div className="summary-total">
+                <span className="total-label">Tổng tiền:</span>
+                <span className="total-value">{formatCurrency(totalPrice)}</span>
+              </div>
             </div>
           </div>
           
-          <div className="action-buttons">
+          <div className="footer-actions">
             <button 
-              className="btn-cancel"
+              className="btn btn-secondary" 
               onClick={onClose}
-              disabled={isSubmitting}
             >
-              Hủy bỏ
+              Hủy
             </button>
             <button 
-              className="btn-booking"
-              onClick={handleBooking}
-              disabled={selectedSlotsCount === 0 || isSubmitting}
+              className={`btn btn-primary ${selectedSlotsCount === 0 ? 'disabled' : ''}`}
+              onClick={handleProceedToDetail}
+              disabled={selectedSlotsCount === 0}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <span className="btn-icon">⚽</span>
-                  Đặt sân ngay
-                </>
-              )}
+              Tiếp tục đặt sân
             </button>
           </div>
         </div>

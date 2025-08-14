@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using B2P_API.Utils;
+using B2P_API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,9 +30,15 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins(
+                   "http://localhost:3000",     // React dev
+                   "https://localhost:3000",    // React dev HTTPS
+                   "http://localhost:3001",     // Nếu có port khác
+                   "https://yourdomain.com"     // Production domain
+               )
                .AllowAnyMethod()
-               .AllowAnyHeader();
+               .AllowAnyHeader()
+               .AllowCredentials();
     });
 });
 
@@ -52,6 +59,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+
+builder.Services.AddSignalR();
 
 // Đăng ký các Repository & Service
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -116,14 +125,28 @@ builder.Services.AddScoped<RatingRepository>();
 builder.Services.AddScoped<IRatingRepository, RatingRepository>();
 builder.Services.AddScoped<RatingService>();
 
-builder.Services.AddScoped<PaymentRepository>();
-//builder.Services.AddScoped<IRatingRepository, RatingRepository>();
-builder.Services.AddScoped<PaymentService>();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<VNPayService>();
 
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
 
-var app = builder.Build();
 
+// Configure ZaloPay settings
+builder.Services.Configure<ZaloPayConfig>(
+    builder.Configuration.GetSection("ZaloPay"));
+
+// Register HttpClient for ZaloPay với custom configuration
+builder.Services.AddHttpClient<ZaloPayService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "ZaloPayAPI/1.0");
+});
+
+// Register ZaloPay service
+builder.Services.AddScoped<ZaloPayService>();
+
+var app = builder.Build();
+app.MapHub<BookingHub>("/bookinghub");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -132,6 +155,30 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+// Add security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+
+// Add request logging middleware (optional - for debugging)
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
+    await next();
+    logger.LogInformation($"Response: {context.Response.StatusCode}");
+});
+// Health check endpoint
+app.MapGet("/health", () => new
+{
+    service = "B2P API with ZaloPay",
+    status = "running",
+    timestamp = DateTimeOffset.UtcNow
+});
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
