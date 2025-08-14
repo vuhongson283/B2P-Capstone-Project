@@ -1,0 +1,10 @@
+diff a/b2p_frontend/src/components/CourtOwnerPage/BookingManagement.js b/b2p_frontend/src/components/CourtOwnerPage/BookingManagement.js	(rejected hunks)
+@@ -114,8 +114,6 @@
+         switch (statusLower) {
+             case 'paid':
+                 return 'paid';
+-            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+-                return 'Chưa thanh toán';
+             case 'completed':
+                 return 'completed';
+             case 'cancelled':

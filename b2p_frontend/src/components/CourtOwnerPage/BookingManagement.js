@@ -114,6 +114,8 @@ const BookingManagement = () => {
         switch (statusLower) {
             case 'paid':
                 return 'paid';
+            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+                return 'Chưa thanh toán';
             case 'completed':
                 return 'completed';
             case 'cancelled':
