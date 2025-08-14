@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from 'react-router-dom';
 import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
 import { useAuth } from "../../context/AuthContext";
 
 const CourtOwnerSideBar = ({
@@ -15,10 +16,26 @@ const CourtOwnerSideBar = ({
 }) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [facilities, setFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // ✅ Use real user data from AuthContext
   const { user, isLoggedIn, logout } = useAuth();
+
+  // ✅ Get real Court Owner ID from AuthContext
+  const getCourtOwnerId = useCallback(() => {
+    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'user:', user);
+    
+    if (isLoggedIn && user) {
+      const userId = user.userId || user.id;
+      console.log('✅ Found court owner ID:', userId);
+      return userId;
+    }
+    
+    console.warn('⚠️ Court owner not logged in or user data not available');
+    return null;
+  }, [isLoggedIn, user]);
 
   // ✅ Real user info from AuthContext
   const userInfo = {
@@ -30,51 +47,50 @@ const CourtOwnerSideBar = ({
     userId: user?.userId || user?.id
   };
 
-  // Mock facilities data - replace with real data
-  const [facilities, setFacilities] = useState([
-    {
-      id: 7,
-      name: "Cơ sở Cầu Giấy",
-      location: "123 Lê Lợi, Q.1",
-      contact: "0123456789",
-      statusId: 1
-    },
-    {
-      id: 8,
-      name: "Cơ sở Quận 1",
-      location: "234 Trần Hưng Đạo, Q.5",
-      contact: "0123456790",
-      statusId: 1
-    },
-    {
-      id: 9,
-      name: "Cơ sở Quận 7",
-      location: "345 Nguyễn Huệ, Q.1",
-      contact: "0123456791",
-      statusId: 2
-    },
-    {
-      id: 10,
-      name: "Cơ sở Thủ Đức",
-      location: "456 Cách Mạng Tháng 8, Q.3",
-      contact: "0123456792",
-      statusId: 1
-    },
-    {
-      id: 11,
-      name: "Cơ sở Hòa Lạc",
-      location: "567 Pasteur, Q.3",
-      contact: "0123456793",
-      statusId: 1
-    },
-    {
-      id: 12,
-      name: "Cơ sở Đà Nẵng",
-      location: "678 Hai Bà Trưng, Q.1",
-      contact: "0123456794",
-      statusId: 2
-    },
-  ]);
+  // ✅ FIXED: Fetch facilities with real user ID
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        setLoading(true);
+        const courtOwnerId = getCourtOwnerId();
+        
+        if (!courtOwnerId) {
+          console.error('❌ No court owner ID available');
+          message.error("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
+          setFacilities([]);
+          return;
+        }
+
+        console.log('📡 Fetching facilities for court owner ID:', courtOwnerId);
+        const response = await getFacilitiesByCourtOwnerId(courtOwnerId);
+        
+        console.log('📊 Facilities API response:', response);
+        
+        if (response.data && response.data.items) {
+          console.log('✅ Found facilities:', response.data.items.length);
+          setFacilities(response.data.items);
+        } else {
+          console.log('⚠️ No facilities found in response');
+          setFacilities([]);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching facilities:", error);
+        message.error("Không thể tải danh sách cơ sở: " + (error.message || 'Unknown error'));
+        setFacilities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch when user data is available
+    if (user && isLoggedIn) {
+      fetchFacilities();
+    } else {
+      console.log('⏳ Waiting for user authentication...');
+      setLoading(false);
+      setFacilities([]);
+    }
+  }, [user, isLoggedIn, getCourtOwnerId]);
 
   // Menu items configuration
   const menuItems = [
@@ -127,15 +143,26 @@ const CourtOwnerSideBar = ({
     }));
   };
 
-  // Handle menu item click
+  // ✅ FIXED: Handle menu item click with better facility checking
   const handleMenuClick = (menuId, path, item) => {
     setActiveMenu(menuId);
 
     if (menuId === "time-slots") {
+      console.log('🕐 Time slots clicked, facilities:', facilities);
+      
+      if (loading) {
+        message.info('Đang tải danh sách cơ sở...');
+        return;
+      }
+      
       if (facilities.length > 0) {
-        navigate(`/court-owner/facility/time-slots/${facilities[0].id}`);
+        const firstFacility = facilities[0];
+        const facilityId = firstFacility.facilityId || firstFacility.id;
+        console.log('✅ Navigating to time slots for facility:', facilityId);
+        navigate(`/court-owner/facility/time-slots/${facilityId}`);
       } else {
-        message.warning('Chưa có cơ sở nào để quản lý khung giờ');
+        console.log('⚠️ No facilities available for time slots');
+        message.warning('Bạn chưa có cơ sở nào. Vui lòng tạo cơ sở trước khi quản lý khung giờ.');
         navigate("/court-owner/facility/general");
       }
     } else if (path) {
@@ -148,23 +175,23 @@ const CourtOwnerSideBar = ({
   };
 
   // Handle logout
- const handleLogout = () => {
-  try {
-    logout(); // ✅ Sync function, không cần await
-    message.success('Đăng xuất thành công!');
-    
-  } catch (error) {
-    console.error('Logout error:', error);
-    message.error('Lỗi khi đăng xuất!');
-    localStorage.clear(); // Xóa toàn bộ localStorage
-  } finally {
-    navigate("/login");
-    
-    if (isMobile && onClose) {
-      onClose();
+  const handleLogout = () => {
+    try {
+      logout(); // ✅ Sync function, không cần await
+      message.success('Đăng xuất thành công!');
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Lỗi khi đăng xuất!');
+      localStorage.clear(); // Xóa toàn bộ localStorage
+    } finally {
+      navigate("/login");
+      
+      if (isMobile && onClose) {
+        onClose();
+      }
     }
-  }
-};
+  };
 
   // Generate avatar initials
   const getAvatarInitials = (fullName) => {
@@ -302,24 +329,50 @@ const CourtOwnerSideBar = ({
 
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
 
-  // Render dynamic submenu
+  // ✅ FIXED: Render dynamic submenu with better error handling
   const renderDynamicSubmenu = () => {
-    return facilities.map((facility) => (
-      <div
-        key={`facility-${facility.id}`}
-        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""}`}
-        onClick={() => {
-          handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
-          setSelectedFacilityId(facility.id);
-        }}
-      >
-        <i className="fas fa-map-marker-alt"></i>
-        <div className="facility-info">
-          <span className="facility-name">{facility.name}</span>
-          <span className="facility-location">{facility.location}</span>
+    if (loading) {
+      return <div className="submenu-loading">Đang tải...</div>;
+    }
+
+    if (!isLoggedIn) {
+      return <div className="submenu-empty">Vui lòng đăng nhập</div>;
+    }
+
+    if (facilities.length === 0) {
+      return (
+        <div className="submenu-empty">
+          <div>Không có cơ sở nào</div>
+          <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>
+            Tạo cơ sở trong "Thông tin chung"
+          </div>
         </div>
-      </div>
-    ));
+      );
+    }
+
+    return facilities.map((facility) => {
+      const facilityId = facility.facilityId || facility.id;
+      const facilityName = facility.facilityName || facility.name;
+      
+      return (
+        <div
+          key={`facility-${facilityId}`}
+          className={`submenu-item ${activeMenu === `facility-${facilityId}` ? "active" : ""}`}
+          onClick={() => {
+            handleMenuClick(
+              `facility-${facilityId}`,
+              `/court-owner/facilities/${facilityId}/courts`
+            );
+            setSelectedFacilityId(facilityId);
+          }}
+        >
+          <div className="submenu-icon-wrapper">
+            <i className="fas fa-map-marker-alt"></i>
+          </div>
+          <span title={facilityName}>{facilityName}</span>
+        </div>
+      );
+    });
   };
 
   // Generate sidebar classes
@@ -336,6 +389,14 @@ const CourtOwnerSideBar = ({
 
     return classes.join(" ");
   };
+
+  // ✅ DEBUG: Log current state
+  console.log('🔍 CourtOwnerSideBar Debug:', {
+    isLoggedIn,
+    user: user ? { id: user.id || user.userId, name: user.name || user.fullName } : null,
+    facilitiesCount: facilities.length,
+    loading
+  });
 
   return (
     <div className={getSidebarClasses()}>

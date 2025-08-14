@@ -57,16 +57,19 @@ const FacilityTable = () => {
   // ✅ FIX: Tạo hàm getCourtOwnerId không dependency vào state
   const getCourtOwnerId = useCallback(() => {
     console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
+
     if (isLoggedIn && userId) {
       return userId;
     }
+
+    // ✅ Không có fallback - return null khi chưa đăng nhập
+    console.warn('⚠️ Court owner not logged in');
     return null;
   }, [isLoggedIn, userId]);
-
   // ✅ STATES CHO ĐỊA CHỈ API
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
-  
+
   // State cho modal thêm mới
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -75,7 +78,7 @@ const FacilityTable = () => {
   const [editSelectedProvince, setEditSelectedProvince] = useState("");
   const [editSelectedDistrict, setEditSelectedDistrict] = useState("");
   const [forceUpdate, setForceUpdate] = useState(0);
-  
+
   // ... existing states ...
   const [facilityImages, setFacilityImages] = useState([]);
   const [uploadFileList, setUploadFileList] = useState([]);
@@ -103,7 +106,7 @@ const FacilityTable = () => {
   const fetchFacilities = useCallback(async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
     try {
       setLoading(true);
-      
+
       // ✅ FIX: Kiểm tra auth loading trước
       if (authLoading) {
         console.log('⏳ Auth is still loading, skipping fetch...');
@@ -112,7 +115,7 @@ const FacilityTable = () => {
 
       // ✅ FIX: Lấy courtOwnerId từ callback
       const courtOwnerId = getCourtOwnerId();
-      
+
       if (!courtOwnerId) {
         console.error('❌ No valid court owner ID, user not authenticated');
         message.error('Người dùng chưa đăng nhập hoặc không có quyền truy cập');
@@ -171,7 +174,7 @@ const FacilityTable = () => {
           pageSize: itemsPerPage,
           total: totalItems,
         }));
-        
+
         console.log('✅ Facilities loaded successfully:', mappedFacilities.length, 'items');
       } else {
         console.log('❌ No facilities data or failed response');
@@ -187,11 +190,11 @@ const FacilityTable = () => {
 
   // ✅ FIX: useEffect chính để fetch dữ liệu khi auth sẵn sàng
   useEffect(() => {
-    console.log('🔄 Auth state changed:', { 
-      authLoading, 
-      isLoggedIn, 
-      userId, 
-      hasInitialized 
+    console.log('🔄 Auth state changed:', {
+      authLoading,
+      isLoggedIn,
+      userId,
+      hasInitialized
     });
 
     // Chỉ fetch khi:

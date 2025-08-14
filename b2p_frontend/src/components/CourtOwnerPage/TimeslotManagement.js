@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { getFacilitiesByCourtOwnerId, getTimeslotsByFacilityId, createTimeslot, deleteTimeslot, updateTimeslot } from '../../services/apiService';
 import {
   Table,
@@ -49,6 +50,7 @@ const STATUS_CONFIG = {
 };
 
 const TimeslotManagement = () => {
+  const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
   // States
   const [facilities, setFacilities] = useState([]);
   const [selectedFacility, setSelectedFacility] = useState(null);
@@ -71,18 +73,17 @@ const TimeslotManagement = () => {
   });
 
   // ✅ Get Court Owner ID from localStorage
-  const getCourtOwnerId = () => {
-    const courtOwnerData = localStorage.getItem("courtOwner");
-    if (courtOwnerData) {
-      try {
-        const parsed = JSON.parse(courtOwnerData);
-        return parsed.id;
-      } catch (error) {
-        console.error("Error parsing courtOwner data:", error);
-      }
+  const getCourtOwnerId = useCallback(() => {
+    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
+
+    if (isLoggedIn && userId) {
+      return userId;
     }
-    return 8; // fallback ID
-  };
+
+    // ✅ Không có fallback - return null khi chưa đăng nhập
+    console.warn('⚠️ Court owner not logged in');
+    return null;
+  }, [isLoggedIn, userId]);
 
   // Load facilities on component mount
   useEffect(() => {
@@ -346,7 +347,7 @@ const TimeslotManagement = () => {
       const response = await updateTimeslot(timeSlotId, updateData);
       console.log('✅ Update response:', response);
 
-      if ( response.status === 200) {
+      if (response.status === 200) {
         const statusText = newStatusId === 1 ? 'Kích hoạt' : 'Tạm dừng';
         message.success(`✅ ${statusText} khung giờ thành công!`);
 

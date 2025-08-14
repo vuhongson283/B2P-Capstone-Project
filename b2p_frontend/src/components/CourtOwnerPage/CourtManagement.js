@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getAllCourts, addNewCourt, updateCourt, deleteCourt, getCourtDetail } from '../../services/apiService';
+import { 
+  getAllCourts, 
+  addNewCourt, 
+  updateCourt, 
+  deleteCourt, 
+  getCourtDetail,
+  getAllCourtCategories 
+} from '../../services/apiService';
 import { Form, InputGroup, Button, Modal } from 'react-bootstrap';
 import './CourtManagement.scss';
 
@@ -12,7 +19,7 @@ const CourtManagement = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     pageNumber: 1,
-    pageSize: 10,
+    pageSize: 5,
     totalItems: 0,
     totalPages: 0
   });
@@ -20,18 +27,8 @@ const CourtManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
-  const [categories] = useState([
-    { id: 1, name: 'Sân bóng đá mini' },
-    { id: 2, name: 'Sân bóng rổ' },
-    { id: 3, name: 'Sân cầu lông' },
-    { id: 4, name: 'Sân tennis' },
-    { id: 5, name: 'Sân bóng chuyền' },
-    { id: 6, name: 'Sân futsal' },
-    { id: 7, name: 'Sân bóng bàn' },
-    { id: 8, name: 'Sân bóng ném' },
-    { id: 9, name: 'Sân đa năng' },
-    { id: 10, name: 'Sân tập gym' }
-  ]);
+  const [categories, setCategories] = useState([]); // Thay đổi từ const thành let
+  const [categoryLoading, setCategoryLoading] = useState(true);
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -218,9 +215,40 @@ const CourtManagement = () => {
     }
   };
 
+  // Thêm hàm xử lý thay đổi pageSize
+  const handlePageSizeChange = (e) => {
+    const newPageSize = parseInt(e.target.value);
+    setPagination(prev => ({
+      ...prev,
+      pageSize: newPageSize,
+      pageNumber: 1 // Reset về trang 1 khi đổi pageSize
+    }));
+  };
+
+  // Thêm useEffect để fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getAllCourtCategories('', 1, 100); // Lấy tất cả categories
+        if (response.data && response.data.items) {
+          setCategories(response.data.items.map(cat => ({
+            categoryId: cat.categoryId,
+            categoryName: cat.categoryName
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoryLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     fetchCourts();
-  }, [facilityId, pagination.pageNumber, selectedCategory, selectedStatus]);
+  }, [facilityId, pagination.pageNumber, pagination.pageSize, selectedCategory, selectedStatus]);
 
   if (loading) {
     return (
@@ -271,11 +299,12 @@ const CourtManagement = () => {
           <Form.Select 
             value={selectedCategory || ''} 
             onChange={(e) => setSelectedCategory(e.target.value || null)}
+            disabled={categoryLoading}
           >
             <option value="">Tất cả loại sân</option>
             {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
+              <option key={category.categoryId} value={category.categoryId}>
+                {category.categoryName}
               </option>
             ))}
           </Form.Select>
@@ -364,49 +393,65 @@ const CourtManagement = () => {
               </tbody>
             </table>
 
-            {pagination.totalPages > 1 && (
-              <div className="pagination mt-3">
-                <Button
-                  variant="outline-primary"
-                  disabled={pagination.pageNumber === 1}
-                  onClick={() => handlePageChange(pagination.pageNumber - 1)}
-                >
-                  <i className="fas fa-chevron-left"></i> Trước
-                </Button>
-                
-                <div className="page-numbers">
-                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (pagination.totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (pagination.pageNumber <= 3) {
-                      pageNum = i + 1;
-                    } else if (pagination.pageNumber >= pagination.totalPages - 2) {
-                      pageNum = pagination.totalPages - 4 + i;
-                    } else {
-                      pageNum = pagination.pageNumber - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={pagination.pageNumber === pageNum ? 'primary' : 'outline-primary'}
-                        onClick={() => handlePageChange(pageNum)}
-                        className="mx-1"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+            {courts.length > 0 && (
+              <div className="pagination-container">
+                <div className="pagination">
+                  <Button
+                    variant="outline-primary"
+                    className="btn-prev"
+                    disabled={pagination.pageNumber === 1}
+                    onClick={() => handlePageChange(pagination.pageNumber - 1)}
+                  >
+                    <i className="fas fa-chevron-left me-1"></i> Trước
+                  </Button>
+                  
+                  <div className="page-numbers">
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.pageNumber <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.pageNumber >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.pageNumber - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={pagination.pageNumber === pageNum ? 'primary' : 'outline-primary'}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline-primary"
+                    className="btn-next"
+                    disabled={pagination.pageNumber >= pagination.totalPages}
+                    onClick={() => handlePageChange(pagination.pageNumber + 1)}
+                  >
+                    Sau <i className="fas fa-chevron-right ms-1"></i>
+                  </Button>
                 </div>
-                
-                <Button
-                  variant="outline-primary"
-                  disabled={pagination.pageNumber >= pagination.totalPages}
-                  onClick={() => handlePageChange(pagination.pageNumber + 1)}
-                >
-                  Sau <i className="fas fa-chevron-right"></i>
-                </Button>
+
+                <div className="page-size-selector">
+                  <span>Hiển thị:</span>
+                  <Form.Select 
+                    value={pagination.pageSize} 
+                    onChange={handlePageSizeChange}
+                    className="page-size-select"
+                  >
+                    <option value="3">3 / page</option>
+                    <option value="5">5 / page</option>
+                    <option value="10">10 / page</option>
+                  </Form.Select>
+                </div>
               </div>
             )}
           </>
@@ -448,11 +493,12 @@ const CourtManagement = () => {
                 value={newCourt.categoryId}
                 onChange={handleInputChange}
                 required
+                disabled={categoryLoading}
               >
                 <option value="">Chọn thể loại sân</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.categoryName}
                   </option>
                 ))}
               </Form.Select>
@@ -551,11 +597,12 @@ const CourtManagement = () => {
                 value={editCourt.categoryId}
                 onChange={handleEditInputChange}
                 required
+                disabled={categoryLoading}
               >
                 <option value="">Chọn thể loại sân</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.categoryName}
                   </option>
                 ))}
               </Form.Select>
@@ -601,32 +648,6 @@ const CourtManagement = () => {
         <Modal.Body className="detail-body">
           {courtDetail && (
             <div className="court-detail">
-              <div className="detail-item">
-                <label><i className="fas fa-hashtag"></i>ID Sân</label>
-                <span>{courtDetail.courtId}</span>
-              </div>
-              <div className="detail-item">
-                <label><i className="fas fa-signature"></i>Tên sân</label>
-                <span>{courtDetail.courtName}</span>
-              </div>
-              <div className="detail-item">
-                <label><i className="fas fa-money-bill"></i>Giá/Giờ</label>
-                <span className="price">{courtDetail.pricePerHour?.toLocaleString('vi-VN')} VNĐ</span>
-              </div>
-              <div className="detail-item">
-                <label><i className="fas fa-toggle-on"></i>Trạng thái</label>
-                <span className={`status ${courtDetail.statusName === 'Active' ? 'active' : 'inactive'}`}>
-                  {courtDetail.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
-                </span>
-              </div>
-              <div className="detail-item">
-                <label><i className="fas fa-th-large"></i>Loại sân</label>
-                <span>{courtDetail.categoryName}</span>
-              </div>
-              <div className="detail-item">
-                <label><i className="fas fa-building"></i>Cơ sở</label>
-                <span>{courtDetail.facilityName}</span>
-              </div>
               <div className="detail-item">
                 <label><i className="fas fa-map-marker-alt"></i>Địa chỉ</label>
                 <span>{courtDetail.location}</span>
