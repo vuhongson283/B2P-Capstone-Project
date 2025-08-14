@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   Table,
@@ -51,6 +52,7 @@ const cleanAddressForDisplay = (address) => {
 };
 
 const FacilityTable = () => {
+  const navigate = useNavigate();
   const { Option } = Select;
   const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
 
@@ -839,6 +841,8 @@ const FacilityTable = () => {
 
   const handleManageCourts = (record) => {
     console.log("Manage courts for facility:", record);
+    const facilityId = record.facilityId || record.id; // Tùy thuộc vào tên field
+    navigate(`/court-owner/facilities/${facilityId}/courts`);
   };
 
   const handleDelete = async (record) => {
