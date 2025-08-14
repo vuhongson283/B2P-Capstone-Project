@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
-import { getFacilityDetailsById, getAvailableSlots } from "../../services/apiService";
+import BookingDetail from "./BookingDetail.js"; // Import BookingDetail modal mới
+import { getFacilityDetailsById, getAvailableSlots, createBookingForPlayer, createPaymentOrder } from "../../services/apiService";
 import { parseInt } from 'lodash';
 
 // Constants
@@ -441,10 +442,6 @@ if (!open) return null;
 
 // Constants
 const TODAY = new Date().toISOString().slice(0, 10);
-
-
-
-
 
 // Header Component
 const FacilityHeader = ({ facilityData }) => (
@@ -993,6 +990,8 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
 const FacilityDetails = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [bookingDetailOpen, setBookingDetailOpen] = useState(false); // State cho BookingDetail modal
+  const [bookingDetailData, setBookingDetailData] = useState(null); // Data cho BookingDetail
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState(TODAY_DATE);
@@ -1077,6 +1076,18 @@ const FacilityDetails = () => {
     setTimeSlots([]);
   };
 
+  // Handle proceed to booking detail - callback từ BookingModal
+  const handleProceedToBookingDetail = (data) => {
+    setBookingDetailData(data);
+    setBookingDetailOpen(true);
+  };
+
+  // Handle close booking detail modal
+  const handleCloseBookingDetail = () => {
+    setBookingDetailOpen(false);
+    setBookingDetailData(null);
+  };
+
   if (loading) {
     return (
       <div className="facility-page">
@@ -1128,6 +1139,7 @@ const FacilityDetails = () => {
         onOpenReviewsModal={() => setReviewsModalOpen(true)}
       />
       
+      {/* BookingModal với callback để chuyển sang BookingDetail */}
       {modalOpen && (
         <BookingModal 
           open={modalOpen} 
@@ -1136,15 +1148,35 @@ const FacilityDetails = () => {
           selectedDate={selectedDate}
           facilityData={facilityData}
           selectedCategory={selectedCategory}
+          onProceedToDetail={handleProceedToBookingDetail} // Pass callback
         />
       )}
 
+      {/* ReviewsModal */}
       {reviewsModalOpen && (
         <ReviewsModal 
           open={reviewsModalOpen} 
           onClose={() => setReviewsModalOpen(false)}
           ratings={facilityData?.ratings}
           facilityName={facilityData?.facilityName}
+        />
+      )}
+
+      {/* BookingDetail Modal mới */}
+      {bookingDetailOpen && bookingDetailData && (
+        <BookingDetail
+          open={bookingDetailOpen}
+          onClose={handleCloseBookingDetail}
+          facilityId={bookingDetailData.facilityId}
+          categoryId={bookingDetailData.categoryId}
+          totalPrice={bookingDetailData.totalPrice}
+          facilityData={bookingDetailData.facilityData}
+          selectedDate={bookingDetailData.selectedDate}
+          selectedSlots={bookingDetailData.selectedSlots}
+          quantities={bookingDetailData.quantities}
+          listSlotId={bookingDetailData?.listSlotId} 
+          createBooking={createBookingForPlayer}
+          createPayment={createPaymentOrder}
         />
       )}
     </div>

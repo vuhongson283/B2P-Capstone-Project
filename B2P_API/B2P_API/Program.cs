@@ -20,31 +20,35 @@ var connectionString = builder.Configuration.GetConnectionString("MyCnn");
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
-	options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString));
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// **THÊM SIGNALR**
+// THÊM SIGNALR
 builder.Services.AddSignalR();
 
-// **FIX CORS cho SignalR - Đây là phần quan trọng**
+// FIX CORS cho SignalR - Dùng policy cụ thể
 builder.Services.AddCors(options =>
 {
-	options.AddPolicy("SignalRPolicy", policy =>
-	{
-		policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
-			  .AllowAnyMethod()
-			  .AllowAnyHeader()
-			  .AllowCredentials()
-			  .SetIsOriginAllowed(origin => true); // Cho phép tất cả origins khi dev
-	});
+    options.AddPolicy("SignalRPolicy", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:3001",
+                "https://yourdomain.com")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin => true); // Cho phép mọi origin (chỉ khi DEV)
+    });
 });
 
 // Cấu hình JSON để tránh vòng lặp
 builder.Services.AddControllers()
-	.AddJsonOptions(x =>
-		x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+    .AddJsonOptions(x =>
+        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -56,10 +60,10 @@ builder.Services.AddMemoryCache();
 // Suppress automatic 400 responses
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-	options.SuppressModelStateInvalidFilter = true;
+    options.SuppressModelStateInvalidFilter = true;
 });
 
-// Đăng ký các Repository & Service (giữ nguyên tất cả...)
+// Đăng ký các Repository & Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
@@ -116,13 +120,23 @@ builder.Services.AddScoped<BankAccountService>();
 builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
 
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
-ExcelPackage.License.SetNonCommercialPersonal("B2P");
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<VNPayService>();
+
 builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSSettings"));
+builder.Services.Configure<ZaloPayConfig>(builder.Configuration.GetSection("ZaloPay"));
+builder.Services.AddHttpClient<ZaloPayService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Add("User-Agent", "ZaloPayAPI/1.0");
+});
+builder.Services.AddScoped<ZaloPayService>();
 
 builder.Services.AddScoped<IBookingNotificationService, BookingNotificationService>();
 
@@ -130,20 +144,42 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-	app.UseSwagger();
-	app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("SignalRPolicy"); // Áp dụng policy cụ thể
 
-// **SỬA THỨ TỰ VÀ SỬ DỤNG POLICY CỤ THỂ**
-app.UseCors("SignalRPolicy"); // Sử dụng policy cụ thể thay vì default
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+
+// Request logging middleware
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
+    await next();
+    logger.LogInformation($"Response: {context.Response.StatusCode}");
+});
+
+// Health check endpoint
+app.MapGet("/health", () => new
+{
+    service = "B2P API with ZaloPay",
+    status = "running",
+    timestamp = DateTimeOffset.UtcNow
+});
 
 app.UseAuthorization();
 
-// **MAP SIGNALR HUB**
-app.MapHub<BookingHub>("/bookingHub");
-
 app.MapControllers();
+app.MapHub<BookingHub>("/bookinghub");
 
 app.Run();
