@@ -15,6 +15,8 @@ const CourtOwnerSideBar = ({
 }) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [facilities, setFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
   // ✅ Use real user data from AuthContext

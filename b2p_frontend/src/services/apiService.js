@@ -821,5 +821,8 @@ export {
   googleLoginAxios,
   verifyOtpAxios,
   sendOtpAxios,
-  loginAxios
+  loginAxios,
+
+  //Rating
+  createRating
 };
