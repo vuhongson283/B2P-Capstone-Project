@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import "./BookingManagement.scss";
+import { useAuth } from '../../context/AuthContext';
 import {
     Select,
     DatePicker,
@@ -51,13 +52,10 @@ const { Option } = Select;
 const { Text } = Typography;
 
 // Constants
-const USER_ID = 6;
-const CUSTOMER_USER_ID = 16;
-const CUSTOMER_EMAIL = "admin@courtowner.com";
-const CUSTOMER_PHONE = "0000000000";
 
 const BookingManagement = () => {
     // State for facilities and courts data
+    const { user, userId, isLoggedIn } = useAuth();
     const [facilities, setFacilities] = useState([]);
     const [courts, setCourts] = useState([]);
     const [timeSlots, setTimeSlots] = useState([]);
@@ -88,7 +86,10 @@ const BookingManagement = () => {
         modalCategories: false,
         creating: false,
     });
-
+    const USER_ID = userId; // hoặc user?.userId
+    const CUSTOMER_USER_ID = userId; // hoặc user?.userId  
+    const CUSTOMER_EMAIL = user?.email || "";
+    const CUSTOMER_PHONE = user?.phone || "";
     // Modal states
     const [isCreateBookingModalVisible, setIsCreateBookingModalVisible] = useState(false);
     const [createBookingForm] = Form.useForm();

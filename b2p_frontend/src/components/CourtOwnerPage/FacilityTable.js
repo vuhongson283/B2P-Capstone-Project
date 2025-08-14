@@ -33,6 +33,7 @@ import {
 import "./FacilityTable.scss";
 
 const { Text } = Typography;
+
 const convertGoogleDriveUrl = (originalUrl) => {
   if (!originalUrl) return "https://placehold.co/300x200?text=No+Image";
   if (originalUrl.includes('thumbnail')) return originalUrl;
@@ -43,6 +44,7 @@ const convertGoogleDriveUrl = (originalUrl) => {
   }
   return originalUrl;
 };
+
 const cleanAddressForDisplay = (address) => {
   if (!address) return "";
   return address.replace(/\$\$/g, '');
@@ -50,18 +52,21 @@ const cleanAddressForDisplay = (address) => {
 
 const FacilityTable = () => {
   const { Option } = Select;
-  const { userId, isLoggedIn } = useAuth();
-   const getCourtOwnerId = () => {
+  const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
+
+  // ✅ FIX: Tạo hàm getCourtOwnerId không dependency vào state
+  const getCourtOwnerId = useCallback(() => {
+    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
     if (isLoggedIn && userId) {
       return userId;
     }
-    return 8;
-  };
+    return null;
+  }, [isLoggedIn, userId]);
+
   // ✅ STATES CHO ĐỊA CHỈ API
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
-  console.log("🔄 Component re-render - Provinces in state:", provinces.length);
-  console.log("🔄 Provinces data:", provinces.slice(0, 2)); // Show first 2 items
+  
   // State cho modal thêm mới
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
@@ -69,7 +74,8 @@ const FacilityTable = () => {
   // State cho modal chỉnh sửa
   const [editSelectedProvince, setEditSelectedProvince] = useState("");
   const [editSelectedDistrict, setEditSelectedDistrict] = useState("");
-
+  const [forceUpdate, setForceUpdate] = useState(0);
+  
   // ... existing states ...
   const [facilityImages, setFacilityImages] = useState([]);
   const [uploadFileList, setUploadFileList] = useState([]);
@@ -93,7 +99,121 @@ const FacilityTable = () => {
     total: 0,
   });
 
-  
+  // ✅ FIX: Tối ưu fetchFacilities với dependencies rõ ràng
+  const fetchFacilities = useCallback(async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
+    try {
+      setLoading(true);
+      
+      // ✅ FIX: Kiểm tra auth loading trước
+      if (authLoading) {
+        console.log('⏳ Auth is still loading, skipping fetch...');
+        return;
+      }
+
+      // ✅ FIX: Lấy courtOwnerId từ callback
+      const courtOwnerId = getCourtOwnerId();
+      
+      if (!courtOwnerId) {
+        console.error('❌ No valid court owner ID, user not authenticated');
+        message.error('Người dùng chưa đăng nhập hoặc không có quyền truy cập');
+        setFacilities([]);
+        return;
+      }
+
+      console.log('🚀 Fetching facilities for courtOwnerId:', courtOwnerId, {
+        page, pageSize, searchQuery, status
+      });
+
+      const response = await getFacilitiesByCourtOwnerId(
+        courtOwnerId,
+        searchQuery,
+        status,
+        page,
+        pageSize
+      );
+
+      let success, payload;
+      if (response?.data?.success !== undefined) {
+        success = response.data.success;
+        payload = response.data.data;
+      } else if (response?.success !== undefined) {
+        success = response.success;
+        payload = response.data;
+      } else if (response?.data) {
+        success = true;
+        payload = response.data;
+      } else {
+        success = false;
+        payload = null;
+      }
+
+      if (success && payload && payload.items) {
+        const { items, totalItems, currentPage, itemsPerPage } = payload;
+
+        const mappedFacilities = items.map((facility) => ({
+          key: facility.facilityId,
+          id: facility.facilityId,
+          name: facility.facilityName,
+          address: cleanAddressForDisplay(facility.location),
+          courtCount: facility.courtCount,
+          status: facility.status,
+          image:
+            facility.images?.length > 0
+              ? convertGoogleDriveUrl(facility.images[0].imageUrl)
+              : "https://placehold.co/300x200?text=No+Image",
+        }));
+
+        setFacilities(mappedFacilities);
+        setTimeout(() => setForceUpdate(prev => prev + 1), 100);
+        setPagination(prev => ({
+          ...prev,
+          current: currentPage,
+          pageSize: itemsPerPage,
+          total: totalItems,
+        }));
+        
+        console.log('✅ Facilities loaded successfully:', mappedFacilities.length, 'items');
+      } else {
+        console.log('❌ No facilities data or failed response');
+        setFacilities([]);
+      }
+    } catch (error) {
+      console.error("💥 Error fetching facilities:", error);
+      setFacilities([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, getCourtOwnerId]);
+
+  // ✅ FIX: useEffect chính để fetch dữ liệu khi auth sẵn sàng
+  useEffect(() => {
+    console.log('🔄 Auth state changed:', { 
+      authLoading, 
+      isLoggedIn, 
+      userId, 
+      hasInitialized 
+    });
+
+    // Chỉ fetch khi:
+    // 1. Auth không loading
+    // 2. User đã login
+    // 3. Có userId
+    // 4. Chưa initialize
+    if (!authLoading && isLoggedIn && userId && !hasInitialized) {
+      console.log('🚀 Conditions met, fetching facilities...');
+      fetchFacilities(1, 3, "", null);
+      setHasInitialized(true);
+    }
+  }, [authLoading, isLoggedIn, userId, hasInitialized, fetchFacilities]);
+
+  // ✅ FIX: Reset hasInitialized khi user thay đổi
+  useEffect(() => {
+    if (!authLoading && (!isLoggedIn || !userId)) {
+      console.log('🔄 User logged out or changed, resetting...');
+      setHasInitialized(false);
+      setFacilities([]);
+    }
+  }, [authLoading, isLoggedIn, userId]);
 
   // ✅ FETCH PROVINCES
   const fetchProvinces = async () => {
@@ -200,12 +320,14 @@ const FacilityTable = () => {
     console.log("🏗️ Built address:", result);
     return result;
   };
+
   useEffect(() => {
     console.log("🔄 Provinces state changed:", provinces.length);
     if (provinces.length > 0) {
       console.log("✅ Provinces available:", provinces.slice(0, 3));
     }
   }, [provinces]);
+
   // ✅ LOAD PROVINCES KHI COMPONENT MOUNT
   useEffect(() => {
     fetchProvinces();
@@ -482,6 +604,11 @@ const FacilityTable = () => {
       setSubmitLoading(true);
       const courtOwnerId = getCourtOwnerId();
 
+      if (!courtOwnerId) {
+        message.error("Không thể xác định người dùng");
+        return;
+      }
+
       console.log("📝 Form values:", values);
 
       // Validate địa chỉ
@@ -683,77 +810,6 @@ const FacilityTable = () => {
     setUploadFileList([]);
     editForm.resetFields();
   };
-
-  // ... existing fetch facilities, handle search, table change, etc functions remain the same ...
-
-  const fetchFacilities = useCallback(async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
-    try {
-      setLoading(true);
-      const courtOwnerId = getCourtOwnerId();
-
-      const response = await getFacilitiesByCourtOwnerId(
-        courtOwnerId,
-        searchQuery,
-        status,
-        page,
-        pageSize
-      );
-
-      let success, payload;
-      if (response?.data?.success !== undefined) {
-        success = response.data.success;
-        payload = response.data.data;
-      } else if (response?.success !== undefined) {
-        success = response.success;
-        payload = response.data;
-      } else if (response?.data) {
-        success = true;
-        payload = response.data;
-      } else {
-        success = false;
-        payload = null;
-      }
-
-      if (success && payload && payload.items) {
-        const { items, totalItems, currentPage, itemsPerPage } = payload;
-
-        const mappedFacilities = items.map((facility) => ({
-          key: facility.facilityId,
-          id: facility.facilityId,
-          name: facility.facilityName,
-          address: cleanAddressForDisplay(facility.location),
-          courtCount: facility.courtCount,
-          status: facility.status,
-          image:
-            facility.images?.length > 0
-              ? convertGoogleDriveUrl(facility.images[0].imageUrl)
-              : "https://placehold.co/300x200?text=No+Image",
-        }));
-
-        setFacilities(mappedFacilities);
-        setPagination(prev => ({
-          ...prev,
-          current: currentPage,
-          pageSize: itemsPerPage,
-          total: totalItems,
-        }));
-      } else {
-        setFacilities([]);
-      }
-    } catch (error) {
-      console.error("💥 Error fetching facilities:", error);
-      setFacilities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasInitialized) {
-      fetchFacilities(1, 3, "", null);
-      setHasInitialized(true);
-    }
-  }, [fetchFacilities, hasInitialized]);
 
   const handleSearch = async (value) => {
     const searchValue = value || "";
@@ -988,6 +1044,7 @@ const FacilityTable = () => {
           </div>
 
           <Table
+            key={forceUpdate}
             columns={columns}
             dataSource={facilities}
             loading={loading}
@@ -1054,7 +1111,7 @@ const FacilityTable = () => {
             >
               <Select
                 getPopupContainer={(trigger) => trigger.parentElement}
-                placeholder={`Chọn tỉnh/thành phố (${provinces.length} tỉnh)`} // ✅ Hiện số lượng
+                placeholder={`Chọn tỉnh/thành phố (${provinces.length} tỉnh)`}
                 value={selectedProvince}
                 onChange={(value) => {
                   console.log("🎯 Province selected:", value);
@@ -1064,7 +1121,7 @@ const FacilityTable = () => {
                 optionFilterProp="children"
                 loading={provinces.length === 0}
                 notFoundContent={provinces.length === 0 ? "Đang tải..." : "Không tìm thấy"}
-                key={provinces.length} // ✅ Force re-render khi provinces change
+                key={provinces.length}
               >
                 {provinces.length > 0 ? (
                   provinces.map((province) => (
@@ -1076,7 +1133,6 @@ const FacilityTable = () => {
                   <Option disabled value="">Đang tải tỉnh thành...</Option>
                 )}
               </Select>
-
             </Form.Item>
 
             <Form.Item
@@ -1124,7 +1180,6 @@ const FacilityTable = () => {
               <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1890ff' }}>
                 📍 Địa chỉ đầy đủ:
               </div>
-
               <div style={{ color: '#333' }}>
                 {cleanAddressForDisplay(buildAddress(
                   form.getFieldValue('detailAddress') || '',

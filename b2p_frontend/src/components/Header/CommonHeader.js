@@ -2,6 +2,7 @@ import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import logo from "../../assets/images/logo3.png";
+import { useAuth } from '../../context/AuthContext';
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { GiShuttlecock } from "react-icons/gi";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,12 +10,15 @@ import { setSearchFacility } from "../../store/action/searchFacilityAction";
 import { useState, useEffect } from "react";
 import UserInfo from '../Test/UserInfor';
 import "./CommonHeader.scss";
-<UserInfo />
+
 const CommonHeader = (props) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
   const searchFacility = useSelector((state) => state.searchFacility);
+
+  // 🎯 Get auth context
+  const { user, logout } = useAuth();
 
   // 🎯 Track active sport category
   const [activeSportCategory, setActiveSportCategory] = useState(null);
@@ -32,29 +36,23 @@ const CommonHeader = (props) => {
   const handleSportNavigation = (categoryId, sportName) => {
     console.log(`Navigating to ${sportName} with category ID: ${categoryId}`);
 
-    // Set active sport category immediately for UI feedback
     setActiveSportCategory(categoryId);
 
-    // Set search facility with selected category
     dispatch(
       setSearchFacility({
         searchText: "",
         categoryId: categoryId,
         province: "",
         district: "",
-        // Add timestamp to force re-render
         timestamp: Date.now(),
       })
     );
 
-    // Check if already on search page
     if (location.pathname === "/search") {
-      // If already on search page, navigate with query params to force refresh
       navigate(
         `/search?category=${categoryId}&sport=${sportName}&t=${Date.now()}`
       );
     } else {
-      // Navigate to search page normally
       navigate("/search");
     }
   };
@@ -64,6 +62,12 @@ const CommonHeader = (props) => {
     return (
       location.pathname === "/search" && activeSportCategory === categoryId
     );
+  };
+
+  // 🎯 Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   return (
@@ -108,7 +112,6 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            {/* 🎯 Thêm link Blog */}
             <NavLink
               to="/blog"
               className={({ isActive }) =>
@@ -121,7 +124,6 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            {/* 🎯 Bóng đá - Category ID: 1 */}
             <button
               className={`nav-link px-3 btn-sport-link ${isSportActive(1) ? "active" : ""
                 }`}
@@ -134,7 +136,6 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            {/* 🎯 Cầu lông - Category ID: 2 */}
             <button
               className={`nav-link px-3 btn-sport-link ${isSportActive(2) ? "active" : ""
                 }`}
@@ -147,7 +148,6 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            {/* 🎯 Pickleball - Category ID: 3 */}
             <button
               className={`nav-link px-3 btn-sport-link ${isSportActive(3) ? "active" : ""
                 }`}
@@ -163,7 +163,6 @@ const CommonHeader = (props) => {
             <NavLink
               to="/search"
               className={({ isActive }) => {
-                // 🎯 Khu vực is active only if no specific sport category is selected
                 const isKhuVucActive = isActive && !activeSportCategory;
                 return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
               }}
@@ -171,32 +170,70 @@ const CommonHeader = (props) => {
               <i className="fas fa-map-marker-alt me-1"></i>
               <span className="nav-text">Khu vực</span>
             </NavLink>
-            <NavLink
-              to="/booking-history"
-              className={({ isActive }) => {
-                // 🎯 Khu vực is active only if no specific sport category is selected
-                const isKhuVucActive = isActive && !activeSportCategory;
-                return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
-              }}
-            >
-              <i className="fas fa-map-marker-alt me-1"></i>
-              <span className="nav-text">Lịch Sử Đặt Sân</span>
-            </NavLink>
-          </Nav>
-          <Nav className="ms-auto align-items-center auth-buttons">
-            <button
-              className="btn-login btn me-2"
-              onClick={() => navigate("/login")}
-            >
-              Đăng Nhập
-            </button>
 
-            <button
-              className="btn-signup btn"
-              onClick={() => navigate("/register")}
-            >
-              Đăng ký
-            </button>
+            {/* 🎯 Show booking history only for logged in users */}
+            {user && (
+              <NavLink
+                to="/booking-history"
+                className={({ isActive }) => {
+                  const isBookingActive = isActive && !activeSportCategory;
+                  return `nav-link px-3 ${isBookingActive ? "active" : ""}`;
+                }}
+              >
+                <i className="fas fa-history me-1"></i>
+                <span className="nav-text">Lịch Sử Đặt Sân</span>
+              </NavLink>
+            )}
+          </Nav>
+
+          {/* 🎯 Authentication Section */}
+          <Nav className="ms-auto align-items-center auth-buttons">
+            {user ? (
+              // 🎯 Logged in user section
+              <>
+                <NavLink
+                  to="/user-profile"
+                  className="nav-link user-greeting px-3"
+                  style={{
+                    color: '#28a745',
+                    fontWeight: '500',
+                    textDecoration: 'none'
+                  }}
+                >
+                  <i className="fas fa-user-circle me-1"></i>
+                  Xin chào, {user.fullName || user.username || 'User'}
+                </NavLink>
+                
+                <button
+                  className="btn-logout btn btn-outline-danger ms-2"
+                  onClick={handleLogout}
+                  style={{
+                    fontSize: '14px',
+                    padding: '6px 12px'
+                  }}
+                >
+                  <i className="fas fa-sign-out-alt me-1"></i>
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              // 🎯 Guest user section
+              <>
+                <button
+                  className="btn-login btn me-2"
+                  onClick={() => navigate("/login")}
+                >
+                  Đăng Nhập
+                </button>
+
+                <button
+                  className="btn-signup btn"
+                  onClick={() => navigate("/register")}
+                >
+                  Đăng ký
+                </button>
+              </>
+            )}
           </Nav>
         </Navbar.Collapse>
       </Container>

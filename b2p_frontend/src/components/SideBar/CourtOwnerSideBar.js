@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
 import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
@@ -15,10 +16,10 @@ const CourtOwnerSideBar = ({
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
   const navigate = useNavigate();
-  
+
   // ✅ Use real user data from AuthContext
   const { user, isLoggedIn, logout } = useAuth();
-  
+
   // ✅ Real user info from AuthContext
   const userInfo = {
     fullName: user?.fullName || user?.name || "Court Owner",
@@ -147,22 +148,23 @@ const CourtOwnerSideBar = ({
   };
 
   // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      message.success('Đăng xuất thành công!');
-      navigate("/login");
-    } catch (error) {
-      console.error('Logout error:', error);
-      message.error('Lỗi khi đăng xuất!');
-      localStorage.removeItem('user');
-      navigate("/login");
-    }
+ const handleLogout = () => {
+  try {
+    logout(); // ✅ Sync function, không cần await
+    message.success('Đăng xuất thành công!');
+    
+  } catch (error) {
+    console.error('Logout error:', error);
+    message.error('Lỗi khi đăng xuất!');
+    localStorage.clear(); // Xóa toàn bộ localStorage
+  } finally {
+    navigate("/login");
     
     if (isMobile && onClose) {
       onClose();
     }
-  };
+  }
+};
 
   // Generate avatar initials
   const getAvatarInitials = (fullName) => {
@@ -207,8 +209,23 @@ const CourtOwnerSideBar = ({
             </div>
           </div>
           {userInfo.userId && (
-            <div className="user-id">
-              <small>ID: {userInfo.userId}</small>
+            <div className="user-actions">
+              <Link
+                to="/user-profile"
+                className="profile-link"
+                style={{
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '2px solid white',
+                  display: 'inline-block',
+                  marginTop: '4px'
+                }}
+              >
+                Thông tin cá nhân
+              </Link>
             </div>
           )}
         </div>
@@ -284,7 +301,7 @@ const CourtOwnerSideBar = ({
   };
 
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
-  
+
   // Render dynamic submenu
   const renderDynamicSubmenu = () => {
     return facilities.map((facility) => (

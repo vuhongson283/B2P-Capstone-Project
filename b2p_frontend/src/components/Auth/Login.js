@@ -410,12 +410,12 @@ const Login = () => {
       if (user.roleId === 1) { // Admin (theo log trước đó bạn có roleId = 1)
         console.log('🔄 Navigating to Admin dashboard');
         navigate('/admin');
-      } else if (user.roleId === 2) { // CourtOwner  
+      } else if (user.roleId === 3) { // CourtOwner  
         console.log('🔄 Navigating to CourtOwner dashboard');
         navigate('/court-owner');
       } else { // Player or default (roleId = 3 hoặc khác)
         console.log('🔄 Navigating to Player dashboard');
-        navigate('/player'); // ✅ Fixed: có path cụ thể
+        navigate('/'); // ✅ Fixed: có path cụ thể
       }
     }, 1000);
   };

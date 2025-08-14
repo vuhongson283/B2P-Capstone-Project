@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./UserProfile.scss";
+import { useAuth } from '../../context/AuthContext';
 import {
   getUserById,
   updateUserProfile,
@@ -21,7 +22,8 @@ const UserProfile = (props) => {
   const [passwordStatus, setPasswordStatus] = useState(null);
 
   // Temporary userId - sẽ thay thế bằng userId từ authentication sau
-  const userId = 4;
+  const { userId,isLoggedIn, isLoading: authLoading } = useAuth();
+  //const userId = 8;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -207,6 +209,20 @@ const UserProfile = (props) => {
     const fetchUserData = async () => {
       try {
         setPageLoading(true);
+         if (authLoading) {
+        console.log('⏳ Waiting for auth context to load...');
+        return; // ← DỪNG LẠI, CHƯA CALL API
+      }
+
+      // ✅ CHECK AUTHENTICATION
+      if (!isLoggedIn || !userId) {
+        console.error('❌ User not authenticated or missing userId');
+        setMessage('Người dùng chưa đăng nhập');
+        return;
+      }
+
+      console.log('👤 Auth loaded, fetching user data for userId:', userId);
+      setPageLoading(true);
 
         // Load bank types trước
         const bankTypesList = await fetchBankTypes();
@@ -300,7 +316,7 @@ const UserProfile = (props) => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [userId,isLoggedIn, authLoading]);
 
   // Simplified avatar upload handler
   const handleAvatarChange = async (e) => {

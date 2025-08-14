@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './BookingHistory.scss';
+import { useAuth } from '../../context/AuthContext';
 import { message, Spin, Rate, Input, Button } from 'antd';
 import {
     getBookingsByUserId,
@@ -31,7 +32,7 @@ const BookingHistory = () => {
     const [existingRating, setExistingRating] = useState(null);
 
     const bookingsPerPage = 8;
-    const userId = 16;
+    const { userId } = useAuth();
 
     useEffect(() => {
         loadBookingHistory();

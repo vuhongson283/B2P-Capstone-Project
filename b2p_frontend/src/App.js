@@ -11,6 +11,7 @@ import { SignalRProvider } from "./contexts/SignalRContext";
 import NearbyCourts from "./components/HomePage/NearbyFacilities";
 import { getCurrentLocation } from "./services/locationService";
 
+
 const AppContent = () => {
   const location = useLocation();
   const showSliderAndSearch =
@@ -33,7 +34,7 @@ const AppContent = () => {
         lng: location.lng,
       });
       setUserLocation(location);
-      alert(`Vị trí của bạn: ${location.lat}, ${location.lng}`);
+      //alert(`Vị trí của bạn: ${location.lat}, ${location.lng}`);
     } catch (error) {
       console.error("❌ Location retrieval failed", {
         error: error.message,

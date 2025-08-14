@@ -13,7 +13,7 @@ class Logger {
 
   static log(level, message, data = {}) {
     if (this.levels[level] > this.currentLevel) return;
-    
+
     const logEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -67,7 +67,7 @@ const loggedAxios = {
   async request(config) {
     const startTime = Date.now();
     const { method, url, data } = config;
-    
+
     Logger.info(`🚀 API Request: ${method?.toUpperCase()} ${url}`, {
       method,
       url,
@@ -77,24 +77,24 @@ const loggedAxios = {
     try {
       const response = await axios.request(config);
       const duration = Date.now() - startTime;
-      
+
       Logger.info(`✅ API Success: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
         status: response.status,
         duration,
         dataSize: response.data ? JSON.stringify(response.data).length : 0
       });
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       Logger.error(`❌ API Error: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
         status: error.response?.status,
         message: error.message,
         duration,
         errorData: error.response?.data
       });
-      
+
       throw error;
     }
   },
@@ -254,7 +254,7 @@ const getUserImage = (userId) => loggedAxios.get(`Image/user/${userId}`);
 
 const uploadUserImage = (file, userId, caption = null) => {
   Logger.info('Uploading user image', { userId, fileName: file.name, fileSize: file.size });
-  
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("entityId", userId.toString());
@@ -312,7 +312,7 @@ const deleteImage = (imageId) => {
 };
 
 /* ===============================
-   🔒 PASSWORD RESET
+   🔒 PASSWORD
 ================================ */
 const forgotPasswordByEmail = (email) => {
   Logger.info('Password reset requested by email', { email: email.substring(0, 3) + '***' });
@@ -615,7 +615,8 @@ const createBookingForCO = (bookingData) => {
   Logger.info('Creating booking for court owner', { facilityId: bookingData.facilityId });
   return loggedAxios.post("Booking", bookingData, { validateStatus: () => true });
 };
-//Auth
+
+// Auth
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -687,9 +688,9 @@ const completeBooking = (bookingId) => {
    ✅ EXPORT ALL
 ================================ */
 export {
-  // Logger pour usage externe
+  // Logger
   Logger,
-  
+
   // Court Category
   getAllCourtCategories,
   addCourtCategory,
@@ -723,8 +724,7 @@ export {
   deleteImage,
   updateImage,
 
-  // Password Reset
-
+  // Password
   forgotPasswordByEmail,
   resetPasswordByEmail,
   resendOtpByEmail,
@@ -742,7 +742,6 @@ export {
   getAllBankType,
 
   // Account Management
-
   getAccountList,
   getAccountById,
   banUser,
@@ -760,7 +759,7 @@ export {
   activateSlider,
   deactivateSlider,
 
-  // Facility & Reports
+  // Facility
   getAllFacilitiesByPlayer,
   getAvailableSlots,
   getFacilityDetailsById,
@@ -773,7 +772,6 @@ export {
   deleteFacilityImage,
 
   // Report
-
   getReport,
   getTotalReport,
   exportReportToExcel,
@@ -785,12 +783,13 @@ export {
   deleteCourt,
   getCourtDetail,
 
-  // Timeslot (✅ Fixed duplicates)
-  getTimeSlotsByFacilityId,        // Simple version
-  getTimeslotsByFacilityId,        // Advanced version with pagination
+  // Timeslot
+  getTimeSlotsByFacilityId,
+  getTimeslotsByFacilityId,
   createTimeslot,
   deleteTimeslot,
   updateTimeslot,
+  createRating,
 
   // Booking
   getBookingsByFacilityId,
@@ -800,6 +799,7 @@ export {
   createBookingForPlayer,
   createPaymentOrder,
   completeBooking,
+
   // Auth
   googleLoginAxios,
   verifyOtpAxios,

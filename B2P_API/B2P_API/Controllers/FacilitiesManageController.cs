@@ -19,7 +19,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("listCourt/{userId}")]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> GetFacilitiesByUser(
     int userId,
     [FromQuery] string? facilityName = null,

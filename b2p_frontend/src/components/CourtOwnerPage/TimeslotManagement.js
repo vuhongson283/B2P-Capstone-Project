@@ -346,7 +346,7 @@ const TimeslotManagement = () => {
       const response = await updateTimeslot(timeSlotId, updateData);
       console.log('✅ Update response:', response);
 
-      if (response.data && (response.status === 200 || response.status === 201)) {
+      if ( response.status === 200) {
         const statusText = newStatusId === 1 ? 'Kích hoạt' : 'Tạm dừng';
         message.success(`✅ ${statusText} khung giờ thành công!`);
 
