@@ -3,7 +3,7 @@ import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
 import BookingDetail from "./BookingDetail.js"; // Import BookingDetail modal mới
-import { getFacilityDetailsById, getAvailableSlots, createBookingForPlayer, createPaymentOrder } from "../../services/apiService";
+import { getFacilityDetailsById, getAvailableSlots, createBookingForPlayer, createPaymentOrder, createStripePaymentOrder } from "../../services/apiService";
 import { parseInt } from 'lodash';
 
 // Constants
@@ -1177,6 +1177,7 @@ const FacilityDetails = () => {
           listSlotId={bookingDetailData?.listSlotId} 
           createBooking={createBookingForPlayer}
           createPayment={createPaymentOrder}
+          createStripePaymentOrder={createStripePaymentOrder}
         />
       )}
     </div>

@@ -4,6 +4,7 @@ import App from "../App";
 import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
 import FacilityDetails from "./HomePage/FacilityDetails";
+import StripePayment from './HomePage/StripePayment.js';
 import BookingProcess from "./HomePage/BookingProcess";
 import UserProfile from "./Common/UserProfile";
 import ForgotPassword from "./Common/ForgotPassword";
@@ -53,6 +54,10 @@ const Layout = (props) => {
               <BookingProcess />
             }
           />
+           <Route
+    path="stripepayment"
+    element={<StripePayment />}
+  />
         </Route>
 
         {/* ✅ Court Owner routes */}

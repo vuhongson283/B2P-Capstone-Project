@@ -23,7 +23,8 @@ export default function BookingDetail({
     selectedSlots,
     quantities,
     createBooking, // Thêm prop function từ parent để gọi API
-    createPayment // Thêm prop function để gọi API tạo thanh toán
+    createPayment, // Thêm prop function để gọi API tạo thanh toán nội địa
+    createStripePaymentOrder // Thêm prop function để gọi API tạo thanh toán quốc tế
 }) {
     const navigate = useNavigate(); // Hook để điều hướng
     const [formData, setFormData] = useState({
@@ -138,6 +139,19 @@ export default function BookingDetail({
         return category ? category.categoryName : '';
     };
 
+    // Helper function to convert VND to USD cents for Stripe
+    const convertVNDtoUSDCents = (vndAmount) => {
+        const exchangeRate = 24000; // 1 USD = 24,000 VND (approximate)
+        const usdAmount = vndAmount / exchangeRate;
+        const usdCents = Math.round(usdAmount * 100); // Convert to cents
+        return usdCents;
+    };
+
+    // Helper function to calculate platform fee (5%)
+    const calculatePlatformFee = (amount) => {
+        return Math.round(amount * 0.05);
+    };
+
     // Handle final booking submission
     const handleFinalBooking = async () => {
         if (!validateForm()) {
@@ -194,41 +208,82 @@ export default function BookingDetail({
                 const bookingInfo = result.data;
                 const bookingId = bookingInfo.bookingId;
 
-                // Sau khi đặt sân thành công, gọi API tạo đơn thanh toán
-                const paymentData = {
-                    amount: totalPrice,
-                    description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
-                    redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
-                    callbackUrl: window.location.origin + "/payment-callback", // URL callback
-                    appUser: formData.phone,
-                    paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
-                    embedData: {
-                        bookingid: bookingId.toString()
+                // Xử lý thanh toán dựa trên phương thức được chọn
+                if (formData.paymentMethod === 'international') {
+                    // Thanh toán quốc tế qua Stripe
+                    const stripePaymentData = {
+                        amount: convertVNDtoUSDCents(totalPrice), // Chuyển đổi VND sang USD cents
+                        currency: 'usd',
+                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(totalPrice)), // Phí platform 5%
+                        destinationAccountId: 'acct_1RuuxcATZut0ML00', // Cố định
+                        bookingId: bookingId.toString()
+                    };
+
+                    console.log('Stripe Payment request data:', stripePaymentData);
+
+                    try {
+                        // Gọi API tạo đơn thanh toán Stripe
+                        const stripePaymentResult = await createStripePaymentOrder(stripePaymentData);
+                        console.log('Stripe Payment API response:', stripePaymentResult);
+
+                        // Lấy ID từ response (có thể là id hoặc trong data.id)
+                        const paymentId = stripePaymentResult?.data?.id || stripePaymentResult?.id;
+
+                        // Đóng modal trước khi chuyển trang
+                        onClose();
+
+                        if (paymentId) {
+                            // Chuyển hướng đến trang Stripe payment trong tab mới
+                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}`;
+                            window.open(stripePaymentUrl, '_blank');
+                        } else {
+                            console.warn('Không có payment ID trong Stripe response:', stripePaymentResult);
+                            alert('Lỗi tạo đơn thanh toán Stripe!');
+                            return;
+                        }
+                    } catch (stripePaymentError) {
+                        console.error('Stripe Payment creation error:', stripePaymentError);
+                        alert('Lỗi tạo đơn thanh toán Stripe!');
+                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
+                        onClose();
                     }
-                };
+                } else {
+                    // Thanh toán nội địa
+                    const paymentData = {
+                        amount: totalPrice,
+                        description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
+                        redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
+                        callbackUrl: window.location.origin + "/payment-callback", // URL callback
+                        appUser: formData.phone,
+                        paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
+                        embedData: {
+                            bookingid: bookingId.toString()
+                        }
+                    };
 
-                console.log('Payment request data:', paymentData);
+                    console.log('Payment request data:', paymentData);
 
-                try {
-                    // Gọi API tạo đơn thanh toán
-                    const paymentResult = await createPayment(paymentData);
-                    console.log('Payment API response:', paymentResult);
+                    try {
+                        // Gọi API tạo đơn thanh toán nội địa
+                        const paymentResult = await createPayment(paymentData);
+                        console.log('Payment API response:', paymentResult);
 
-                    const orderUrl = paymentResult?.data?.order_url;
+                        const orderUrl = paymentResult?.data?.order_url;
 
-                    // Đóng modal trước khi chuyển trang
-                    onClose();
+                        // Đóng modal trước khi chuyển trang
+                        onClose();
 
-                    if (orderUrl) {
-                        // Mở trang thanh toán trong tab mới
-                        window.open(orderUrl, '_blank');
-                    } else {
-                        console.warn('Không có order_url trong payment response:', paymentResult);
+                        if (orderUrl) {
+                            // Mở trang thanh toán trong tab mới
+                            window.open(orderUrl, '_blank');
+                        } else {
+                            console.warn('Không có order_url trong payment response:', paymentResult);
+                        }
+                    } catch (paymentError) {
+                        console.error('Payment creation error:', paymentError);
+                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
+                        onClose();
                     }
-                } catch (paymentError) {
-                    console.error('Payment creation error:', paymentError);
-                    // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
-                    onClose();
                 }
 
                 // Chuyển trang hiện tại đến booking process với bookingId
