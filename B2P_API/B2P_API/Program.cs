@@ -23,7 +23,7 @@ var connectionString = builder.Configuration.GetConnectionString("MyCnn");
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<SportBookingDbContext>(options =>
-    options.UseSqlServer(connectionString));
+	options.UseSqlServer(connectionString));
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -34,59 +34,60 @@ builder.Services.AddSignalR();
 // FIX CORS cho SignalR - Dùng policy cụ thể
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("SignalRPolicy", policy =>
-    {
-        policy.WithOrigins(
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "http://localhost:3001",
-                "https://yourdomain.com")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials()
-              .SetIsOriginAllowed(origin => true); // Cho phép mọi origin (chỉ khi DEV)
-    });
+	options.AddPolicy("SignalRPolicy", policy =>
+	{
+		policy.WithOrigins(
+				"http://localhost:3000",
+				"https://localhost:3000",
+				"http://localhost:3001",
+				"https://yourdomain.com")
+			  .AllowAnyMethod()
+			  .AllowAnyHeader()
+			  .AllowCredentials()
+			  .SetIsOriginAllowed(origin => true); // Cho phép mọi origin (chỉ khi DEV)
+	});
 });
 
 // ✅ JWT Authentication Configuration
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    var jwtSettings = builder.Configuration.GetSection("JWT");
+	var jwtSettings = builder.Configuration.GetSection("JWT");
 
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+	options.TokenValidationParameters = new TokenValidationParameters
+	{
+		RoleClaimType = "roleId", // ✅ THÊM MỚI từ nhánh test
+		ValidateIssuer = true,
+		ValidateAudience = true,
+		ValidateLifetime = true,
+		ValidateIssuerSigningKey = true,
 
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["AccessSecret"]!)
-        ),
+		ValidIssuer = jwtSettings["Issuer"],
+		ValidAudience = jwtSettings["Audience"],
+		IssuerSigningKey = new SymmetricSecurityKey(
+			Encoding.UTF8.GetBytes(jwtSettings["AccessSecret"]!)
+		),
 
-        ClockSkew = TimeSpan.Zero
-    };
+		ClockSkew = TimeSpan.Zero
+	};
 
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine($"JWT Token validated for user: {context.Principal?.FindFirst("userId")?.Value}");
-            return Task.CompletedTask;
-        }
-    };
+	options.Events = new JwtBearerEvents
+	{
+		OnAuthenticationFailed = context =>
+		{
+			Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+			return Task.CompletedTask;
+		},
+		OnTokenValidated = context =>
+		{
+			Console.WriteLine($"JWT Token validated for user: {context.Principal?.FindFirst("userId")?.Value}");
+			return Task.CompletedTask;
+		}
+	};
 });
 
 // ✅ Add Authorization
@@ -94,14 +95,14 @@ builder.Services.AddAuthorization();
 
 // Controllers + JSON config
 builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+	.AddJsonOptions(options =>
+	{
+		options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
 
-        // ✅ CHỈ DÙNG CÁC OPTIONS CÓ SẴN:
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.WriteIndented = true; // For debugging
-    });
+		// ✅ CHỈ DÙNG CÁC OPTIONS CÓ SẴN:
+		options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+		options.JsonSerializerOptions.WriteIndented = true; // For debugging
+	});
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -113,7 +114,7 @@ builder.Services.AddMemoryCache();
 // Suppress automatic 400 responses
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+	options.SuppressModelStateInvalidFilter = true;
 });
 
 // Đăng ký các Repository & Services
@@ -179,6 +180,12 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
+// ✅ THÊM MỚI từ nhánh test - Auth services
+builder.Services.AddScoped<JWTHelper>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<AuthService>();
+
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<VNPayService>();
 
@@ -186,8 +193,8 @@ builder.Services.Configure<ESMSSettings>(builder.Configuration.GetSection("ESMSS
 builder.Services.Configure<ZaloPayConfig>(builder.Configuration.GetSection("ZaloPay"));
 builder.Services.AddHttpClient<ZaloPayService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(30);
-    client.DefaultRequestHeaders.Add("User-Agent", "ZaloPayAPI/1.0");
+	client.Timeout = TimeSpan.FromSeconds(30);
+	client.DefaultRequestHeaders.Add("User-Agent", "ZaloPayAPI/1.0");
 });
 builder.Services.AddScoped<ZaloPayService>();
 
@@ -197,8 +204,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
@@ -207,27 +214,27 @@ app.UseCors("SignalRPolicy"); // Áp dụng policy cụ thể
 // Security headers
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Add("X-Frame-Options", "DENY");
-    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-    await next();
+	context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+	context.Response.Headers.Add("X-Frame-Options", "DENY");
+	context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+	await next();
 });
 
 // Request logging middleware
 app.Use(async (context, next) =>
 {
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
-    await next();
-    logger.LogInformation($"Response: {context.Response.StatusCode}");
+	var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+	logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
+	await next();
+	logger.LogInformation($"Response: {context.Response.StatusCode}");
 });
 
 // Health check endpoint
 app.MapGet("/health", () => new
 {
-    service = "B2P API with ZaloPay",
-    status = "running",
-    timestamp = DateTimeOffset.UtcNow
+	service = "B2P API with ZaloPay",
+	status = "running",
+	timestamp = DateTimeOffset.UtcNow
 });
 
 app.UseAuthorization();
