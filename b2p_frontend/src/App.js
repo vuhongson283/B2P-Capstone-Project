@@ -14,7 +14,7 @@ const App = (props) => {
   const location = useLocation();
   const showSliderAndSearch =
     location.pathname === "/" || location.pathname === "/homepage";
-  
+
   const [userLocation, setUserLocation] = useState(null); // ✅ MOVE lên trên
 
   useEffect(() => {
@@ -26,14 +26,14 @@ const App = (props) => {
   // ✅ SỬA function để lưu location vào state
   const getUserLocation = async () => {
     try {
-      console.log('🔍 Đang xin permission location...');
+      console.log("🔍 Đang xin permission location...");
       const location = await getCurrentLocation();
-      console.log('✅ Lấy vị trí thành công:', location);
+      console.log("✅ Lấy vị trí thành công:", location);
       setUserLocation(location); // ✅ LƯU VÀO STATE
       alert(`Vị trí của bạn: ${location.lat}, ${location.lng}`);
     } catch (error) {
-      console.log('❌ Lỗi:', error.message);
-      alert('Không thể lấy vị trí: ' + error.message);
+      console.log("❌ Lỗi:", error.message);
+      alert("Không thể lấy vị trí: " + error.message);
     }
   };
 
@@ -56,7 +56,10 @@ const App = (props) => {
 
               {/* ✅ THÊM NearbyCourts component */}
               {userLocation && (
-                <div className="nearby-facilities-container" style={{ marginTop: '40px' }}>
+                <div
+                  className="nearby-facilities-container"
+                  style={{ marginTop: "40px" }}
+                >
                   <NearbyCourts userLocation={userLocation} />
                 </div>
               )}
