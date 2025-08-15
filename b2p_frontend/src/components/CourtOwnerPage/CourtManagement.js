@@ -50,6 +50,20 @@ const CourtManagement = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [courtDetail, setCourtDetail] = useState(null);
 
+  // Thêm state cho validation errors
+  const [validationErrors, setValidationErrors] = useState({
+    courtName: '',
+    categoryId: '',
+    pricePerHour: ''
+  });
+
+  // Thêm state mới cho edit validation
+  const [editValidationErrors, setEditValidationErrors] = useState({
+    courtName: '',
+    categoryId: '',
+    pricePerHour: ''
+  });
+
   // Fetch courts data
   const fetchCourts = async () => {
     if (!facilityId) {
@@ -101,6 +115,30 @@ const CourtManagement = () => {
 
   // Handle add new court
   const handleAddCourt = async () => {
+    // Reset validation errors
+    setValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+
+    // Validate form inputs
+    let isValid = true;
+    if (!newCourt.courtName) {
+      setValidationErrors(prev => ({ ...prev, courtName: 'Tên sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!newCourt.categoryId) {
+      setValidationErrors(prev => ({ ...prev, categoryId: 'Thể loại sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!newCourt.pricePerHour) {
+      setValidationErrors(prev => ({ ...prev, pricePerHour: 'Giá sân là bắt buộc' }));
+      isValid = false;
+    }
+
+    if (!isValid) return; // Ngừng thực hiện nếu có lỗi validation
+
     try {
       const courtData = {
         facilityId: parseInt(facilityId),
@@ -128,11 +166,12 @@ const CourtManagement = () => {
   // Handle edit court
   const handleEdit = (court) => {
     setEditCourt({
-        courtId: court.courtId,
-        statusId: court.status || court.statusId, // Sửa thành giá trị status thực tế từ API
-        courtName: court.courtName,
-        categoryId: court.categoryId,
-        pricePerHour: court.pricePerHour
+      courtId: court.courtId,
+      // Chuyển đổi trạng thái từ 'Active' thành giá trị tương ứng
+      statusId: court.statusName === 'Active' ? '1' : '2',
+      courtName: court.courtName,
+      categoryId: court.categoryId,
+      pricePerHour: court.pricePerHour
     });
     setShowEditModal(true);
     };
@@ -140,9 +179,82 @@ const CourtManagement = () => {
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditCourt(prev => ({ ...prev, [name]: value }));
+    
+    // Validate từng trường của form edit
+    switch (name) {
+      case 'courtName':
+        if (!value.trim()) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân không được để trống'
+          }));
+        } else if (value.length < 3) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân phải có ít nhất 3 ký tự'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, courtName: '' }));
+        }
+        break;
+        
+      case 'categoryId':
+        if (!value) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            categoryId: 'Vui lòng chọn loại sân'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, categoryId: '' }));
+        }
+        break;
+        
+      case 'pricePerHour':
+        if (!value) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân không được để trống'
+          }));
+        } else if (parseInt(value) <= 0) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân phải lớn hơn 0'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, pricePerHour: '' }));
+        }
+        break;
+        
+      default:
+        break;
+    }
   };
   
   const handleUpdateCourt = async () => {
+    // Reset edit validation errors
+    setEditValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+
+    // Validate form inputs
+    let isValid = true;
+    if (!editCourt.courtName) {
+      setEditValidationErrors(prev => ({ ...prev, courtName: 'Tên sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!editCourt.categoryId) {
+      setEditValidationErrors(prev => ({ ...prev, categoryId: 'Thể loại sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!editCourt.pricePerHour) {
+      setEditValidationErrors(prev => ({ ...prev, pricePerHour: 'Giá sân là bắt buộc' }));
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
     try {
         console.log('Edit court data before submit:', editCourt);
       const courtData = {
@@ -170,6 +282,55 @@ const CourtManagement = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewCourt(prev => ({ ...prev, [name]: value }));
+    
+    // Validate từng trường
+    switch (name) {
+      case 'courtName':
+        if (!value.trim()) {
+          setValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân không được để trống'
+          }));
+        } else if (value.length < 3) {
+          setValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân phải có ít nhất 3 ký tự'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, courtName: '' }));
+        }
+        break;
+        
+      case 'categoryId':
+        if (!value) {
+          setValidationErrors(prev => ({
+            ...prev,
+            categoryId: 'Vui lòng chọn loại sân'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, categoryId: '' }));
+        }
+        break;
+        
+      case 'pricePerHour':
+        if (!value) {
+          setValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân không được để trống'
+          }));
+        } else if (parseInt(value) <= 0) {
+          setValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân phải lớn hơn 0'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, pricePerHour: '' }));
+        }
+        break;
+        
+      default:
+        break;
+    }
   };
 
   const handleSearch = (e) => {
@@ -249,6 +410,16 @@ const CourtManagement = () => {
   useEffect(() => {
     fetchCourts();
   }, [facilityId, pagination.pageNumber, pagination.pageSize, selectedCategory, selectedStatus]);
+
+  // Thêm vào hàm đóng modal
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+  };
 
   if (loading) {
     return (
@@ -480,8 +651,11 @@ const CourtManagement = () => {
                 value={newCourt.courtName}
                 onChange={handleInputChange}
                 placeholder="Nhập tên sân"
-                required
+                isInvalid={!!validationErrors.courtName}
               />
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.courtName}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -493,8 +667,8 @@ const CourtManagement = () => {
                 name="categoryId"
                 value={newCourt.categoryId}
                 onChange={handleInputChange}
-                required
                 disabled={categoryLoading}
+                isInvalid={!!validationErrors.categoryId}
               >
                 <option value="">Chọn thể loại sân</option>
                 {categories.map(category => (
@@ -503,6 +677,9 @@ const CourtManagement = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.categoryId}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -517,8 +694,11 @@ const CourtManagement = () => {
                 onChange={handleInputChange}
                 min="0"
                 placeholder="Nhập giá sân"
-                required
+                isInvalid={!!validationErrors.pricePerHour}
               />
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.pricePerHour}
+              </Form.Control.Feedback>
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -527,7 +707,11 @@ const CourtManagement = () => {
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleAddCourt}>
+          <Button 
+            variant="primary" 
+            onClick={handleAddCourt}
+            disabled={Object.values(validationErrors).some(error => error !== '')}
+          >
             <i className="fas fa-check me-2"></i>
             Thêm mới
           </Button>
@@ -535,7 +719,7 @@ const CourtManagement = () => {
       </Modal>
 
       {/* Edit Court Modal */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      <Modal show={showEditModal} onHide={handleCloseEditModal}>
         <Modal.Header closeButton>
           <Modal.Title>
             <i className="fas fa-edit me-2"></i>
@@ -564,7 +748,7 @@ const CourtManagement = () => {
               </Form.Label>
               <Form.Select
                 name="statusId"
-                value={editCourt.statusId || '1'} // Add fallback to '1'
+                value={editCourt.statusId}
                 onChange={handleEditInputChange}
                 required
               >
@@ -584,8 +768,11 @@ const CourtManagement = () => {
                 value={editCourt.courtName}
                 onChange={handleEditInputChange}
                 placeholder="Nhập tên sân"
-                required
+                isInvalid={!!editValidationErrors.courtName}
               />
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.courtName}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -597,7 +784,7 @@ const CourtManagement = () => {
                 name="categoryId"
                 value={editCourt.categoryId}
                 onChange={handleEditInputChange}
-                required
+                isInvalid={!!editValidationErrors.categoryId}
                 disabled={categoryLoading}
               >
                 <option value="">Chọn thể loại sân</option>
@@ -607,6 +794,9 @@ const CourtManagement = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.categoryId}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -621,8 +811,11 @@ const CourtManagement = () => {
                 onChange={handleEditInputChange}
                 min="0"
                 placeholder="Nhập giá sân"
-                required
+                isInvalid={!!editValidationErrors.pricePerHour}
               />
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.pricePerHour}
+              </Form.Control.Feedback>
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -631,7 +824,11 @@ const CourtManagement = () => {
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleUpdateCourt}>
+          <Button 
+            variant="primary" 
+            onClick={handleUpdateCourt}
+            disabled={Object.values(editValidationErrors).some(error => error !== '')}
+          >
             <i className="fas fa-save me-2"></i>
             Lưu thay đổi
           </Button>

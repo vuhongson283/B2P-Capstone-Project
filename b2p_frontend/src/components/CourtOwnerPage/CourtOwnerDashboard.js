@@ -30,20 +30,44 @@ const OwnerDashboard = () => {
   const userId = 6;
   useEffect(() => {
     const fetchDashboardData = async () => {
+      setLoading(true);
       try {
         const totalReportResponse = await getTotalReport(userId, null, null);
-        const reportResponse = await getReport(userId, null, null, null, 1, 10);
 
-        setDashboardData({
-          totalFacilities: totalReportResponse.data.totalFacility || 0,
-          totalCourts: totalReportResponse.data.totalCourt || 0,
-          totalBookings: totalReportResponse.data.totalBooking || 0,
-          totalRevenue: totalReportResponse.data.totalCost || 0,
-          recentBookings: reportResponse.data.items || [],
-        });
+        // Kiểm tra và set data cho totalReport trước
+        if (totalReportResponse.success) {
+          setDashboardData((prev) => ({
+            ...prev,
+            totalFacilities: totalReportResponse.data.totalFacility || 0,
+            totalCourts: totalReportResponse.data.totalCourt || 0,
+            totalBookings: totalReportResponse.data.totalBooking || 0,
+            totalRevenue: totalReportResponse.data.totalCost || 0,
+          }));
+        } else {
+          setError(totalReportResponse.message || "Không thể tải dữ liệu tổng quan");
+          return;
+        }
+
+        // Tiếp tục fetch reportResponse
+        try {
+          const reportResponse = await getReport(userId, null, null, null, 1, 10);
+          if (reportResponse.success) {
+            setDashboardData((prev) => ({
+              ...prev,
+              recentBookings: reportResponse.data.items || [],
+            }));
+          } else {
+            // Chỉ set error message cho phần recent bookings
+            setError(reportResponse.message || "Không thể tải dữ liệu đơn đặt sân");
+          }
+        } catch (error) {
+          // Xử lý lỗi cho phần recent bookings
+          console.error("Error fetching recent bookings:", error);
+          setError("Không thể tải dữ liệu đơn đặt sân");
+        }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
+        console.error("Error fetching total report:", error);
+        setError(error.message || "Không thể tải dữ liệu tổng quan");
       } finally {
         setLoading(false);
       }
@@ -58,11 +82,11 @@ const OwnerDashboard = () => {
     setExportLoading(true);
     try {
       const response = await exportReportToExcel(
-        userId, 
+        userId,
         startDate, // Ngày bắt đầu
-        endDate,   // Ngày kết thúc
-        null,      // facilityId (nếu cần)
-        1          // pageNumber
+        endDate, // Ngày kết thúc
+        null, // facilityId (nếu cần)
+        1 // pageNumber
       );
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
@@ -81,8 +105,13 @@ const OwnerDashboard = () => {
       });
 
       const now = new Date();
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const formattedTime = `${String(now.getHours()).padStart(2, '0')}h${String(now.getMinutes()).padStart(2, '0')}m${String(now.getSeconds()).padStart(2, '0')}s`;
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(now.getDate()).padStart(2, "0")}`;
+      const formattedTime = `${String(now.getHours()).padStart(2, "0")}h${String(
+        now.getMinutes()
+      ).padStart(2, "0")}m${String(now.getSeconds()).padStart(2, "0")}s`;
 
       // Tạo URL tạm
       const url = URL.createObjectURL(blob);
@@ -117,8 +146,19 @@ const OwnerDashboard = () => {
       setLoading(true);
       try {
         const selectedDate = date.toDate(); // Chuyển moment object sang Date
-        const totalReportResponse = await getTotalReport(userId, selectedDate, selectedDate);
-        const reportResponse = await getReport(userId, selectedDate, selectedDate, null, 1, 10);
+        const totalReportResponse = await getTotalReport(
+          userId,
+          selectedDate,
+          selectedDate
+        );
+        const reportResponse = await getReport(
+          userId,
+          selectedDate,
+          selectedDate,
+          null,
+          1,
+          10
+        );
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -141,8 +181,19 @@ const OwnerDashboard = () => {
       const [startDate, endDate] = dates;
       setLoading(true);
       try {
-        const totalReportResponse = await getTotalReport(userId, startDate.toDate(), endDate.toDate());
-        const reportResponse = await getReport(userId, startDate.toDate(), endDate.toDate(), null, 1, 10);
+        const totalReportResponse = await getTotalReport(
+          userId,
+          startDate.toDate(),
+          endDate.toDate()
+        );
+        const reportResponse = await getReport(
+          userId,
+          startDate.toDate(),
+          endDate.toDate(),
+          null,
+          1,
+          10
+        );
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -295,12 +346,15 @@ const OwnerDashboard = () => {
     return <div className="loading-spinner">Loading...</div>;
   }
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
   return (
     <div className="owner-dashboard">
+      {error && (
+        <div className="error-alert">
+          <i className="fas fa-exclamation-circle"></i>
+          <span className="error-text">{error}</span>
+        </div>
+      )}
+
       <div className="dashboard-header">
         <div>
           <h2 className="dashboard-title">Xin Chào, Nguyễn Văn A</h2>
@@ -312,8 +366,8 @@ const OwnerDashboard = () => {
           <DatePicker.RangePicker
             onChange={handleDateRangeChange}
             format="DD/MM/YYYY"
-            placeholder={['Từ ngày', 'Đến ngày']}
-            style={{ width: '300px' }}
+            placeholder={["Từ ngày", "Đến ngày"]}
+            style={{ width: "300px" }}
           />
           <Button
             variant="success"
