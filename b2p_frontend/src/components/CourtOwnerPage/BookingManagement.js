@@ -44,13 +44,14 @@ import {
     createBookingForCO,
     getFacilityDetailsById
 } from "../../services/apiService";
-import { useSignalR } from "../../hooks/useSignalR";
+// ✅ THAY ĐỔI: Import signalRService trực tiếp thay vì useSignalR
+import signalRService from "../../services/signalRService";
 
 const { Option } = Select;
 const { Text } = Typography;
 
 // Constants
-const USER_ID = 13;
+const USER_ID = 6;
 const CUSTOMER_USER_ID = 16;
 const CUSTOMER_EMAIL = "admin@courtowner.com";
 const CUSTOMER_PHONE = "0000000000";
@@ -88,25 +89,14 @@ const BookingManagement = () => {
         creating: false,
     });
 
-
     // Modal states
     const [isCreateBookingModalVisible, setIsCreateBookingModalVisible] = useState(false);
     const [createBookingForm] = Form.useForm();
 
-    // FIX: Thêm ref để track notifications đã hiển thị
-    const shownNotifications = useRef(new Set());
-    const lastProcessedTime = useRef(0);
-
-    // FIX: Function để cleanup old notification IDs
-    const cleanupOldNotifications = useCallback(() => {
-        const now = Date.now();
-        const CLEANUP_INTERVAL = 30000; // 30 seconds
-
-        if (now - lastProcessedTime.current > CLEANUP_INTERVAL) {
-            shownNotifications.current.clear();
-            lastProcessedTime.current = now;
-        }
-    }, []);
+    // ✅ THAY ĐỔI: Lấy trực tiếp từ signalRService thay vì useSignalR
+    const isConnected = signalRService.connected;
+    const connectionState = signalRService.connectionState;
+    const sendBookingUpdate = signalRService.sendBookingUpdate.bind(signalRService);
 
     // Utility functions
     const updateLoading = useCallback((key, value) => {
@@ -285,7 +275,7 @@ const BookingManagement = () => {
         }
     }, []);
 
-    // API calls with error handling - DI CHUYỂN loadBookings LÊN TRƯỚC
+    // API calls with error handling
     const loadBookings = useCallback(async (facilityId) => {
         try {
             updateLoading('bookings', true);
@@ -304,264 +294,186 @@ const BookingManagement = () => {
         }
     }, [updateLoading, processBookingData]);
 
-    // FIX: SignalR event handlers with deduplication
-    const handleSignalRBookingCreated = useCallback((notification) => {
-        console.log('🔔 SignalR: Booking created received!', notification);
-
-        // FIX: Cleanup old notifications first
-        cleanupOldNotifications();
-
-        // FIX: Create unique notification ID
-        const notificationId = `booking-created-${notification.bookingId || Date.now()}-${notification.facilityId}-${notification.timeSlot}`;
-        const dateText =
-            notification.date ||
-            (notification.checkInDate && dayjs(notification.checkInDate).isValid()
-                ? dayjs(notification.checkInDate).format('DD/MM/YYYY')
-                : '');
-
-        const timeText =
-            notification.timeSlot // ưu tiên khung giờ đầy đủ
-            || (notification.checkInTime && notification.checkOutTime
-                ? `${notification.checkInTime} - ${notification.checkOutTime}`
-                : notification.checkInTime || ''); // fallback
-
-        const hasAmount =
-            typeof notification.totalAmount === 'number' && !Number.isNaN(notification.totalAmount);
-
-        // FIX: Check if this notification was already shown
-        if (shownNotifications.current.has(notificationId)) {
-            console.log('⏭️ Notification already shown, skipping:', notificationId);
-            return;
-        }
-
-        // FIX: Mark as shown
-        shownNotifications.current.add(notificationId);
-
-        // 1. Hiển thị thông báo
-        const notificationContent = (
-            <div
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                    setNotificationBookingDetail(notification);
-                    setIsNotificationDetailVisible(true);
-                    antdNotification.destroy(notificationId);
-                }}
-            >
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    fontWeight: 'bold',
-                    color: '#52c41a'
-                }}>
-                    <CalendarOutlined style={{ marginRight: '8px', fontSize: '16px' }} />
-                    Đơn đặt sân mới
-                </div>
-                <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-                    <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
-                    <div><strong>Khách hàng:</strong> {notification.customerName || (notification.customerEmail?.split('@')[0]) || 'Admin'}</div>
-                    <div>
-                        <strong>Thời gian:</strong> {dateText}{timeText ? ` • ${timeText}` : ''}
-                    </div>
-                    {hasAmount && (
-                        <div>
-                            <strong>Tổng tiền:</strong> {Number(notification.totalAmount).toLocaleString('vi-VN')} VND
-                        </div>
-                    )}
-                </div>
-                <div style={{
-                    marginTop: '8px',
-                    fontSize: '12px',
-                    color: '#1890ff',
-                    fontStyle: 'italic'
-                }}>
-                    💡 Click để xem chi tiết
-                </div>
-            </div>
-        );
-
-        antdNotification.success({
-            key: notificationId,
-            message: notificationContent,
-            duration: 8,
-            placement: 'topRight',
-            style: {
-                width: '400px',
-                borderLeft: '4px solid #52c41a'
-            }
-        });
-
-        // 2. Cập nhật trực tiếp state của booking data
-        if (notification.facilityId === selectedFacility) {
-            const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
-            const currentDate = selectedDate;
-
-            if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
-                console.log('📱 Updating slot status directly...');
-
-                const timeSlot = notification.timeSlot;
-                const courtId = notification.courtId;
-
-                if (courtId && timeSlot) {
-                    const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
-
-                    const newBooking = {
-                        id: notification.bookingId || Date.now(),
-                        userId: CUSTOMER_USER_ID,
-                        courtId: courtId,
-                        courtName: notification.courtName || 'Sân thể thao',
-                        timeSlot: timeSlot,
-                        date: currentDate.format('DD/MM/YYYY'),
-                        price: notification.totalAmount || 0,
-                        status: 'paid',
-                        paymentStatus: 'deposit',
-                        bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
-                        checkInDate: currentDate.format('YYYY-MM-DD'),
-                        statusId: 7,
-                        originalStatus: 'Paid',
-                        customerName: notification.customerName || 'Admin',
-                        customerPhone: notification.customerPhone || 'N/A',
-                        customerEmail: notification.customerEmail || 'N/A'
-                    };
-
-                    setBookingData(prev => ({
-                        ...prev,
-                        [bookingKey]: newBooking
-                    }));
-
-                    console.log(`✅ Slot ${timeSlot} updated to PAID status`);
-                }
-
-                // Backup reload sau 2 giây
-                setTimeout(() => {
-                    if (selectedFacility) {
-                        console.log('🔄 Backup reload booking data...');
-                        loadBookings(selectedFacility);
-                    }
-                }, 200);
-            }
-        }
-    }, [selectedFacility, selectedDate, loadBookings, cleanupOldNotifications]);
-
-    const handleSignalRBookingUpdated = useCallback((notification) => {
-        console.log('🔔 SignalR: Booking updated received!', notification);
-
-        // FIX: Cleanup old notifications first
-        cleanupOldNotifications();
-
-        // FIX: Create unique notification ID
-        const notificationId = `booking-updated-${notification.bookingId || Date.now()}-${notification.action}`;
-
-        // FIX: Check if this notification was already shown
-        if (shownNotifications.current.has(notificationId)) {
-            console.log('⏭️ Update notification already shown, skipping:', notificationId);
-            return;
-        }
-
-        // FIX: Mark as shown
-        shownNotifications.current.add(notificationId);
-
-        // Hiển thị thông báo
-        const notificationContent = (
-            <div style={{ cursor: 'pointer' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '8px',
-                    fontWeight: 'bold',
-                    color: '#1890ff'
-                }}>
-                    <CheckCircleOutlined style={{ marginRight: '8px', fontSize: '16px' }} />
-                    {notification.action === 'completed' ? 'Đơn đặt sân hoàn thành' : 'Đơn đặt sân cập nhật'}
-                </div>
-                <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-                    <div><strong>Mã booking:</strong> #{notification.bookingId}</div>
-                    <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
-                    <div><strong>Thời gian:</strong> {notification.date} lúc {notification.checkInTime || notification.timeSlot}</div>
-                </div>
-            </div>
-        );
-
-        antdNotification.info({
-            key: notificationId,
-            message: notificationContent,
-            duration: 5,
-            placement: 'topRight',
-            style: {
-                width: '380px',
-                borderLeft: '4px solid #1890ff'
-            }
-        });
-
-        // Cập nhật trực tiếp state của slot
-        if (notification.facilityId === selectedFacility) {
-            const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
-            const currentDate = selectedDate;
-
-            if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
-                console.log('📱 Updating slot status to:', notification.status);
-
-                const timeSlot = notification.timeSlot;
-                const courtId = notification.courtId;
-
-                if (courtId && timeSlot) {
-                    const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
-
-                    setBookingData(prev => {
-                        if (prev[bookingKey]) {
-                            const updatedBooking = {
-                                ...prev[bookingKey],
-                                status: getBookingStatusFromString(notification.status),
-                                originalStatus: notification.status,
-                                paymentStatus: notification.status === 'completed' ? 'paid' : prev[bookingKey].paymentStatus,
-                                statusId: notification.status === 'completed' ? 10 : prev[bookingKey].statusId
-                            };
-
-                            console.log(`✅ Slot ${timeSlot} updated to ${notification.status.toUpperCase()} status`);
-
-                            return {
-                                ...prev,
-                                [bookingKey]: updatedBooking
-                            };
-                        }
-                        return prev;
-                    });
-
-                    if (selectedBooking && selectedBooking.id.toString() === notification.bookingId.toString()) {
-                        setSelectedBooking(prev => prev ? {
-                            ...prev,
-                            status: getBookingStatusFromString(notification.status),
-                            originalStatus: notification.status,
-                            paymentStatus: notification.status === 'completed' ? 'paid' : prev.paymentStatus,
-                            statusId: notification.status === 'completed' ? 10 : prev.statusId
-                        } : null);
-                    }
-                }
-            }
-        }
-    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString, cleanupOldNotifications]);
-
-    const handleConnectionChanged = useCallback((connected) => {
-        setIsRealTimeConnected(connected);
-    }, []);
-
-    // SignalR integration
-    const { isConnected, connectionState, sendBookingUpdate } = useSignalR({
-        facilityId: selectedFacility,
-        onBookingCreated: handleSignalRBookingCreated,
-        onBookingUpdated: handleSignalRBookingUpdated,
-        onBookingCompleted: handleSignalRBookingUpdated,
-        onBookingCancelled: handleSignalRBookingUpdated,
-        onConnectionChanged: handleConnectionChanged,
-        showNotifications: false
-    });
-
-    // FIX: Cleanup notifications when component unmounts or facility changes
+    // ✅ Quản lý facility groups trực tiếp
     useEffect(() => {
+        if (!selectedFacility) return;
+
+        const manageFacilityGroups = async () => {
+            await signalRService.joinFacilityGroup(selectedFacility);
+            console.log(`📍 LOCAL: Joined facility group ${selectedFacility}`);
+        };
+
+        if (signalRService.connected) {
+            manageFacilityGroups();
+        }
+
         return () => {
-            shownNotifications.current.clear();
+            if (selectedFacility) {
+                signalRService.leaveFacilityGroup(selectedFacility);
+                console.log(`📤 LOCAL: Left facility group ${selectedFacility}`);
+            }
         };
     }, [selectedFacility]);
+
+    // ✅ Event listener cho global notifications
+    useEffect(() => {
+        const handleOpenNotificationDetail = (event) => {
+            console.log('🔔 Received notification detail event:', event.detail);
+            setNotificationBookingDetail(event.detail);
+            setIsNotificationDetailVisible(true);
+        };
+
+        window.addEventListener('openNotificationDetail', handleOpenNotificationDetail);
+
+        return () => {
+            window.removeEventListener('openNotificationDetail', handleOpenNotificationDetail);
+        };
+    }, []);
+
+    // ✅ CÁCH 1: Listen for global SignalR events to update UI slots
+    useEffect(() => {
+        // Global booking created handler for UI updates
+        const handleGlobalBookingCreated = (notification) => {
+            console.log('🔔 LOCAL UI: Global booking created received!', notification);
+
+            // Cập nhật UI slots
+            if (notification.facilityId === selectedFacility) {
+                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
+                const currentDate = selectedDate;
+
+                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
+                    console.log('📱 LOCAL UI: Updating slot status directly...');
+
+                    const timeSlot = notification.timeSlot;
+                    const courtId = notification.courtId;
+
+                    if (courtId && timeSlot) {
+                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
+
+                        const newBooking = {
+                            id: notification.bookingId || Date.now(),
+                            userId: CUSTOMER_USER_ID,
+                            courtId: courtId,
+                            courtName: notification.courtName || 'Sân thể thao',
+                            timeSlot: timeSlot,
+                            date: currentDate.format('DD/MM/YYYY'),
+                            price: notification.totalAmount || 0,
+                            status: 'paid',
+                            paymentStatus: 'deposit',
+                            bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                            checkInDate: currentDate.format('YYYY-MM-DD'),
+                            statusId: 7,
+                            originalStatus: 'Paid',
+                            customerName: notification.customerName || 'Admin',
+                            customerPhone: notification.customerPhone || 'N/A',
+                            customerEmail: notification.customerEmail || 'N/A'
+                        };
+
+                        setBookingData(prev => ({
+                            ...prev,
+                            [bookingKey]: newBooking
+                        }));
+
+                        console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to PAID status`);
+                    }
+                }
+            }
+        };
+
+        // Global booking updated handler for UI updates
+        const handleGlobalBookingUpdated = (notification) => {
+            console.log('🔔 LOCAL UI: Global booking updated received!', notification);
+
+            // Cập nhật UI slots
+            if (notification.facilityId === selectedFacility) {
+                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
+                const currentDate = selectedDate;
+
+                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
+                    console.log('📱 LOCAL UI: Updating slot status to:', notification.status);
+
+                    const timeSlot = notification.timeSlot;
+                    const courtId = notification.courtId;
+
+                    if (courtId && timeSlot) {
+                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
+
+                        setBookingData(prev => {
+                            if (prev[bookingKey]) {
+                                const updatedBooking = {
+                                    ...prev[bookingKey],
+                                    status: getBookingStatusFromString(notification.status),
+                                    originalStatus: notification.status,
+                                    paymentStatus: notification.status === 'completed' ? 'paid' : prev[bookingKey].paymentStatus,
+                                    statusId: notification.status === 'completed' ? 10 : prev[bookingKey].statusId
+                                };
+
+                                console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${notification.status.toUpperCase()} status`);
+
+                                return {
+                                    ...prev,
+                                    [bookingKey]: updatedBooking
+                                };
+                            }
+                            return prev;
+                        });
+
+                        if (selectedBooking && selectedBooking.id.toString() === notification.bookingId.toString()) {
+                            setSelectedBooking(prev => prev ? {
+                                ...prev,
+                                status: getBookingStatusFromString(notification.status),
+                                originalStatus: notification.status,
+                                paymentStatus: notification.status === 'completed' ? 'paid' : prev.paymentStatus,
+                                statusId: notification.status === 'completed' ? 10 : prev.statusId
+                            } : null);
+                        }
+                    }
+                }
+            }
+        };
+
+        // ✅ TAP INTO EXISTING SIGNALR CONNECTION EVENTS
+        if (signalRService.connection) {
+            // Add listeners directly to SignalR connection for UI updates
+            signalRService.connection.on('BookingCreated', handleGlobalBookingCreated);
+            signalRService.connection.on('BookingUpdated', handleGlobalBookingUpdated);
+            signalRService.connection.on('BookingCompleted', handleGlobalBookingUpdated);
+            signalRService.connection.on('BookingCancelled', handleGlobalBookingUpdated);
+
+            console.log('✅ LOCAL UI: Added SignalR event listeners for slot updates');
+        }
+
+        return () => {
+            // Cleanup
+            if (signalRService.connection) {
+                signalRService.connection.off('BookingCreated', handleGlobalBookingCreated);
+                signalRService.connection.off('BookingUpdated', handleGlobalBookingUpdated);
+                signalRService.connection.off('BookingCompleted', handleGlobalBookingUpdated);
+                signalRService.connection.off('BookingCancelled', handleGlobalBookingUpdated);
+
+                console.log('🧹 LOCAL UI: Removed SignalR event listeners');
+            }
+        };
+    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString, loadBookings]);
+
+    // ✅ Monitor connection state  
+    useEffect(() => {
+        const updateConnectionState = () => {
+            const currentConnected = signalRService.connected;
+            if (currentConnected !== isRealTimeConnected) {
+                setIsRealTimeConnected(currentConnected);
+                console.log(`🔗 LOCAL: Connection state updated: ${currentConnected}`);
+            }
+        };
+
+        // Check immediately
+        updateConnectionState();
+
+        // Check periodically
+        const interval = setInterval(updateConnectionState, 2000);
+
+        return () => clearInterval(interval);
+    }, [isRealTimeConnected]);
 
     // API calls khác
     const loadFacilities = useCallback(async () => {
@@ -670,8 +582,6 @@ const BookingManagement = () => {
     const handleFacilityChange = useCallback((value) => {
         setSelectedFacility(value);
         setSelectedCategoryFilter('all');
-        // FIX: Clear notifications when facility changes
-        shownNotifications.current.clear();
     }, []);
 
     const handleDateChange = useCallback((date) => {
@@ -1500,7 +1410,6 @@ const BookingManagement = () => {
                                     <Text>{notificationBookingDetail.timeSlot}</Text>
                                 </div>
                             </Col>
-
 
                             {notificationBookingDetail.totalAmount && (
                                 <Col span={24}>

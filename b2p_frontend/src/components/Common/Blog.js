@@ -1619,9 +1619,6 @@ const Blog = () => {
                 Bài viết của{" "}
                 {blogUser?.fullName || `User ${currentBlogForComments.userId}`}
               </h3>
-              <div className={styles.subtitle}>
-                📅 26/07/2025 • 🕐 17:17 UTC • DuyQuan226 đang xem
-              </div>
             </div>
             <button onClick={closeCommentModal} className={styles.closeButton}>
               <CloseOutlined />

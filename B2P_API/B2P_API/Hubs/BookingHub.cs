@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using System.Text.RegularExpressions;
 
 namespace B2P_API.Hubs
