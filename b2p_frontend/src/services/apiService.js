@@ -177,6 +177,8 @@ const updateUserImage = (imageId, file, order = null, caption = null) => {
   });
 };
 
+
+
 const updateSlideImage = updateUserImage;
 const updateImage = updateUserImage;
 
@@ -441,6 +443,46 @@ const createRating = (ratingData) => {
 /* ===============================
    📅 BOOKING MANAGEMENT
 ================================ */
+
+const createSimpleBooking = async (bookingData) => {
+  try {
+    console.log('📡 Calling createSimpleBooking API with data:', bookingData);
+
+    const response = await axios.post("Booking/create-simple", bookingData, {
+      validateStatus: () => true, // Accept all status codes
+      timeout: 15000
+    });
+
+    console.log('✅ CreateSimpleBooking API full response:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+      headers: response.headers
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ CreateSimpleBooking API error:', error);
+    console.error('❌ Error response:', error.response);
+    throw error;
+  }
+};
+
+const markSmartSlot = async (bookingData) => {
+  try {
+    console.log('📡 Calling markSmartSlot API with data:', bookingData);
+
+    const response = await axios.post("Booking/mark-smart-slot", bookingData, {
+      validateStatus: () => true,
+      timeout: 10000 // ✅ REDUCED: 30s → 10s for faster feedback
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ MarkSmartSlot API error:', error);
+    throw error;
+  }
+};
 const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
   return axios.get(`Booking/court-owner`, { params: { facilityId, pageNumber, pageSize } });
 };
@@ -648,6 +690,7 @@ export {
   createRating,
 
   // Booking
+  createSimpleBooking,
   getBookingsByFacilityId,
   getBookingsByUserId,
   getBookingById, // ✅ THÊM MỚI
@@ -655,6 +698,7 @@ export {
   createBookingForPlayer, // ✅ THÊM MỚI
   createPaymentOrder, // ✅ THÊM MỚI
   completeBooking,
+  markSmartSlot,
 
   // Auth (THÊM MỚI)
   googleLoginAxios, // ✅ THÊM MỚI

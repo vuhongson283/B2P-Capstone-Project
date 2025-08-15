@@ -5,6 +5,7 @@ namespace B2P_API.Interface
 	public interface IAccountManagementRepository
 	{
 		Task<User?> GetByIdAsync(int userId);
+		Task<User?> GetByIdForDisplayAsync(int userId);
 
 		Task<List<User>> GetAllAsync(
 			int pageNumber,

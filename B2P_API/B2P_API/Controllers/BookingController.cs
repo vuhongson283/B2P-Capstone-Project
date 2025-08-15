@@ -21,7 +21,12 @@ namespace B2P_API.Controllers
 			_bookingService = bookingService;
 			_notificationService = notificationService;
 		}
-
+		[HttpPost("create-simple")]
+		public async Task<IActionResult> CreateSimpleBooking([FromBody] SimpleBookingDto request)
+		{
+			var result = await _bookingService.CreateSimpleBookingAsync(request);
+			return StatusCode(result.Status, result);
+		}
 		[HttpPost]
 		public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDto request)
 		{
@@ -93,6 +98,60 @@ namespace B2P_API.Controllers
 			catch (Exception ex)
 			{
 				Console.WriteLine($"❌ Error in CreateBooking: {ex.Message}");
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
+
+		[HttpPost("mark-smart-slot")]
+		public async Task<IActionResult> MarkSmartSlot([FromBody] BookingRequestDto request)
+		{
+			try
+			{
+				var result = await _bookingService.MarkSmartSlot(request);
+
+				if (result.Success)
+				{
+					var data = JsonConvert.DeserializeObject<dynamic>(
+						JsonConvert.SerializeObject(result.Data));
+
+					if (data?.slots != null)
+					{
+						string Fmt(string t) => string.IsNullOrWhiteSpace(t) ? "" : t.Substring(0, 5);
+
+						foreach (var slot in data.slots)
+						{
+							var start = slot.startTime?.ToString();
+							var end = slot.endTime?.ToString();
+
+							// ✅ ENSURE: This notification is sent
+							await _notificationService.NotifyBookingCreated(request.FacilityId, new
+							{
+								bookingId = data.bookingId,
+								facilityId = request.FacilityId,
+								courtId = slot.courtId,
+								courtName = slot.courtName?.ToString(),
+								customerName = data.user?.email?.ToString()?.Split('@')[0] ?? "Admin",
+								customerEmail = data.user?.email?.ToString(),
+								customerPhone = data.user?.phone?.ToString(),
+								date = data.checkInDate?.ToString("dd/MM/yyyy"),
+								checkInTime = Fmt(start),
+								timeSlot = $"{Fmt(start)} - {Fmt(end)}",
+								status = "Paid",
+								statusId = 7,
+								statusDescription = "Đã Cọc",
+								action = "created",
+								totalAmount = 0,
+								timestamp = DateTime.UtcNow.ToString("o")
+							});
+						}
+					}
+				}
+
+				return StatusCode(result.Status, result);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error in MarkSmartSlot: {ex.Message}");
 				return StatusCode(500, new { message = ex.Message });
 			}
 		}

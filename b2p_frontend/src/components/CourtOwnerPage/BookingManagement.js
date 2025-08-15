@@ -16,7 +16,9 @@ import {
     Row,
     Col,
     Card,
-    Typography
+    Typography,
+    Menu,
+    Dropdown
 } from "antd";
 import {
     CalendarOutlined,
@@ -31,7 +33,10 @@ import {
     PlusOutlined,
     StopOutlined,
     AppstoreOutlined,
-    WifiOutlined,
+    InfoCircleOutlined,
+    FlagOutlined,
+    LockOutlined,
+    MoreOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -42,7 +47,9 @@ import {
     getAccountById,
     completeBooking,
     createBookingForCO,
-    getFacilityDetailsById
+    getFacilityDetailsById,
+    createSimpleBooking,
+    markSmartSlot
 } from "../../services/apiService";
 // ✅ THAY ĐỔI: Import signalRService trực tiếp thay vì useSignalR
 import signalRService from "../../services/signalRService";
@@ -72,10 +79,21 @@ const BookingManagement = () => {
     const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
     const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
     const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+    const [customerCache, setCustomerCache] = useState({});
 
     // Modal states for notification detail
     const [notificationBookingDetail, setNotificationBookingDetail] = useState(null);
     const [isNotificationDetailVisible, setIsNotificationDetailVisible] = useState(false);
+
+    // ✅ NEW: State for slot context menu
+    const [slotContextMenu, setSlotContextMenu] = useState({
+        visible: false,
+        x: 0,
+        y: 0,
+        court: null,
+        timeSlot: null,
+        slotId: null
+    });
 
     // Loading states
     const [loading, setLoading] = useState({
@@ -87,6 +105,7 @@ const BookingManagement = () => {
         completing: false,
         modalCategories: false,
         creating: false,
+        markingCourt: false, // ✅ NEW: Loading state for marking court
     });
 
     // Modal states
@@ -106,6 +125,7 @@ const BookingManagement = () => {
     const formatTime = useCallback((time) => {
         return time ? time.substring(0, 5) : '';
     }, []);
+
 
     const getBookingStatusFromString = useCallback((status) => {
         const statusLower = status?.toLowerCase();
@@ -160,6 +180,7 @@ const BookingManagement = () => {
         }
     }, []);
 
+
     const getTimeSlotId = useCallback((timeSlotString) => {
         const foundSlot = rawTimeSlots.find(slot => {
             const startTime = slot.startTime || slot.start || slot.timeStart;
@@ -174,6 +195,14 @@ const BookingManagement = () => {
     const getBookingKey = useCallback((courtId, date, timeSlot) => {
         return `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
     }, []);
+
+    // ✅ NEW: Get selected category ID for simple booking
+    const getSelectedCategoryId = useCallback(() => {
+        if (selectedCategoryFilter === 'all' && modalCategories.length > 0) {
+            return modalCategories[0].categoryId;
+        }
+        return selectedCategoryFilter;
+    }, [selectedCategoryFilter, modalCategories]);
 
     // Process booking data
     const processBookingData = useCallback((bookingsData) => {
@@ -281,7 +310,7 @@ const BookingManagement = () => {
         }
     }, []);
 
-    // API calls with error handling
+    // ✅ MOVE: loadBookings function moved here before it's used
     const loadBookings = useCallback(async (facilityId) => {
         try {
             updateLoading('bookings', true);
@@ -299,6 +328,232 @@ const BookingManagement = () => {
             updateLoading('bookings', false);
         }
     }, [updateLoading, processBookingData]);
+
+    // ✅ NEW: Handle mark court (create simple booking) - NOW MOVED AFTER loadBookings
+    // ✅ ENHANCED: Better debugging and error handling for createSimpleBooking
+
+
+    // ✅ FIXED: Update handleMarkCourt with correct API format
+    const handleMarkCourt = useCallback(async (court, timeSlot) => {
+        try {
+            updateLoading('markingCourt', true);
+
+            // Get slot ID
+            const timeSlotId = getTimeSlotId(timeSlot); // ✅ RENAMED: slotId -> timeSlotId
+            const categoryId = getSelectedCategoryId();
+
+            if (!categoryId) {
+                message.error('Vui lòng chọn loại sân trước khi đánh dấu');
+                return;
+            }
+
+            // ✅ FIXED: Use correct format matching the API requirement
+            const bookingRequestData = {
+                userId: CUSTOMER_USER_ID, // ✅ ADD: Required userId
+                checkInDate: selectedDate.format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
+                facilityId: selectedFacility,
+                categoryId: parseInt(categoryId), // ✅ CONVERT: String to number
+                timeSlotId: timeSlotId, // ✅ RENAMED: slotId -> timeSlotId
+                courtId: court.courtId || court.id
+            };
+
+            console.log('📡 Creating simple booking with data:', bookingRequestData);
+            console.log('🔍 DEBUG - Court object:', court);
+            console.log('🔍 DEBUG - Time slot:', timeSlot);
+            console.log('🔍 DEBUG - Selected facility:', selectedFacility);
+            console.log('🔍 DEBUG - Selected category:', categoryId);
+            console.log('🔍 DEBUG - Selected date:', selectedDate.format('YYYY-MM-DD'));
+
+            const response = await createSimpleBooking(bookingRequestData);
+
+            console.log('📡 CreateSimpleBooking response:', response);
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response data:', response.data);
+
+            // ✅ ENHANCED ERROR CHECKING
+            if (response.status === 400) {
+                console.error('❌ 400 Bad Request - Invalid data sent to server');
+                console.error('❌ Request data was:', bookingRequestData);
+
+                // Get error message from response
+                let errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
+
+                if (response.message) {
+                    errorMessage = response.message;
+                } else if (response.data?.message) {
+                    errorMessage = response.data.message;
+                } else if (response.data?.error) {
+                    errorMessage = response.data.error;
+                }
+
+                message.error(`Không thể đánh dấu sân: ${errorMessage}`);
+                return;
+            }
+
+            if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
+                console.error('❌ API returned error status:', response.status);
+                message.error(`Lỗi API: ${response.status}`);
+                return;
+            }
+
+            // ✅ SUCCESS CASES
+            console.log('✅ API call successful with status:', response.status);
+            message.success('Đánh dấu sân thành công!');
+
+            // ✅ UPDATE LOCAL STATE
+            const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
+            const newBooking = {
+                id: response.data?.bookingId || Date.now(),
+                userId: CUSTOMER_USER_ID,
+                courtId: court.courtId || court.id,
+                courtName: court.courtName || court.name,
+                timeSlot: timeSlot,
+                date: selectedDate.format('DD/MM/YYYY'),
+                price: 0,
+                status: 'paid',
+                paymentStatus: 'deposit',
+                bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                checkInDate: selectedDate.format('YYYY-MM-DD'),
+                statusId: 7,
+                originalStatus: 'Paid',
+                customerName: 'Admin (Đánh dấu)',
+                customerPhone: CUSTOMER_PHONE,
+                customerEmail: CUSTOMER_EMAIL
+            };
+
+            setBookingData(prev => ({
+                ...prev,
+                [bookingKey]: newBooking
+            }));
+
+            // ✅ SEND SIGNALR NOTIFICATION
+            if (isConnected) {
+                const notification = {
+                    bookingId: newBooking.id,
+                    facilityId: selectedFacility,
+                    courtId: court.courtId || court.id,
+                    timeSlot: timeSlot,
+                    date: selectedDate.format('DD/MM/YYYY'),
+                    checkInTime: timeSlot.split(' - ')[0],
+                    status: 'paid',
+                    action: 'created',
+                    message: `Sân ${court.courtName || court.name} đã được đánh dấu`,
+                    courtName: court.courtName || court.name,
+                    customerName: 'Admin',
+                    customerEmail: CUSTOMER_EMAIL,
+                    customerPhone: CUSTOMER_PHONE,
+                    totalAmount: 0,
+                    timestamp: new Date().toISOString()
+                };
+
+                await sendBookingUpdate(notification);
+            }
+
+
+
+        } catch (error) {
+            console.error('❌ Error marking court:', error);
+            console.error('❌ Error response:', error.response);
+
+            let errorMessage = 'Có lỗi xảy ra khi đánh dấu sân';
+
+            if (error.response?.status === 400) {
+                if (error.response.data?.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
+                }
+            } else if (error.response?.status === 401) {
+                errorMessage = 'Không có quyền thực hiện thao tác này';
+            } else if (error.response?.status === 500) {
+                errorMessage = 'Lỗi server, vui lòng thử lại sau';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            message.error(errorMessage);
+        } finally {
+            updateLoading('markingCourt', false);
+            setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
+        }
+    }, [selectedFacility, selectedDate, getTimeSlotId, getSelectedCategoryId, getBookingKey, loadBookings, updateLoading, isConnected, sendBookingUpdate]);
+    // ✅ NEW: Handle context menu for empty slots
+    // ✅ ENHANCED: Better context menu positioning
+    const handleEmptySlotClick = useCallback((event, court, timeSlot) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const slotId = getTimeSlotId(timeSlot);
+
+        // ✅ GET: Clicked element position
+        const clickedElement = event.currentTarget;
+        const rect = clickedElement.getBoundingClientRect();
+
+        // ✅ POSITION: Menu below and to the right of the clicked slot
+        const x = rect.left + window.scrollX;
+        const y = rect.bottom + window.scrollY + 5; // 5px below the slot
+
+        // ✅ FALLBACK: If menu would go off-screen, position above
+        const menuHeight = 80;
+        const finalY = (y + menuHeight > window.innerHeight + window.scrollY)
+            ? rect.top + window.scrollY - menuHeight - 5
+            : y;
+
+        // ✅ ENSURE: Menu doesn't go off-screen horizontally
+        const menuWidth = 160;
+        const finalX = (x + menuWidth > window.innerWidth + window.scrollX)
+            ? window.innerWidth + window.scrollX - menuWidth - 10
+            : x;
+
+        console.log('🎯 Slot-relative menu position:', {
+            slotRect: rect,
+            finalX,
+            finalY,
+            court: court.courtName || court.name,
+            timeSlot
+        });
+
+        setSlotContextMenu({
+            visible: true,
+            x: finalX,
+            y: finalY,
+            court: court,
+            timeSlot: timeSlot,
+            slotId: slotId
+        });
+    }, [getTimeSlotId]);
+
+    // ✅ NEW: Hide context menu when clicking outside
+    const hideContextMenu = useCallback(() => {
+        setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
+    }, []);
+
+    // ✅ NEW: Context menu items
+    const contextMenuItems = useMemo(() => [
+        {
+            key: 'mark',
+            icon: <FlagOutlined />,
+            label: 'Đánh dấu sân',
+            onClick: () => {
+                if (slotContextMenu.court && slotContextMenu.timeSlot) {
+                    handleMarkCourt(slotContextMenu.court, slotContextMenu.timeSlot);
+                }
+            }
+        },
+        {
+            key: 'block',
+            icon: <LockOutlined />,
+            label: 'Block sân',
+            disabled: true, // Temporarily disabled as requested
+            onClick: () => {
+                // TODO: Implement block functionality
+                message.info('Chức năng Block sân sẽ được phát triển sau');
+                hideContextMenu();
+            }
+        }
+    ], [slotContextMenu.court, slotContextMenu.timeSlot, handleMarkCourt, hideContextMenu]);
 
     // ✅ Quản lý facility groups trực tiếp
     useEffect(() => {
@@ -335,6 +590,18 @@ const BookingManagement = () => {
             window.removeEventListener('openNotificationDetail', handleOpenNotificationDetail);
         };
     }, []);
+
+    // ✅ NEW: Add click outside listener for context menu
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (slotContextMenu.visible) {
+                hideContextMenu();
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [slotContextMenu.visible, hideContextMenu]);
 
     // ✅ CÁCH 1: Listen for global SignalR events to update UI slots
     useEffect(() => {
@@ -417,6 +684,7 @@ const BookingManagement = () => {
             }
         };
 
+
         // Global booking updated handler for UI updates
         const handleGlobalBookingUpdated = (notification) => {
             console.log('🔔 LOCAL UI: Global booking updated received!', notification);
@@ -491,7 +759,7 @@ const BookingManagement = () => {
                 console.log('🧹 LOCAL UI: Removed SignalR event listeners');
             }
         };
-    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString, loadBookings]);
+    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString]);
 
     // ✅ Monitor connection state  
     useEffect(() => {
@@ -597,7 +865,13 @@ const BookingManagement = () => {
 
     const loadCustomerDetails = useCallback(async (userId) => {
         try {
-            if (!userId || userId === 0 || userId === '0') {
+            // ✅ CHECK: Cache trước
+            if (customerCache[userId]) {
+                console.log(`✅ Using cached customer data for userId: ${userId}`);
+                return customerCache[userId];
+            }
+
+            if (!userId || userId === 0) {
                 return {
                     customerName: 'Khách hàng không xác định',
                     customerPhone: 'Không có thông tin',
@@ -606,43 +880,32 @@ const BookingManagement = () => {
                 };
             }
 
-            // ✅ Gọi API không cần token
+            console.log(`🔍 Loading customer details for userId: ${userId}`);
             const response = await getAccountById(userId);
 
-            let customerData = null;
-            if (response?.data?.data) {
-                customerData = response.data.data;
-            } else if (response?.data) {
-                customerData = response.data;
-            }
+            const customerData = response?.data?.data || response?.data;
 
-            if (customerData) {
-                return {
-                    customerName: customerData.fullName ||
-                        customerData.name ||
-                        customerData.userName ||
-                        customerData.displayName ||
-                        customerData.email?.split('@')[0] ||
-                        `User #${userId}`,
-                    customerPhone: customerData.phoneNumber ||
-                        customerData.phone ||
-                        'Chưa cập nhật',
-                    customerEmail: customerData.email ||
-                        'Chưa cập nhật',
-                    customerAvatar: customerData.avatar ||
-                        customerData.profilePicture ||
-                        null
-                };
-            } else {
-                return {
-                    customerName: `User ID: ${userId}`,
-                    customerPhone: 'Không có dữ liệu',
-                    customerEmail: 'Không có dữ liệu',
-                    customerAvatar: null
-                };
-            }
+            const result = {
+                customerName: customerData?.fullName ||
+                    customerData?.email?.split('@')[0] ||
+                    `User #${userId}`,
+                customerPhone: customerData?.phoneNumber ||
+                    customerData?.phone ||
+                    'Chưa cập nhật',
+                customerEmail: customerData?.email || 'Chưa cập nhật',
+                customerAvatar: customerData?.avatar || null
+            };
+
+            // ✅ CACHE: Lưu lại để lần sau không gọi API
+            setCustomerCache(prev => ({
+                ...prev,
+                [userId]: result
+            }));
+
+            return result;
 
         } catch (error) {
+            console.error('❌ Error loading customer:', error);
             return {
                 customerName: `User ID: ${userId}`,
                 customerPhone: 'Lỗi tải thông tin',
@@ -650,7 +913,7 @@ const BookingManagement = () => {
                 customerAvatar: null
             };
         }
-    }, []);
+    }, [customerCache]);
 
     // Event handlers
     const handleFacilityChange = useCallback((value) => {
@@ -729,12 +992,28 @@ const BookingManagement = () => {
             }
         } else {
             console.log('⚠️ Invalid userId:', booking.userId);
-            setSelectedBooking(prev => prev ? {
-                ...prev,
-                customerName: 'Admin (Court Owner)',
-                customerPhone: CUSTOMER_PHONE || '0000000000',
-                customerEmail: CUSTOMER_EMAIL || 'admin@courtowner.com'
-            } : null);
+            console.log('🔍 DEBUG: Full booking object:', JSON.stringify(booking, null, 2));
+
+            // ✅ FIX: Check nếu có customer info trong booking
+            if (booking.customerName && booking.customerPhone && booking.customerEmail) {
+                console.log('✅ Using existing customer info from booking object');
+                setSelectedBooking(prev => prev ? {
+                    ...prev,
+                    customerName: booking.customerName,
+                    customerPhone: booking.customerPhone,
+                    customerEmail: booking.customerEmail,
+                    customerAvatar: null
+                } : null);
+                console.log('✅ Customer details set from booking object');
+            } else {
+                console.log('🔄 Fallback to Admin info - no customer data in booking');
+                setSelectedBooking(prev => prev ? {
+                    ...prev,
+                    customerName: 'Admin (Court Owner)',
+                    customerPhone: CUSTOMER_PHONE || '0000000000',
+                    customerEmail: CUSTOMER_EMAIL || 'admin@courtowner.com'
+                } : null);
+            }
         }
 
         updateLoading('customer', false);
@@ -841,56 +1120,133 @@ const BookingManagement = () => {
                 categoryId: values.categoryId
             };
 
-            const response = await createBookingForCO(bookingRequestData);
+            console.log('📡 Creating smart booking with data:', bookingRequestData);
+
+            const response = await markSmartSlot(bookingRequestData);
+            console.log('📡 MarkSmartSlot response:', response);
+
             const isSuccess = response.status === 200 || response.status === 201 ||
                 response.data?.success === true || !response.data?.error;
 
             if (isSuccess) {
-                message.success('Tạo đơn đặt sân thành công!');
+                message.success('Tạo đơn đặt sân thành công với trạng thái đã cọc!');
 
-                // 🔔 FIX: LẤY THÔNG TIN THỰC TỪ RESPONSE
-                const responseData = response.data?.data;
-                if (responseData?.slots?.length > 0 && isConnected) {
-                    // Gửi notification cho từng slot được tạo
+                // ✅ UPDATE: Local state trước, sau đó delay 2s rồi đóng modal
+                const responseData = response.data?.data || response.data;
+
+                if (responseData?.slots?.length > 0) {
+                    // Update local state
                     for (const slot of responseData.slots) {
-                        const notification = {
-                            bookingId: responseData.bookingId, // ✅ 1125 từ response
-                            facilityId: selectedFacility,
-                            courtId: slot.courtId, // ✅ 19 từ response
-                            timeSlot: `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`, // ✅ "08:00 - 10:00"
+                        const timeSlot = `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
+                        const bookingKey = getBookingKey(slot.courtId, selectedDate, timeSlot);
+
+                        const newBooking = {
+                            id: responseData.bookingId,
+                            userId: CUSTOMER_USER_ID,
+                            courtId: slot.courtId,
+                            courtName: slot.courtName,
+                            timeSlot: timeSlot,
                             date: selectedDate.format('DD/MM/YYYY'),
-                            checkInTime: formatTime(slot.startTime), // ✅ "08:00"
+                            price: 0,
                             status: 'paid',
-                            action: 'created',
-                            message: `Đơn đặt sân mới được tạo cho ${slot.courtName}`,
-                            courtName: slot.courtName, // ✅ "Sân 5 ngu?i - CMT8 - 2"
-                            customerName: responseData.user?.email?.split('@')[0] || 'Admin', // ✅ "trong1m"
-                            customerEmail: responseData.user?.email || CUSTOMER_EMAIL, // ✅ "trong1m@gmail.com"
-                            customerPhone: responseData.user?.phone || CUSTOMER_PHONE, // ✅ "0944126356"
-                            totalAmount: 0, // Không có trong response, để 0
-                            timestamp: new Date().toISOString()
+                            paymentStatus: 'deposit',
+                            bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                            checkInDate: selectedDate.format('YYYY-MM-DD'),
+                            statusId: 7,
+                            originalStatus: 'Paid',
+                            customerName: responseData.user?.email?.split('@')[0] || 'Admin',
+                            customerPhone: responseData.user?.phone || CUSTOMER_PHONE,
+                            customerEmail: responseData.user?.email || CUSTOMER_EMAIL
                         };
 
-                        console.log('🔔 Sending notification with real data:', notification);
-                        await sendBookingUpdate(notification);
+                        setBookingData(prev => ({
+                            ...prev,
+                            [bookingKey]: newBooking
+                        }));
+                    }
+                } else if (responseData?.bookingId) {
+                    // Handle single booking response
+                    for (const timeSlot of selectedTimeSlots) {
+                        const courtId = responseData.courtId || (courts.length > 0 ? courts[0].courtId : null);
+                        const courtName = responseData.courtName || (courts.length > 0 ? courts[0].courtName : 'Unknown Court');
+
+                        if (courtId) {
+                            const bookingKey = getBookingKey(courtId, selectedDate, timeSlot);
+
+                            const newBooking = {
+                                id: responseData.bookingId,
+                                userId: CUSTOMER_USER_ID,
+                                courtId: courtId,
+                                courtName: courtName,
+                                timeSlot: timeSlot,
+                                date: selectedDate.format('DD/MM/YYYY'),
+                                price: 0,
+                                status: 'paid',
+                                paymentStatus: 'deposit',
+                                bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                                checkInDate: selectedDate.format('YYYY-MM-DD'),
+                                statusId: 7,
+                                originalStatus: 'Paid',
+                                customerName: 'Admin (Smart Booking)',
+                                customerPhone: CUSTOMER_PHONE,
+                                customerEmail: CUSTOMER_EMAIL
+                            };
+
+                            setBookingData(prev => ({
+                                ...prev,
+                                [bookingKey]: newBooking
+                            }));
+                        }
                     }
                 }
 
-                setTimeout(() => closeCreateBookingModal(), 1000);
-                setTimeout(() => selectedFacility && loadBookings(selectedFacility), 1500);
+                // ✅ DELAY: 2 giây trước khi đóng modal và reload data
+                setTimeout(() => {
+                    setIsCreateBookingModalVisible(false);
+                    createBookingForm.resetFields();
+                    setSelectedTimeSlots([]);
+                }, 3000); // ✅ THAY ĐỔI: Delay 2s thay vì đóng ngay lập tức
+
+                // ✅ RELOAD: Data sau 3s để đảm bảo modal đã đóng
+                setTimeout(() => {
+                    if (selectedFacility) {
+                        loadBookings(selectedFacility);
+                    }
+                }, 3000); // ✅ 3s để đảm bảo modal đã đóng xong
+
             } else {
                 const errorMessage = response.data?.message || response.data?.error || 'Không thể tạo đơn đặt sân';
                 message.error(errorMessage);
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
-            message.error(errorMessage);
-        } finally {
-            updateLoading('creating', false);
-        }
-    }, [selectedTimeSlots, selectedDate, selectedFacility, getTimeSlotId, loadBookings, updateLoading, isConnected, sendBookingUpdate, formatTime]);
+            console.error('❌ Error creating smart booking:', error);
 
-    // Modal handlers
+            if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+                message.warning('Yêu cầu quá thời gian chờ. Vui lòng kiểm tra lại!');
+
+                // ✅ DELAY: Cho timeout cũng delay 2s
+                setTimeout(() => {
+                    setIsCreateBookingModalVisible(false);
+                    createBookingForm.resetFields();
+                    setSelectedTimeSlots([]);
+                }, 3000);
+
+                setTimeout(() => {
+                    if (selectedFacility) {
+                        loadBookings(selectedFacility);
+                    }
+                }, 3000);
+            } else {
+                const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                message.error(errorMessage);
+            }
+        } finally {
+            // ✅ DELAY: Reset loading state sau 2.5s để user thấy được success message
+            setTimeout(() => {
+                updateLoading('creating', false);
+            }, 2500);
+        }
+    }, [selectedTimeSlots, selectedDate, selectedFacility, getTimeSlotId, loadBookings, updateLoading, formatTime, courts, createBookingForm]);
     const openCreateBookingModal = useCallback(async () => {
         if (!selectedFacility) {
             message.warning('Vui lòng chọn cơ sở trước');
@@ -983,6 +1339,42 @@ const BookingManagement = () => {
         // eslint-disable-next-line
     }, [modalCategories, isCreateBookingModalVisible]);
 
+    const getAvailableTimeSlots = useCallback(() => {
+        const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
+
+        if (!selectedCategoryId) {
+            return []; // Không hiển thị time slot nếu chưa chọn category
+        }
+
+        // Lấy tất cả courts của category đã chọn
+        const selectedCategory = modalCategories.find(
+            cat => String(cat.categoryId) === String(selectedCategoryId)
+        );
+
+        if (!selectedCategory) return [];
+
+        const categoryName = selectedCategory.categoryName;
+        const courtsOfSelectedCategory = courts.filter(court =>
+            court.categoryName === categoryName
+        );
+
+        if (courtsOfSelectedCategory.length === 0) return [];
+
+        // Lọc time slots có ít nhất 1 sân trống
+        const availableTimeSlots = timeSlots.filter(timeSlot => {
+            // Kiểm tra xem có ít nhất 1 sân trống trong category này không
+            const hasAvailableSlot = courtsOfSelectedCategory.some(court => {
+                const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
+                return !bookingData[bookingKey]; // Không có booking = slot trống
+            });
+
+            return hasAvailableSlot;
+        });
+
+        return availableTimeSlots;
+    }, [modalCategories, courts, timeSlots, selectedDate, getBookingKey, bookingData, createBookingForm]);
+
+
     // Render helpers
     const renderTimeSlotGrid = useCallback(() => {
         if (loading.timeSlots) {
@@ -994,34 +1386,77 @@ const BookingManagement = () => {
             );
         }
 
-        if (timeSlots.length === 0) {
+        // ✅ SỬ DỤNG: Available time slots thay vì tất cả time slots
+        const availableSlots = getAvailableTimeSlots();
+
+        if (availableSlots.length === 0) {
+            const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
+
             return (
                 <div className="empty-slots">
                     <ClockCircleOutlined className="empty-icon" />
-                    <span>Không có khung giờ nào</span>
+                    <span>
+                        {!selectedCategoryId
+                            ? 'Vui lòng chọn loại sân trước'
+                            : 'Không có khung giờ trống nào'
+                        }
+                    </span>
                 </div>
             );
         }
 
-        return timeSlots.map(slot => (
-            <div
-                key={slot}
-                className={`time-slot-card ${selectedTimeSlots.includes(slot) ? 'selected' : ''}`}
-                onClick={() => handleTimeSlotToggle(slot)}
-            >
-                <div className="slot-time">
-                    <ClockCircleOutlined className="slot-icon" />
-                    <span>{slot}</span>
-                </div>
-                <div className="slot-indicator">
-                    {selectedTimeSlots.includes(slot) && (
-                        <CheckCircleOutlined className="check-icon" />
-                    )}
-                </div>
-            </div>
-        ));
-    }, [timeSlots, selectedTimeSlots, loading.timeSlots, handleTimeSlotToggle]);
+        return availableSlots.map(slot => {
+            // ✅ HIỂN THỊ: Số sân trống cho mỗi slot
+            const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
+            const selectedCategory = modalCategories.find(
+                cat => String(cat.categoryId) === String(selectedCategoryId)
+            );
 
+            const courtsOfCategory = courts.filter(court =>
+                court.categoryName === selectedCategory?.categoryName
+            );
+
+            const availableCourtsCount = courtsOfCategory.filter(court => {
+                const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, slot);
+                return !bookingData[bookingKey];
+            }).length;
+
+            return (
+                <div
+                    key={slot}
+                    className={`time-slot-card ${selectedTimeSlots.includes(slot) ? 'selected' : ''}`}
+                    onClick={() => handleTimeSlotToggle(slot)}
+                >
+                    <div className="slot-time">
+                        <ClockCircleOutlined className="slot-icon" />
+                        <span>{slot}</span>
+                    </div>
+                    <div className="slot-info">
+                        <span className="available-count">
+                            {availableCourtsCount} sân trống
+                        </span>
+                    </div>
+                    <div className="slot-indicator">
+                        {selectedTimeSlots.includes(slot) && (
+                            <CheckCircleOutlined className="check-icon" />
+                        )}
+                    </div>
+                </div>
+            );
+        });
+    }, [
+        timeSlots,
+        selectedTimeSlots,
+        loading.timeSlots,
+        handleTimeSlotToggle,
+        getAvailableTimeSlots,
+        modalCategories,
+        courts,
+        selectedDate,
+        getBookingKey,
+        bookingData,
+        createBookingForm
+    ]);
     const renderBookingTable = useCallback(() => {
         if (loading.courts || loading.bookings) {
             return (
@@ -1066,14 +1501,39 @@ const BookingManagement = () => {
                 </div>
                 {timeSlots.map(slot => {
                     const status = getSlotStatus(court, slot);
+                    const isAvailable = status === 'available';
+
                     return (
                         <div
                             key={`${court.courtId || court.id}-${slot}`}
                             className={`slot-cell ${status}`}
-                            onClick={() => handleSlotClick(court, slot)}
-                            title={`${court.courtName || court.name} - ${slot}`}
+                            onClick={isAvailable
+                                ? (e) => handleEmptySlotClick(e, court, slot)
+                                : () => handleSlotClick(court, slot)
+                            }
+                            onContextMenu={isAvailable
+                                ? (e) => handleEmptySlotClick(e, court, slot)
+                                : undefined
+                            }
+                            title={`${court.courtName || court.name} - ${slot} - ${getSlotDisplayText(status)}`}
+                            style={{
+                                cursor: isAvailable ? 'context-menu' : 'pointer',
+                                position: 'relative'
+                            }}
                         >
-                            {getSlotDisplayText(status)}
+                            <span className="slot-text">{getSlotDisplayText(status)}</span>
+                            {isAvailable && (
+                                <MoreOutlined
+                                    className="slot-menu-icon"
+                                    style={{
+                                        position: 'absolute',
+                                        top: '2px',
+                                        right: '2px',
+                                        fontSize: '10px',
+                                        opacity: 0.6
+                                    }}
+                                />
+                            )}
                         </div>
                     );
                 })}
@@ -1088,11 +1548,17 @@ const BookingManagement = () => {
         selectedFacility,
         getSlotStatus,
         handleSlotClick,
+        handleEmptySlotClick,
         getSlotDisplayText
     ]);
+    const handleCategoryChange = useCallback((categoryId) => {
+        createBookingForm.setFieldsValue({ categoryId });
+        // Reset selected time slots khi đổi category
+        setSelectedTimeSlots([]);
+    }, [createBookingForm]);
 
     return (
-        <div className="booking-management">
+        <div className="booking-management" onClick={hideContextMenu}>
             <div className="main-container">
                 {/* Header with connection status */}
                 <div className="header">
@@ -1240,6 +1706,57 @@ const BookingManagement = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ✅ NEW: Context Menu for Empty Slots */}
+            {slotContextMenu.visible && (
+                <div
+                    className="slot-context-menu"
+                    style={{
+                        position: 'fixed',
+                        top: slotContextMenu.y,
+                        left: slotContextMenu.x,
+                        zIndex: 1000,
+                        backgroundColor: 'white',
+                        border: '1px solid #d9d9d9',
+                        borderRadius: '6px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        padding: '8px 0',
+                        minWidth: '160px'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {contextMenuItems.map(item => (
+                        <div
+                            key={item.key}
+                            className={`context-menu-item ${item.disabled ? 'disabled' : ''}`}
+                            style={{
+                                padding: '8px 16px',
+                                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                opacity: item.disabled ? 0.5 : 1,
+                                transition: 'background-color 0.2s'
+                            }}
+                            onClick={item.disabled ? undefined : item.onClick}
+                            onMouseEnter={(e) => {
+                                if (!item.disabled) {
+                                    e.target.style.backgroundColor = '#f5f5f5';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'transparent';
+                            }}
+                        >
+                            {item.icon}
+                            <span>{item.label}</span>
+                            {loading.markingCourt && item.key === 'mark' && (
+                                <Spin size="small" style={{ marginLeft: 'auto' }} />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Booking Detail Modal */}
             <Modal
@@ -1443,7 +1960,6 @@ const BookingManagement = () => {
                             key="detail"
                             type="primary"
                             onClick={async () => {
-                                // Mở modal booking detail chính
                                 setIsNotificationDetailVisible(false);
                                 await openModal(notificationBookingDetail.bookingId);
                                 setNotificationBookingDetail(null);
@@ -1457,92 +1973,157 @@ const BookingManagement = () => {
                 centered
                 styles={{ body: { padding: '24px' } }}
             >
-                {notificationBookingDetail && (
-                    <div className="notification-booking-detail">
-                        <Row gutter={[16, 16]}>
-                            <Col span={24}>
-                                <Card size="small" style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f' }}>
-                                    <Statistic
-                                        title="Trạng thái"
-                                        value="Đã thanh toán"
-                                        valueStyle={{ color: '#52c41a', fontSize: '16px' }}
-                                        prefix={<CheckCircleOutlined />}
-                                    />
-                                </Card>
-                            </Col>
+                {notificationBookingDetail && (() => {
+                    // ✅ Map statusId to display text and style
+                    const getStatusInfo = (statusId) => {
+                        switch (statusId) {
+                            case 7:
+                                return {
+                                    text: 'Đã đặt cọc',
+                                    color: '#faad14',
+                                    backgroundColor: '#fff7e6',
+                                    borderColor: '#ffd591',
+                                    icon: <InfoCircleOutlined />
+                                };
+                            case 8:
+                                return {
+                                    text: 'Chưa thanh toán',
+                                    color: '#ff4d4f',
+                                    backgroundColor: '#fff1f0',
+                                    borderColor: '#ffccc7',
+                                    icon: <CloseCircleOutlined />
+                                };
+                            case 9:
+                                return {
+                                    text: 'Đã hủy',
+                                    color: '#8c8c8c',
+                                    backgroundColor: '#f5f5f5',
+                                    borderColor: '#d9d9d9',
+                                    icon: <CloseCircleOutlined />
+                                };
+                            case 10:
+                                return {
+                                    text: 'Đã thanh toán',
+                                    color: '#52c41a',
+                                    backgroundColor: '#f6ffed',
+                                    borderColor: '#b7eb8f',
+                                    icon: <CheckCircleOutlined />
+                                };
+                            default:
+                                return {
+                                    text: 'Chưa xác định',
+                                    color: '#8c8c8c',
+                                    backgroundColor: '#f5f5f5',
+                                    borderColor: '#d9d9d9',
+                                    icon: <InfoCircleOutlined />
+                                };
+                        }
+                    };
 
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Mã booking:</Text>
-                                    <br />
-                                    <Text>#{notificationBookingDetail.bookingId}</Text>
-                                </div>
-                            </Col>
+                    // ✅ Get status info based on statusId
+                    const statusInfo = getStatusInfo(notificationBookingDetail.statusId || 8);
 
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Sân:</Text>
-                                    <br />
-                                    <Text>{notificationBookingDetail.courtName}</Text>
-                                </div>
-                            </Col>
+                    // ✅ DEBUG: Log status info
+                    console.log('🔍 DEBUG: Modal status info:', {
+                        statusId: notificationBookingDetail.statusId,
+                        statusDescription: notificationBookingDetail.statusDescription,
+                        statusInfo
+                    });
 
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Khách hàng:</Text>
-                                    <br />
-                                    <Text>{notificationBookingDetail.customerName}</Text>
-                                </div>
-                            </Col>
-
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Điện thoại:</Text>
-                                    <br />
-                                    <Text>{notificationBookingDetail.customerPhone || 'Chưa có'}</Text>
-                                </div>
-                            </Col>
-
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Ngày đặt:</Text>
-                                    <br />
-                                    <Text>{notificationBookingDetail.date}</Text>
-                                </div>
-                            </Col>
-
-                            <Col span={12}>
-                                <div className="detail-item">
-                                    <Text strong>Khung Giờ:</Text>
-                                    <br />
-                                    <Text>{notificationBookingDetail.timeSlot}</Text>
-                                </div>
-                            </Col>
-
-                            {notificationBookingDetail.totalAmount && (
+                    return (
+                        <div className="notification-booking-detail">
+                            <Row gutter={[16, 16]}>
                                 <Col span={24}>
-                                    <Card size="small" style={{ backgroundColor: '#fff7e6', border: '1px solid #ffd591' }}>
+                                    <Card
+                                        size="small"
+                                        style={{
+                                            backgroundColor: statusInfo.backgroundColor,
+                                            border: `1px solid ${statusInfo.borderColor}`
+                                        }}
+                                    >
                                         <Statistic
-                                            title="Tổng tiền"
-                                            value={notificationBookingDetail.totalAmount}
-                                            suffix="VND"
-                                            valueStyle={{ color: '#fa8c16', fontSize: '18px', fontWeight: 'bold' }}
-                                            formatter={(value) => value.toLocaleString()}
+                                            title="Trạng thái"
+                                            value={statusInfo.text} // ✅ SỬ DỤNG STATUS THỰC TẾ
+                                            valueStyle={{
+                                                color: statusInfo.color,
+                                                fontSize: '16px'
+                                            }}
+                                            prefix={statusInfo.icon} // ✅ ICON ĐỘNG THEO STATUS
                                         />
                                     </Card>
                                 </Col>
-                            )}
 
-                            <Col span={24}>
-                                <div className="detail-item">
-                                    <Text strong>Thời gian tạo:</Text>
-                                    <br />
-                                    <Text>{dayjs(notificationBookingDetail.timestamp).format('DD/MM/YYYY HH:mm:ss')}</Text>
-                                </div>
-                            </Col>
-                        </Row>
-                    </div>
-                )}
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Mã booking:</Text>
+                                        <br />
+                                        <Text>#{notificationBookingDetail.bookingId}</Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Sân:</Text>
+                                        <br />
+                                        <Text>{notificationBookingDetail.courtName}</Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Khách hàng:</Text>
+                                        <br />
+                                        <Text>{notificationBookingDetail.customerName}</Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Điện thoại:</Text>
+                                        <br />
+                                        <Text>{notificationBookingDetail.customerPhone || 'Chưa có'}</Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Ngày đặt:</Text>
+                                        <br />
+                                        <Text>{notificationBookingDetail.date}</Text>
+                                    </div>
+                                </Col>
+
+                                <Col span={12}>
+                                    <div className="detail-item">
+                                        <Text strong>Khung Giờ:</Text>
+                                        <br />
+                                        <Text>{notificationBookingDetail.timeSlot}</Text>
+                                    </div>
+                                </Col>
+                                {notificationBookingDetail.totalAmount != null && (
+                                    <Col span={24}>
+                                        <Card size="small" style={{ backgroundColor: '#fff7e6', border: '1px solid #ffd591' }}>
+                                            <Statistic
+                                                title="Tổng tiền"
+                                                value={notificationBookingDetail.totalAmount}
+                                                suffix="VND"
+                                                valueStyle={{ color: '#fa8c16', fontSize: '18px', fontWeight: 'bold' }}
+                                                formatter={(value) => value.toLocaleString()}
+                                            />
+                                        </Card>
+                                    </Col>
+                                )}
+                                <Col span={24}>
+                                    <div className="detail-item">
+                                        <Text strong>Thời gian tạo:</Text>
+                                        <br />
+                                        <Text>{dayjs(notificationBookingDetail.timestamp).format('DD/MM/YYYY HH:mm:ss')}</Text>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </div>
+                    );
+                })()}
             </Modal>
 
             {/* Create Booking Modal */}
@@ -1599,7 +2180,7 @@ const BookingManagement = () => {
                                     <select
                                         style={{ width: '100%', padding: 8, borderRadius: 4 }}
                                         value={createBookingForm.getFieldValue('categoryId') || ''}
-                                        onChange={e => createBookingForm.setFieldsValue({ categoryId: e.target.value })}
+                                        onChange={e => handleCategoryChange(e.target.value)}
                                     >
                                         <option value="">Chọn loại sân</option>
                                         {modalCategories.map(category => (
