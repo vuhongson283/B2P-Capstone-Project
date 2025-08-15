@@ -73,5 +73,18 @@ namespace B2P_API.Repository
 			await _context.SaveChangesAsync();
 			return user;
 		}
-	}
+
+        public async Task<User> GetUserByPhoneAsync(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone))
+                return null;
+
+            // Normalize phone number (remove spaces, special characters)
+            string normalizedPhone = phone.Trim().Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
+
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Phone != null &&
+                                         u.Phone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "") == normalizedPhone);
+        }
+    }
 }

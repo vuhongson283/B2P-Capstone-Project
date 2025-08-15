@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.Account;
 using B2P_API.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace B2P_API.Interface
@@ -10,5 +11,8 @@ namespace B2P_API.Interface
 		Task<bool> IsPhoneExistsAsync(string phone);
 		Task<bool> IsRealEmailAsync(string email);
 		Task<User> RegisterAccountAsync(User user);
-	}
+
+		Task<User> GetUserByPhoneAsync(string phone);
+        
+    }
 }
