@@ -35,8 +35,12 @@ const BookingHistory = () => {
     const { userId } = useAuth();
 
     useEffect(() => {
-        loadBookingHistory();
-    }, []);
+        // ✅ Chỉ call API khi userId đã có giá trị
+        if (userId) {
+            console.log('🔄 userId changed, loading booking history:', userId);
+            loadBookingHistory();
+        }
+    }, [userId]); // ✅ Dependency array bao gồm userId
 
     const calculateDuration = (startTime, endTime) => {
         if (!startTime || !endTime) return 'N/A';
@@ -179,6 +183,12 @@ const BookingHistory = () => {
     };
 
     const loadBookingHistory = async () => {
+        // ✅ Kiểm tra userId trước khi call API
+        if (!userId) {
+            console.log('⚠️ UserId not available yet, skipping API call');
+            return;
+        }
+
         try {
             setLoading(true);
             console.log('📚 Loading booking history for userId:', userId);
@@ -214,7 +224,6 @@ const BookingHistory = () => {
             setLoading(false);
         }
     };
-
     const loadCustomerInfoForBookings = async (bookingsToLoad) => {
         for (const booking of bookingsToLoad) {
             if (booking.userId) {

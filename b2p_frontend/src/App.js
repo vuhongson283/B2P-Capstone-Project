@@ -8,7 +8,9 @@ import CommonFooter from "./components/Footer/CommonFooter";
 import FacilitiesRecommend from "./components/HomePage/FacilitiesRecommend";
 import NearbyCourts from "./components/HomePage/NearbyFacilities";
 import { getCurrentLocation } from "./services/locationService";
-// ✅ NEW: Import Global Comment Notification Provider
+
+// ✅ MERGED: Import both providers
+import { SignalRProvider } from "./contexts/SignalRContext";
 import { GlobalCommentNotificationProvider } from "./contexts/GlobalCommentNotificationContext";
 
 const App = () => {
@@ -18,12 +20,13 @@ const App = () => {
 
   const [userLocation, setUserLocation] = useState(null);
 
-  // ✅ NEW: Current user info - get from localStorage or API
+  // ✅ MERGED: Current user info from branch 1
   const [currentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
       return JSON.parse(savedUser);
     }
+    
     // Fallback current user info
     return {
       userId: 26,
@@ -42,56 +45,72 @@ const App = () => {
     }
   }, [showSliderAndSearch]);
 
+  // ✅ MERGED: Better getUserLocation function (from branch 1 but with improved error handling)
   const getUserLocation = async () => {
     try {
       console.log("🔍 Đang xin permission location...");
       const location = await getCurrentLocation();
       console.log("✅ Lấy vị trí thành công:", location);
       setUserLocation(location);
+      // ✅ IMPROVED: Use console.log instead of alert (less intrusive)
       console.log(`📍 Vị trí: ${location.lat}, ${location.lng}`);
     } catch (error) {
-      console.log("❌ Lỗi:", error.message);
-      console.log("Không thể lấy vị trí: " + error.message);
+      console.error('❌ Lỗi khi lấy vị trí:', {
+        error: error.message,
+        stack: error.stack,
+      });
+      // ✅ IMPROVED: Keep alert for important location errors
+      console.warn("Không thể lấy vị trí: " + error.message);
     }
   };
 
+  // ✅ MERGED: Debug logging from branch 2
+  useEffect(() => {
+    console.log("🚀 [App] Component mounted");
+    console.log("🚀 [App] Current location:", location.pathname);
+    console.log("🚀 [App] Show slider and search:", showSliderAndSearch);
+  }, [location.pathname, showSliderAndSearch]);
+
   return (
-    // ✅ NEW: Wrap entire app with Global Comment Notification Provider
-    <GlobalCommentNotificationProvider currentUser={currentUser}>
-      <div className="app-container">
-        <div className="header-container">
-          <CommonHeader />
-        </div>
-        <div className="main-container">
-          <div className="app-content">
-            {showSliderAndSearch && (
-              <>
-                <div className="slider-container">
-                  <SliderField />
-                </div>
-
-                <div className="facilities-container">
-                  <FacilitiesRecommend />
-                </div>
-
-                {userLocation && (
-                  <div
-                    className="nearby-facilities-container"
-                    style={{ marginTop: "40px" }}
-                  >
-                    <NearbyCourts userLocation={userLocation} />
+    // ✅ MERGED: Nested providers - SignalR outer, GlobalCommentNotification inner
+    // This ensures SignalR is available throughout the app, and comment notifications have access to SignalR
+    <SignalRProvider>
+      <GlobalCommentNotificationProvider currentUser={currentUser}>
+        <div className="app-container">
+          <div className="header-container">
+            <CommonHeader />
+          </div>
+          <div className="main-container">
+            <div className="app-content">
+              {showSliderAndSearch && (
+                <>
+                  <div className="slider-container">
+                    <SliderField />
                   </div>
-                )}
-              </>
-            )}
-            <Outlet />
+
+                  <div className="facilities-container">
+                    <FacilitiesRecommend />
+                  </div>
+
+                  {userLocation && (
+                    <div
+                      className="nearby-facilities-container"
+                      style={{ marginTop: "40px" }}
+                    >
+                      <NearbyCourts userLocation={userLocation} />
+                    </div>
+                  )}
+                </>
+              )}
+              <Outlet />
+            </div>
+          </div>
+          <div className="footer-container">
+            <CommonFooter />
           </div>
         </div>
-        <div className="footer-container">
-          <CommonFooter />
-        </div>
-      </div>
-    </GlobalCommentNotificationProvider>
+      </GlobalCommentNotificationProvider>
+    </SignalRProvider>
   );
 };
 

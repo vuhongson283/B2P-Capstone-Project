@@ -594,6 +594,25 @@ const createPaymentOrder = (paymentData) => {
   return axios.post("Payment/create-order", paymentData, { validateStatus: () => true });
 };
 
+const createStripePaymentOrder = (paymentData) => {
+  return axios.post("Payments/create", paymentData, { validateStatus: () => true });
+};
+
+// ✅ THÊM MỚI: Confirm Stripe Payment
+const confirmStripePayment = async (paymentIntentId) => {
+  try {
+    console.log('📡 Calling confirm payment API with ID:', paymentIntentId);
+    const response = await axios.post(`Payments/confirm/${paymentIntentId}`, {}, {
+      timeout: 20000, // 20 giây
+      validateStatus: () => true // Cho phép tất cả status codes
+    });
+    console.log('✅ Confirm payment API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Confirm payment API error:', error);
+    throw error;
+  }
+};
 /* ===============================
    🔐 AUTH SERVICES
 ================================ */
@@ -767,6 +786,8 @@ export {
   createBookingForCO,
   createBookingForPlayer, // ✅ THÊM MỚI
   createPaymentOrder, // ✅ THÊM MỚI
+  createStripePaymentOrder,
+  confirmStripePayment,
   completeBooking,
 
   // Auth

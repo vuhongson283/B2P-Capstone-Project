@@ -1,4 +1,4 @@
-﻿using.Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using B2P_API.DTOs.CourtCategoryDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
