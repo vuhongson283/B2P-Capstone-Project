@@ -55,7 +55,7 @@ class Logger {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logEntry)
-      }).catch(() => {}); // Silent fail
+      }).catch(() => { }); // Silent fail
     } catch (error) {
       // Ne pas logger les erreurs de logging pour éviter les boucles
     }
@@ -283,8 +283,6 @@ const updateUserImage = (imageId, file, order = null, caption = null) => {
     timeout: 30000,
   });
 };
-
-
 
 const updateSlideImage = updateUserImage;
 const updateImage = updateUserImage;
@@ -617,11 +615,7 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
   return axios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
 };
 
-<<<<<<< HEAD
-// ✅ THÊM: getBookingById (thiếu trong file của bạn)
-=======
 // ✅ THÊM: getBookingById
->>>>>>> Test
 const getBookingById = (bookingId) => {
   return axios.get(`Booking/${bookingId}`);
 };
@@ -630,30 +624,16 @@ const createBookingForCO = (bookingData) => {
   return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
 
-<<<<<<< HEAD
-// ✅ THÊM: createBookingForPlayer (thiếu trong file của bạn)
-=======
 // ✅ THÊM: createBookingForPlayer
->>>>>>> Test
 const createBookingForPlayer = (bookingData) => {
   return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
 
-<<<<<<< HEAD
-// ✅ THÊM: createPaymentOrder (thiếu trong file của bạn)
-=======
 // ✅ THÊM: createPaymentOrder
->>>>>>> Test
 const createPaymentOrder = (paymentData) => {
   return axios.post("Payment/create-order", paymentData, { validateStatus: () => true });
 };
 
-<<<<<<< HEAD
-/* ===============================
-   🔐 AUTH SERVICES (THÊM MỚI)
-================================ */
-// ✅ THÊM: googleLoginAxios
-=======
 const createStripePaymentOrder = (paymentData) => {
   return axios.post("Payments/create", paymentData, { validateStatus: () => true });
 };
@@ -673,10 +653,10 @@ const confirmStripePayment = async (paymentIntentId) => {
     throw error;
   }
 };
+
 /* ===============================
    🔐 AUTH SERVICES
 ================================ */
->>>>>>> Test
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -694,10 +674,7 @@ const googleLoginAxios = async (googleToken) => {
     throw error;
   }
 };
-<<<<<<< HEAD
-=======
 
->>>>>>> Test
 const sendOtpAxios = async (data) => {
   try {
     console.log('📡 Calling sendOtp API with data:', data);
@@ -709,10 +686,7 @@ const sendOtpAxios = async (data) => {
     throw error;
   }
 };
-<<<<<<< HEAD
-=======
 
->>>>>>> Test
 // Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
 const verifyOtpAxios = async (data) => {
   try {
@@ -725,10 +699,7 @@ const verifyOtpAxios = async (data) => {
     throw error;
   }
 };
-<<<<<<< HEAD
-=======
 
->>>>>>> Test
 const loginAxios = async (data) => {
   try {
     console.log('📡 Calling login API with data:', data);
@@ -741,29 +712,6 @@ const loginAxios = async (data) => {
   }
 };
 
-<<<<<<< HEAD
-// ✅ THÊM: getAdminReport (thiếu trong file của bạn)
-const getAdminReport = (
-  startDate,
-  endDate,
-  pageNumber = 1,
-  pageSize = 10
-) => {
-  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
-  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
-
-  return axios.get(`Report/AdminReport`, {
-    params: {
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
-      pageNumber,
-      pageSize,
-    },
-  });
-};
-
-=======
->>>>>>> Test
 /* ===============================
    ✅ EXPORT ALL
 ================================ */
@@ -880,18 +828,12 @@ export {
   createBookingForCO,
   createBookingForPlayer, // ✅ THÊM MỚI
   createPaymentOrder, // ✅ THÊM MỚI
-<<<<<<< HEAD
-  completeBooking,
-  markSmartSlot,
-
-  // Auth (THÊM MỚI)
-=======
   createStripePaymentOrder,
   confirmStripePayment,
   completeBooking,
+  markSmartSlot,
 
   // Auth
->>>>>>> Test
   googleLoginAxios, // ✅ THÊM MỚI
   verifyOtpAxios, // ✅ THÊM MỚI
   sendOtpAxios, // ✅ THÊM MỚI

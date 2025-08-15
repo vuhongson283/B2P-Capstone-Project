@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, useContext } from "react";
 import "./BookingManagement.scss";
 import {
     Select,
@@ -53,17 +53,25 @@ import {
 } from "../../services/apiService";
 // ✅ THAY ĐỔI: Import signalRService trực tiếp thay vì useSignalR
 import signalRService from "../../services/signalRService";
+import { useAuth } from "../../context/AuthContext";
 
 const { Option } = Select;
 const { Text } = Typography;
 
 // Constants
-const USER_ID = 13;
-const CUSTOMER_USER_ID = 16;
-const CUSTOMER_EMAIL = "admin@courtowner.com";
-const CUSTOMER_PHONE = "0000000000";
+
 
 const BookingManagement = () => {
+
+    // ✅ DYNAMIC: Sử dụng userId từ AuthContext, fallback về 13
+    const { user, userId, isLoading: authLoading, isLoggedIn } = useAuth();
+
+    // ✅ SIMPLE: Chỉ dùng userId và user từ AuthContext
+    const USER_ID = userId || user?.userId || 13;
+    const CUSTOMER_USER_ID = userId || user?.userId || 16;
+    const CUSTOMER_EMAIL = user?.email || "admin@courtowner.com";
+    const CUSTOMER_PHONE = user?.phone || user?.phoneNumber || "0000000000";
+
     // State for facilities and courts data
     const [facilities, setFacilities] = useState([]);
     const [courts, setCourts] = useState([]);
