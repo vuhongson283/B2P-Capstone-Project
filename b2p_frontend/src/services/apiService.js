@@ -1,5 +1,110 @@
 import axios from "../utils/axiosCustomize";
 
+// ✅ LOGGER SERVICE INTÉGRÉ
+class Logger {
+  static levels = {
+    ERROR: 0,
+    WARN: 1,
+    INFO: 2,
+    DEBUG: 3
+  };
+
+  static currentLevel = process.env.NODE_ENV === 'production' ? 1 : 3;
+
+  static log(level, message, data = {}) {
+    if (this.levels[level] > this.currentLevel) return;
+
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      data,
+      url: window.location.href,
+      userAgent: navigator.userAgent
+    };
+
+    // Console logging avec couleurs
+    const colors = {
+      ERROR: 'color: #ff4757; font-weight: bold;',
+      WARN: 'color: #ffa502; font-weight: bold;',
+      INFO: 'color: #2ed573; font-weight: bold;',
+      DEBUG: 'color: #5352ed; font-weight: bold;'
+    };
+
+    console.log(
+      `%c[${level}] ${message}`,
+      colors[level],
+      data
+    );
+
+    // Envoyer vers service externe en production
+    if (process.env.NODE_ENV === 'production') {
+      this.sendToService(logEntry);
+    }
+  }
+
+  static error(message, data) { this.log('ERROR', message, data); }
+  static warn(message, data) { this.log('WARN', message, data); }
+  static info(message, data) { this.log('INFO', message, data); }
+  static debug(message, data) { this.log('DEBUG', message, data); }
+
+  static sendToService(logEntry) {
+    // Intégration avec Sentry, LogRocket, etc.
+    try {
+      fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logEntry)
+      }).catch(() => {}); // Silent fail
+    } catch (error) {
+      // Ne pas logger les erreurs de logging pour éviter les boucles
+    }
+  }
+}
+
+// ✅ WRAPPER AXIOS AVEC LOGGING AUTOMATIQUE
+const loggedAxios = {
+  async request(config) {
+    const startTime = Date.now();
+    const { method, url, data } = config;
+
+    Logger.info(`🚀 API Request: ${method?.toUpperCase()} ${url}`, {
+      method,
+      url,
+      data: data && typeof data === 'object' ? data : undefined
+    });
+
+    try {
+      const response = await axios.request(config);
+      const duration = Date.now() - startTime;
+
+      Logger.info(`✅ API Success: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
+        status: response.status,
+        duration,
+        dataSize: response.data ? JSON.stringify(response.data).length : 0
+      });
+
+      return response;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      Logger.error(`❌ API Error: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
+        status: error.response?.status,
+        message: error.message,
+        duration,
+        errorData: error.response?.data
+      });
+
+      throw error;
+    }
+  },
+
+  get: (url, config) => loggedAxios.request({ ...config, method: 'GET', url }),
+  post: (url, data, config) => loggedAxios.request({ ...config, method: 'POST', url, data }),
+  put: (url, data, config) => loggedAxios.request({ ...config, method: 'PUT', url, data }),
+  delete: (url, config) => loggedAxios.request({ ...config, method: 'DELETE', url })
+};
+
 // ✅ TĂNG TIMEOUT từ 5 giây lên 20 giây
 axios.defaults.timeout = 20000;
 
@@ -142,6 +247,8 @@ const getCommentsByUserId = (userId, queryParams = {}) => {
 const getUserImage = (userId) => axios.get(`Image/user/${userId}`);
 
 const uploadUserImage = (file, userId, caption = null) => {
+  Logger.info('Uploading user image', { userId, fileName: file.name, fileSize: file.size });
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("entityId", userId.toString());
@@ -198,7 +305,7 @@ const getBlogImages = (blogId) => axios.get(`Image/blog/${blogId}`);
 const deleteImage = (imageId) => axios.delete(`Image/${imageId}`);
 
 /* ===============================
-   🔒 PASSWORD RESET
+   🔒 PASSWORD
 ================================ */
 const forgotPasswordByEmail = (email) => axios.post("User/forgot-password-by-email", { email });
 const resetPasswordByEmail = (email, otpCode, newPassword, confirmPassword) => {
@@ -379,6 +486,26 @@ const exportReportToExcel = (
   });
 };
 
+// ✅ THÊM: getAdminReport
+const getAdminReport = (
+  startDate,
+  endDate,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
+  return axios.get(`Report/AdminReport`, {
+    params: {
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      pageNumber,
+      pageSize,
+    },
+  });
+};
+
 const getAllCourts = (params) => {
   return axios.get("CourtManagement/CourtList", {
     params: {
@@ -435,7 +562,6 @@ const createTimeslot = (createRequest) => axios.post(`TimeslotManagement/create`
 const deleteTimeslot = (timeSlotId) => axios.delete(`TimeslotManagement/delete/${timeSlotId}`);
 const updateTimeslot = (timeSlotId, updateRequest) => axios.put(`TimeslotManagement/update/${timeSlotId}`, updateRequest);
 
-// Bổ sung vì bạn export createRating
 const createRating = (ratingData) => {
   return axios.post("Ratings", ratingData, { validateStatus: () => true });
 };
@@ -491,7 +617,11 @@ const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
   return axios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
 };
 
+<<<<<<< HEAD
 // ✅ THÊM: getBookingById (thiếu trong file của bạn)
+=======
+// ✅ THÊM: getBookingById
+>>>>>>> Test
 const getBookingById = (bookingId) => {
   return axios.get(`Booking/${bookingId}`);
 };
@@ -500,20 +630,53 @@ const createBookingForCO = (bookingData) => {
   return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
 
+<<<<<<< HEAD
 // ✅ THÊM: createBookingForPlayer (thiếu trong file của bạn)
+=======
+// ✅ THÊM: createBookingForPlayer
+>>>>>>> Test
 const createBookingForPlayer = (bookingData) => {
   return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
 
+<<<<<<< HEAD
 // ✅ THÊM: createPaymentOrder (thiếu trong file của bạn)
+=======
+// ✅ THÊM: createPaymentOrder
+>>>>>>> Test
 const createPaymentOrder = (paymentData) => {
   return axios.post("Payment/create-order", paymentData, { validateStatus: () => true });
 };
 
+<<<<<<< HEAD
 /* ===============================
    🔐 AUTH SERVICES (THÊM MỚI)
 ================================ */
 // ✅ THÊM: googleLoginAxios
+=======
+const createStripePaymentOrder = (paymentData) => {
+  return axios.post("Payments/create", paymentData, { validateStatus: () => true });
+};
+
+// ✅ THÊM MỚI: Confirm Stripe Payment
+const confirmStripePayment = async (paymentIntentId) => {
+  try {
+    console.log('📡 Calling confirm payment API with ID:', paymentIntentId);
+    const response = await axios.post(`Payments/confirm/${paymentIntentId}`, {}, {
+      timeout: 20000, // 20 giây
+      validateStatus: () => true // Cho phép tất cả status codes
+    });
+    console.log('✅ Confirm payment API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Confirm payment API error:', error);
+    throw error;
+  }
+};
+/* ===============================
+   🔐 AUTH SERVICES
+================================ */
+>>>>>>> Test
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -531,6 +694,10 @@ const googleLoginAxios = async (googleToken) => {
     throw error;
   }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> Test
 const sendOtpAxios = async (data) => {
   try {
     console.log('📡 Calling sendOtp API with data:', data);
@@ -542,6 +709,10 @@ const sendOtpAxios = async (data) => {
     throw error;
   }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> Test
 // Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
 const verifyOtpAxios = async (data) => {
   try {
@@ -554,6 +725,10 @@ const verifyOtpAxios = async (data) => {
     throw error;
   }
 };
+<<<<<<< HEAD
+=======
+
+>>>>>>> Test
 const loginAxios = async (data) => {
   try {
     console.log('📡 Calling login API with data:', data);
@@ -566,6 +741,7 @@ const loginAxios = async (data) => {
   }
 };
 
+<<<<<<< HEAD
 // ✅ THÊM: getAdminReport (thiếu trong file của bạn)
 const getAdminReport = (
   startDate,
@@ -586,10 +762,15 @@ const getAdminReport = (
   });
 };
 
+=======
+>>>>>>> Test
 /* ===============================
    ✅ EXPORT ALL
 ================================ */
 export {
+  // Logger
+  Logger,
+
   // Court Category
   getAllCourtCategories,
   addCourtCategory,
@@ -640,7 +821,7 @@ export {
   // Bank
   getAllBankType,
 
-  // Account
+  // Account Management
   getAccountList,
   getAccountById,
   banUser,
@@ -658,7 +839,7 @@ export {
   activateSlider,
   deactivateSlider,
 
-  // Facility & Reports
+  // Facility
   getAllFacilitiesByPlayer,
   getAvailableSlots,
   getFacilityDetailsById,
@@ -669,6 +850,8 @@ export {
   updateFacility,
   deleteFacility,
   deleteFacilityImage,
+
+  // Report
   getReport,
   getTotalReport,
   exportReportToExcel,
@@ -697,10 +880,18 @@ export {
   createBookingForCO,
   createBookingForPlayer, // ✅ THÊM MỚI
   createPaymentOrder, // ✅ THÊM MỚI
+<<<<<<< HEAD
   completeBooking,
   markSmartSlot,
 
   // Auth (THÊM MỚI)
+=======
+  createStripePaymentOrder,
+  confirmStripePayment,
+  completeBooking,
+
+  // Auth
+>>>>>>> Test
   googleLoginAxios, // ✅ THÊM MỚI
   verifyOtpAxios, // ✅ THÊM MỚI
   sendOtpAxios, // ✅ THÊM MỚI

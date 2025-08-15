@@ -2,6 +2,7 @@ import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import logo from "../../assets/images/logo3.png";
+import { useAuth } from '../../context/AuthContext';
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { GiShuttlecock } from "react-icons/gi";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,11 +10,11 @@ import { setSearchFacility } from "../../store/action/searchFacilityAction";
 import { useState, useEffect } from "react";
 import "./CommonHeader.scss";
 
-// ✅ NEW: Import Ant Design components for notification
+// Import Ant Design components for notification
 import { Badge, Button, Dropdown, Avatar, Typography, Tooltip } from 'antd';
 import { BellOutlined, MessageOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 
-// ✅ NEW: Import comment notification context
+// Import comment notification context
 import { useGlobalCommentNotification } from "../../contexts/GlobalCommentNotificationContext";
 
 const { Text } = Typography;
@@ -24,7 +25,10 @@ const CommonHeader = (props) => {
   const location = useLocation();
   const searchFacility = useSelector((state) => state.searchFacility);
 
-  // ✅ NEW: Get comment notification context
+  // Get auth context
+  const { user, logout } = useAuth();
+
+  // Get comment notification context
   const { notifications, unreadCount, markAsRead, clearAll } = useGlobalCommentNotification();
 
   // Track active sport category
@@ -71,7 +75,13 @@ const CommonHeader = (props) => {
     );
   };
 
-  // ✅ NEW: Format notification time
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Format notification time
   const formatNotificationTime = (timestamp) => {
     const now = Date.now();
     const diff = now - timestamp;
@@ -85,10 +95,10 @@ const CommonHeader = (props) => {
     return `${days} ngày trước`;
   };
 
-  // ✅ NEW: Recent notifications (last 5)
+  // Recent notifications (last 5)
   const recentNotifications = notifications.slice(0, 5);
 
-  // ✅ NEW: Notification dropdown menu
+  // Notification dropdown menu
   const notificationDropdown = {
     items: [
       {
@@ -375,91 +385,131 @@ const CommonHeader = (props) => {
               <span className="nav-text">Khu vực</span>
             </NavLink>
 
-            <NavLink
-              to="/booking-history"
-              className={({ isActive }) => {
-                const isKhuVucActive = isActive && !activeSportCategory;
-                return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
-              }}
-            >
-              <i className="fas fa-history me-1"></i>
-              <span className="nav-text">Lịch Sử Đặt Sân</span>
-            </NavLink>
+            <span className="separator mx-2">|</span>
+
+            {/* Show booking history only for logged in users */}
+            {user && (
+              <NavLink
+                to="/booking-history"
+                className={({ isActive }) => {
+                  const isBookingActive = isActive && !activeSportCategory;
+                  return `nav-link px-3 ${isBookingActive ? "active" : ""}`;
+                }}
+              >
+                <i className="fas fa-history me-1"></i>
+                <span className="nav-text">Lịch Sử Đặt Sân</span>
+              </NavLink>
+            )}
           </Nav>
 
-          {/* ✅ NEW: Right side with notification bell and auth buttons */}
+          {/* Right side with notification bell and auth buttons */}
           <Nav className="ms-auto align-items-center">
-            {/* ✅ NEW: Comment Notification Bell */}
-            <div className="me-3">
-              <Tooltip title="Thông báo bình luận" placement="bottom">
-                <Dropdown
-                  menu={notificationDropdown}
-                  trigger={['click']}
-                  placement="bottomRight"
-                  overlayStyle={{
-                    width: '380px',
-                    maxHeight: '500px',
-                    overflow: 'auto',
-                    borderRadius: '8px',
-                    boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)'
-                  }}
-                  overlayClassName="comment-notification-dropdown"
-                >
-                  <div style={{ position: 'relative', cursor: 'pointer' }}>
-                    <Badge
-                      count={unreadCount}
-                      size="small"
-                      style={{
-                        backgroundColor: '#52c41a',
-                        boxShadow: '0 0 0 1px #d9d9d9 inset'
-                      }}
-                    >
-                      <div
+            {/* Comment Notification Bell - Show only for logged in users */}
+            {user && (
+              <div className="me-3">
+                <Tooltip title="Thông báo bình luận" placement="bottom">
+                  <Dropdown
+                    menu={notificationDropdown}
+                    trigger={['click']}
+                    placement="bottomRight"
+                    overlayStyle={{
+                      width: '380px',
+                      maxHeight: '500px',
+                      overflow: 'auto',
+                      borderRadius: '8px',
+                      boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)'
+                    }}
+                    overlayClassName="comment-notification-dropdown"
+                  >
+                    <div style={{ position: 'relative', cursor: 'pointer' }}>
+                      <Badge
+                        count={unreadCount}
+                        size="small"
                         style={{
-                          fontSize: '20px',
-                          color: unreadCount > 0 ? '#1890ff' : '#666',
-                          padding: '8px',
-                          borderRadius: '6px',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'transparent',
-                          border: 'none'
-                        }}
-                        className="comment-notification-bell"
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f5f5f5';
-                          e.target.style.color = '#1890ff';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent';
-                          e.target.style.color = unreadCount > 0 ? '#1890ff' : '#666';
+                          backgroundColor: '#52c41a',
+                          boxShadow: '0 0 0 1px #d9d9d9 inset'
                         }}
                       >
-                        <BellOutlined />
-                      </div>
-                    </Badge>
-                  </div>
-                </Dropdown>
-              </Tooltip>
-            </div>
+                        <div
+                          style={{
+                            fontSize: '20px',
+                            color: unreadCount > 0 ? '#1890ff' : '#666',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: 'transparent',
+                            border: 'none'
+                          }}
+                          className="comment-notification-bell"
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = '#f5f5f5';
+                            e.target.style.color = '#1890ff';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'transparent';
+                            e.target.style.color = unreadCount > 0 ? '#1890ff' : '#666';
+                          }}
+                        >
+                          <BellOutlined />
+                        </div>
+                      </Badge>
+                    </div>
+                  </Dropdown>
+                </Tooltip>
+              </div>
+            )}
 
-            {/* Auth buttons */}
-            <div className="auth-buttons d-flex">
-              <button
-                className="btn-login btn me-2"
-                onClick={() => navigate("/login")}
-              >
-                Đăng Nhập
-              </button>
+            {/* Authentication Section */}
+            <div className="auth-buttons d-flex align-items-center">
+              {user ? (
+                // Logged in user section
+                <>
+                  <NavLink
+                    to="/user-profile"
+                    className="nav-link user-greeting px-3"
+                    style={{
+                      color: '#28a745',
+                      fontWeight: '500',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <i className="fas fa-user-circle me-1"></i>
+                    Xin chào, {user.fullName || user.username || 'User'}
+                  </NavLink>
+                  
+                  <button
+                    className="btn-logout btn btn-outline-danger ms-2"
+                    onClick={handleLogout}
+                    style={{
+                      fontSize: '14px',
+                      padding: '6px 12px'
+                    }}
+                  >
+                    <i className="fas fa-sign-out-alt me-1"></i>
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                // Guest user section
+                <>
+                  <button
+                    className="btn-login btn me-2"
+                    onClick={() => navigate("/login")}
+                  >
+                    Đăng Nhập
+                  </button>
 
-              <button
-                className="btn-signup btn"
-                onClick={() => navigate("/register")}
-              >
-                Đăng ký
-              </button>
+                  <button
+                    className="btn-signup btn"
+                    onClick={() => navigate("/register")}
+                  >
+                    Đăng ký
+                  </button>
+                </>
+              )}
             </div>
           </Nav>
         </Navbar.Collapse>

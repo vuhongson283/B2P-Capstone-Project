@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from '../../context/AuthContext';
 import {
   Card,
   Button,
@@ -109,14 +110,14 @@ const Blog = () => {
   const [loadingBlogImages, setLoadingBlogImages] = useState({});
 
   // Current user info - Updated: 2025-07-26 17:51:24
+  const { user, isLoggedIn, isLoading: authLoading } = useAuth();
   const [currentUser] = useState({
-    userId: 16,
-    fullName: "DuyQuan226",
-    userName: "DuyQuan226",
+    userId: user?.userId,
+    fullName: user?.fullName || "",
+    userName: user?.userName || "DuyQuan226",
     avatar:
-      "https://ui-avatars.com/api/?name=DuyQuan226&background=27ae60&color=fff&size=200",
-    roleId: 2,
-    loginTime: "2025-07-26 17:51:24",
+      user?.avatar || "https://ui-avatars.com/api/?name=DuyQuan226&background=27ae60&color=fff&size=200",
+    roleId: user?.roleId || 2,
   });
 
   // User cache for displaying other users
@@ -1783,7 +1784,7 @@ const Blog = () => {
                 {blogUser?.fullName || `User ${currentBlogForComments.userId}`}
               </h3>
               <div className={styles.subtitle}>
-                📅 26/07/2025 • 🕐 17:17 UTC • DuyQuan226 đang xem
+                📅 26/07/2025 • 🕐 17:17 UTC 
               </div>
             </div>
             <button onClick={closeCommentModal} className={styles.closeButton}>
@@ -1860,7 +1861,7 @@ const Blog = () => {
                     </div>
                     <p>Chưa có bình luận nào.</p>
                     <p className={styles.subtitle}>
-                      Hãy là người đầu tiên bình luận! DuyQuan226 có thể viết
+                      Hãy là người đầu tiên bình luận! {user?.fullName || "Bạn"} có thể viết
                       ngay ⬇️
                     </p>
                   </div>

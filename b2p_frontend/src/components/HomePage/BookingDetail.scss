@@ -44,6 +44,7 @@
       justify-content: space-between;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      flex-shrink: 0; // Không cho header co lại
 
       .header-content {
         flex: 1;
@@ -89,8 +90,34 @@
       }
     }
 
+    // Container có thể scroll
+    .modal-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+
+      // Custom scrollbar
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+
+        &:hover {
+          background: #a8a8a8;
+        }
+      }
+    }
+
     .booking-summary-section,
     .contact-form-section,
+    .payment-method-section,
     .system-info-section {
       padding: 24px 32px;
 
@@ -201,6 +228,7 @@
           font-size: 15px;
           transition: all 0.2s ease;
           background-color: white;
+          box-sizing: border-box;
 
           &:focus {
             outline: none;
@@ -246,6 +274,131 @@
       }
     }
 
+    // Payment Method Section
+    .payment-method-section {
+      border-bottom: 1px solid #e5e7eb;
+
+      .form-group {
+        margin-bottom: 20px;
+
+        .form-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 8px;
+
+          .label-icon {
+            font-size: 16px;
+          }
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 15px;
+          transition: all 0.2s ease;
+          background-color: white;
+          box-sizing: border-box;
+
+          &:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          }
+
+          &.error {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+          }
+        }
+
+        .form-select {
+          background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"></polyline></svg>');
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          background-size: 16px;
+          padding-right: 40px;
+          cursor: pointer;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+
+          &::-ms-expand {
+            display: none;
+          }
+        }
+
+        .error-message {
+          display: block;
+          font-size: 12px;
+          color: #ef4444;
+          margin-top: 4px;
+          font-weight: 500;
+        }
+      }
+
+      .payment-info {
+        margin-top: 12px;
+
+        .payment-detail {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 12px;
+          border: 1px solid #e9ecef;
+          animation: fadeIn 0.3s ease-out;
+
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .info-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+          }
+
+          .info-content {
+            flex: 1;
+
+            strong {
+              display: block;
+              margin-bottom: 6px;
+              color: #333;
+              font-size: 15px;
+            }
+
+            p {
+              margin: 4px 0;
+              font-size: 14px;
+              color: #666;
+              line-height: 1.5;
+
+              &:last-child {
+                color: #28a745;
+                font-weight: 500;
+                margin-top: 8px;
+              }
+            }
+          }
+        }
+      }
+    }
+
     .system-info-section {
       background-color: #f9fafb;
       border-top: 1px solid #e5e7eb;
@@ -287,6 +440,7 @@
       padding: 24px 32px;
       border-top: 1px solid #e5e7eb;
       background-color: white;
+      flex-shrink: 0; // Không cho footer co lại
 
       .action-buttons {
         display: flex;
@@ -375,6 +529,7 @@
       .modal-header,
       .booking-summary-section,
       .contact-form-section,
+      .payment-method-section,
       .system-info-section,
       .modal-footer {
         padding: 20px 24px;
@@ -414,9 +569,21 @@
       .modal-header,
       .booking-summary-section,
       .contact-form-section,
+      .payment-method-section,
       .system-info-section,
       .modal-footer {
         padding: 16px 20px;
+      }
+
+      .modal-footer .action-buttons {
+        gap: 8px;
+
+        .btn-cancel,
+        .btn-confirm {
+          min-width: auto;
+          padding: 10px 16px;
+          font-size: 14px;
+        }
       }
     }
   }

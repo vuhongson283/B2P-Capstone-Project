@@ -1,108 +1,55 @@
-// ✅ GREEN SPORT THEME VARIABLES
-:root {
-  --primary-green: #4CAF50;
-  --deep-green: #2E7D32;
-  --light-green: #81C784;
-  --accent-green: #66BB6A;
-  --neon-green: #00E676;
-  
-  --white: #FFFFFF;
-  --light-gray: #F5F5F5;
-  --border-light: #E8F5E9;
-  --text-dark: #1B5E20;
-  --text-medium: #4A4A4A;
-  --text-light: #6B7280;
-  --danger: #EF4444;
-  
-  --gradient-primary: linear-gradient(135deg, var(--primary-green) 0%, var(--deep-green) 100%);
-  --gradient-light: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
-  --gradient-success: linear-gradient(135deg, var(--neon-green) 0%, var(--primary-green) 100%);
-  
-  --shadow-sm: 0 2px 8px rgba(76, 175, 80, 0.1);
-  --shadow-md: 0 4px 16px rgba(76, 175, 80, 0.15);
-  --shadow-lg: 0 8px 32px rgba(76, 175, 80, 0.2);
-  --shadow-xl: 0 20px 60px rgba(76, 175, 80, 0.25);
-  
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+// Variables
+$primary-color: #2B7A78;
+$secondary-color: #17252A;
+$accent-color: #3AAFA9;
+$success-color: #4CAF50;
+$danger-color: #F44336;
+$white: #FEFFFF;
+$light-gray: #DEF2F1;
+$border-color: #E5E5E5;
+$text-primary: #17252A;
+$text-secondary: #5A6C57;
+$background-light: #F8FFFE;
 
-// ✅ ANIMATIONS
+// Gradients
+$gradient-primary: linear-gradient(135deg, $primary-color 0%, $accent-color 100%);
+
+// Shadows
+$shadow-light: 0 2px 8px rgba(43, 122, 120, 0.08);
+$shadow-medium: 0 4px 20px rgba(43, 122, 120, 0.12);
+$shadow-heavy: 0 8px 32px rgba(43, 122, 120, 0.16);
+
+// Animations
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes slideIn {
   from { 
     opacity: 0;
-    transform: translateY(40px) scale(0.95);
+    transform: translateY(-20px);
   }
   to { 
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% {
-    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
     transform: translateY(0);
   }
-  40%, 43% {
-    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-    transform: translateY(-8px);
-  }
-  70% {
-    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
-    transform: translateY(-4px);
-  }
 }
 
-// ✅ LOADING SPINNER
-.loading-spinner {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  
-  &.small .spinner-dot {
-    width: 6px;
-    height: 6px;
-  }
-  
-  &.medium .spinner-dot {
-    width: 8px;
-    height: 8px;
-  }
-  
-  .spinner-dot {
-    width: 10px;
-    height: 10px;
-    background: currentColor;
-    border-radius: 50%;
-    animation: pulse 1.4s ease-in-out infinite both;
-    
-    &:nth-child(1) { animation-delay: -0.32s; }
-    &:nth-child(2) { animation-delay: -0.16s; }
-    &:nth-child(3) { animation-delay: 0s; }
-  }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-// ✅ MODAL OVERLAY
+// Modal Overlay
 .booking-modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(27, 94, 32, 0.8);
-  backdrop-filter: blur(8px);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(23, 37, 42, 0.8);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -111,39 +58,39 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-// ✅ MODAL CONTAINER
+// Modal Container - Tăng width, giảm height
 .booking-modal {
-  background: var(--white);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
+  background: $white;
+  border-radius: 20px;
+  box-shadow: $shadow-heavy;
   width: 100%;
-  max-width: 800px;
-  max-height: 85vh;
+  max-width: 750px; // Tăng từ 600px lên 750px
+  max-height: 80vh; // Giảm từ 85vh xuống 80vh
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid var(--border-light);
+  animation: slideIn 0.4s ease-out;
 }
 
-// ✅ MODAL HEADER
+// Modal Header - Giảm padding để tiết kiệm không gian
 .modal-header {
-  background: var(--gradient-primary);
-  color: var(--white);
-  padding: 24px 32px;
+  background: $gradient-primary;
+  color: $white;
+  padding: 20px 32px; // Giảm từ 24px xuống 20px
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   position: relative;
-  overflow: hidden;
   
   &::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: 
-      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="3" fill="rgba(255,255,255,0.05)"/></svg>');
     pointer-events: none;
   }
   
@@ -152,40 +99,39 @@
     z-index: 1;
     
     .modal-title {
-      font-size: 1.75rem;
-      font-weight: 800;
-      margin: 0 0 8px 0;
+      font-size: 1.6rem; // Giảm từ 1.8rem xuống 1.6rem
+      font-weight: 700;
+      margin: 0 0 6px 0; // Giảm margin bottom từ 8px xuống 6px
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px; // Giảm từ 12px xuống 10px
       
       .title-icon {
-        font-size: 2rem;
-        animation: bounce 2s infinite;
+        font-size: 1.8rem; // Giảm từ 2rem xuống 1.8rem
       }
     }
     
     .modal-subtitle {
       margin: 0;
-      opacity: 0.95;
-      font-size: 1rem;
+      opacity: 0.9;
+      font-size: 0.95rem; // Giảm từ 1rem xuống 0.95rem
       font-weight: 500;
     }
   }
   
-  .close-button {
+  .close-btn {
     background: rgba(255, 255, 255, 0.2);
     border: none;
-    color: var(--white);
-    font-size: 1.5rem;
-    width: 40px;
-    height: 40px;
+    color: $white;
+    font-size: 1.4rem; // Giảm từ 1.5rem xuống 1.4rem
+    width: 36px; // Giảm từ 40px xuống 36px
+    height: 36px; // Giảm từ 40px xuống 36px
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     z-index: 1;
     
     &:hover {
@@ -195,45 +141,32 @@
   }
 }
 
-// ✅ BOOKING INFO
+// Booking Info - Giảm padding
 .booking-info {
-  padding: 24px 32px;
-  background: var(--gradient-light);
-  border-bottom: 1px solid var(--border-light);
+  padding: 20px 32px; // Giảm từ 24px xuống 20px
+  background: $background-light;
+  border-bottom: 1px solid $border-color;
   
-  .info-cards {
+  .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 24px; // Tăng gap để có không gian hơn
   }
   
-  .info-card {
+  .info-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: var(--white);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 2px solid transparent;
-    transition: var(--transition);
-    
-    &:hover {
-      border-color: var(--primary-green);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
+    gap: 14px; // Tăng từ 12px lên 14px
     
     .info-icon {
-      font-size: 1.5rem;
-      width: 48px;
-      height: 48px;
-      background: var(--gradient-success);
+      font-size: 1.3rem; // Giảm từ 1.5rem xuống 1.3rem
+      width: 36px; // Giảm từ 40px xuống 36px
+      height: 36px; // Giảm từ 40px xuống 36px
+      background: $gradient-primary;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--white);
       flex-shrink: 0;
     }
     
@@ -242,23 +175,22 @@
       
       .info-label {
         display: block;
-        font-size: 0.875rem;
-        color: var(--text-light);
-        margin-bottom: 4px;
-        font-weight: 500;
+        font-size: 0.8rem; // Giảm từ 0.85rem xuống 0.8rem
+        color: $text-secondary;
+        margin-bottom: 3px; // Tăng từ 2px lên 3px
       }
       
       .info-value {
         display: block;
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-dark);
+        font-size: 0.95rem; // Giảm từ 1rem xuống 0.95rem
+        font-weight: 600;
+        color: $text-primary;
       }
     }
   }
 }
 
-// ✅ MODAL CONTENT
+// Modal Content
 .modal-content {
   flex: 1;
   overflow-y: auto;
@@ -269,144 +201,131 @@
   }
   
   &::-webkit-scrollbar-track {
-    background: var(--light-gray);
+    background: $light-gray;
   }
   
   &::-webkit-scrollbar-thumb {
-    background: var(--primary-green);
+    background: $accent-color;
     border-radius: 3px;
     
     &:hover {
-      background: var(--deep-green);
+      background: $primary-color;
     }
   }
 }
 
-// ✅ EMPTY STATE
+// Empty State
 .empty-state {
   text-align: center;
-  padding: 80px 32px;
+  padding: 60px 32px;
+  color: $text-secondary;
   
   .empty-icon {
     font-size: 4rem;
-    margin-bottom: 20px;
-    opacity: 0.6;
+    margin-bottom: 16px;
   }
   
   h3 {
-    margin: 0 0 12px 0;
-    color: var(--text-dark);
-    font-size: 1.5rem;
-    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: $text-primary;
+    font-size: 1.3rem;
   }
   
   p {
     margin: 0;
-    color: var(--text-medium);
     font-size: 1rem;
   }
 }
 
-// ✅ SLOTS SECTION
-.slots-section {
-  padding: 24px 32px;
+// Slots Container - Giảm padding
+.slots-container {
+  padding: 20px 32px; // Giảm từ 24px xuống 20px
 }
 
-// ✅ SELECT ALL BAR
-.select-all-bar {
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--border-light);
+// Select All Section - Giảm spacing
+.select-all-section {
+  margin-bottom: 16px; // Giảm từ 20px xuống 16px
+  padding-bottom: 14px; // Giảm từ 16px xuống 14px
+  border-bottom: 2px solid $light-gray;
+}
+
+.select-all-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
+  color: $primary-color;
   
-  .select-all-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--deep-green);
-    transition: var(--transition);
+  input[type="checkbox"] {
+    display: none;
+  }
+  
+  .checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid $primary-color;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.3s ease;
     
-    &:hover {
-      color: var(--primary-green);
+    &::after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 2px;
+      width: 6px;
+      height: 10px;
+      border: solid $white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
+  }
+  
+  input[type="checkbox"]:checked + .checkmark {
+    background: $primary-color;
     
-    input[type="checkbox"] {
-      display: none;
-    }
-    
-    .checkbox-custom {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--primary-green);
-      border-radius: var(--radius-sm);
-      position: relative;
-      transition: var(--transition);
-      
-      &::after {
-        content: '';
-        position: absolute;
-        left: 6px;
-        top: 2px;
-        width: 6px;
-        height: 10px;
-        border: solid var(--white);
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-    }
-    
-    input[type="checkbox"]:checked + .checkbox-custom {
-      background: var(--primary-green);
-      
-      &::after {
-        opacity: 1;
-      }
+    &::after {
+      opacity: 1;
     }
   }
 }
 
-// ✅ SLOTS GRID
-.slots-grid {
+// Slots List - Giảm gap
+.slots-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px; // Giảm từ 16px xuống 12px
 }
 
-// ✅ SLOT CARD
-.slot-card {
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-md);
+// Slot Item - Cải thiện layout và spacing
+.slot-item {
+  border: 2px solid $border-color;
+  border-radius: 12px;
   overflow: hidden;
-  transition: var(--transition);
-  background: var(--white);
+  transition: all 0.3s ease;
+  background: $white;
   
   &:hover {
-    border-color: var(--accent-green);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: $accent-color;
+    box-shadow: $shadow-light;
   }
   
   &.selected {
-    border-color: var(--primary-green);
-    background: rgba(76, 175, 80, 0.02);
-    box-shadow: var(--shadow-md);
-    
-    .slot-header {
-      background: var(--gradient-light);
-    }
+    border-color: $primary-color;
+    background: rgba(43, 122, 120, 0.02);
+    box-shadow: $shadow-medium;
   }
   
-  .slot-header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+  .slot-main {
+    display: grid; // Đổi từ flex sang grid
+    grid-template-columns: auto 1fr auto; // 3 cột: checkbox, info, price
     align-items: center;
-    padding: 20px 24px;
-    gap: 20px;
-    transition: var(--transition);
+    padding: 16px 20px; // Giảm từ 20px xuống 16px
+    gap: 20px; // Tăng gap để có không gian hơn
   }
   
   .slot-checkbox {
@@ -416,13 +335,13 @@
       display: none;
     }
     
-    .checkbox-custom {
+    .checkmark {
       width: 20px;
       height: 20px;
-      border: 2px solid var(--border-light);
-      border-radius: var(--radius-sm);
+      border: 2px solid $border-color;
+      border-radius: 4px;
       position: relative;
-      transition: var(--transition);
+      transition: all 0.3s ease;
       
       &::after {
         content: '';
@@ -431,7 +350,7 @@
         top: 2px;
         width: 6px;
         height: 10px;
-        border: solid var(--white);
+        border: solid $white;
         border-width: 0 2px 2px 0;
         transform: rotate(45deg);
         opacity: 0;
@@ -439,9 +358,9 @@
       }
     }
     
-    input[type="checkbox"]:checked + .checkbox-custom {
-      background: var(--primary-green);
-      border-color: var(--primary-green);
+    input[type="checkbox"]:checked + .checkmark {
+      background: $primary-color;
+      border-color: $primary-color;
       
       &::after {
         opacity: 1;
@@ -449,19 +368,20 @@
     }
   }
   
-  .slot-details {
+  .slot-info {
+    flex: 1;
+    
     .slot-time {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin-bottom: 6px;
+      font-size: 1.1rem; // Giảm từ 1.2rem xuống 1.1rem
+      font-weight: 600;
+      color: $text-primary;
+      margin-bottom: 4px;
       
       .time-icon {
-        font-size: 1.1rem;
-        color: var(--primary-green);
+        font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
       }
     }
     
@@ -469,188 +389,171 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.9rem;
-      color: var(--text-medium);
-      font-weight: 500;
+      font-size: 0.85rem; // Giảm từ 0.9rem xuống 0.85rem
+      color: $text-secondary;
       
-      .court-icon {
-        font-size: 0.9rem;
-        color: var(--accent-green);
+      .availability-icon {
+        font-size: 0.85rem; // Giảm từ 0.9rem xuống 0.85rem
       }
     }
   }
   
   .slot-price {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--primary-green);
+    font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
+    font-weight: 600;
+    color: $primary-color;
     text-align: right;
-    background: var(--gradient-light);
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
+    min-width: 100px; // Đảm bảo có đủ không gian
   }
 }
 
-// ✅ QUANTITY SECTION
+// Quantity Section - Cải thiện layout
 .quantity-section {
-  padding: 20px 24px;
-  background: var(--light-gray);
-  border-top: 1px solid var(--border-light);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  padding: 14px 20px; // Giảm từ 16px xuống 14px
+  background: $background-light;
+  border-top: 1px solid $light-gray;
+  display: grid; // Đổi từ flex sang grid
+  grid-template-columns: auto 1fr auto; // 3 cột: label, controls, subtotal
   align-items: center;
-  gap: 20px;
+  gap: 20px; // Khoảng cách đều giữa các element
   
   .quantity-label {
     font-weight: 600;
-    color: var(--text-dark);
-    font-size: 0.95rem;
+    color: $text-primary;
+    font-size: 0.9rem; // Thêm font-size
+  }
+  
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 2px solid $border-color;
+    border-radius: 8px;
+    overflow: hidden;
+    background: $white;
+    justify-self: center; // Căn giữa trong grid
+    
+    .quantity-btn {
+      background: none;
+      border: none;
+      width: 36px; // Giảm từ 40px xuống 36px
+      height: 36px; // Giảm từ 40px xuống 36px
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem; // Giảm từ 1.2rem xuống 1.1rem
+      font-weight: bold;
+      color: $primary-color;
+      transition: all 0.2s ease;
+      
+      &:hover:not(:disabled) {
+        background: $light-gray;
+      }
+      
+      &:disabled {
+        color: #ccc;
+        cursor: not-allowed;
+      }
+      
+      &.decrease:hover:not(:disabled) {
+        background: rgba(244, 67, 54, 0.1);
+        color: $danger-color;
+      }
+      
+      &.increase:hover:not(:disabled) {
+        background: rgba(76, 175, 80, 0.1);
+        color: $success-color;
+      }
+    }
+    
+    .quantity-value {
+      width: 45px; // Giảm từ 50px xuống 45px
+      text-align: center;
+      font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
+      font-weight: 600;
+      color: $text-primary;
+      border-left: 1px solid $border-color;
+      border-right: 1px solid $border-color;
+    }
   }
   
   .slot-subtotal {
-    font-size: 1.1rem;
+    font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
     font-weight: 700;
-    color: var(--deep-green);
+    color: $primary-color;
     text-align: right;
-    background: var(--white);
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    border: 2px solid var(--primary-green);
   }
 }
 
-// ✅ QUANTITY SELECTOR
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  background: var(--white);
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  justify-self: center;
-  box-shadow: var(--shadow-sm);
-  
-  .quantity-btn {
-    background: none;
-    border: none;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--primary-green);
-    transition: var(--transition);
-    
-    &:hover:not(:disabled) {
-      background: var(--gradient-light);
-      color: var(--deep-green);
-    }
-    
-    &:disabled {
-      color: #ccc;
-      cursor: not-allowed;
-    }
-    
-    &.decrease:hover:not(:disabled) {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger);
-    }
-    
-    &.increase:hover:not(:disabled) {
-      background: rgba(0, 230, 118, 0.1);
-      color: var(--neon-green);
-    }
-  }
-  
-  .quantity-display {
-    width: 40px;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--text-dark);
-    border-left: 1px solid var(--border-light);
-    border-right: 1px solid var(--border-light);
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-// ✅ MODAL FOOTER
+// Modal Footer - Giảm padding và cải thiện layout
 .modal-footer {
-  padding: 24px 32px;
-  background: var(--gradient-light);
-  border-top: 1px solid var(--border-light);
+  padding: 20px 32px; // Giảm từ 24px xuống 20px
+  background: $background-light;
+  border-top: 1px solid $border-color;
   
   .booking-summary {
-    margin-bottom: 20px;
+    margin-bottom: 16px; // Giảm từ 20px xuống 16px
     
-    .summary-stats {
+    .summary-row {
       display: flex;
-      gap: 24px;
-      margin-bottom: 16px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px; // Giảm từ 8px xuống 6px
       
-      .summary-item {
+      &.total {
+        margin-top: 10px; // Giảm từ 12px xuống 10px
+        padding-top: 10px; // Giảm từ 12px xuống 10px
+        border-top: 2px solid $primary-color;
+        
+        .summary-label,
+        .summary-value {
+          font-size: 1.1rem; // Giảm từ 1.2rem xuống 1.1rem
+          font-weight: 700;
+        }
+        
+        .total-price {
+          color: $primary-color;
+        }
+      }
+      
+      .summary-label {
         display: flex;
         align-items: center;
         gap: 8px;
         font-weight: 600;
-        color: var(--text-dark);
-        font-size: 0.95rem;
+        color: $text-primary;
+        font-size: 0.9rem; // Thêm font-size
         
         .summary-icon {
-          font-size: 1rem;
-          color: var(--primary-green);
+          font-size: 0.9rem; // Giảm từ 1rem xuống 0.9rem
         }
       }
-    }
-    
-    .total-price {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      background: var(--white);
-      border-radius: var(--radius-md);
-      border: 2px solid var(--primary-green);
       
-      .total-label {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--deep-green);
-      }
-      
-      .total-amount {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: var(--primary-green);
+      .summary-value {
+        font-weight: 600;
+        color: $text-primary;
+        font-size: 0.9rem; // Thêm font-size
       }
     }
   }
   
   .action-buttons {
     display: flex;
-    gap: 16px;
+    gap: 16px; // Tăng từ 12px lên 16px để có khoảng cách tốt hơn
     
-    .btn-secondary,
-    .btn-primary {
+    .btn-cancel,
+    .btn-booking {
       flex: 1;
-      padding: 14px 24px;
-      border-radius: var(--radius-md);
-      font-size: 1rem;
-      font-weight: 700;
+      padding: 12px 20px; // Giảm từ 14px 24px xuống 12px 20px
+      border-radius: 12px;
+      font-size: 1rem; // Giảm từ 1.1rem xuống 1rem
+      font-weight: 600;
       cursor: pointer;
-      transition: var(--transition);
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       
       &:disabled {
         cursor: not-allowed;
@@ -658,96 +561,91 @@
       }
     }
     
-    .btn-secondary {
-      background: var(--white);
-      border: 2px solid var(--border-light);
-      color: var(--text-medium);
+    .btn-cancel {
+      background: transparent;
+      border: 2px solid $border-color;
+      color: $text-secondary;
       
       &:hover:not(:disabled) {
-        border-color: var(--danger);
-        color: var(--danger);
-        background: rgba(239, 68, 68, 0.05);
-        transform: translateY(-2px);
+        border-color: $danger-color;
+        color: $danger-color;
+        background: rgba(244, 67, 54, 0.05);
       }
     }
     
-    .btn-primary {
-      background: var(--gradient-primary);
+    .btn-booking {
+      background: $gradient-primary;
       border: none;
-      color: var(--white);
-      box-shadow: var(--shadow-md);
+      color: $white;
       
       &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
+        box-shadow: $shadow-medium;
       }
       
       .btn-icon {
-        font-size: 1.2rem;
+        font-size: 1.1rem; // Giảm từ 1.2rem xuống 1.1rem
+      }
+      
+      .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid $white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
       }
     }
   }
 }
 
-// ✅ RESPONSIVE DESIGN
+// Responsive Design - Cập nhật cho mobile
 @media (max-width: 768px) {
   .booking-modal-overlay {
     padding: 10px;
   }
   
   .booking-modal {
-    max-height: 90vh;
+    max-height: 90vh; // Tăng lại cho mobile
     max-width: 95vw;
   }
   
   .modal-header {
-    padding: 20px 24px;
+    padding: 16px 20px; // Giảm padding cho mobile
     
     .modal-title {
-      font-size: 1.5rem;
-      
-      .title-icon {
-        font-size: 1.7rem;
-      }
+      font-size: 1.4rem;
     }
   }
   
   .booking-info {
-    padding: 20px 24px;
+    padding: 16px 20px;
     
-    .info-cards {
+    .info-grid {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 12px;
     }
   }
   
-  .slots-section {
-    padding: 20px 24px;
+  .slots-container {
+    padding: 16px 20px;
   }
   
-  .slot-card .slot-header {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    text-align: center;
-    
-    .slot-details {
-      order: -1;
-    }
+  .slot-item .slot-main {
+    grid-template-columns: 1fr; // Chuyển về 1 cột cho mobile
+    gap: 12px;
+    text-align: left;
   }
   
   .quantity-section {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    padding: 12px 16px;
+    grid-template-columns: 1fr; // Chuyển về 1 cột cho mobile
+    gap: 12px;
     text-align: center;
   }
   
   .modal-footer {
-    padding: 20px 24px;
-    
-    .summary-stats {
-      flex-direction: column;
-      gap: 12px;
-    }
+    padding: 16px 20px;
     
     .action-buttons {
       flex-direction: column;
@@ -765,7 +663,7 @@
     }
   }
   
-  .slot-card .slot-details .slot-time {
+  .slot-item .slot-info .slot-time {
     font-size: 1.1rem;
   }
 }

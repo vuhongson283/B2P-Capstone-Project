@@ -19,18 +19,17 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-export default function BookingModal({
-  open,
-  onClose,
-  timeSlots = [],
-  selectedDate,
+export default function BookingModal({ 
+  open, 
+  onClose, 
+  timeSlots = [], 
+  selectedDate, 
   facilityData,
   selectedCategory,
-  onBookingSuccess // ✅ ADDED: Callback prop for successful booking
+  onProceedToDetail // New prop để chuyển sang BookingDetail
 }) {
   const [selectedSlots, setSelectedSlots] = useState({});
   const [quantities, setQuantities] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset state when modal opens/closes or timeSlots change
   useEffect(() => {
@@ -72,7 +71,7 @@ export default function BookingModal({
   const availableSlots = timeSlots.filter(slot => slot.availableCourtCount > 0);
 
   // Check if all slots are selected
-  const isAllSelected = availableSlots.length > 0 &&
+  const isAllSelected = availableSlots.length > 0 && 
     Object.values(selectedSlots).filter(Boolean).length === availableSlots.length;
 
   // Chọn tất cả
@@ -80,12 +79,12 @@ export default function BookingModal({
     const checked = e.target.checked;
     let newSelected = {};
     let newQuantities = {};
-
+    
     availableSlots.forEach(slot => {
       newSelected[slot.timeSlotId] = checked;
       newQuantities[slot.timeSlotId] = 1;
     });
-
+    
     setSelectedSlots(checked ? newSelected : {});
     setQuantities(checked ? newQuantities : {});
   };
@@ -106,7 +105,7 @@ export default function BookingModal({
   const handleQuantity = (slotId, value) => {
     const slot = timeSlots.find(s => s.timeSlotId === slotId);
     const maxQuantity = slot ? slot.availableCourtCount : 1;
-
+    
     setQuantities(prev => ({
       ...prev,
       [slotId]: Math.max(1, Math.min(value, maxQuantity))
@@ -139,100 +138,43 @@ export default function BookingModal({
   // Get selected category name
   const getSelectedCategoryName = () => {
     if (!facilityData?.categories || !selectedCategory) return '';
-    const category = facilityData.categories.find(cat =>
+    const category = facilityData.categories.find(cat => 
       cat.categoryId.toString() === selectedCategory.toString()
     );
     return category ? category.categoryName : '';
   };
 
-  // ✅ UPDATED: Handle booking submission with success callback
-  const handleBooking = async () => {
-    setIsSubmitting(true);
-    try {
-      // Prepare booking data
-      const bookingData = {
+  // Handle proceed to booking detail
+  const handleProceedToDetail = () => {
+    if (selectedSlotsCount === 0) {
+      alert('Vui lòng chọn ít nhất một khung giờ!');
+      return;
+    }
+
+    // Tạo danh sách ID của các slot đã chọn
+    const listSlotId = Object.keys(selectedSlots)
+      .filter(slotId => selectedSlots[slotId])
+      .map(slotId => parseInt(slotId));
+
+    console.log('Selected slots:', selectedSlots);
+    console.log('List slot IDs:', listSlotId);
+
+    // Đóng modal hiện tại và chuyển sang BookingDetail
+    onClose();
+    
+    // Gọi callback để mở BookingDetail với dữ liệu cần thiết
+    if (onProceedToDetail) {
+      onProceedToDetail({
         facilityId: facilityData?.facilityId,
         categoryId: selectedCategory,
-        date: selectedDate,
-        slots: selectedSlots,
-        quantities: quantities,
+        listSlotId: listSlotId, // Thêm danh sách ID slot đã chọn
         totalPrice,
-        // Additional details for API
-        selectedSlotIds: Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId]),
-        courtCounts: Object.keys(selectedSlots).reduce((acc, slotId) => {
-          if (selectedSlots[slotId]) {
-            acc[slotId] = quantities[slotId] || 1;
-          }
-          return acc;
-        }, {})
-      };
-
-      console.log('📤 Booking data:', bookingData);
-
-      // TODO: Replace with actual API call
-      // const response = await createBookingAPI(bookingData);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // ✅ SIMULATE: Successful booking response
-      const simulatedResponse = {
-        success: true,
-        data: {
-          bookingId: Date.now(), // Simulated booking ID
-          message: 'Đặt sân thành công!',
-          bookedSlots: Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId])
-        }
-      };
-
-      if (simulatedResponse.success) {
-        // Show success message
-        console.log('✅ Booking successful:', simulatedResponse.data);
-
-        // ✅ IMPORTANT: Call success callback to refresh slot data
-        if (onBookingSuccess) {
-          console.log('🔄 Calling onBookingSuccess callback to refresh slots...');
-          onBookingSuccess(simulatedResponse.data);
-        }
-
-        // Show user-friendly success message
-        alert(`Đặt sân thành công! Mã booking: #${simulatedResponse.data.bookingId}`);
-
-        // ✅ UPDATED: Don't close modal immediately - let parent handle it
-        // The parent component (FacilityDetails) will close modal after refreshing data
-
-      } else {
-        throw new Error(simulatedResponse.message || 'Đặt sân thất bại');
-      }
-
-    } catch (error) {
-      console.error('❌ Booking error:', error);
-      alert(error.message || 'Có lỗi xảy ra khi đặt sân!');
-    } finally {
-      setIsSubmitting(false);
+        selectedSlots,
+        quantities,
+        selectedDate,
+        facilityData
+      });
     }
-  };
-
-  // ✅ ADDED: Handle successful booking completion
-  const handleBookingComplete = (bookingResult) => {
-    // Reset form state
-    setSelectedSlots({});
-    setQuantities({});
-    setIsSubmitting(false);
-
-    // Close modal
-    onClose();
-
-    console.log('✅ Booking completed and modal closed');
-  };
-
-  // ✅ ADDED: Enhanced close handler
-  const handleClose = () => {
-    // Reset states when closing
-    setSelectedSlots({});
-    setQuantities({});
-    setIsSubmitting(false);
-    onClose();
   };
 
   return (
@@ -247,11 +189,11 @@ export default function BookingModal({
             </h2>
             <p className="modal-subtitle">{formatDate(selectedDate)}</p>
           </div>
-          <button className="close-btn" onClick={handleClose} aria-label="Đóng">
+          <button className="close-btn" onClick={onClose} aria-label="Đóng">
             <span>×</span>
           </button>
         </div>
-
+        
         {/* Booking Info */}
         <div className="booking-info">
           <div className="info-grid">
@@ -285,11 +227,10 @@ export default function BookingModal({
               {/* Select All */}
               <div className="select-all-section">
                 <label className="select-all-checkbox">
-                  <input
+                  <input 
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={handleCheckAll}
-                    disabled={isSubmitting}
                   />
                   <span className="checkmark"></span>
                   <span className="select-all-text">
@@ -297,25 +238,24 @@ export default function BookingModal({
                   </span>
                 </label>
               </div>
-
+              
               {/* Time Slots */}
               <div className="slots-list">
                 {availableSlots.map(slot => (
-                  <div
-                    className={`slot-item ${selectedSlots[slot.timeSlotId] ? "selected" : ""} ${isSubmitting ? "disabled" : ""}`}
+                  <div 
+                    className={`slot-item ${selectedSlots[slot.timeSlotId] ? "selected" : ""}`} 
                     key={slot.timeSlotId}
                   >
                     <div className="slot-main">
                       <label className="slot-checkbox">
-                        <input
+                        <input 
                           type="checkbox"
                           checked={!!selectedSlots[slot.timeSlotId]}
                           onChange={e => handleCheckSlot(slot.timeSlotId, e.target.checked)}
-                          disabled={isSubmitting}
                         />
                         <span className="checkmark"></span>
                       </label>
-
+                      
                       <div className="slot-info">
                         <div className="slot-time">
                           <span className="time-icon">🕐</span>
@@ -326,20 +266,20 @@ export default function BookingModal({
                           {slot.availableCourtCount} sân trống
                         </div>
                       </div>
-
+                      
                       <div className="slot-price">
                         {formatCurrency(PRICE_PER_COURT)}/sân
                       </div>
                     </div>
-
+                    
                     {selectedSlots[slot.timeSlotId] && (
                       <div className="quantity-section">
                         <label className="quantity-label">Số sân:</label>
                         <div className="quantity-controls">
-                          <button
+                          <button 
                             className="quantity-btn decrease"
                             onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) - 1)}
-                            disabled={(quantities[slot.timeSlotId] || 1) <= 1 || isSubmitting}
+                            disabled={(quantities[slot.timeSlotId] || 1) <= 1}
                             aria-label="Giảm số lượng"
                           >
                             <span>−</span>
@@ -347,10 +287,10 @@ export default function BookingModal({
                           <span className="quantity-value">
                             {quantities[slot.timeSlotId] || 1}
                           </span>
-                          <button
+                          <button 
                             className="quantity-btn increase"
                             onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) + 1)}
-                            disabled={(quantities[slot.timeSlotId] || 1) >= slot.availableCourtCount || isSubmitting}
+                            disabled={(quantities[slot.timeSlotId] || 1) >= slot.availableCourtCount}
                             aria-label="Tăng số lượng"
                           >
                             <span>+</span>
@@ -371,55 +311,35 @@ export default function BookingModal({
         {/* Footer */}
         <div className="modal-footer">
           <div className="booking-summary">
-            <div className="summary-row">
-              <span className="summary-label">
-                <span className="summary-icon">🕐</span>
-                Số khung giờ:
-              </span>
-              <span className="summary-value">{selectedSlotsCount}</span>
-            </div>
-            <div className="summary-row">
-              <span className="summary-label">
-                <span className="summary-icon">🏟️</span>
-                Tổng số sân:
-              </span>
-              <span className="summary-value">{totalCourts}</span>
-            </div>
-            <div className="summary-row total">
-              <span className="summary-label">
-                <span className="summary-icon">💰</span>
-                Tổng tiền:
-              </span>
-              <span className="summary-value total-price">
-                {formatCurrency(totalPrice)}
-              </span>
+            <div className="summary-info">
+              <div className="summary-item">
+                <span className="summary-label">Khung giờ đã chọn:</span>
+                <span className="summary-value">{selectedSlotsCount}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Tổng số sân:</span>
+                <span className="summary-value">{totalCourts}</span>
+              </div>
+              <div className="summary-total">
+                <span className="total-label">Tổng tiền:</span>
+                <span className="total-value">{formatCurrency(totalPrice)}</span>
+              </div>
             </div>
           </div>
-
-          <div className="action-buttons">
-            <button
-              className="btn-cancel"
-              onClick={handleClose}
-              disabled={isSubmitting}
+          
+          <div className="footer-actions">
+            <button 
+              className="btn btn-secondary" 
+              onClick={onClose}
             >
-              Hủy bỏ
+              Hủy
             </button>
-            <button
-              className="btn-booking"
-              onClick={handleBooking}
-              disabled={selectedSlotsCount === 0 || isSubmitting}
+            <button 
+              className={`btn btn-primary ${selectedSlotsCount === 0 ? 'disabled' : ''}`}
+              onClick={handleProceedToDetail}
+              disabled={selectedSlotsCount === 0}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <span className="btn-icon">⚽</span>
-                  Đặt sân ngay
-                </>
-              )}
+              Tiếp tục đặt sân
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.TimeslotDTO;
 using B2P_API.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace B2P_API.Controllers
@@ -16,6 +17,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("create")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Create([FromBody] CreateTimeslotRequestDTO request)
         {
             var result = await _service.CreateNewTimeSlot(request);
@@ -23,6 +25,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPut("update/{id}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] CreateTimeslotRequestDTO request)
         {
             var result = await _service.UpdateTimeSlot(request, id);
@@ -30,6 +33,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpDelete("delete/{id}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var result = await _service.DeleteTimeSlot(id);
@@ -37,6 +41,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("facility/{facilityId}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> GetByFacilityId(
             [FromRoute] int facilityId,
             [FromQuery] int? statusId = null,
