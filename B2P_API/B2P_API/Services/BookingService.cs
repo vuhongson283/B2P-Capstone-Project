@@ -89,18 +89,25 @@ namespace B2P_API.Services
                     };
                 }
 
-                // Tạo user mới
-                user = new User
-                {
-                    Email = request.Email,
-                    Phone = request.Phone,
-                    StatusId = 1,
-                    RoleId = 3,
-                    IsMale = true,
-                    CreateAt = DateTime.UtcNow
-                };
+                // Kiểm tra user đã tồn tại theo số điện thoại
+                user = await _accRepo2.GetUserByPhoneAsync(request.Phone);
 
-                await _accRepo2.RegisterAccountAsync(user);
+                if (user == null)
+                {
+                    // Tạo user mới nếu chưa tồn tại
+                    user = new User
+                    {
+                        Email = request.Email,
+                        Phone = request.Phone,
+                        StatusId = 1,
+                        RoleId = 3,
+                        IsMale = true,
+                        CreateAt = DateTime.UtcNow
+                    };
+
+                    await _accRepo2.RegisterAccountAsync(user);
+                }
+                // Nếu user đã tồn tại theo phone, sử dụng user đó (không cần làm gì thêm)
             }
 
             // Gán slot vào sân
