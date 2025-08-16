@@ -255,6 +255,16 @@
                         box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
                     }
 
+                    // 🎯 Loading state cho category tag
+                    &.loading {
+                        background: linear-gradient(135deg, #95a5a6, #bdc3c7);
+                        animation : pulse 1.5s ease-in-out infinite;
+
+                        .tag-remove {
+                            display: none;
+                        }
+                    }
+
                     .tag-remove {
                         background     : none;
                         border         : none;
@@ -273,6 +283,11 @@
                         &:hover {
                             background: rgba(255, 255, 255, 0.2);
                             transform : scale(1.1);
+                        }
+
+                        &:disabled {
+                            opacity: 0.5;
+                            cursor : not-allowed;
                         }
 
                         i {
@@ -1076,5 +1091,31 @@
                 }
             }
         }
+    }
+}
+
+// 🎯 Thêm animation pulse cho loading state
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+// Giữ nguyên phần animation slideIn hiện có
+@keyframes slideIn {
+    from {
+        opacity  : 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity  : 1;
+        transform: translateX(0);
     }
 }

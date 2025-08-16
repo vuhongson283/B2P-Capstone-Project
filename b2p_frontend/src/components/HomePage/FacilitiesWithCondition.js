@@ -98,12 +98,7 @@ const FacilitiesWithCondition = () => {
       console.log("=== COURT CATEGORIES LOADED ===");
       console.log("Categories:", categories);
 
-      // Set default selected categories to first item when categories are loaded
-      if (categories.length > 0 && selectedCategories.length === 0) {
-        const firstCategoryId = categories[0].categoryId;
-        setSelectedCategories([firstCategoryId]);
-        console.log("Set default category to:", firstCategoryId);
-      }
+      // 🎯 Không set default category ở đây nữa, để useEffect khác handle
     } catch (error) {
       console.error("Error fetching court categories:", error);
     }
@@ -160,6 +155,71 @@ const FacilitiesWithCondition = () => {
       setDistrictFilter("");
     }
   }, [selectedProvince]);
+
+  // 🎯 Sửa useEffect đồng bộ categories - FIX CHÍNH
+  useEffect(() => {
+    console.log("=== SYNCING CATEGORIES USEEFFECT ===");
+    console.log("listCourtCategories.length:", listCourtCategories.length);
+    console.log("searchFacility:", searchFacility);
+    console.log("current selectedCategories:", selectedCategories);
+
+    // Khi listCourtCategories load xong
+    if (listCourtCategories.length > 0) {
+      // Kiểm tra nếu có categoryId từ Redux
+      if (searchFacility && searchFacility.categoryId) {
+        let categoriesToSet;
+        if (Array.isArray(searchFacility.categoryId)) {
+          categoriesToSet = searchFacility.categoryId.map((id) => parseInt(id)); // 🎯 Ensure integers
+        } else {
+          categoriesToSet = [parseInt(searchFacility.categoryId)]; // 🎯 Ensure integer
+        }
+
+        console.log("Categories from Redux (parsed):", categoriesToSet);
+
+        // 🎯 Validate tất cả categories có tồn tại trong listCourtCategories
+        const validCategories = categoriesToSet.filter((categoryId) =>
+          listCourtCategories.some((cat) => cat.categoryId === categoryId)
+        );
+
+        console.log("Valid categories after filter:", validCategories);
+
+        // 🎯 Chỉ update nếu validCategories khác với selectedCategories hiện tại
+        const currentCategoriesString = JSON.stringify(
+          [...selectedCategories].sort()
+        );
+        const newCategoriesString = JSON.stringify([...validCategories].sort());
+
+        console.log("Current categories string:", currentCategoriesString);
+        console.log("New categories string:", newCategoriesString);
+
+        if (
+          validCategories.length > 0 &&
+          currentCategoriesString !== newCategoriesString
+        ) {
+          console.log("🔄 UPDATING categories from Redux:", validCategories);
+          setSelectedCategories(validCategories);
+          return; // 🎯 Exit early to avoid setting default
+        } else if (validCategories.length > 0) {
+          console.log("✅ Categories already synced, no update needed");
+          return; // 🎯 Exit early to avoid setting default
+        } else {
+          console.log("⚠️ No valid categories found from Redux");
+        }
+      }
+
+      // 🎯 Chỉ set default nếu KHÔNG có categories nào được chọn VÀ không có từ Redux
+      if (
+        selectedCategories.length === 0 &&
+        (!searchFacility || !searchFacility.categoryId)
+      ) {
+        console.log(
+          "📝 No categories selected and none from Redux, using first category"
+        );
+        const firstCategoryId = listCourtCategories[0].categoryId;
+        setSelectedCategories([firstCategoryId]);
+      }
+    }
+  }, [listCourtCategories, searchFacility]); // 🎯 Removed selectedCategories from deps
 
   // 🎯 Handle click outside để đóng dropdown
   useEffect(() => {
@@ -232,34 +292,14 @@ const FacilitiesWithCondition = () => {
     }
   }, [location.search, listCourtCategories, sortOrder, dispatch, navigate]);
 
-  // 🎯 Handle Redux search facility state changes
+  // 🎯 Sửa useEffect handle Redux state changes để không override categories
   useEffect(() => {
     if (searchFacility && listCourtCategories.length > 0) {
-      console.log("=== REDUX STATE CHANGED ===");
+      console.log("=== REDUX STATE CHANGED USEEFFECT ===");
       console.log("searchFacility:", searchFacility);
 
-      // Update local states from searchFacility
+      // Update local states from searchFacility (KHÔNG touch categories ở đây)
       setSearchText(searchFacility.searchText || "");
-
-      // Handle category selection from Redux state
-      if (searchFacility.categoryId) {
-        let categoriesToSet;
-        if (Array.isArray(searchFacility.categoryId)) {
-          categoriesToSet = searchFacility.categoryId;
-        } else {
-          categoriesToSet = [searchFacility.categoryId];
-        }
-
-        console.log("Setting categories from Redux:", categoriesToSet);
-        setSelectedCategories(categoriesToSet);
-      } else {
-        if (listCourtCategories.length > 0) {
-          const firstCategoryId = listCourtCategories[0].categoryId;
-          setSelectedCategories([firstCategoryId]);
-          console.log("No category from Redux, using first:", firstCategoryId);
-        }
-      }
-
       setSelectedProvince(searchFacility.province || "");
       setSelectedDistrict(searchFacility.district || "");
 
@@ -274,13 +314,23 @@ const FacilitiesWithCondition = () => {
           searchFacility.timestamp
         );
 
-        const categoriesToSearch = searchFacility.categoryId
-          ? Array.isArray(searchFacility.categoryId)
-            ? searchFacility.categoryId
-            : [searchFacility.categoryId]
-          : listCourtCategories.length > 0
-          ? [listCourtCategories[0].categoryId]
-          : [];
+        // 🎯 Use categories from Redux instead of selectedCategories
+        let categoriesToSearch = [];
+        if (searchFacility.categoryId) {
+          if (Array.isArray(searchFacility.categoryId)) {
+            categoriesToSearch = searchFacility.categoryId.map((id) =>
+              parseInt(id)
+            );
+          } else {
+            categoriesToSearch = [parseInt(searchFacility.categoryId)];
+          }
+        } else if (selectedCategories.length > 0) {
+          categoriesToSearch = selectedCategories;
+        } else if (listCourtCategories.length > 0) {
+          categoriesToSearch = [listCourtCategories[0].categoryId];
+        }
+
+        console.log("Categories to search (timestamp):", categoriesToSearch);
 
         const requestBody = {
           name: searchFacility.searchText || "",
@@ -302,13 +352,20 @@ const FacilitiesWithCondition = () => {
         );
       } else if (!initialSearchDone.current) {
         // Only perform initial search if no timestamp
-        const categoriesToSearch = searchFacility.categoryId
-          ? Array.isArray(searchFacility.categoryId)
-            ? searchFacility.categoryId
-            : [searchFacility.categoryId]
-          : listCourtCategories.length > 0
-          ? [listCourtCategories[0].categoryId]
-          : [];
+        let categoriesToSearch = [];
+        if (searchFacility.categoryId) {
+          if (Array.isArray(searchFacility.categoryId)) {
+            categoriesToSearch = searchFacility.categoryId.map((id) =>
+              parseInt(id)
+            );
+          } else {
+            categoriesToSearch = [parseInt(searchFacility.categoryId)];
+          }
+        } else if (selectedCategories.length > 0) {
+          categoriesToSearch = selectedCategories;
+        } else if (listCourtCategories.length > 0) {
+          categoriesToSearch = [listCourtCategories[0].categoryId];
+        }
 
         console.log("Initial search with categories:", categoriesToSearch);
 
@@ -325,7 +382,7 @@ const FacilitiesWithCondition = () => {
         initialSearchDone.current = true;
       }
     }
-  }, [searchFacility, listCourtCategories, sortOrder, dispatch]);
+  }, [searchFacility, listCourtCategories, sortOrder, dispatch]); // 🎯 Removed selectedCategories from deps
 
   // 🎯 Filter provinces based on search text
   const filteredProvinces = provinces.filter((province) =>
@@ -440,12 +497,78 @@ const FacilitiesWithCondition = () => {
     setCategoryFilter(event.target.value);
   };
 
-  // 🎯 Get category name by ID
+  // 🎯 Get category name by ID với better debugging
   const getCategoryNameById = (categoryId) => {
-    const category = listCourtCategories.find(
-      (cat) => cat.categoryId === categoryId
+    console.log(
+      `getCategoryNameById called with ID: ${categoryId} (type: ${typeof categoryId})`
     );
-    return category ? category.categoryName : "Unknown";
+    console.log(
+      "Available categories:",
+      listCourtCategories.map((cat) => `${cat.categoryId}: ${cat.categoryName}`)
+    );
+
+    // Nếu listCourtCategories chưa load xong, return loading text thay vì "Unknown"
+    if (listCourtCategories.length === 0) {
+      return "Đang tải...";
+    }
+
+    // 🎯 Ensure categoryId is integer for comparison
+    const categoryIdInt = parseInt(categoryId);
+    const category = listCourtCategories.find(
+      (cat) => cat.categoryId === categoryIdInt
+    );
+
+    const result = category ? category.categoryName : "Unknown";
+    console.log(`Found category: ${result}`);
+    return result;
+  };
+
+  // 🎯 Cập nhật hàm renderCategoryTags với better debugging
+  const renderCategoryTags = () => {
+    console.log("=== RENDERING CATEGORY TAGS ===");
+    console.log("listCourtCategories.length:", listCourtCategories.length);
+    console.log("selectedCategories:", selectedCategories);
+    console.log("searchFacility.categoryId:", searchFacility?.categoryId);
+
+    if (listCourtCategories.length === 0) {
+      console.log("Categories not loaded yet, showing loading state");
+      return (
+        <div className="category-tags">
+          <span className="category-tag loading">Đang tải...</span>
+        </div>
+      );
+    }
+
+    if (selectedCategories.length === 0) {
+      console.log("No categories selected, showing nothing");
+      return null;
+    }
+
+    console.log("Rendering", selectedCategories.length, "category tags");
+    return (
+      <div className="category-tags">
+        {selectedCategories.map((categoryId) => {
+          const categoryName = getCategoryNameById(categoryId);
+          console.log(
+            `Category ID ${categoryId} (type: ${typeof categoryId}) -> Name: ${categoryName}`
+          );
+          return (
+            <span key={categoryId} className="category-tag">
+              {categoryName}
+              <button
+                type="button"
+                className="tag-remove"
+                onClick={() => removeCategoryTag(categoryId)}
+                title="Xóa"
+                disabled={categoryName === "Đang tải..."}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </span>
+          );
+        })}
+      </div>
+    );
   };
 
   // Handle search
@@ -704,38 +827,31 @@ const FacilitiesWithCondition = () => {
               <div className="filter-section">
                 <h5 className="filter-title">Loại sân</h5>
 
-                {/* Selected Categories Tags */}
-                {selectedCategories.length > 0 && (
-                  <div className="category-tags">
-                    {selectedCategories.map((categoryId) => (
-                      <span key={categoryId} className="category-tag">
-                        {getCategoryNameById(categoryId)}
-                        <button
-                          type="button"
-                          className="tag-remove"
-                          onClick={() => removeCategoryTag(categoryId)}
-                          title="Xóa"
-                        >
-                          <i className="fas fa-times"></i>
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Selected Categories Tags - use render function */}
+                {renderCategoryTags()}
 
                 <div className="custom-dropdown" ref={categoryDropdownRef}>
                   <div className="custom-select-wrapper">
                     <Form.Control
                       type="text"
-                      placeholder="Thêm loại sân..."
+                      placeholder={
+                        listCourtCategories.length > 0
+                          ? "Thêm loại sân..."
+                          : "Đang tải loại sân..."
+                      }
                       value={categoryFilter}
                       onChange={handleCategoryFilterChange}
                       onFocus={() => setShowCategoryDropdown(true)}
                       className="custom-select-input"
+                      disabled={listCourtCategories.length === 0}
                     />
                     {showCategoryDropdown && (
                       <div className="custom-dropdown-menu">
-                        {filteredCategories.length > 0 ? (
+                        {listCourtCategories.length === 0 ? (
+                          <div className="custom-dropdown-item no-results">
+                            Đang tải danh sách loại sân...
+                          </div>
+                        ) : filteredCategories.length > 0 ? (
                           filteredCategories.map((category) => (
                             <div
                               key={category.categoryId}

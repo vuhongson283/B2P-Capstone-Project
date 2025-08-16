@@ -220,14 +220,19 @@ const SearchField = (props) => {
     }
   };
 
-  // Hàm xử lý tìm kiếm
   const handleSearch = () => {
     const searchParams = {
       searchText,
-      categoryId: selectedCategory,
+      categoryId: [parseInt(selectedCategory)], // 🎯 Đảm bảo là integer trong array
       province: selectedProvince,
       district: selectedDistrict,
+      timestamp: Date.now(), // 🎯 Thêm timestamp để force refresh
     };
+
+    console.log("=== SEARCHFIELD DISPATCHING ===");
+    console.log("selectedCategory (raw):", selectedCategory);
+    console.log("selectedCategory (parsed):", parseInt(selectedCategory));
+    console.log("searchParams:", searchParams);
 
     dispatch(setSearchFacility(searchParams));
 
