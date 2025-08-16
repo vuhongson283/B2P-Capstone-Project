@@ -5,10 +5,13 @@ import {
   addNewCourt, 
   updateCourt, 
   deleteCourt, 
+  lockCourt,
   getCourtDetail,
   getAllCourtCategories 
 } from '../../services/apiService';
 import { Form, InputGroup, Button, Modal } from 'react-bootstrap';
+import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import { Tooltip } from 'antd'; // Chỉ import Tooltip từ antd
 import './CourtManagement.scss';
 
 const CourtManagement = () => {
@@ -63,6 +66,14 @@ const CourtManagement = () => {
     categoryId: '',
     pricePerHour: ''
   });
+
+  // Thêm state để track loading state cho từng sân
+  const [loadingCourtIds, setLoadingCourtIds] = useState([]);
+
+  // Thêm state cho modal thông báo
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState('');
 
   // Fetch courts data
   const fetchCourts = async () => {
@@ -421,6 +432,34 @@ const CourtManagement = () => {
     });
   };
 
+  // Thêm handler để xử lý khóa/mở khóa
+  const handleLockToggle = async (courtId, currentStatus) => {
+    try {
+      setLoadingCourtIds(prev => [...prev, courtId]);
+      
+      const newStatus = currentStatus === 'Active' ? 2 : 1;
+      const response = await lockCourt(courtId, newStatus, 6);
+      
+      if (response?.status === 200) {
+        fetchCourts();
+        setNotificationMessage(`${currentStatus === 'Active' ? 'Khóa' : 'Mở khóa'} sân thành công!`);
+        setNotificationType('success');
+        setShowNotification(true);
+      } else {
+        setNotificationMessage('Không thể cập nhật trạng thái sân');
+        setNotificationType('danger');
+        setShowNotification(true);
+      }
+    } catch (error) {
+      console.error('Error toggling court status:', error);
+      setNotificationMessage('Lỗi khi cập nhật trạng thái sân');
+      setNotificationType('danger');
+      setShowNotification(true);
+    } finally {
+      setLoadingCourtIds(prev => prev.filter(id => id !== courtId));
+    }
+  };
+
   if (loading) {
     return (
       <div className="court-management-container">
@@ -515,6 +554,7 @@ const CourtManagement = () => {
                   <th>Tên Sân</th>
                   <th>Loại Sân</th>
                   <th>Trạng Thái</th>
+                  <th>Khóa/Mở khóa</th>
                   <th>Hành Động</th>
                 </tr>
               </thead>
@@ -528,6 +568,26 @@ const CourtManagement = () => {
                       <span className={`status ${court.statusName === 'Active' ? 'active' : 'inactive'}`}>
                         {court.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                       </span>
+                    </td>
+                    <td>
+                      <div 
+                        className={`status-icon ${loadingCourtIds.includes(court.courtId) ? 'disabled' : ''}`}
+                        onClick={() => !loadingCourtIds.includes(court.courtId) && handleLockToggle(court.courtId, court.statusName)}
+                      >
+                        <div className="icon-tooltip">
+                          {court.statusName === 'Active' ? (
+                            <i className="fas fa-unlock" />
+                          ) : (
+                            <i className="fas fa-lock" />
+                          )}
+                          <span className="tooltip-text">
+                            {court.statusName === 'Active' ? 'Khóa sân' : 'Mở khóa sân'}
+                          </span>
+                        </div>
+                        {loadingCourtIds.includes(court.courtId) && (
+                          <i className="fas fa-spinner fa-spin ms-2"></i>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="action-buttons">
@@ -847,6 +907,32 @@ const CourtManagement = () => {
           {courtDetail && (
             <div className="court-detail">
               <div className="detail-item">
+                <label><i className="fas fa-hashtag"></i>ID Sân</label>
+                <span>{courtDetail.courtId}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-signature"></i>Tên sân</label>
+                <span>{courtDetail.courtName}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-money-bill"></i>Giá/Giờ</label>
+                <span className="price">{courtDetail.pricePerHour?.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-toggle-on"></i>Trạng thái</label>
+                <span className={`status ${courtDetail.statusName === 'Active' ? 'active' : 'inactive'}`}>
+                  {courtDetail.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+                </span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-th-large"></i>Loại sân</label>
+                <span>{courtDetail.categoryName}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-building"></i>Cơ sở</label>
+                <span>{courtDetail.facilityName}</span>
+              </div>
+              <div className="detail-item">
                 <label><i className="fas fa-map-marker-alt"></i>Địa chỉ</label>
                 <span>{courtDetail.location}</span>
               </div>
@@ -860,6 +946,26 @@ const CourtManagement = () => {
         <Modal.Footer className="detail-footer">
           <Button variant="secondary" onClick={() => setShowDetailModal(false)} className="btn-close">
             <i className="fas fa-times"></i>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Thêm Modal thông báo */}
+      <Modal 
+        show={showNotification} 
+        onHide={() => setShowNotification(false)}
+        centered
+      >
+        <Modal.Header closeButton className={`bg-${notificationType} text-white`}>
+          <Modal.Title>
+            <i className={`fas ${notificationType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2`}></i>
+            {notificationType === 'success' ? 'Thành công' : 'Lỗi'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{notificationMessage}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowNotification(false)}>
             Đóng
           </Button>
         </Modal.Footer>

@@ -572,6 +572,10 @@ const deleteCourt = (courtId, userId = 6) => {
   return loggedAxios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
 };
 
+const lockCourt = (courtId, statusId, userId) => {
+  return loggedAxios.put(`CourtManagement/LockCourt?courtId=${courtId}&statusId=${statusId}&userId=${userId}`);
+}
+
 const getCourtDetail = (courtId) => loggedAxios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 
 /* ===============================
@@ -800,6 +804,7 @@ export {
   addNewCourt,
   updateCourt,
   deleteCourt,
+  lockCourt,
   getCourtDetail,
 
   // Timeslot (✅ Fixed duplicates)
