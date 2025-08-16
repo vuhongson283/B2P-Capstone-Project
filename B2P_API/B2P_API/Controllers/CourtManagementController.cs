@@ -39,7 +39,6 @@ namespace B2P_API.Controllers
         }
         
         [HttpGet("CourtDetail")]
-        [Authorize(Roles = "3")]
         public async Task<IActionResult> Get(int courtId)
         {
             var response = await _courseService.GetCourtDetail(courtId);

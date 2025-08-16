@@ -55,7 +55,7 @@ namespace B2P_API.Controllers
 							string status = "Unpaid";
 							int statusId = 8;
 							string statusDescription = "Chưa thanh toán";
-							decimal totalAmount = 0;
+							decimal totalAmount = 20;
 
 							if (bookingDetailsResponse.Success && bookingDetailsResponse.Data != null)
 							{

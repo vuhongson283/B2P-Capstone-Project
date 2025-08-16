@@ -33,6 +33,7 @@ const BookingHistory = () => {
 
     const bookingsPerPage = 8;
     const { userId } = useAuth();
+    console.log("User ID:", userId);
 
     useEffect(() => {
         // ✅ Chỉ call API khi userId đã có giá trị
@@ -134,6 +135,44 @@ const BookingHistory = () => {
                     const courtDetails = await loadCourtDetails(slot.courtId);
                     console.log(`🏟️ [DEBUG] Court details loaded:`, courtDetails);
 
+                    // ✅ FIX: Sửa logic lấy giá tiền
+                    console.log('💰 [DEBUG] Price fields in booking:', {
+                        totalPrice: booking.totalPrice,
+                        totalAmount: booking.totalAmount,
+                        amount: booking.amount,
+                        price: booking.price,
+                        cost: booking.cost,
+                        slotPrice: slot.price,
+                        slotAmount: slot.amount,
+                        slotCost: slot.cost
+                    });
+
+                    // ✅ Thử nhiều field có thể chứa giá
+                    let finalPrice = 0;
+
+                    // Thử các field của booking trước
+                    if (booking.totalAmount && booking.totalAmount !== 0) {
+                        finalPrice = Number(booking.totalAmount);
+                    } else if (booking.totalPrice && booking.totalPrice !== 0) {
+                        finalPrice = Number(booking.totalPrice);
+                    } else if (booking.amount && booking.amount !== 0) {
+                        finalPrice = Number(booking.amount);
+                    } else if (booking.price && booking.price !== 0) {
+                        finalPrice = Number(booking.price);
+                    } else if (booking.cost && booking.cost !== 0) {
+                        finalPrice = Number(booking.cost);
+                    }
+                    // Nếu booking không có giá, thử slot
+                    else if (slot.price && slot.price !== 0) {
+                        finalPrice = Number(slot.price);
+                    } else if (slot.amount && slot.amount !== 0) {
+                        finalPrice = Number(slot.amount);
+                    } else if (slot.cost && slot.cost !== 0) {
+                        finalPrice = Number(slot.cost);
+                    }
+
+                    console.log('💰 [DEBUG] Final calculated price:', finalPrice);
+
                     const processedBooking = {
                         id: booking.bookingId || booking.id,
                         courtId: slot.courtId,
@@ -144,7 +183,7 @@ const BookingHistory = () => {
                         startTime: slot.startTime,
                         endTime: slot.endTime,
                         duration: calculateDuration(slot.startTime, slot.endTime),
-                        price: booking.totalPrice || 0,
+                        price: finalPrice, // ✅ Sử dụng finalPrice đã tính toán
                         status: mapBookingStatus(booking.status, booking.statusId),
                         originalStatus: booking.status,
                         statusId: booking.statusId,
@@ -164,13 +203,22 @@ const BookingHistory = () => {
                         customerEmail: 'Đang tải...',
                         uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`,
 
+                        // ✅ Debug thông tin để kiểm tra
+                        rawBookingData: booking, // Tạm thời thêm để debug
+                        rawSlotData: slot, // Tạm thời thêm để debug
+
                         // Thông tin rating từ API (nếu có)
                         hasRated: booking.hasRated || booking.isRated || false,
                         ratingInfo: booking.rating || booking.ratingData || null,
                         existingRating: booking.existingRating || null
                     };
 
-                    console.log(`✅ [DEBUG] Processed booking:`, processedBooking);
+                    console.log(`✅ [DEBUG] Processed booking with price:`, {
+                        bookingId: processedBooking.id,
+                        price: processedBooking.price,
+                        formattedPrice: formatPrice(processedBooking.price)
+                    });
+
                     processedBookings.push(processedBooking);
                 }
             } else {
@@ -178,7 +226,7 @@ const BookingHistory = () => {
             }
         }
 
-        console.log('✅ [DEBUG] All processed bookings with court details:', processedBookings);
+        console.log('✅ [DEBUG] All processed bookings with prices:', processedBookings);
         return processedBookings;
     };
 
@@ -360,11 +408,28 @@ const BookingHistory = () => {
     };
 
     const formatPrice = (price) => {
-        if (!price || price === 0) return '0 VNĐ';
-        return new Intl.NumberFormat('vi-VN', {
+        console.log('💰 [formatPrice] Input price:', price, typeof price);
+
+        // ✅ Kiểm tra null/undefined/empty
+        if (price === null || price === undefined || price === '' || isNaN(price)) {
+            console.log('💰 [formatPrice] Invalid price, returning 0');
+            return '0 VNĐ';
+        }
+
+        const numPrice = Number(price);
+        console.log('💰 [formatPrice] Converted to number:', numPrice);
+
+        if (numPrice === 0) {
+            return '0 VNĐ';
+        }
+
+        const formatted = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
-        }).format(price);
+        }).format(numPrice);
+
+        console.log('💰 [formatPrice] Formatted result:', formatted);
+        return formatted;
     };
 
     const formatDate = (dateString) => {
@@ -491,7 +556,7 @@ const BookingHistory = () => {
     return (
         <div className="booking-history-page">
             <div className="main-container">
-                <div className="page-header" style={{ marginTop: '2%' }}>
+                <div className="page-header" style={{ marginTop: '5%' }}>
                     <div className="header-content">
                         <h1 className="page-title">Lịch Sử Đặt Sân</h1>
                         <p className="page-subtitle">
@@ -526,8 +591,6 @@ const BookingHistory = () => {
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="completed">Đã hoàn thành</option>
                                 <option value="deposit-paid">Đã thanh toán cọc</option>
-                                <option value="confirmed">Đã xác nhận</option>
-                                <option value="pending">Chờ xác nhận</option>
                                 <option value="cancelled">Đã hủy</option>
                             </select>
                         </div>
@@ -623,15 +686,6 @@ const BookingHistory = () => {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                             </svg>
                                                             Hủy
-                                                        </button>
-                                                    )}
-
-                                                    {booking.status === 'completed' && (
-                                                        <button className="btn btn-primary btn-sm">
-                                                            <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                            </svg>
-                                                            Đặt lại
                                                         </button>
                                                     )}
                                                 </div>

@@ -7,8 +7,8 @@ import { MenuOutlined } from "@ant-design/icons";
 import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
 import NotificationBell from "../../components/NotificationBell";
 import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
+import { useAuth } from "../../context/AuthContext";
 
-const USER_ID = 13; // Your user ID
 
 const CourtOwner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -18,6 +18,8 @@ const CourtOwner = () => {
 
   // ✅ NEW: State for global notifications
   const [facilityIds, setFacilityIds] = useState([]);
+  const { user, userId, isLoading: authLoading, isLoggedIn } = useAuth();
+  const USER_ID = userId || user?.userId;
 
   // ✅ NEW: Load facilities for global notifications
   useEffect(() => {
