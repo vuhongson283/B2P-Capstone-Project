@@ -145,6 +145,11 @@ namespace B2P_API.Services
 					? slot.Discount.Value
 					: (court.PricePerHour ?? 0);
 
+				// ✅ THÊM DÒNG NÀY
+				total += finalPrice;
+
+				// ✅ DEBUG: Log để kiểm tra
+				Console.WriteLine($"💰 Slot {slotId}, Court {courtId}: finalPrice = {finalPrice}, running total = {total}");
 			}
 
 			// Tạo booking
