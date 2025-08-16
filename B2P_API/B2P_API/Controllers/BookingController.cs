@@ -3,6 +3,7 @@ using B2P_API.DTOs.BookingDTOs;
 using B2P_API.Response;
 using B2P_API.Services;
 using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace B2P_API.Controllers
 {
@@ -30,34 +31,57 @@ namespace B2P_API.Controllers
 
 				if (result.Success)
 				{
-					// Biến object -> DTO
 					var data = JsonConvert.DeserializeObject<CreateBookingResultDto>(
 						JsonConvert.SerializeObject(result.Data));
 
 					if (data?.Slots != null && data.Slots.Count > 0)
 					{
+						// ✅ FIX: Lấy booking details để có thông tin Status
+						var bookingDetailsResponse = await _bookingService.GetByIdAsync(data.BookingId);
+
 						string Fmt(string t) => string.IsNullOrWhiteSpace(t) ? "" : t.Substring(0, 5);
 
 						foreach (var slot in data.Slots)
 						{
-							var start = slot.StartTime; // "10:00:00"
-							var end = slot.EndTime;   // "12:00:00"
+							var start = slot.StartTime;
+							var end = slot.EndTime;
+
+							// ✅ FIX: Xử lý response để lấy Status
+							string status = "Unpaid";
+							int statusId = 8;
+							string statusDescription = "Chưa thanh toán";
+							decimal totalAmount = 0;
+
+							if (bookingDetailsResponse.Success && bookingDetailsResponse.Data != null)
+							{
+								var bookingData = JsonConvert.DeserializeObject<dynamic>(
+									JsonConvert.SerializeObject(bookingDetailsResponse.Data));
+
+								// Lấy thông tin từ booking details
+								status = bookingData?.status ?? "Unpaid";
+								statusId = bookingData?.statusId ?? 8;
+								statusDescription = bookingData?.statusDescription ?? "Chưa thanh toán";
+								totalAmount = bookingData?.totalPrice ?? 0;
+							}
 
 							await _notificationService.NotifyBookingCreated(request.FacilityId, new
 							{
-								bookingId = data.BookingId,              // 1131
-								facilityId = request.FacilityId,          // 27
-								courtId = slot.CourtId,                // 19
-								courtName = slot.CourtName,              // "Sân 5 người - CMT8 - 2"
+								bookingId = data.BookingId,
+								facilityId = request.FacilityId,
+								courtId = slot.CourtId,
+								courtName = slot.CourtName,
 								customerName = data.User?.Email?.Split('@')[0] ?? "Khách",
 								customerEmail = data.User?.Email,
 								customerPhone = data.User?.Phone,
 								date = data.CheckInDate.ToString("dd/MM/yyyy"),
-								checkInTime = Fmt(start),                  // "10:00"
-								timeSlot = $"{Fmt(start)} - {Fmt(end)}",// "10:00 - 12:00"
-								status = "paid",
+								checkInTime = Fmt(start),
+								timeSlot = $"{Fmt(start)} - {Fmt(end)}",
+								// ✅ FIX: Sử dụng Status từ database
+								status = status,
+								statusId = statusId,
+								statusDescription = statusDescription,
 								action = "created",
-								totalAmount = 0,                           // nếu có field thực thì thay vào
+								totalAmount = totalAmount,
 								timestamp = DateTime.UtcNow.ToString("o")
 							});
 						}
@@ -111,14 +135,26 @@ namespace B2P_API.Controllers
 
 				if (result.Success)
 				{
-					// 🔔 GỬI THÔNG BÁO SIGNALR đơn giản
-					await _notificationService.NotifyBookingCompleted(0, new // facilityId = 0 tạm thời
+					// ✅ FIX: Lấy thông tin booking để gửi notification đúng
+					var bookingDetailsResponse = await _bookingService.GetByIdAsync(id);
+
+					int facilityId = 0;
+					if (bookingDetailsResponse.Success && bookingDetailsResponse.Data != null)
+					{
+						var bookingData = JsonConvert.DeserializeObject<dynamic>(
+							JsonConvert.SerializeObject(bookingDetailsResponse.Data));
+						facilityId = bookingData?.facilityId ?? 0;
+					}
+
+					await _notificationService.NotifyBookingCompleted(facilityId, new
 					{
 						bookingId = id,
-						status = "completed",
+						facilityId = facilityId,
+						status = "Completed", // ✅ Status sau khi complete
+						statusId = 10,        // ✅ StatusId cho Completed
 						action = "completed",
 						message = "Đơn đặt sân đã được hoàn thành",
-						timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+						timestamp = DateTime.UtcNow.ToString("o")
 					});
 
 					Console.WriteLine($"✅ Booking {id} completed and SignalR notification sent");
@@ -145,8 +181,7 @@ namespace B2P_API.Controllers
 			return Ok(response);
 		}
 
-
-
+		// ✅ DTO Classes - Không thay đổi vì không có TotalAmount field
 		public class CreateBookingResultDto
 		{
 			public int BookingId { get; set; }

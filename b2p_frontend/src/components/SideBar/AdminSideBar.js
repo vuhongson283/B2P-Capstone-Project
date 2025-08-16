@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Link } from 'react-router-dom';
+import { message } from "antd";
 import "./AdminSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../../context/AuthContext';
 
 const AdminSideBar = ({
+
   onClose,
   isMobile,
   isTablet,
@@ -10,12 +14,14 @@ const AdminSideBar = ({
   collapsed,
   onToggleCollapse,
 }) => {
+  const { user, isLoggedIn, logout } = useAuth();
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
   const [userInfo, setUserInfo] = useState({
-    fullName: "Admin System",
-    email: "admin@book2play.com",
-    phone: "0987654321",
+    userId: user?.userId || "",
+    fullName: user?.fullName || "Admin",
+    email: user?.email || "",
+    phone: user?.phone || "",
     avatar: "",
   });
   const navigate = useNavigate();
@@ -88,10 +94,27 @@ const AdminSideBar = ({
 
   // Handle logout
   const handleLogout = () => {
-    // Add logout logic here
-    navigate("/login");
-    if (isMobile && onClose) {
-      onClose();
+    try {
+      logout(); // ✅ Sync function, không cần await
+      message.success('Đăng xuất thành công!');
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Lỗi khi đăng xuất!');
+
+      // ✅ MANUAL CLEANUP nếu AuthContext fail
+      localStorage.clear(); // Xóa toàn bộ localStorage
+      // HOẶC chỉ xóa specific items:
+      // localStorage.removeItem('user');
+      // localStorage.removeItem('accessToken');
+      // localStorage.removeItem('refreshToken');
+
+    } finally {
+      navigate("/login");
+
+      if (isMobile && onClose) {
+        onClose();
+      }
     }
   };
 
@@ -125,6 +148,26 @@ const AdminSideBar = ({
               <i className="fas fa-phone"></i>
               <span>{userInfo.phone}</span>
             </div>
+            {userInfo.userId && (
+              <div className="user-actions">
+                <Link
+                  to="/user-profile"
+                  className="profile-link"
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontSize: '12px',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '2px solid white',
+                    display: 'inline-block',
+                    marginTop: '4px'
+                  }}
+                >
+                  Thông tin cá nhân
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

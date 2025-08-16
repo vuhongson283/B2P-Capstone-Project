@@ -331,5 +331,42 @@ namespace B2P_API.Repository
                 return false;
             }
         }
+
+        public async Task<User> GetUserByEmailOrPhoneAsync(string emailOrPhone)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.Email == emailOrPhone || u.Phone == emailOrPhone);
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error getting user by email/phone: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<bool> VerifyUserPasswordAsync(int userId, string password)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null || string.IsNullOrEmpty(user.Password))
+                {
+                    return false;
+                }
+
+                // VERIFY PASSWORD HASH
+                return BCrypt.Net.BCrypt.Verify(password, user.Password);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error verifying password: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

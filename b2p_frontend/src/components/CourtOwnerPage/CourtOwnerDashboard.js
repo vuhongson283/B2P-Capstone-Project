@@ -27,12 +27,12 @@ const OwnerDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-
+  const userId = 6;
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const totalReportResponse = await getTotalReport(8, null, null);
-        const reportResponse = await getReport(8, null, null, null, 1, 10);
+        const totalReportResponse = await getTotalReport(userId, null, null);
+        const reportResponse = await getReport(userId, null, null, null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -58,7 +58,7 @@ const OwnerDashboard = () => {
     setExportLoading(true);
     try {
       const response = await exportReportToExcel(
-        15, 
+        userId, 
         startDate, // Ngày bắt đầu
         endDate,   // Ngày kết thúc
         null,      // facilityId (nếu cần)
@@ -117,8 +117,8 @@ const OwnerDashboard = () => {
       setLoading(true);
       try {
         const selectedDate = date.toDate(); // Chuyển moment object sang Date
-        const totalReportResponse = await getTotalReport(15, selectedDate, selectedDate);
-        const reportResponse = await getReport(15, selectedDate, selectedDate, null, 1, 10);
+        const totalReportResponse = await getTotalReport(userId, selectedDate, selectedDate);
+        const reportResponse = await getReport(userId, selectedDate, selectedDate, null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,
@@ -141,8 +141,8 @@ const OwnerDashboard = () => {
       const [startDate, endDate] = dates;
       setLoading(true);
       try {
-        const totalReportResponse = await getTotalReport(15, startDate.toDate(), endDate.toDate());
-        const reportResponse = await getReport(15, startDate.toDate(), endDate.toDate(), null, 1, 10);
+        const totalReportResponse = await getTotalReport(userId, startDate.toDate(), endDate.toDate());
+        const reportResponse = await getReport(userId, startDate.toDate(), endDate.toDate(), null, 1, 10);
 
         setDashboardData({
           totalFacilities: totalReportResponse.data.totalFacility || 0,

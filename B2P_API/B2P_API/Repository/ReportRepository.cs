@@ -91,7 +91,7 @@ namespace B2P_API.Repository
             var totalCourt = await _context.Courts.CountAsync(c => c.Facility.UserId == userId);
 
             // Lấy tổng doanh thu (TotalPrice từ các booking)
-            var totalCost = await bookingsQuery.SumAsync(b => b.TotalPrice);
+            var totalCost = await bookingsQuery.Where(b => b.StatusId == 10).SumAsync(b => b.TotalPrice);
 
             return new TotalReportDTO
             {

@@ -108,17 +108,6 @@ const NotificationBell = () => {
 
             <Divider style={{ margin: '8px 0' }} />
 
-            <div className="notification-status">
-                <WifiOutlined style={{ marginRight: '4px' }} />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {isConnected ? (
-                        <span style={{ color: '#52c41a' }}>● Đã kết nối</span>
-                    ) : (
-                        <span style={{ color: '#ff4d4f' }}>● Mất kết nối</span>
-                    )}
-                </Text>
-            </div>
-
             <div className="notification-list">
                 {notifications.length === 0 ? (
                     <Empty

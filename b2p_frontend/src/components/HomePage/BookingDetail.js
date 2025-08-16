@@ -23,12 +23,14 @@ export default function BookingDetail({
     selectedSlots,
     quantities,
     createBooking, // Thêm prop function từ parent để gọi API
-    createPayment // Thêm prop function để gọi API tạo thanh toán
+    createPayment, // Thêm prop function để gọi API tạo thanh toán nội địa
+    createStripePaymentOrder // Thêm prop function để gọi API tạo thanh toán quốc tế
 }) {
     const navigate = useNavigate(); // Hook để điều hướng
     const [formData, setFormData] = useState({
         phone: '',
-        email: ''
+        email: '',
+        paymentMethod: 'domestic' // Thêm phương thức thanh toán mặc định
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +40,8 @@ export default function BookingDetail({
         if (open) {
             setFormData({
                 phone: '',
-                email: ''
+                email: '',
+                paymentMethod: 'domestic'
             });
             setErrors({});
         }
@@ -90,6 +93,11 @@ export default function BookingDetail({
             newErrors.email = 'Email không hợp lệ';
         }
 
+        // Payment method validation
+        if (!formData.paymentMethod) {
+            newErrors.paymentMethod = 'Vui lòng chọn phương thức thanh toán';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -131,6 +139,19 @@ export default function BookingDetail({
         return category ? category.categoryName : '';
     };
 
+    // Helper function to convert VND to USD cents for Stripe
+    const convertVNDtoUSDCents = (vndAmount) => {
+        const exchangeRate = 24000; // 1 USD = 24,000 VND (approximate)
+        const usdAmount = vndAmount / exchangeRate;
+        const usdCents = Math.round(usdAmount * 100); // Convert to cents
+        return usdCents;
+    };
+
+    // Helper function to calculate platform fee (5%)
+    const calculatePlatformFee = (amount) => {
+        return Math.round(amount * 0.05);
+    };
+
     // Handle final booking submission
     const handleFinalBooking = async () => {
         if (!validateForm()) {
@@ -157,6 +178,7 @@ export default function BookingDetail({
             console.log('selectedSlots:', selectedSlots);
             console.log('facilityId:', facilityId);
             console.log('categoryId:', categoryId);
+            console.log('paymentMethod:', formData.paymentMethod);
 
             // Chuẩn bị dữ liệu theo đúng thứ tự API yêu cầu
             const apiData = {
@@ -186,40 +208,82 @@ export default function BookingDetail({
                 const bookingInfo = result.data;
                 const bookingId = bookingInfo.bookingId;
 
-                // Sau khi đặt sân thành công, gọi API tạo đơn thanh toán
-                const paymentData = {
-                    amount: totalPrice,
-                    description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
-                    redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
-                    callbackUrl: window.location.origin + "/payment-callback", // URL callback
-                    appUser: formData.phone,
-                    embedData: {
-                        bookingid: bookingId.toString()
+                // Xử lý thanh toán dựa trên phương thức được chọn
+                if (formData.paymentMethod === 'international') {
+                    // Thanh toán quốc tế qua Stripe
+                    const stripePaymentData = {
+                        amount: convertVNDtoUSDCents(totalPrice), // Chuyển đổi VND sang USD cents
+                        currency: 'usd',
+                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(totalPrice)), // Phí platform 5%
+                        destinationAccountId: 'acct_1RuuxcATZut0ML00', // Cố định
+                        bookingId: bookingId.toString()
+                    };
+
+                    console.log('Stripe Payment request data:', stripePaymentData);
+
+                    try {
+                        // Gọi API tạo đơn thanh toán Stripe
+                        const stripePaymentResult = await createStripePaymentOrder(stripePaymentData);
+                        console.log('Stripe Payment API response:', stripePaymentResult);
+
+                        // Lấy ID từ response (có thể là id hoặc trong data.id)
+                        const paymentId = stripePaymentResult?.data?.id || stripePaymentResult?.id;
+
+                        // Đóng modal trước khi chuyển trang
+                        onClose();
+
+                        if (paymentId) {
+                            // Chuyển hướng đến trang Stripe payment trong tab mới
+                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}`;
+                            window.open(stripePaymentUrl, '_blank');
+                        } else {
+                            console.warn('Không có payment ID trong Stripe response:', stripePaymentResult);
+                            alert('Lỗi tạo đơn thanh toán Stripe!');
+                            return;
+                        }
+                    } catch (stripePaymentError) {
+                        console.error('Stripe Payment creation error:', stripePaymentError);
+                        alert('Lỗi tạo đơn thanh toán Stripe!');
+                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
+                        onClose();
                     }
-                };
+                } else {
+                    // Thanh toán nội địa
+                    const paymentData = {
+                        amount: totalPrice,
+                        description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
+                        redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
+                        callbackUrl: window.location.origin + "/payment-callback", // URL callback
+                        appUser: formData.phone,
+                        paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
+                        embedData: {
+                            bookingid: bookingId.toString()
+                        }
+                    };
 
-                console.log('Payment request data:', paymentData);
+                    console.log('Payment request data:', paymentData);
 
-                try {
-                    // Gọi API tạo đơn thanh toán
-                    const paymentResult = await createPayment(paymentData);
-                    console.log('Payment API response:', paymentResult);
+                    try {
+                        // Gọi API tạo đơn thanh toán nội địa
+                        const paymentResult = await createPayment(paymentData);
+                        console.log('Payment API response:', paymentResult);
 
-                    const orderUrl = paymentResult?.data?.order_url;
+                        const orderUrl = paymentResult?.data?.order_url;
 
-                    // Đóng modal trước khi chuyển trang
-                    onClose();
+                        // Đóng modal trước khi chuyển trang
+                        onClose();
 
-                    if (orderUrl) {
-                        // Mở trang thanh toán trong tab mới
-                        window.open(orderUrl, '_blank');
-                    } else {
-                        console.warn('Không có order_url trong payment response:', paymentResult);
+                        if (orderUrl) {
+                            // Mở trang thanh toán trong tab mới
+                            window.open(orderUrl, '_blank');
+                        } else {
+                            console.warn('Không có order_url trong payment response:', paymentResult);
+                        }
+                    } catch (paymentError) {
+                        console.error('Payment creation error:', paymentError);
+                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
+                        onClose();
                     }
-                } catch (paymentError) {
-                    console.error('Payment creation error:', paymentError);
-                    // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
-                    onClose();
                 }
 
                 // Chuyển trang hiện tại đến booking process với bookingId
@@ -230,7 +294,6 @@ export default function BookingDetail({
                         fromBooking: true
                     }
                 });
-
 
             } else {
                 throw new Error(result?.message || 'Đặt sân thất bại');
@@ -279,8 +342,10 @@ export default function BookingDetail({
                     </button>
                 </div>
 
-                {/* Booking Summary */}
-                <div className="booking-summary-section">
+                {/* Scrollable Content */}
+                <div className="modal-content">
+                    {/* Booking Summary */}
+                    <div className="booking-summary-section">
                     <h3 className="section-title">
                         <span className="section-icon">📊</span>
                         Thông tin đặt sân
@@ -377,6 +442,63 @@ export default function BookingDetail({
                         <span className="note-icon">ℹ️</span>
                         Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
                     </div>
+                </div>
+
+                {/* Payment Method Section */}
+                <div className="payment-method-section">
+                    <h3 className="section-title">
+                        <span className="section-icon">💳</span>
+                        Phương thức thanh toán
+                    </h3>
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="paymentMethod">
+                            <span className="label-icon">🏦</span>
+                            Cổng thanh toán *
+                        </label>
+                        <select
+                            id="paymentMethod"
+                            className={`form-input form-select ${errors.paymentMethod ? 'error' : ''}`}
+                            value={formData.paymentMethod}
+                            onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                        >
+                            <option value="">-- Chọn cổng thanh toán --</option>
+                            <option value="domestic">
+                                🏧 Cổng thanh toán nội địa (ZaloPay, MoMo, VietQR)
+                            </option>
+                            <option value="international">
+                                🌍 Cổng thanh toán quốc tế (Visa, Mastercard, PayPal)
+                            </option>
+                        </select>
+                        {errors.paymentMethod && (
+                            <span className="error-message">{errors.paymentMethod}</span>
+                        )}
+                    </div>
+
+                    {/* Payment Method Info */}
+                    {formData.paymentMethod && (
+                        <div className="payment-info">
+                            {formData.paymentMethod === 'domestic' ? (
+                                <div className="payment-detail">
+                                    <span className="info-icon">🏧</span>
+                                    <div className="info-content">
+                                        <strong>Cổng thanh toán nội địa</strong>
+                                        <p>Hỗ trợ: ZaloPay, MoMo, VietQR, Internet Banking các ngân hàng Việt Nam</p>
+                                        <p>✅ Phí giao dịch thấp • ✅ Thanh toán nhanh chóng</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="payment-detail">
+                                    <span className="info-icon">🌍</span>
+                                    <div className="info-content">
+                                        <strong>Cổng thanh toán quốc tế</strong>
+                                        <p>Hỗ trợ: Visa, Mastercard, American Express, PayPal</p>
+                                        <p>✅ Thanh toán toàn cầu • ✅ Bảo mật cao</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
                 </div>
 
                 {/* Footer */}

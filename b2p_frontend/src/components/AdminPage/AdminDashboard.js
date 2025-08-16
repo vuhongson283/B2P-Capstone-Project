@@ -12,13 +12,14 @@ const CourtOwnerDashboard = () => {
   const [topFacilities, setTopFacilities] = useState([]);
   const [popularCourtCategories, setPopularCourtCategories] = useState([]);
   const [totalStats, setTotalStats] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(undefined); // Thay null bằng undefined
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const month = selectedDate ? selectedDate.month() + 1 : new Date().getMonth() + 1;
-        const year = selectedDate ? selectedDate.year() : new Date().getFullYear();
+        // Sử dụng toàn tử optional chaining để tránh lỗi khi selectedDate là undefined
+        const month = selectedDate?.month() + 1 || new Date().getMonth() + 1;
+        const year = selectedDate?.year() || new Date().getFullYear();
         
         console.log('Calling API with:', { month, year }); // Log tham số gọi API
         
@@ -96,9 +97,11 @@ const CourtOwnerDashboard = () => {
         </Title>
         <DatePicker 
           picker="month" 
-          onChange={(date) => setSelectedDate(date)}
+          onChange={(date) => setSelectedDate(date || undefined)} // Thêm check undefined
           placeholder="Chọn tháng"
           format="MM/YYYY"
+          value={selectedDate}
+          allowClear={true}
         />
       </div>
       

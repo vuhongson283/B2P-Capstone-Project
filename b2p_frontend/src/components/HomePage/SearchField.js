@@ -1,7 +1,7 @@
 import Form from "react-bootstrap/Form";
 import "./SearchField.scss";
 import { getAllCourtCategories } from "../../services/apiService";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { setSearchFacility } from "../../store/action/searchFacilityAction";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 const SearchField = (props) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   // State cho danh sách loại sân, loại sân được chọn, và ô tìm kiếm
   const [listCourtCategories, setListCourtCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -19,6 +20,16 @@ const SearchField = (props) => {
   const [districts, setDistricts] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
+
+  // State cho filter dropdown
+  const [provinceFilter, setProvinceFilter] = useState("");
+  const [districtFilter, setDistrictFilter] = useState("");
+  const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
+  const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
+
+  // Refs cho click outside
+  const provinceDropdownRef = useRef(null);
+  const districtDropdownRef = useRef(null);
 
   const fetchCourtCategories = async () => {
     try {
@@ -69,12 +80,9 @@ const SearchField = (props) => {
       const districtList = data.districts || [];
       setDistricts(districtList);
 
-      // Set giá trị mặc định là quận/huyện đầu tiên - sử dụng name
-      if (districtList.length > 0) {
-        setSelectedDistrict(districtList[0].name);
-      } else {
-        setSelectedDistrict("");
-      }
+      // Không auto chọn quận/huyện đầu tiên nữa
+      setSelectedDistrict("");
+      setDistrictFilter("");
     } catch (error) {
       console.error("Error fetching districts:", error);
     }
@@ -92,8 +100,32 @@ const SearchField = (props) => {
     } else {
       setDistricts([]);
       setSelectedDistrict("");
+      setDistrictFilter("");
     }
-  }, [selectedProvince, provinces]); // Thêm provinces vào dependency
+  }, [selectedProvince, provinces]);
+
+  // Handle click outside để đóng dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        provinceDropdownRef.current &&
+        !provinceDropdownRef.current.contains(event.target)
+      ) {
+        setShowProvinceDropdown(false);
+      }
+      if (
+        districtDropdownRef.current &&
+        !districtDropdownRef.current.contains(event.target)
+      ) {
+        setShowDistrictDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSearchChange = (event) => {
     setSearchText(event.target.value);
@@ -103,12 +135,89 @@ const SearchField = (props) => {
     setSelectedCategory(event.target.value);
   };
 
-  const handleProvinceChange = (event) => {
-    setSelectedProvince(event.target.value);
+  // Filter provinces based on search text
+  const filteredProvinces = provinces.filter((province) =>
+    province.name.toLowerCase().includes(provinceFilter.toLowerCase())
+  );
+
+  // Filter districts based on search text
+  const filteredDistricts = districts.filter((district) =>
+    district.name.toLowerCase().includes(districtFilter.toLowerCase())
+  );
+
+  // Handle province selection
+  const handleProvinceSelect = (provinceName) => {
+    setSelectedProvince(provinceName);
+    setProvinceFilter(provinceName);
+    setShowProvinceDropdown(false);
+
+    // Reset district selection when province changes
+    setSelectedDistrict("");
+    setDistrictFilter("");
   };
 
-  const handleDistrictChange = (event) => {
-    setSelectedDistrict(event.target.value);
+  // Handle district selection
+  const handleDistrictSelect = (districtName) => {
+    setSelectedDistrict(districtName);
+    setDistrictFilter(districtName);
+    setShowDistrictDropdown(false);
+  };
+
+  // 🎯 Clear province selection
+  const clearProvinceSelection = (e) => {
+    e.stopPropagation();
+    setSelectedProvince("");
+    setProvinceFilter("");
+    setSelectedDistrict("");
+    setDistrictFilter("");
+    setShowProvinceDropdown(false);
+  };
+
+  // 🎯 Clear district selection
+  const clearDistrictSelection = (e) => {
+    e.stopPropagation();
+    setSelectedDistrict("");
+    setDistrictFilter("");
+    setShowDistrictDropdown(false);
+  };
+
+  // Handle province filter change
+  const handleProvinceFilterChange = (event) => {
+    const value = event.target.value;
+    setProvinceFilter(value);
+
+    // If exact match found, select it
+    const exactMatch = provinces.find(
+      (p) => p.name.toLowerCase() === value.toLowerCase()
+    );
+    if (exactMatch && value !== selectedProvince) {
+      setSelectedProvince(exactMatch.name);
+      // Reset district when province changes
+      setSelectedDistrict("");
+      setDistrictFilter("");
+    } else if (!exactMatch && selectedProvince) {
+      // Clear selection if no exact match and something was previously selected
+      setSelectedProvince("");
+      setSelectedDistrict("");
+      setDistrictFilter("");
+    }
+  };
+
+  // Handle district filter change
+  const handleDistrictFilterChange = (event) => {
+    const value = event.target.value;
+    setDistrictFilter(value);
+
+    // If exact match found, select it
+    const exactMatch = districts.find(
+      (d) => d.name.toLowerCase() === value.toLowerCase()
+    );
+    if (exactMatch) {
+      setSelectedDistrict(exactMatch.name);
+    } else if (!exactMatch && selectedDistrict) {
+      // Clear selection if no exact match and something was previously selected
+      setSelectedDistrict("");
+    }
   };
 
   // Hàm xử lý tìm kiếm
@@ -129,16 +238,8 @@ const SearchField = (props) => {
   return (
     <div className="search-field">
       <h3 className="title">Book2Play - Đặt sân ngay </h3>
-      <div className="search-input">
-        <Form.Control
-          value={searchText}
-          onChange={handleSearchChange}
-          size="md"
-          type="text"
-          placeholder="🔎 Nhập tên sân..."
-        />
-        <br />
-      </div>
+
+      {/* 🎯 Moved main filter fields up */}
       <div className="search-category">
         <div className="d-flex">
           <i className="fas fa-futbol me-1"></i>
@@ -158,39 +259,118 @@ const SearchField = (props) => {
           </Form.Select>
         </div>
 
-        <div className="d-flex">
+        {/* Custom Province Dropdown */}
+        <div className="d-flex custom-dropdown" ref={provinceDropdownRef}>
           <i className="fas fa-city me-1"></i>
-          <Form.Select
-            aria-label="Select province"
-            value={selectedProvince}
-            onChange={handleProvinceChange}
-          >
-            <option value="">Chọn tỉnh/thành phố</option>
-            {provinces.map((province) => (
-              <option key={province.code} value={province.name}>
-                {province.name}
-              </option>
-            ))}
-          </Form.Select>
+          <div className="custom-select-wrapper">
+            <div className="input-with-clear">
+              <Form.Control
+                type="text"
+                placeholder="Chọn tỉnh/thành phố"
+                value={provinceFilter}
+                onChange={handleProvinceFilterChange}
+                onFocus={() => setShowProvinceDropdown(true)}
+                className="custom-select-input"
+              />
+              {/* 🎯 Clear button for province */}
+              {selectedProvince && (
+                <button
+                  type="button"
+                  className="clear-button"
+                  onClick={clearProvinceSelection}
+                  title="Xóa lựa chọn"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            {showProvinceDropdown && (
+              <div className="custom-dropdown-menu">
+                {filteredProvinces.length > 0 ? (
+                  filteredProvinces.map((province) => (
+                    <div
+                      key={province.code}
+                      className={`custom-dropdown-item ${
+                        selectedProvince === province.name ? "selected" : ""
+                      }`}
+                      onClick={() => handleProvinceSelect(province.name)}
+                    >
+                      {province.name}
+                    </div>
+                  ))
+                ) : (
+                  <div className="custom-dropdown-item no-results">
+                    Không tìm thấy tỉnh/thành phố
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="d-flex">
+        {/* Custom District Dropdown */}
+        <div className="d-flex custom-dropdown" ref={districtDropdownRef}>
           <i className="fas fa-map-marker-alt me-1"></i>
-          <Form.Select
-            aria-label="Select district"
-            value={selectedDistrict}
-            onChange={handleDistrictChange}
-            disabled={!selectedProvince || districts.length === 0}
-          >
-            <option value="">Chọn quận/huyện</option>
-            {districts.map((district) => (
-              <option key={district.code} value={district.name}>
-                {district.name}
-              </option>
-            ))}
-          </Form.Select>
+          <div className="custom-select-wrapper">
+            <div className="input-with-clear">
+              <Form.Control
+                type="text"
+                placeholder="Chọn quận/huyện"
+                value={districtFilter}
+                onChange={handleDistrictFilterChange}
+                onFocus={() => setShowDistrictDropdown(true)}
+                disabled={!selectedProvince || districts.length === 0}
+                className="custom-select-input"
+              />
+              {/* 🎯 Clear button for district */}
+              {selectedDistrict && (
+                <button
+                  type="button"
+                  className="clear-button"
+                  onClick={clearDistrictSelection}
+                  title="Xóa lựa chọn"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            {showDistrictDropdown && selectedProvince && (
+              <div className="custom-dropdown-menu">
+                {filteredDistricts.length > 0 ? (
+                  filteredDistricts.map((district) => (
+                    <div
+                      key={district.code}
+                      className={`custom-dropdown-item ${
+                        selectedDistrict === district.name ? "selected" : ""
+                      }`}
+                      onClick={() => handleDistrictSelect(district.name)}
+                    >
+                      {district.name}
+                    </div>
+                  ))
+                ) : (
+                  <div className="custom-dropdown-item no-results">
+                    Không tìm thấy quận/huyện
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* 🎯 Moved search input down and made it less prominent */}
+      <div className="search-input secondary">
+        <Form.Control
+          value={searchText}
+          onChange={handleSearchChange}
+          size="sm"
+          type="text"
+          placeholder="Tìm theo cơ sở..."
+          className="secondary-input"
+        />
+      </div>
+
       <button className="btn-search btn btn-success" onClick={handleSearch}>
         Tìm kiếm
       </button>

@@ -296,56 +296,107 @@
                         }
                     }
 
-                    // Action buttons - B2P Colors
-                    .ant-space-item {
-                        .ant-btn {
-                            border-radius  : 8px;
-                            transition     : all 0.2s ease;
-                            height         : 32px;
-                            width          : 32px;
-                            display        : flex;
-                            align-items    : center;
-                            justify-content: center;
-
-                            &:hover {
-                                transform : translateY(-1px);
-                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                            }
-
-                            // View button - Blue (info)
-                            &.ant-btn-primary.ant-btn-background-ghost {
-                                border-color: #00b894;
-                                color       : #00b894;
+                    // 🎯 Action buttons - nested trong table để tránh ảnh hưởng trang khác
+                    .ant-space {
+                        .ant-space-item {
+                            .ant-btn {
+                                border-radius  : 8px;
+                                transition     : all 0.2s ease;
+                                height         : 32px;
+                                width          : 32px;
+                                display        : flex;
+                                align-items    : center;
+                                justify-content: center;
 
                                 &:hover {
-                                    background: #00b894;
-                                    color     : white;
-                                    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+                                    transform : translateY(-1px);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                                 }
-                            }
 
-                            // Edit button - Orange (B2P accent color)
-                            &.ant-btn-default {
-                                border-color: #f39c12;
-                                color       : #f39c12;
+                                // Edit button - Orange (B2P accent color)
+                                &.edit-btn {
+                                    background: transparent !important;
+                                    border    : 1px solid #f39c12 !important;
+                                    color     : #f39c12 !important;
 
-                                &:hover {
-                                    background  : #f39c12;
-                                    color       : white;
-                                    border-color: #f39c12;
-                                    box-shadow  : 0 4px 12px rgba(243, 156, 18, 0.3);
+                                    .anticon {
+                                        color: #f39c12 !important;
+                                    }
+
+                                    &:hover,
+                                    &:focus {
+                                        background  : #f39c12 !important;
+                                        color       : white !important;
+                                        border-color: #f39c12 !important;
+                                        box-shadow  : 0 4px 12px rgba(243, 156, 18, 0.3) !important;
+
+                                        .anticon {
+                                            color: white !important;
+                                        }
+                                    }
                                 }
-                            }
 
-                            // Delete button - Red
-                            &.ant-btn-primary.ant-btn-dangerous {
-                                border-color: #e74c3c;
-                                background  : #e74c3c;
+                                // 🎯 Delete button - giống edit nhưng màu đỏ
+                                &.delete-btn {
+                                    background: transparent !important;
+                                    border    : 1px solid #e74c3c !important;
+                                    color     : #e74c3c !important;
 
-                                &:hover {
-                                    background  : #c0392b;
-                                    border-color: #c0392b;
-                                    box-shadow  : 0 4px 12px rgba(231, 76, 60, 0.3);
+                                    .anticon {
+                                        color: #e74c3c !important;
+                                    }
+
+                                    &:hover,
+                                    &:focus,
+                                    &:active {
+                                        background  : #e74c3c !important;
+                                        color       : white !important;
+                                        border-color: #e74c3c !important;
+                                        box-shadow  : 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+
+                                        .anticon {
+                                            color: white !important;
+                                        }
+                                    }
+
+                                    // 🎯 Override Ant Design dangerous button styles
+                                    &.ant-btn-primary,
+                                    &.ant-btn-dangerous,
+                                    &[danger],
+                                    &[data-danger="true"] {
+                                        background: transparent !important;
+                                        border    : 1px solid #e74c3c !important;
+                                        color     : #e74c3c !important;
+
+                                        .anticon {
+                                            color: #e74c3c !important;
+                                        }
+
+                                        &:hover,
+                                        &:focus,
+                                        &:active {
+                                            background  : #e74c3c !important;
+                                            color       : white !important;
+                                            border-color: #e74c3c !important;
+                                            box-shadow  : 0 4px 12px rgba(231, 76, 60, 0.3) !important;
+
+                                            .anticon {
+                                                color: white !important;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // View button - Blue (info) - giữ nguyên nếu có
+                                &.ant-btn-primary.ant-btn-background-ghost {
+                                    border-color: #00b894;
+                                    color       : #00b894;
+
+                                    &:hover {
+                                        background: #00b894;
+                                        color     : white;
+                                        box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+                                    }
                                 }
                             }
                         }
@@ -570,6 +621,141 @@
         }
     }
 
+    // Custom Delete Modal Styles
+    .custom-delete-modal {
+        .ant-modal-content {
+            border-radius: 16px;
+            overflow     : hidden;
+            box-shadow   : 0 20px 60px rgba(231, 76, 60, 0.15);
+        }
+
+        .ant-modal-header {
+            background   : linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+            border-bottom: 1px solid rgba(231, 76, 60, 0.1);
+            padding      : 24px;
+
+            .ant-modal-title {
+                font-size  : 18px;
+                font-weight: 600;
+                color      : #2c3e50;
+            }
+        }
+
+        .ant-modal-body {
+            padding   : 32px 24px;
+            background: white;
+
+            .delete-confirm-title {
+                display      : flex;
+                align-items  : center;
+                font-size    : 18px;
+                font-weight  : 600;
+                color        : #2c3e50;
+                margin-bottom: 16px;
+            }
+
+            .delete-confirm-content {
+                p {
+                    font-size    : 16px;
+                    color        : #2c3e50;
+                    margin-bottom: 20px;
+                    line-height  : 1.5;
+                }
+
+                .category-info {
+                    background   : linear-gradient(135deg, #f8fcff 0%, #e8f5e8 100%);
+                    padding      : 16px;
+                    border-radius: 12px;
+                    border       : 1px solid rgba(39, 174, 96, 0.2);
+                    margin-bottom: 16px;
+
+                    .category-tag {
+                        font-size    : 14px;
+                        font-weight  : 600;
+                        background   : linear-gradient(135deg, #27ae60, #2ecc71);
+                        border       : none;
+                        color        : white;
+                        padding      : 8px 16px;
+                        border-radius: 20px;
+                        display      : inline-flex;
+                        align-items  : center;
+                        box-shadow   : 0 4px 12px rgba(39, 174, 96, 0.3);
+                    }
+                }
+
+                .warning-text {
+                    display      : flex;
+                    align-items  : center;
+                    color        : #fa8c16;
+                    font-size    : 14px;
+                    font-weight  : 500;
+                    background   : rgba(250, 173, 20, 0.1);
+                    padding      : 12px 16px;
+                    border-radius: 8px;
+                    border-left  : 4px solid #faad14;
+                }
+            }
+        }
+
+        .ant-modal-footer {
+            background     : #fff;
+            border-top     : 1px solid rgba(231, 76, 60, 0.1);
+            padding        : 20px 24px;
+            display        : flex;
+            justify-content: flex-end;
+            gap            : 12px;
+
+            .ant-btn {
+                transition: all 0.3s ease;
+
+                &:hover {
+                    transform: translateY(-1px);
+                }
+
+                &.ant-btn-dangerous {
+                    background: linear-gradient(135deg, #e74c3c, #c0392b);
+                    border    : none;
+                    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+
+                    &:hover {
+                        background: linear-gradient(135deg, #c0392b, #a93226);
+                        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+                    }
+                }
+            }
+        }
+    }
+
+    // Message Enhancement
+    .ant-message {
+        .ant-message-notice-content {
+            border-radius: 8px;
+            box-shadow   : 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding      : 16px 20px;
+
+            .anticon {
+                font-size   : 16px;
+                margin-right: 8px;
+            }
+        }
+
+        .ant-message-success {
+            .ant-message-notice-content {
+                background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+                border    : 1px solid #b7eb8f;
+                color     : #389e0d;
+            }
+        }
+
+        .ant-message-error {
+            .ant-message-notice-content {
+                background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
+                border    : 1px solid #ffadd2;
+                color     : #cf1322;
+            }
+        }
+    }
+
     // Animations
     @keyframes bounce {
 
@@ -642,6 +828,24 @@
             &.ant-select-item-option-selected {
                 background: linear-gradient(135deg, #27ae60, #2ecc71);
                 color     : white;
+            }
+        }
+    }
+
+    // Search Input Enhancement
+    .search-input {
+        .ant-input-search-button {
+            .anticon-search {
+                font-weight: 900 !important;
+                font-size  : 16px !important;
+                color      : white !important;
+            }
+        }
+
+        .ant-btn {
+            .anticon {
+                font-weight : bold !important;
+                stroke-width: 2 !important;
             }
         }
     }
@@ -721,10 +925,18 @@
                 }
 
                 .ant-table-tbody>tr>td {
-                    .ant-space-item .ant-btn {
-                        height   : 28px;
-                        width    : 28px;
-                        font-size: 12px;
+                    .ant-space {
+                        .ant-space-item {
+                            .ant-btn {
+                                height   : 28px !important;
+                                width    : 28px !important;
+                                font-size: 12px;
+
+                                .anticon {
+                                    font-size: 12px;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -792,10 +1004,16 @@
                             flex-direction: column;
                             gap           : 4px !important;
 
-                            .ant-space-item .ant-btn {
-                                height   : 24px;
-                                width    : 24px;
-                                font-size: 10px;
+                            .ant-space-item {
+                                .ant-btn {
+                                    height   : 24px !important;
+                                    width    : 24px !important;
+                                    font-size: 10px !important;
+
+                                    .anticon {
+                                        font-size: 10px !important;
+                                    }
+                                }
                             }
                         }
                     }
@@ -840,6 +1058,51 @@
                         height   : 36px;
                         font-size: 13px;
                     }
+                }
+            }
+        }
+
+        .custom-delete-modal {
+            .ant-modal {
+                margin   : 16px;
+                max-width: calc(100vw - 32px);
+            }
+
+            .ant-modal-header {
+                padding: 20px 16px;
+
+                .ant-modal-title {
+                    font-size: 16px;
+                }
+            }
+
+            .ant-modal-body {
+                padding: 24px 16px;
+
+                .delete-confirm-content {
+                    .category-info {
+                        padding: 12px;
+
+                        .category-tag {
+                            font-size: 12px;
+                            padding  : 6px 12px;
+                        }
+                    }
+
+                    .warning-text {
+                        font-size: 13px;
+                        padding  : 10px 12px;
+                    }
+                }
+            }
+
+            .ant-modal-footer {
+                padding: 16px;
+
+                .ant-btn {
+                    height   : 36px;
+                    font-size: 13px;
+                    min-width: 80px;
                 }
             }
         }
@@ -996,243 +1259,6 @@
         .categories-table .ant-table {
             color     : #000 !important;
             background: white !important;
-        }
-    }
-}
-
-// ... existing styles ...
-
-// Custom Delete Modal Styles
-.custom-delete-modal {
-    .ant-modal-content {
-        border-radius: 16px;
-        overflow     : hidden;
-        box-shadow   : 0 20px 60px rgba(231, 76, 60, 0.15);
-    }
-
-    .ant-modal-header {
-        background   : linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
-        border-bottom: 1px solid rgba(231, 76, 60, 0.1);
-        padding      : 24px;
-
-        .ant-modal-title {
-            font-size  : 18px;
-            font-weight: 600;
-            color      : #2c3e50;
-        }
-    }
-
-    .ant-modal-body {
-        padding   : 32px 24px;
-        background: white;
-
-        .delete-confirm-title {
-            display      : flex;
-            align-items  : center;
-            font-size    : 18px;
-            font-weight  : 600;
-            color        : #2c3e50;
-            margin-bottom: 16px;
-        }
-
-        .delete-confirm-content {
-            p {
-                font-size    : 16px;
-                color        : #2c3e50;
-                margin-bottom: 20px;
-                line-height  : 1.5;
-            }
-
-            .category-info {
-                background   : linear-gradient(135deg, #f8fcff 0%, #e8f5e8 100%);
-                padding      : 16px;
-                border-radius: 12px;
-                border       : 1px solid rgba(39, 174, 96, 0.2);
-                margin-bottom: 16px;
-
-                .category-tag {
-                    font-size    : 14px;
-                    font-weight  : 600;
-                    background   : linear-gradient(135deg, #27ae60, #2ecc71);
-                    border       : none;
-                    color        : white;
-                    padding      : 8px 16px;
-                    border-radius: 20px;
-                    display      : inline-flex;
-                    align-items  : center;
-                    box-shadow   : 0 4px 12px rgba(39, 174, 96, 0.3);
-                }
-            }
-
-            .warning-text {
-                display      : flex;
-                align-items  : center;
-                color        : #fa8c16;
-                font-size    : 14px;
-                font-weight  : 500;
-                background   : rgba(250, 173, 20, 0.1);
-                padding      : 12px 16px;
-                border-radius: 8px;
-                border-left  : 4px solid #faad14;
-            }
-        }
-    }
-
-    .ant-modal-footer {
-        background     : #fff;
-        border-top     : 1px solid rgba(231, 76, 60, 0.1);
-        padding        : 20px 24px;
-        display        : flex;
-        justify-content: flex-end;
-        gap            : 12px;
-
-        .ant-btn {
-            transition: all 0.3s ease;
-
-            &:hover {
-                transform: translateY(-1px);
-            }
-
-            &.ant-btn-dangerous {
-                background: linear-gradient(135deg, #e74c3c, #c0392b);
-                border    : none;
-                box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
-
-                &:hover {
-                    background: linear-gradient(135deg, #c0392b, #a93226);
-                    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
-                }
-            }
-        }
-    }
-}
-
-// Enhanced Action Buttons
-.categories-table {
-    .ant-table-tbody>tr>td {
-        .ant-space-item {
-            .edit-btn {
-                border-color: #f39c12;
-                color       : #f39c12;
-                transition  : all 0.2s ease;
-
-                &:hover {
-                    background  : #f39c12;
-                    color       : white;
-                    border-color: #f39c12;
-                    box-shadow  : 0 4px 12px rgba(243, 156, 18, 0.3);
-                    transform   : translateY(-1px);
-                }
-            }
-
-            .delete-btn {
-                background: linear-gradient(135deg, #e74c3c, #c0392b);
-                border    : none;
-                box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
-                transition: all 0.2s ease;
-
-                &:hover {
-                    background: linear-gradient(135deg, #c0392b, #a93226);
-                    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
-                    transform : translateY(-1px);
-                }
-            }
-        }
-    }
-}
-
-// Message Enhancement
-.ant-message {
-    .ant-message-notice-content {
-        border-radius: 8px;
-        box-shadow   : 0 4px 15px rgba(0, 0, 0, 0.1);
-        padding      : 16px 20px;
-
-        .anticon {
-            font-size   : 16px;
-            margin-right: 8px;
-        }
-    }
-
-    .ant-message-success {
-        .ant-message-notice-content {
-            background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
-            border    : 1px solid #b7eb8f;
-            color     : #389e0d;
-        }
-    }
-
-    .ant-message-error {
-        .ant-message-notice-content {
-            background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
-            border    : 1px solid #ffadd2;
-            color     : #cf1322;
-        }
-    }
-}
-
-// Responsive adjustments for delete modal
-@media (max-width: 768px) {
-    .custom-delete-modal {
-        .ant-modal {
-            margin   : 16px;
-            max-width: calc(100vw - 32px);
-        }
-
-        .ant-modal-header {
-            padding: 20px 16px;
-
-            .ant-modal-title {
-                font-size: 16px;
-            }
-        }
-
-        .ant-modal-body {
-            padding: 24px 16px;
-
-            .delete-confirm-content {
-                .category-info {
-                    padding: 12px;
-
-                    .category-tag {
-                        font-size: 12px;
-                        padding  : 6px 12px;
-                    }
-                }
-
-                .warning-text {
-                    font-size: 13px;
-                    padding  : 10px 12px;
-                }
-            }
-        }
-
-        .ant-modal-footer {
-            padding: 16px;
-
-            .ant-btn {
-                height   : 36px;
-                font-size: 13px;
-                min-width: 80px;
-            }
-        }
-    }
-}
-
-.search-input {
-    .ant-input-search-button {
-        .anticon-search {
-            font-weight: 900 !important; // Làm đậm icon
-            font-size  : 16px !important; // Tăng size nếu cần
-            color      : #01070c !important; // Đổi màu nếu muốn
-        }
-    }
-
-    // Hoặc target toàn bộ button
-    .ant-btn {
-        .anticon {
-            font-weight : bold !important;
-            stroke-width: 2 !important; // Làm đậm stroke nếu là SVG
         }
     }
 }

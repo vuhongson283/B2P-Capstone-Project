@@ -19,7 +19,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("listCourt/{userId}")]
-        //[Authorize]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> GetFacilitiesByUser(
     int userId,
     [FromQuery] string? facilityName = null,
@@ -61,6 +61,7 @@ namespace B2P_API.Controllers
             }
         }
         [HttpGet("getFacilityById/{facilityId}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> GetFacilityById(int facilityId)
         {
             try
@@ -91,6 +92,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("createFacility")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> CreateFacility([FromBody] CreateFacilityRequest request)
         {
 
@@ -112,6 +114,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPut("updateFacility/{facilityId}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> UpdateFacility([FromRoute] int facilityId, [FromBody] UpdateFacilityRequest request)
         {
             try
@@ -136,6 +139,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpDelete("{facilityId}")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> DeleteFacility(int facilityId)
         {
             var response = await _facilityService.DeleteFacility(facilityId);

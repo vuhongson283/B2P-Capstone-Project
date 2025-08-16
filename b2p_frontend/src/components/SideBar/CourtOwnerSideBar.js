@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link } from 'react-router-dom';
 import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
+import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
+import { useAuth } from "../../context/AuthContext";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -13,60 +16,81 @@ const CourtOwnerSideBar = ({
 }) => {
   const [activeMenu, setActiveMenu] = useState("statistics");
   const [expandedMenus, setExpandedMenus] = useState({});
-  const [userInfo, setUserInfo] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "owner@example.com",
-    phone: "0987654321",
-    avatar: "",
-    role: "Court Owner"
-  });
+  const [facilities, setFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Mock facilities data - replace with real data
-  const [facilities, setFacilities] = useState([
-    {
-      id: 7,
-      name: "Cơ sở Cầu Giấy",
-      location: "123 Lê Lợi, Q.1",
-      contact: "0123456789",
-      statusId: 1
-    },
-    {
-      id: 8,
-      name: "Cơ sở Quận 1",
-      location: "234 Trần Hưng Đạo, Q.5",
-      contact: "0123456790",
-      statusId: 1
-    },
-    {
-      id: 9,
-      name: "Cơ sở Quận 7",
-      location: "345 Nguyễn Huệ, Q.1",
-      contact: "0123456791",
-      statusId: 2
-    },
-    {
-      id: 10,
-      name: "Cơ sở Thủ Đức",
-      location: "456 Cách Mạng Tháng 8, Q.3",
-      contact: "0123456792",
-      statusId: 1
-    },
-    {
-      id: 11,
-      name: "Cơ sở Hòa Lạc",
-      location: "567 Pasteur, Q.3",
-      contact: "0123456793",
-      statusId: 1
-    },
-    {
-      id: 12,
-      name: "Cơ sở Đà Nẵng",
-      location: "678 Hai Bà Trưng, Q.1",
-      contact: "0123456794",
-      statusId: 2
-    },
-  ]);
+  // ✅ Use real user data from AuthContext
+  const { user, isLoggedIn, logout } = useAuth();
+
+  // ✅ Get real Court Owner ID from AuthContext
+  const getCourtOwnerId = useCallback(() => {
+    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'user:', user);
+    
+    if (isLoggedIn && user) {
+      const userId = user.userId || user.id;
+      console.log('✅ Found court owner ID:', userId);
+      return userId;
+    }
+    
+    console.warn('⚠️ Court owner not logged in or user data not available');
+    return null;
+  }, [isLoggedIn, user]);
+
+  // ✅ Real user info from AuthContext
+  const userInfo = {
+    fullName: user?.fullName || user?.name || "Court Owner",
+    email: user?.email || "owner@example.com",
+    phone: user?.phone || "Chưa cập nhật",
+    avatar: user?.avatar || user?.picture || "",
+    role: "Chủ sân",
+    userId: user?.userId || user?.id
+  };
+
+  // ✅ FIXED: Fetch facilities with real user ID
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        setLoading(true);
+        const courtOwnerId = getCourtOwnerId();
+        
+        if (!courtOwnerId) {
+          console.error('❌ No court owner ID available');
+          message.error("Không thể xác định người dùng. Vui lòng đăng nhập lại.");
+          setFacilities([]);
+          return;
+        }
+
+        console.log('📡 Fetching facilities for court owner ID:', courtOwnerId);
+        const response = await getFacilitiesByCourtOwnerId(courtOwnerId);
+        
+        console.log('📊 Facilities API response:', response);
+        
+        if (response.data && response.data.items) {
+          console.log('✅ Found facilities:', response.data.items.length);
+          setFacilities(response.data.items);
+        } else {
+          console.log('⚠️ No facilities found in response');
+          setFacilities([]);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching facilities:", error);
+        message.error("Không thể tải danh sách cơ sở: " + (error.message || 'Unknown error'));
+        setFacilities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch when user data is available
+    if (user && isLoggedIn) {
+      fetchFacilities();
+    } else {
+      console.log('⏳ Waiting for user authentication...');
+      setLoading(false);
+      setFacilities([]);
+    }
+  }, [user, isLoggedIn, getCourtOwnerId]);
 
   // Menu items configuration
   const menuItems = [
@@ -107,7 +131,7 @@ const CourtOwnerSideBar = ({
       title: "Quản lý sân",
       icon: "fas fa-futbol",
       hasSubmenu: true,
-      isDynamic: true, // Dynamic submenu based on facilities
+      isDynamic: true,
     },
   ];
 
@@ -119,26 +143,32 @@ const CourtOwnerSideBar = ({
     }));
   };
 
-  // Handle menu item click
-  // Handle menu item click
+  // ✅ FIXED: Handle menu item click with better facility checking
   const handleMenuClick = (menuId, path, item) => {
     setActiveMenu(menuId);
 
-    // ✅ Special handling for time-slots
     if (menuId === "time-slots") {
+      console.log('🕐 Time slots clicked, facilities:', facilities);
+      
+      if (loading) {
+        message.info('Đang tải danh sách cơ sở...');
+        return;
+      }
+      
       if (facilities.length > 0) {
-        // Navigate to first facility's time-slots
-        navigate(`/court-owner/facility/time-slots/${facilities[0].id}`);
+        const firstFacility = facilities[0];
+        const facilityId = firstFacility.facilityId || firstFacility.id;
+        console.log('✅ Navigating to time slots for facility:', facilityId);
+        navigate(`/court-owner/facility/time-slots/${facilityId}`);
       } else {
-        // Fallback if no facilities
-        message.warning('Chưa có cơ sở nào để quản lý khung giờ');
+        console.log('⚠️ No facilities available for time slots');
+        message.warning('Bạn chưa có cơ sở nào. Vui lòng tạo cơ sở trước khi quản lý khung giờ.');
         navigate("/court-owner/facility/general");
       }
     } else if (path) {
       navigate(path);
     }
 
-    // Close mobile sidebar after navigation
     if (isMobile && onClose) {
       onClose();
     }
@@ -146,10 +176,20 @@ const CourtOwnerSideBar = ({
 
   // Handle logout
   const handleLogout = () => {
-    // Add logout logic here
-    navigate("/login");
-    if (isMobile && onClose) {
-      onClose();
+    try {
+      logout(); // ✅ Sync function, không cần await
+      message.success('Đăng xuất thành công!');
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Lỗi khi đăng xuất!');
+      localStorage.clear(); // Xóa toàn bộ localStorage
+    } finally {
+      navigate("/login");
+      
+      if (isMobile && onClose) {
+        onClose();
+      }
     }
   };
 
@@ -195,12 +235,32 @@ const CourtOwnerSideBar = ({
               <span>{userInfo.phone}</span>
             </div>
           </div>
+          {userInfo.userId && (
+            <div className="user-actions">
+              <Link
+                to="/user-profile"
+                className="profile-link"
+                style={{
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '2px solid white',
+                  display: 'inline-block',
+                  marginTop: '4px'
+                }}
+              >
+                Thông tin cá nhân
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 
-  // Render menu item
+  // ✅ UPDATED: Render menu item with hover support
   const renderMenuItem = (item) => {
     const isActive = activeMenu === item.id;
     const isExpanded = expandedMenus[item.id];
@@ -208,15 +268,22 @@ const CourtOwnerSideBar = ({
     return (
       <div key={item.id} className="menu-item">
         <div
-          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""
-            }`}
+          className={`menu-link ${isActive ? "active" : ""} ${item.hasSubmenu ? "has-submenu" : ""}`}
           onClick={() => {
-            if (item.hasSubmenu) {
+            // ✅ Handle collapsed submenu click - navigate to first submenu item
+            if (item.hasSubmenu && collapsed && !isMobile) {
+              const firstSubmenuItem = item.submenu?.[0];
+              if (firstSubmenuItem) {
+                handleMenuClick(firstSubmenuItem.id, firstSubmenuItem.path);
+              }
+            } else if (item.hasSubmenu) {
               toggleMenu(item.id);
             } else {
               handleMenuClick(item.id, item.path);
             }
           }}
+          // ✅ Add tooltip for collapsed state
+          title={collapsed && !isMobile ? item.title : undefined}
         >
           <div className="menu-content">
             <div className="menu-icon-wrapper">
@@ -228,16 +295,13 @@ const CourtOwnerSideBar = ({
           </div>
 
           {item.hasSubmenu && (!collapsed || isMobile) && (
-            <i
-              className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""
-                }`}
-            ></i>
+            <i className={`fas fa-chevron-down submenu-arrow ${isExpanded ? "expanded" : ""}`}></i>
           )}
         </div>
 
-        {/* Render submenu */}
-        {item.hasSubmenu && isExpanded && (!collapsed || isMobile) && (
-          <div className="submenu">
+        {/* ✅ UPDATED: Always render submenu for hover effect */}
+        {item.hasSubmenu && (
+          <div className={`submenu ${(!collapsed || isMobile) && isExpanded ? 'show' : ''}`}>
             {item.isDynamic
               ? renderDynamicSubmenu()
               : renderStaticSubmenu(item.submenu)}
@@ -264,27 +328,52 @@ const CourtOwnerSideBar = ({
   };
 
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
-  // Render dynamic submenu
-  const renderDynamicSubmenu = () => {
-    return facilities.map((facility) => (
-      <div
-        key={`facility-${facility.id}`}
-        className={`submenu-item ${activeMenu === `facility-${facility.id}` ? "active" : ""
-          }`}
-        onClick={() => {
-          handleMenuClick(`facility-${facility.id}`, `/court-owner/facilities/${facility.id}/courts`);
-          setSelectedFacilityId(facility.id); // Lưu facilityId được chọn
-        }}
-      >
-        <i className="fas fa-map-marker-alt"></i>
-        <div className="facility-info">
-          <span className="facility-name">{facility.name}</span>
-          <span className="facility-location">{facility.location}</span>
-        </div>
-      </div>
-    ));
-  };
 
+  // ✅ FIXED: Render dynamic submenu with better error handling
+  const renderDynamicSubmenu = () => {
+    if (loading) {
+      return <div className="submenu-loading">Đang tải...</div>;
+    }
+
+    if (!isLoggedIn) {
+      return <div className="submenu-empty">Vui lòng đăng nhập</div>;
+    }
+
+    if (facilities.length === 0) {
+      return (
+        <div className="submenu-empty">
+          <div>Không có cơ sở nào</div>
+          <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>
+            Tạo cơ sở trong "Thông tin chung"
+          </div>
+        </div>
+      );
+    }
+
+    return facilities.map((facility) => {
+      const facilityId = facility.facilityId || facility.id;
+      const facilityName = facility.facilityName || facility.name;
+      
+      return (
+        <div
+          key={`facility-${facilityId}`}
+          className={`submenu-item ${activeMenu === `facility-${facilityId}` ? "active" : ""}`}
+          onClick={() => {
+            handleMenuClick(
+              `facility-${facilityId}`,
+              `/court-owner/facilities/${facilityId}/courts`
+            );
+            setSelectedFacilityId(facilityId);
+          }}
+        >
+          <div className="submenu-icon-wrapper">
+            <i className="fas fa-map-marker-alt"></i>
+          </div>
+          <span title={facilityName}>{facilityName}</span>
+        </div>
+      );
+    });
+  };
 
   // Generate sidebar classes
   const getSidebarClasses = () => {
@@ -301,9 +390,17 @@ const CourtOwnerSideBar = ({
     return classes.join(" ");
   };
 
+  // ✅ DEBUG: Log current state
+  console.log('🔍 CourtOwnerSideBar Debug:', {
+    isLoggedIn,
+    user: user ? { id: user.id || user.userId, name: user.name || user.fullName } : null,
+    facilitiesCount: facilities.length,
+    loading
+  });
+
   return (
     <div className={getSidebarClasses()}>
-      {/* Header with Toggle Button */}
+      {/* Header */}
       <div className="sidebar__header">
         <div className="logo-section">
           <div className="logo-icon-wrapper">
@@ -317,9 +414,7 @@ const CourtOwnerSideBar = ({
           )}
         </div>
 
-        {/* Toggle/Close Button */}
         <div className="header-controls">
-          {/* Close button for mobile */}
           {isMobile && (
             <button
               className="collapse-btn mobile-close"
@@ -330,17 +425,13 @@ const CourtOwnerSideBar = ({
             </button>
           )}
 
-          {/* Toggle button for desktop/tablet */}
           {!isMobile && onToggleCollapse && (
             <button
               className="collapse-btn desktop-toggle"
               onClick={onToggleCollapse}
               title={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
             >
-              <i
-                className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"
-                  }`}
-              ></i>
+              <i className={`fas ${collapsed ? "fa-angle-right" : "fa-angle-left"}`}></i>
             </button>
           )}
         </div>

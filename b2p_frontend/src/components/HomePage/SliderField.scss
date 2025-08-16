@@ -299,12 +299,10 @@
     }
 }
 
-// 🎯 Optimized Responsive Design
-
 // 🔥 Extra Large Desktop (1600px+) - 4K & Ultra-wide
 @media (min-width: 1600px) {
     .slider-field {
-        margin-top: 90px;
+        margin-top: 70px;
 
         .carousel .carousel-item {
             height: 650px;
@@ -314,8 +312,6 @@
         .carousel-control-next {
             width : 80px;
             height: 80px;
-            left  : 50px;
-            right : 50px;
 
             .carousel-control-prev-icon,
             .carousel-control-next-icon {

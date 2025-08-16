@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './BookingHistory.scss';
+import { useAuth } from '../../context/AuthContext';
 import { message, Spin, Rate, Input, Button } from 'antd';
 import {
     getBookingsByUserId,
@@ -31,11 +32,15 @@ const BookingHistory = () => {
     const [existingRating, setExistingRating] = useState(null);
 
     const bookingsPerPage = 8;
-    const userId = 16;
+    const { userId } = useAuth();
 
     useEffect(() => {
-        loadBookingHistory();
-    }, []);
+        // ✅ Chỉ call API khi userId đã có giá trị
+        if (userId) {
+            console.log('🔄 userId changed, loading booking history:', userId);
+            loadBookingHistory();
+        }
+    }, [userId]); // ✅ Dependency array bao gồm userId
 
     const calculateDuration = (startTime, endTime) => {
         if (!startTime || !endTime) return 'N/A';
@@ -178,6 +183,12 @@ const BookingHistory = () => {
     };
 
     const loadBookingHistory = async () => {
+        // ✅ Kiểm tra userId trước khi call API
+        if (!userId) {
+            console.log('⚠️ UserId not available yet, skipping API call');
+            return;
+        }
+
         try {
             setLoading(true);
             console.log('📚 Loading booking history for userId:', userId);
@@ -213,7 +224,6 @@ const BookingHistory = () => {
             setLoading(false);
         }
     };
-
     const loadCustomerInfoForBookings = async (bookingsToLoad) => {
         for (const booking of bookingsToLoad) {
             if (booking.userId) {

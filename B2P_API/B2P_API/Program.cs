@@ -1,4 +1,5 @@
 using B2P_API;
+using B2P_API.Hubs;
 using B2P_API.Interface;
 using B2P_API.Map;
 using B2P_API.Models;
@@ -6,12 +7,14 @@ using B2P_API.Repositories;
 using B2P_API.Repository;
 using B2P_API.Response;
 using B2P_API.Services;
+using B2P_API.Utils;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
-using B2P_API.Utils;
-using B2P_API.Hubs;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,10 +48,61 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Cấu hình JSON để tránh vòng lặp
+// ✅ JWT Authentication Configuration
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var jwtSettings = builder.Configuration.GetSection("JWT");
+
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        RoleClaimType = "roleId",
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings["AccessSecret"]!)
+        ),
+
+        ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            Console.WriteLine($"JWT Token validated for user: {context.Principal?.FindFirst("userId")?.Value}");
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// ✅ Add Authorization
+builder.Services.AddAuthorization();
+
+// Controllers + JSON config
 builder.Services.AddControllers()
-    .AddJsonOptions(x =>
-        x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+
+        // ✅ CHỈ DÙNG CÁC OPTIONS CÓ SẴN:
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.WriteIndented = true; // For debugging
+    });
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -125,6 +179,11 @@ ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
+
+builder.Services.AddScoped<JWTHelper>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<VNPayService>();
