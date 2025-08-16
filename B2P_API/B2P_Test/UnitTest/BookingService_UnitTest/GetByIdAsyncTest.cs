@@ -9,6 +9,8 @@ using B2P_API.Interface;
 using B2P_API.Response;
 using B2P_API.Services;
 using B2P_API.DTOs.BookingDTOs;
+using Microsoft.AspNetCore.SignalR;
+using B2P_API.Hubs;
 
 namespace B2P_Test.UnitTest.BookingService_UnitTest
 {
@@ -17,6 +19,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         private readonly Mock<IBookingRepository> _bookingRepoMock;
         private readonly Mock<IAccountManagementRepository> _accRepoMock;
         private readonly Mock<IAccountRepository> _accRepo2Mock;
+        private readonly Mock<IHubContext<BookingHub>> _hubContextMock;
         private readonly BookingService _service;
 
         public GetByIdAsyncTest()
@@ -24,7 +27,13 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             _bookingRepoMock = new Mock<IBookingRepository>();
             _accRepoMock = new Mock<IAccountManagementRepository>();
             _accRepo2Mock = new Mock<IAccountRepository>();
-            _service = new BookingService(_bookingRepoMock.Object, _accRepoMock.Object, _accRepo2Mock.Object);
+            _hubContextMock = new Mock<IHubContext<BookingHub>>();
+            _service = new BookingService(
+                _bookingRepoMock.Object,
+                _accRepoMock.Object,
+                _hubContextMock.Object,
+                _accRepo2Mock.Object
+            );
         }
 
         [Fact(DisplayName = "GetByIdAsync - Không tìm thấy booking")]

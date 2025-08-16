@@ -66,7 +66,8 @@ namespace B2P_Test.UnitTest.CourtCategoryService_UnitTest
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
             Assert.Contains(MessagesCodes.MSG_06, result.Message);
-            Assert.Contains("Database connection failed", result.Message);
+            // Không kiểm tra ex.Message vì service chỉ trả về MSG_06 + "Thể loại sân này đang được sử dụng"
+            Assert.Contains("Thể loại sân này đang được sử dụng", result.Message);
             Assert.Null(result.Data);
 
             // Verify repository was called

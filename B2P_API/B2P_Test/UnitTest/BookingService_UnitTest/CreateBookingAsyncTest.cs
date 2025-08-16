@@ -1,10 +1,12 @@
 ﻿using B2P_API.DTOs;
 using B2P_API.DTOs.BookingDTOs;
+using B2P_API.Hubs;
 using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Repositories;
 using B2P_API.Repository;
 using B2P_API.Services;
+using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Newtonsoft.Json;
 using System;
@@ -21,6 +23,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         private readonly Mock<IBookingRepository> _bookingRepoMock;
         private readonly Mock<IAccountManagementRepository> _accRepoMock;
         private readonly Mock<IAccountRepository> _accRepo2Mock;
+        private readonly Mock<IHubContext<BookingHub>> _hubContextMock;
         private readonly BookingService _service;
 
         public CreateBookingAsyncTest()
@@ -28,7 +31,13 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             _bookingRepoMock = new Mock<IBookingRepository>();
             _accRepoMock = new Mock<IAccountManagementRepository>();
             _accRepo2Mock = new Mock<IAccountRepository>();
-            _service = new BookingService(_bookingRepoMock.Object, _accRepoMock.Object, _accRepo2Mock.Object);
+            _hubContextMock = new Mock<IHubContext<BookingHub>>();
+            _service = new BookingService(
+                _bookingRepoMock.Object,
+                _accRepoMock.Object,
+                _hubContextMock.Object,
+                _accRepo2Mock.Object
+            );
         }
 
         private BookingRequestDto CreateValidRequest(bool withUserId = false)
@@ -458,7 +467,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         public void TrySmartBooking_ShouldAssignIndividualSlots_WhenGroupAssignmentFails()
         {
             // Arrange
-            var service = new BookingService(null, null, null);
+            var service = new BookingService(null, null, null, null);
             var method = typeof(BookingService)
                 .GetMethod("TrySmartBooking", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -497,7 +506,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         public void TrySmartBooking_ShouldReturnNull_WhenNoCourtsAvailable()
         {
             // Arrange
-            var service = new BookingService(null, null, null);
+            var service = new BookingService(null, null, null, null);
             var method = typeof(BookingService)
                 .GetMethod("TrySmartBooking", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -520,7 +529,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         public void TrySmartBooking_ShouldPartiallyAssign_WhenSomeSlotsCannotBeAssigned()
         {
             // Arrange
-            var service = new BookingService(null, null, null);
+            var service = new BookingService(null, null, null, null);
             var method = typeof(BookingService)
                 .GetMethod("TrySmartBooking", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -554,7 +563,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         public void TrySmartBooking_ShouldHandleNonConsecutiveSlots()
         {
             // Arrange
-            var service = new BookingService(null, null, null);
+            var service = new BookingService(null, null, null, null);
             var method = typeof(BookingService)
                 .GetMethod("TrySmartBooking", BindingFlags.NonPublic | BindingFlags.Instance);
 

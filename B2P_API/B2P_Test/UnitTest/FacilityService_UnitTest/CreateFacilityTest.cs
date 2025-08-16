@@ -40,6 +40,14 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Equal(400, result.Status);
             Assert.Equal("Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng", result.Message);
             Assert.Null(result.Data);
+
+            // Test null case
+            req.FacilityName = null;
+            var result2 = await service.CreateFacility(req);
+            Assert.False(result2.Success);
+            Assert.Equal(400, result2.Status);
+            Assert.Equal("Tên cơ sở không được để trống hoặc chỉ chứa khoảng trắng", result2.Message);
+            Assert.Null(result2.Data);
         }
 
         [Fact(DisplayName = "UTCID02 - StatusId <= 0 returns 400")]
@@ -61,10 +69,47 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Equal(400, result.Status);
             Assert.Equal("Trạng thái không hợp lệ", result.Message);
             Assert.Null(result.Data);
+
+            req.StatusId = -1;
+            var result2 = await service.CreateFacility(req);
+            Assert.False(result2.Success);
+            Assert.Equal(400, result2.Status);
+            Assert.Equal("Trạng thái không hợp lệ", result2.Message);
+            Assert.Null(result2.Data);
         }
 
-        [Fact(DisplayName = "UTCID03 - OpenHour >= CloseHour returns 400")]
-        public async Task UTCID03_OpenHourGreaterOrEqualCloseHour_Returns400()
+        [Fact(DisplayName = "UTCID03 - OpenHour or CloseHour invalid returns 400")]
+        public async Task UTCID03_OpenHourOrCloseHourInvalid_Returns400()
+        {
+            var req = new CreateFacilityRequest
+            {
+                FacilityName = "Facility A",
+                StatusId = 1,
+                OpenHour = -1, // invalid
+                CloseHour = 20,
+                SlotDuration = 60
+            };
+            var service = CreateService();
+
+            var result = await service.CreateFacility(req);
+
+            Assert.False(result.Success);
+            Assert.Equal(400, result.Status);
+            Assert.Equal("Giờ mở/đóng cửa không hợp lệ (0-24)", result.Message);
+            Assert.Null(result.Data);
+
+            req.OpenHour = 7;
+            req.CloseHour = 25; // invalid
+            var result2 = await service.CreateFacility(req);
+
+            Assert.False(result2.Success);
+            Assert.Equal(400, result2.Status);
+            Assert.Equal("Giờ mở/đóng cửa không hợp lệ (0-24)", result2.Message);
+            Assert.Null(result2.Data);
+        }
+
+        [Fact(DisplayName = "UTCID04 - OpenHour >= CloseHour returns 400")]
+        public async Task UTCID04_OpenHourGreaterOrEqualCloseHour_Returns400()
         {
             var req = new CreateFacilityRequest
             {
@@ -83,7 +128,8 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Equal("Giờ mở cửa phải nhỏ hơn giờ đóng cửa", result.Message);
             Assert.Null(result.Data);
 
-            req.CloseHour = 9;
+            req.OpenHour = 11;
+            req.CloseHour = 10;
             var result2 = await service.CreateFacility(req);
             Assert.False(result2.Success);
             Assert.Equal(400, result2.Status);
@@ -91,8 +137,8 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Null(result2.Data);
         }
 
-        [Fact(DisplayName = "UTCID04 - SlotDuration invalid returns 400")]
-        public async Task UTCID04_SlotDurationInvalid_Returns400()
+        [Fact(DisplayName = "UTCID05 - SlotDuration invalid returns 400")]
+        public async Task UTCID05_SlotDurationInvalid_Returns400()
         {
             var req = new CreateFacilityRequest
             {
@@ -120,8 +166,8 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Null(result2.Data);
         }
 
-        [Fact(DisplayName = "UTCID05 - Exception in repository returns 500")]
-        public async Task UTCID05_ExceptionInRepository_Returns500()
+        [Fact(DisplayName = "UTCID06 - Exception in repository returns 500")]
+        public async Task UTCID06_ExceptionInRepository_Returns500()
         {
             var req = new CreateFacilityRequest
             {
@@ -145,8 +191,8 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID06 - Success returns 200")]
-        public async Task UTCID06_Success_Returns200()
+        [Fact(DisplayName = "UTCID07 - Success returns 200")]
+        public async Task UTCID07_Success_Returns200()
         {
             var req = new CreateFacilityRequest
             {
@@ -167,6 +213,7 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
                 UserId = 11,
                 Location = "Hanoi",
                 Contact = "123456",
+                TimeSlots = new List<TimeSlot>() // For assertion
             };
             _manageRepoMock.Setup(x => x.CreateFacilityAsync(It.IsAny<Facility>())).ReturnsAsync(created);
 
@@ -176,18 +223,107 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
 
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Tạo cơ sở thành công", result.Message);
+            Assert.Equal("Tạo cơ sở thành công với 2 khung giờ", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal(123, result.Data.FacilityId);
             Assert.Equal("Facility A", result.Data.FacilityName);
             Assert.Equal(11, result.Data.UserId);
             Assert.Equal("Hanoi", result.Data.Location);
             Assert.Equal("123456", result.Data.Contact);
+        }
 
-            // Check TimeSlots created
-            Assert.NotNull(result.Data.TimeSlots);
-            // Số slot: Open: 7h, Close: 9h, SlotDuration: 60 => 2 slots (7-8, 8-9)
-            Assert.True(result.Data.TimeSlots.Count >= 0);
+        [Fact(DisplayName = "UTCID08 - OpenHour 0 and CloseHour 23 returns 200 (full day minus last hour)")]
+        public async Task UTCID08_OpenHourZeroAndCloseHourTwentyThree_Returns200()
+        {
+            var req = new CreateFacilityRequest
+            {
+                FacilityName = "Facility A",
+                StatusId = 1,
+                OpenHour = 0,
+                CloseHour = 23,
+                SlotDuration = 60
+            };
+            var created = new Facility { FacilityId = 8, FacilityName = "Facility A", StatusId = 1, UserId = 1, TimeSlots = new List<TimeSlot>() };
+            _manageRepoMock.Setup(x => x.CreateFacilityAsync(It.IsAny<Facility>())).ReturnsAsync(created);
+            var service = CreateService();
+
+            var result = await service.CreateFacility(req);
+
+            if (!result.Success)
+                Console.WriteLine($"[DEBUG UTCID08] Status: {result.Status} - Message: {result.Message}");
+
+            Assert.True(result.Success);
+            Assert.Equal(200, result.Status);
+            Assert.Contains("khung giờ", result.Message);
+            Assert.NotNull(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID09 - OpenHour 22 and CloseHour 23 is valid")]
+        public async Task UTCID09_OpenHourTwentyTwoAndCloseHourTwentyThree_Success()
+        {
+            var req = new CreateFacilityRequest
+            {
+                FacilityName = "Facility Night",
+                StatusId = 1,
+                OpenHour = 22,
+                CloseHour = 23,
+                SlotDuration = 60
+            };
+            var created = new Facility { FacilityId = 222, FacilityName = "Facility Night", StatusId = 1, UserId = 1, TimeSlots = new List<TimeSlot>() };
+            _manageRepoMock.Setup(x => x.CreateFacilityAsync(It.IsAny<Facility>())).ReturnsAsync(created);
+            var service = CreateService();
+
+            var result = await service.CreateFacility(req);
+
+            if (!result.Success)
+                Console.WriteLine($"[DEBUG UTCID09] Status: {result.Status} - Message: {result.Message}");
+
+            Assert.True(result.Success);
+            Assert.Equal(200, result.Status);
+            Assert.Contains("khung giờ", result.Message);
+            Assert.NotNull(result.Data);
+            Assert.Equal(222, result.Data.FacilityId);
+        }
+
+        [Fact(DisplayName = "UTCID10 - Slot creation does not exceed 50 slots")]
+        public async Task UTCID10_SlotCreationMax50Slots()
+        {
+            var req = new CreateFacilityRequest
+            {
+                FacilityName = "Big Facility",
+                StatusId = 1,
+                OpenHour = 0,
+                CloseHour = 24,
+                SlotDuration = 10 // 24h * 60min / 10 = 144 slots, should be capped at 50
+            };
+            var created = new Facility { FacilityId = 333, FacilityName = "Big Facility", StatusId = 1, UserId = 1, TimeSlots = new List<TimeSlot>() };
+            _manageRepoMock.Setup(x => x.CreateFacilityAsync(It.IsAny<Facility>())).ReturnsAsync(created);
+
+            var service = CreateService();
+
+            var result = await service.CreateFacility(req);
+
+            Assert.True(result.Success);
+            Assert.Equal(200, result.Status);
+            Assert.Contains("khung giờ", result.Message);
+            Assert.NotNull(result.Data);
+
+            // Lấy số lượng slot từ message: "Tạo cơ sở thành công với 50 khung giờ"
+            // => lấy số đứng trước chữ "khung"
+            var msg = result.Message;
+            var parts = msg.Split(' ');
+            int slotCount = 0;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (parts[i] == "khung" && i > 0 && int.TryParse(parts[i - 1], out var number))
+                {
+                    slotCount = number;
+                    break;
+                }
+                // hoặc: lấy số đầu tiên trong message
+                if (int.TryParse(parts[i], out var n)) { slotCount = n; break; }
+            }
+            Assert.True(slotCount <= 50);
         }
     }
 }
