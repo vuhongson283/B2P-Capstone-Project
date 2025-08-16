@@ -231,7 +231,6 @@ const BookingHistory = () => {
     };
 
     const loadBookingHistory = async () => {
-        // ✅ Kiểm tra userId trước khi call API
         if (!userId) {
             console.log('⚠️ UserId not available yet, skipping API call');
             return;
@@ -251,13 +250,24 @@ const BookingHistory = () => {
 
             console.log('📅 Raw bookings data:', bookingsData);
 
-            if (bookingsData.length === 0) {
+            // ✅ FILTER: Loại bỏ booking có statusId = 8
+            const filteredBookingsData = bookingsData.filter(booking => {
+                const shouldInclude = booking.statusId !== 8;
+                if (!shouldInclude) {
+                    console.log(`🚫 [DEBUG] Filtering out booking ${booking.bookingId} with statusId = 8`);
+                }
+                return shouldInclude;
+            });
+
+            console.log('📅 Filtered bookings data (statusId != 8):', filteredBookingsData);
+
+            if (filteredBookingsData.length === 0) {
                 message.info('Không có lịch sử đặt sân nào');
                 setBookings([]);
                 return;
             }
 
-            const processedBookings = await processBookingData(bookingsData);
+            const processedBookings = await processBookingData(filteredBookingsData);
             setBookings(processedBookings);
 
             if (processedBookings.length > 0) {
