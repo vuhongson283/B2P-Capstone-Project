@@ -38,7 +38,6 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
         [Fact(DisplayName = "UTCID01 - OTP expired or invalid session")]
         public async Task UTCID01_OtpExpiredOrInvalidSession_Returns400()
         {
-            // Arrange
             var service = CreateService();
             object? cacheObj = null;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(false);
@@ -50,21 +49,17 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("OTP expired or invalid session", result.Message);
+            Assert.Equal("OTP hết hạn hoặc session không hợp lệ", result.Message);
             Assert.Null(result.Data);
         }
-
 
         [Fact(DisplayName = "UTCID02 - Invalid OTP code")]
         public async Task UTCID02_InvalidOtpCode_Returns400()
         {
-            // Arrange
             var service = CreateService();
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "654321";
@@ -80,24 +75,20 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Invalid OTP code", result.Message);
+            Assert.Equal("Mã OTP không đúng", result.Message);
             Assert.Null(result.Data);
         }
 
         [Fact(DisplayName = "UTCID03 - Login for existing email user")]
         public async Task UTCID03_LoginExistingEmailUser_Returns200()
         {
-            // Arrange
-            // Cấu hình giả cho JWTHelper
             var inMemorySettings = new Dictionary<string, string?>
             {
-                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"}, // Đúng key cho JWTHelper
+                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
                 {"JWT:Issuer", "test-issuer"},
                 {"JWT:Audience", "test-audience"},
                 {"JWT:DurationInMinutes", "60"},
@@ -108,7 +99,6 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
 
             var jwtHelper = new JWTHelper(configuration);
 
-            // Service dùng JWTHelper thật
             var service = new AuthService(
                 _authRepoMock.Object,
                 jwtHelper,
@@ -120,6 +110,8 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = true;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object? cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
@@ -145,13 +137,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Login successful", result.Message);
+            Assert.Equal("Đăng nhập thành công", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal(user.Email, result.Data.User.Email);
             Assert.False(result.Data.IsNewUser);
@@ -161,15 +151,13 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
         [Fact(DisplayName = "UTCID04 - Auto register new phone user")]
         public async Task UTCID04_AutoRegisterNewPhoneUser_Returns200()
         {
-            // Arrange
             var inMemorySettings = new Dictionary<string, string?>
-    {
-        // Đảm bảo đủ mọi key/issuer cấu hình mà JWTHelper có thể lấy!
-        {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
-        {"JWT:Issuer", "test-issuer"},
-        {"JWT:Audience", "test-audience"},
-        {"JWT:DurationInMinutes", "60"},
-    };
+            {
+                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
+                {"JWT:Issuer", "test-issuer"},
+                {"JWT:Audience", "test-audience"},
+                {"JWT:DurationInMinutes", "60"},
+            };
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(inMemorySettings)
                 .Build();
@@ -179,10 +167,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = false;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
-            // User không tồn tại lần đầu, sau đó trả về user mới
             var newUser = new User
             {
                 UserId = 2,
@@ -195,8 +184,8 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Role = new Role { RoleName = "Player" }
             };
             _authRepoMock.SetupSequence(x => x.GetUserByPhoneAsync("0912345678"))
-                .ReturnsAsync((User?)null) // lần đầu: chưa có user
-                .ReturnsAsync(newUser);    // lần sau: đã tạo user
+                .ReturnsAsync((User?)null)
+                .ReturnsAsync(newUser);
 
             _authRepoMock.Setup(x => x.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(2);
             _authRepoMock.Setup(x => x.SaveUserTokenAsync(It.IsAny<UserToken>())).Returns(Task.CompletedTask);
@@ -216,17 +205,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service2.VerifyOtpAndLoginAsync(req);
 
-            // Debug nếu fail
-            if (!result.Success)
-                Console.WriteLine($"Status: {result.Status}, Message: {result.Message}");
-
-            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Account created and login successful", result.Message);
+            Assert.Equal("Tài khoản đã được tạo và đăng nhập thành công", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal(newUser.Phone, result.Data.User.Phone);
             Assert.True(result.Data.IsNewUser);
@@ -236,18 +219,17 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
         [Fact(DisplayName = "UTCID05 - Failed to create or retrieve user returns 500")]
         public async Task UTCID05_FailedToCreateOrRetrieveUser_Returns500()
         {
-            // Arrange
             var service = CreateService();
-            // Use ExpandoObject for dynamic to avoid runtime binder issues
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = false;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object? cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
             _authRepoMock.Setup(x => x.GetUserByPhoneAsync("0912345678")).ReturnsAsync((User?)null);
             _authRepoMock.Setup(x => x.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(1);
-            // After creation, still return null
             _authRepoMock.Setup(x => x.GetUserByPhoneAsync("0912345678")).ReturnsAsync((User?)null);
 
             var req = new VerifyOtpRequestDto
@@ -261,14 +243,13 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
-            Assert.Equal("Failed to create or retrieve user", result.Message);
+            Assert.Equal("Không thể tìm thấy hoặc tạo user", result.Message);
             Assert.Null(result.Data);
         }
 
         [Fact(DisplayName = "UTCID06 - Exception returns 500")]
         public async Task UTCID06_Exception_Returns500()
         {
-            // Arrange
             var service = CreateService();
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out It.Ref<object?>.IsAny)).Throws(new Exception("cache error"));
 
@@ -283,21 +264,20 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
-            Assert.StartsWith("Login failed: cache error", result.Message);
+            Assert.StartsWith("Đăng nhập thất bại: cache error", result.Message);
             Assert.Null(result.Data);
         }
 
         [Fact(DisplayName = "UTCID07 - Auto register new email user")]
         public async Task UTCID07_AutoRegisterNewEmailUser_Returns200()
         {
-            // Arrange
             var inMemorySettings = new Dictionary<string, string?>
-    {
-        {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
-        {"JWT:Issuer", "test-issuer"},
-        {"JWT:Audience", "test-audience"},
-        {"JWT:DurationInMinutes", "60"},
-    };
+            {
+                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
+                {"JWT:Issuer", "test-issuer"},
+                {"JWT:Audience", "test-audience"},
+                {"JWT:DurationInMinutes", "60"},
+            };
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(inMemorySettings)
                 .Build();
@@ -307,10 +287,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = true;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
-            // User không tồn tại lần đầu, sau đó trả về user mới
             var newUser = new User
             {
                 UserId = 3,
@@ -323,8 +304,8 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Role = new Role { RoleName = "User" }
             };
             _authRepoMock.SetupSequence(x => x.GetUserByEmailAsync("newuser@email.com"))
-                .ReturnsAsync((User?)null) // lần đầu: chưa có user
-                .ReturnsAsync(newUser);    // lần sau: đã tạo user
+                .ReturnsAsync((User?)null)
+                .ReturnsAsync(newUser);
 
             _authRepoMock.Setup(x => x.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(3);
             _authRepoMock.Setup(x => x.SaveUserTokenAsync(It.IsAny<UserToken>())).Returns(Task.CompletedTask);
@@ -344,13 +325,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Account created and login successful", result.Message);
+            Assert.Equal("Tài khoản đã được tạo và đăng nhập thành công", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal(newUser.Email, result.Data.User.Email);
             Assert.True(result.Data.IsNewUser);
@@ -360,14 +339,13 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
         [Fact(DisplayName = "UTCID08 - Login success with user has no Role returns RoleName User")]
         public async Task UTCID08_LoginSuccess_UserNoRole_ReturnsRoleNameUser()
         {
-            // Arrange
             var inMemorySettings = new Dictionary<string, string?>
-    {
-        {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
-        {"JWT:Issuer", "test-issuer"},
-        {"JWT:Audience", "test-audience"},
-        {"JWT:DurationInMinutes", "60"},
-    };
+            {
+                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
+                {"JWT:Issuer", "test-issuer"},
+                {"JWT:Audience", "test-audience"},
+                {"JWT:DurationInMinutes", "60"},
+            };
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(inMemorySettings)
                 .Build();
@@ -377,6 +355,8 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = true;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
@@ -389,7 +369,7 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 StatusId = 1,
                 RoleId = 1,
                 CreateAt = DateTime.UtcNow,
-                Role = null // Quan trọng: Không có Role
+                Role = null
             };
             _authRepoMock.Setup(x => x.GetUserByEmailAsync("norole@email.com")).ReturnsAsync(user);
             _authRepoMock.Setup(x => x.SaveUserTokenAsync(It.IsAny<UserToken>())).Returns(Task.CompletedTask);
@@ -409,31 +389,28 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Login successful", result.Message);
+            Assert.Equal("Đăng nhập thành công", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal(user.Email, result.Data.User.Email);
             Assert.False(result.Data.IsNewUser);
             Assert.False(string.IsNullOrWhiteSpace(result.Data.AccessToken));
-            Assert.Equal("User", result.Data.User.RoleName); // Quan trọng: RoleName trả về đúng "User"
+            Assert.Equal("User", result.Data.User.RoleName);
         }
 
         [Fact(DisplayName = "UTCID09 - Login success with user fields Phone, FullName, Email null and RoleName null")]
         public async Task UTCID09_LoginSuccess_UserFieldsAndRoleNameNull_ReturnsDefaultValues()
         {
-            // Arrange
             var inMemorySettings = new Dictionary<string, string?>
-    {
-        {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
-        {"JWT:Issuer", "test-issuer"},
-        {"JWT:Audience", "test-audience"},
-        {"JWT:DurationInMinutes", "60"},
-    };
+            {
+                {"JWT:AccessSecret", "test-key-test-key-test-key-test-key"},
+                {"JWT:Issuer", "test-issuer"},
+                {"JWT:Audience", "test-audience"},
+                {"JWT:DurationInMinutes", "60"},
+            };
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(inMemorySettings)
                 .Build();
@@ -443,19 +420,21 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
             dynamic otpData = new System.Dynamic.ExpandoObject();
             otpData.Code = "123456";
             otpData.IsEmail = true;
+            otpData.IsGoogleLogin = false;
+            otpData.IsNewUser = false;
             object cacheObj = otpData;
             _cacheMock.Setup(x => x.TryGetValue(It.IsAny<object>(), out cacheObj)).Returns(true);
 
             var user = new User
             {
                 UserId = 9,
-                Email = null,                // Test nhánh Email ?? ""
-                FullName = null,             // Test nhánh FullName ?? ""
-                Phone = null,                // Test nhánh Phone ?? ""
+                Email = null,
+                FullName = null,
+                Phone = null,
                 StatusId = 1,
                 RoleId = 1,
                 CreateAt = DateTime.UtcNow,
-                Role = new Role { RoleName = null } // Test nhánh RoleName ?? "User"
+                Role = new Role { RoleName = null }
             };
             _authRepoMock.Setup(x => x.GetUserByEmailAsync("fieldsnull@email.com")).ReturnsAsync(user);
             _authRepoMock.Setup(x => x.SaveUserTokenAsync(It.IsAny<UserToken>())).Returns(Task.CompletedTask);
@@ -475,13 +454,11 @@ namespace B2P_Test.UnitTest.AuthService_UnitTest
                 Otp = "123456"
             };
 
-            // Act
             var result = await service.VerifyOtpAndLoginAsync(req);
 
-            // Assert
             Assert.True(result.Success);
             Assert.Equal(200, result.Status);
-            Assert.Equal("Login successful", result.Message);
+            Assert.Equal("Đăng nhập thành công", result.Message);
             Assert.NotNull(result.Data);
             Assert.Equal("", result.Data.User.Phone);
             Assert.Equal("", result.Data.User.FullName);

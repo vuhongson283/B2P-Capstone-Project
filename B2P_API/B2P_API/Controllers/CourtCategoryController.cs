@@ -20,7 +20,6 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("get-all-court-categories")]
-        [Authorize(Roles = "1")]
         public async Task<IActionResult> GetAllCourtCategories(string? search, int pageNumber = 1, int pageSize = 10)
         {
             var response = await _courtCategoryService.GetAllCourtCategoriesAsync(search, pageNumber, pageSize);

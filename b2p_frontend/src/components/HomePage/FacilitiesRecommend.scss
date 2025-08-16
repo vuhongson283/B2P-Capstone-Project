@@ -230,10 +230,10 @@
                                 line-height: 1.4;
                                 flex       : 1;
                                 word-break : break-word;
+                                color      : black !important;
 
                                 &.price-range {
                                     font-weight: 600;
-                                    color      : #28a745;
                                 }
                             }
 
@@ -253,7 +253,7 @@
                             padding      : 0.8rem 1.5rem;
                             transition   : all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                             border       : none;
-                            background   : linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                            background   : linear-gradient(135deg, #157409 0%, #6dda2e 100%);
                             position     : relative;
                             overflow     : hidden;
 
@@ -271,7 +271,7 @@
                             &:hover {
                                 transform : translateY(-2px);
                                 box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
-                                background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+                                background: linear-gradient(135deg, #616466 0%, #1a1b1b 100%);
 
                                 &::before {
                                     left: 100%;
