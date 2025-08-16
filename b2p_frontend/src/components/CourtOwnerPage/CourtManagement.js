@@ -199,11 +199,6 @@ const CourtManagement = () => {
             ...prev,
             courtName: 'Tên sân không được để trống'
           }));
-        } else if (value.length < 3) {
-          setEditValidationErrors(prev => ({
-            ...prev,
-            courtName: 'Tên sân phải có ít nhất 3 ký tự'
-          }));
         } else {
           setEditValidationErrors(prev => ({ ...prev, courtName: '' }));
         }
@@ -294,18 +289,12 @@ const CourtManagement = () => {
     const { name, value } = e.target;
     setNewCourt(prev => ({ ...prev, [name]: value }));
     
-    // Validate từng trường
     switch (name) {
       case 'courtName':
         if (!value.trim()) {
           setValidationErrors(prev => ({
             ...prev,
             courtName: 'Tên sân không được để trống'
-          }));
-        } else if (value.length < 3) {
-          setValidationErrors(prev => ({
-            ...prev,
-            courtName: 'Tên sân phải có ít nhất 3 ký tự'
           }));
         } else {
           setValidationErrors(prev => ({ ...prev, courtName: '' }));
@@ -425,6 +414,15 @@ const CourtManagement = () => {
   // Thêm vào hàm đóng modal
   const handleCloseEditModal = () => {
     setShowEditModal(false);
+    // Reset form data
+    setEditCourt({
+      courtId: '',
+      statusId: '',
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+    // Reset validation errors
     setEditValidationErrors({
       courtName: '',
       categoryId: '',
@@ -458,6 +456,23 @@ const CourtManagement = () => {
     } finally {
       setLoadingCourtIds(prev => prev.filter(id => id !== courtId));
     }
+  };
+
+  // Thêm hàm reset form
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    // Reset form data
+    setNewCourt({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+    // Reset validation errors
+    setValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
   };
 
   if (loading) {
@@ -691,7 +706,7 @@ const CourtManagement = () => {
       </div>
 
       {/* Add Court Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal show={showAddModal} onHide={handleCloseAddModal}>
         <Modal.Header closeButton>
           <Modal.Title>
             <i className="fas fa-plus-circle me-2"></i>
@@ -763,7 +778,7 @@ const CourtManagement = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+          <Button variant="secondary" onClick={handleCloseAddModal}>
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
@@ -880,7 +895,7 @@ const CourtManagement = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+          <Button variant="secondary" onClick={handleCloseEditModal}>
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
