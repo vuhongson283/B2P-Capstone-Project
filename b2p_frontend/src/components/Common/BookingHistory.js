@@ -56,6 +56,14 @@ const BookingHistory = () => {
     };
 
     const mapBookingStatus = (apiStatus, statusId) => {
+        console.log('🎯 [mapBookingStatus] Input:', { apiStatus, statusId });
+
+        // ✅ FILTER: Không map statusId = 8 (UnPaid)
+        if (statusId === 8) {
+            console.log('🚫 [mapBookingStatus] Skipping statusId = 8 (UnPaid)');
+            return null; // Return null để báo hiệu skip
+        }
+
         if (statusId === 10) {
             return 'completed';
         } else if (statusId === 7) {
@@ -66,14 +74,23 @@ const BookingHistory = () => {
             'Active': 'confirmed',
             'Paid': 'deposit-paid',
             'Confirmed': 'confirmed',
-            'Pending': 'pending',
             'Cancelled': 'cancelled',
-            'Completed': 'completed'
+            'Completed': 'completed',
+            // ✅ REMOVE: Không map 'Pending' nữa vì statusId = 8 sẽ bị filter
+            // 'Pending': 'pending',  // <-- Xóa dòng này
         };
-        return statusMap[apiStatus] || 'pending';
+
+        const result = statusMap[apiStatus] || 'unknown';
+        console.log('🎯 [mapBookingStatus] Result:', result);
+        return result;
     };
 
     const getPaymentMethod = (status, statusId) => {
+        // ✅ Handle statusId = 8 (UnPaid) - nhưng không nên xảy ra vì đã filter
+        if (statusId === 8) {
+            return 'Chưa thanh toán'; // Fallback, shouldn't reach here
+        }
+
         if (statusId === 10) {
             return 'Đã thanh toán đầy đủ';
         } else if (statusId === 7) {
@@ -84,7 +101,8 @@ const BookingHistory = () => {
             'Paid': 'Đã thanh toán cọc',
             'Active': 'Chuyển khoản',
             'Confirmed': 'Tiền mặt',
-            'Pending': 'Chưa thanh toán'
+            // ✅ REMOVE: Không cần 'Pending' nữa
+            // 'Pending': 'Chưa thanh toán'
         };
         return paymentMap[status] || 'N/A';
     };
@@ -123,34 +141,32 @@ const BookingHistory = () => {
         const processedBookings = [];
 
         for (const booking of bookingsData) {
-            console.log(`📝 [DEBUG] Processing booking:`, booking);
+            console.log(`📝 [DEBUG] Processing booking ${booking.bookingId}:`, {
+                statusId: booking.statusId,
+                status: booking.status
+            });
+
+            // ✅ EARLY CHECK: Skip booking với statusId = 8 (UnPaid)
+            if (booking.statusId === 8) {
+                console.log(`🚫 [DEBUG] Skipping booking ${booking.bookingId} with statusId = 8 (UnPaid)`);
+                continue;
+            }
 
             if (booking.slots && Array.isArray(booking.slots)) {
-                console.log(`🎫 [DEBUG] Found ${booking.slots.length} slots for booking ${booking.bookingId}`);
-
                 for (const slot of booking.slots) {
-                    console.log(`🎫 [DEBUG] Processing slot:`, slot);
-                    console.log(`🏟️ [DEBUG] Court ID from slot: ${slot.courtId}`);
-
                     const courtDetails = await loadCourtDetails(slot.courtId);
-                    console.log(`🏟️ [DEBUG] Court details loaded:`, courtDetails);
 
-                    // ✅ FIX: Sửa logic lấy giá tiền
-                    console.log('💰 [DEBUG] Price fields in booking:', {
-                        totalPrice: booking.totalPrice,
-                        totalAmount: booking.totalAmount,
-                        amount: booking.amount,
-                        price: booking.price,
-                        cost: booking.cost,
-                        slotPrice: slot.price,
-                        slotAmount: slot.amount,
-                        slotCost: slot.cost
-                    });
+                    // ✅ Map status và check null
+                    const mappedStatus = mapBookingStatus(booking.status, booking.statusId);
 
-                    // ✅ Thử nhiều field có thể chứa giá
+                    // ✅ Skip nếu status mapping trả về null (statusId = 8)
+                    if (!mappedStatus || mappedStatus === 'unknown') {
+                        console.log(`🚫 [DEBUG] Skipping booking ${booking.bookingId} - Status mapping returned null or unknown`);
+                        continue;
+                    }
+
+                    // ... existing price calculation code ...
                     let finalPrice = 0;
-
-                    // Thử các field của booking trước
                     if (booking.totalAmount && booking.totalAmount !== 0) {
                         finalPrice = Number(booking.totalAmount);
                     } else if (booking.totalPrice && booking.totalPrice !== 0) {
@@ -161,17 +177,13 @@ const BookingHistory = () => {
                         finalPrice = Number(booking.price);
                     } else if (booking.cost && booking.cost !== 0) {
                         finalPrice = Number(booking.cost);
-                    }
-                    // Nếu booking không có giá, thử slot
-                    else if (slot.price && slot.price !== 0) {
+                    } else if (slot.price && slot.price !== 0) {
                         finalPrice = Number(slot.price);
                     } else if (slot.amount && slot.amount !== 0) {
                         finalPrice = Number(slot.amount);
                     } else if (slot.cost && slot.cost !== 0) {
                         finalPrice = Number(slot.cost);
                     }
-
-                    console.log('💰 [DEBUG] Final calculated price:', finalPrice);
 
                     const processedBooking = {
                         id: booking.bookingId || booking.id,
@@ -183,8 +195,8 @@ const BookingHistory = () => {
                         startTime: slot.startTime,
                         endTime: slot.endTime,
                         duration: calculateDuration(slot.startTime, slot.endTime),
-                        price: finalPrice, // ✅ Sử dụng finalPrice đã tính toán
-                        status: mapBookingStatus(booking.status, booking.statusId),
+                        price: finalPrice,
+                        status: mappedStatus, // ✅ Sử dụng mapped status đã check
                         originalStatus: booking.status,
                         statusId: booking.statusId,
                         bookingDate: booking.checkInDate,
@@ -202,34 +214,28 @@ const BookingHistory = () => {
                         customerPhone: 'Đang tải...',
                         customerEmail: 'Đang tải...',
                         uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`,
-
-                        // ✅ Debug thông tin để kiểm tra
-                        rawBookingData: booking, // Tạm thời thêm để debug
-                        rawSlotData: slot, // Tạm thời thêm để debug
-
-                        // Thông tin rating từ API (nếu có)
+                        rawBookingData: booking,
+                        rawSlotData: slot,
                         hasRated: booking.hasRated || booking.isRated || false,
                         ratingInfo: booking.rating || booking.ratingData || null,
                         existingRating: booking.existingRating || null
                     };
 
-                    console.log(`✅ [DEBUG] Processed booking with price:`, {
+                    console.log(`✅ [DEBUG] Processed booking:`, {
                         bookingId: processedBooking.id,
-                        price: processedBooking.price,
-                        formattedPrice: formatPrice(processedBooking.price)
+                        statusId: processedBooking.statusId,
+                        status: processedBooking.status,
+                        originalStatus: processedBooking.originalStatus
                     });
 
                     processedBookings.push(processedBooking);
                 }
-            } else {
-                console.warn(`⚠️ [DEBUG] No slots found for booking ${booking.bookingId}`);
             }
         }
 
-        console.log('✅ [DEBUG] All processed bookings with prices:', processedBookings);
+        console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after filtering out statusId = 8`);
         return processedBookings;
     };
-
     const loadBookingHistory = async () => {
         if (!userId) {
             console.log('⚠️ UserId not available yet, skipping API call');
@@ -248,26 +254,32 @@ const BookingHistory = () => {
                 bookingsData = response.data.items;
             }
 
-            console.log('📅 Raw bookings data:', bookingsData);
+            // ✅ DEBUG: Log distribution of statusId
+            const statusDistribution = bookingsData.reduce((acc, booking) => {
+                const statusKey = `${booking.statusId} (${booking.status})`;
+                acc[statusKey] = (acc[statusKey] || 0) + 1;
+                return acc;
+            }, {});
+            console.log('📊 [DEBUG] Status ID distribution:', statusDistribution);
 
-            // ✅ FILTER: Loại bỏ booking có statusId = 8
-            const filteredBookingsData = bookingsData.filter(booking => {
-                const shouldInclude = booking.statusId !== 8;
-                if (!shouldInclude) {
-                    console.log(`🚫 [DEBUG] Filtering out booking ${booking.bookingId} with statusId = 8`);
-                }
-                return shouldInclude;
-            });
+            // ✅ DEBUG: Log statusId = 8 bookings
+            const unpaidBookings = bookingsData.filter(b => b.statusId === 8);
+            console.log(`🚫 [DEBUG] Found ${unpaidBookings.length} bookings with statusId = 8 (UnPaid) - these will be filtered out`);
 
-            console.log('📅 Filtered bookings data (statusId != 8):', filteredBookingsData);
-
-            if (filteredBookingsData.length === 0) {
+            if (bookingsData.length === 0) {
                 message.info('Không có lịch sử đặt sân nào');
                 setBookings([]);
                 return;
             }
 
-            const processedBookings = await processBookingData(filteredBookingsData);
+            const processedBookings = await processBookingData(bookingsData);
+
+            if (processedBookings.length === 0) {
+                message.info('Không có đơn đặt sân hợp lệ nào');
+                setBookings([]);
+                return;
+            }
+
             setBookings(processedBookings);
 
             if (processedBookings.length > 0) {
@@ -510,9 +522,16 @@ const BookingHistory = () => {
 
     const filteredBookings = useMemo(() => {
         return bookings.filter(booking => {
+            // ✅ DOUBLE CHECK: Loại bỏ statusId = 8 (UnPaid)
+            if (booking.statusId === 8) {
+                console.log(`🚫 [filteredBookings] Filtering out booking ${booking.id} with statusId = 8 (UnPaid)`);
+                return false;
+            }
+
             const matchesStatus = filterStatus === 'all' || booking.status === filterStatus;
             const matchesSearch = booking.courtName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 booking.courtType.toLowerCase().includes(searchTerm.toLowerCase());
+
             return matchesStatus && matchesSearch;
         });
     }, [bookings, filterStatus, searchTerm]);
