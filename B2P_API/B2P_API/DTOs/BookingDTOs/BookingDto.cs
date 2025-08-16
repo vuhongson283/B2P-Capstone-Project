@@ -15,7 +15,20 @@
         public int CategoryId { get; set; }
     }
 
-    public class BookingQueryParameters
+	public class SimpleBookingDto
+	{
+		public int? UserId { get; set; }
+		public string? Email { get; set; }
+		public string? Phone { get; set; }
+
+		public DateTime CheckInDate { get; set; }
+		public int FacilityId { get; set; }
+		public int CategoryId { get; set; }
+		public int TimeSlotId { get; set; }
+		public int CourtId { get; set; }
+	}
+
+	public class BookingQueryParameters
     {
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 10;

@@ -133,7 +133,8 @@ namespace B2P_API.Services
 		{
 			try
 			{
-				var user = await _repo.GetByIdAsync(userId);
+				// ✅ SỬA: Dùng method tối ưu
+				var user = await _repo.GetByIdForDisplayAsync(userId);
 				if (user == null)
 				{
 					return new ApiResponse<GetAccountByIdResponse>

@@ -41,7 +41,16 @@ namespace B2P_API.Repository
 				.FirstOrDefaultAsync(u => u.UserId == userId);
 		}
 
-
+		public async Task<User?> GetByIdForDisplayAsync(int userId)
+		{
+			return await _context.Users
+				.AsNoTracking() 
+				.Include(u => u.Role)    
+				.Include(u => u.Status)  
+				.Include(u => u.Images)  
+										
+				.FirstOrDefaultAsync(u => u.UserId == userId);
+		}
 		public async Task<List<User>> GetAllAsync(
 			int pageNumber,
 			int pageSize,
