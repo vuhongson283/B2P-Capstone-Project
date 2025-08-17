@@ -641,49 +641,48 @@ const CourtManagement = () => {
 
             {courts.length > 0 && (
               <div className="pagination-container">
-                <div className="pagination mt-3">
+                <div className="pagination">
                   <Button
                     variant="outline-primary"
+                    className="btn-prev"
                     disabled={pagination.pageNumber === 1}
                     onClick={() => handlePageChange(pagination.pageNumber - 1)}
                   >
-                    <i className="fas fa-chevron-left"></i> Trước
+                    <i className="fas fa-chevron-left me-1"></i> Trước
                   </Button>
                   
-                  {pagination.totalPages > 1 && (
-                    <div className="page-numbers">
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (pagination.totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (pagination.pageNumber <= 3) {
-                          pageNum = i + 1;
-                        } else if (pagination.pageNumber >= pagination.totalPages - 2) {
-                          pageNum = pagination.totalPages - 4 + i;
-                        } else {
-                          pageNum = pagination.pageNumber - 2 + i;
-                        }
-                        
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={pagination.pageNumber === pageNum ? 'primary' : 'outline-primary'}
-                            onClick={() => handlePageChange(pageNum)}
-                            className="mx-1"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <div className="page-numbers">
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.pageNumber <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.pageNumber >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.pageNumber - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={pagination.pageNumber === pageNum ? 'primary' : 'outline-primary'}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
                   
                   <Button
                     variant="outline-primary"
+                    className="btn-next"
                     disabled={pagination.pageNumber >= pagination.totalPages}
                     onClick={() => handlePageChange(pagination.pageNumber + 1)}
                   >
-                    Sau <i className="fas fa-chevron-right"></i>
+                    Sau <i className="fas fa-chevron-right ms-1"></i>
                   </Button>
                 </div>
 
@@ -694,9 +693,9 @@ const CourtManagement = () => {
                     onChange={handlePageSizeChange}
                     className="page-size-select"
                   >
-                    <option value="3">3/Trang</option>
-                    <option value="5">5/Trang</option>
-                    <option value="10">10/Trang</option>
+                    <option value="3">3 / page</option>
+                    <option value="5">5 / page</option>
+                    <option value="10">10 / page</option>
                   </Form.Select>
                 </div>
               </div>

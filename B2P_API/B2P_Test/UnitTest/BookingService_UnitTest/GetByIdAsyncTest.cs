@@ -1,16 +1,16 @@
-﻿using B2P_API.DTOs.BookingDTOs;
-using B2P_API.Hubs;
-using B2P_API.Interface;
-using B2P_API.Models;
-using B2P_API.Response;
-using B2P_API.Services;
-using Microsoft.AspNetCore.SignalR;
-using Moq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Moq;
+using B2P_API.Models;
+using B2P_API.Interface;
+using B2P_API.Response;
+using B2P_API.Services;
+using B2P_API.DTOs.BookingDTOs;
+using Microsoft.AspNetCore.SignalR;
+using B2P_API.Hubs;
 
 namespace B2P_Test.UnitTest.BookingService_UnitTest
 {
@@ -19,7 +19,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         private readonly Mock<IBookingRepository> _bookingRepoMock;
         private readonly Mock<IAccountManagementRepository> _accRepoMock;
         private readonly Mock<IAccountRepository> _accRepo2Mock;
-        private readonly IHubContext<BookingHub> _hubContext;
+        private readonly Mock<IHubContext<BookingHub>> _hubContextMock;
         private readonly BookingService _service;
 
         public GetByIdAsyncTest()
@@ -27,8 +27,13 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             _bookingRepoMock = new Mock<IBookingRepository>();
             _accRepoMock = new Mock<IAccountManagementRepository>();
             _accRepo2Mock = new Mock<IAccountRepository>();
-            _hubContext = new Mock<IHubContext<BookingHub>>().Object;
-            _service = new BookingService(_bookingRepoMock.Object, _accRepoMock.Object, _hubContext, _accRepo2Mock.Object);
+            _hubContextMock = new Mock<IHubContext<BookingHub>>();
+            _service = new BookingService(
+                _bookingRepoMock.Object,
+                _accRepoMock.Object,
+                _hubContextMock.Object,
+                _accRepo2Mock.Object
+            );
         }
 
         [Fact(DisplayName = "GetByIdAsync - Không tìm thấy booking")]

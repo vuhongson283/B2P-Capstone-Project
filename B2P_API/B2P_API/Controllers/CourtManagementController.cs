@@ -1,6 +1,7 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Models;
 using B2P_API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -19,6 +20,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("CourtList")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Get(int pageNumber, int pageSize,
             [FromQuery, BindRequired] int facilityId,
             string? search, int? status, int? categoryId)
@@ -44,6 +46,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("CreateCourt")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Create([FromBody] CreateCourt request)
         {
             var response = await _courseService.CreateCourtAsync(request);
@@ -51,6 +54,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPut("UpdateCourt")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Update([FromBody] UpdateCourtRequest request, [FromQuery, BindRequired] int userId)
         {
             var response = await _courseService.UpdateCourt(request, userId);
@@ -58,6 +62,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpDelete("DeleteCourt")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Delete(int courtId, [FromQuery, BindRequired] int userId)
         {
             var response = await _courseService.DeleteCourt(userId, courtId);
@@ -65,6 +70,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPut("LockCourt")]
+        [Authorize(Roles = "3")]
         public async Task<IActionResult> Lock(int courtId, int statusId, [FromQuery, BindRequired] int userId)
         {
             var response = await _courseService.LockCourt(userId, courtId, statusId);

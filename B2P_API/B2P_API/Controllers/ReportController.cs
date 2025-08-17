@@ -2,6 +2,7 @@
 using B2P_API.Interface;
 using B2P_API.Response;
 using B2P_API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 

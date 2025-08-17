@@ -60,6 +60,7 @@ builder.Services.AddAuthentication(options =>
 
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        RoleClaimType = "roleId",
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
@@ -178,6 +179,11 @@ ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
+
+builder.Services.AddScoped<JWTHelper>();
+builder.Services.AddScoped<AuthRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<VNPayService>();

@@ -12,6 +12,7 @@ using B2P_API.Interface;
 using B2P_API.DTOs.RatingDTO;
 using B2P_API.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Cryptography;
 
 namespace B2P_API.Services
 {
@@ -89,18 +90,25 @@ namespace B2P_API.Services
                     };
                 }
 
-                // Tạo user mới
-                user = new User
-                {
-                    Email = request.Email,
-                    Phone = request.Phone,
-                    StatusId = 1,
-                    RoleId = 3,
-                    IsMale = true,
-                    CreateAt = DateTime.UtcNow
-                };
+                // Kiểm tra user đã tồn tại theo số điện thoại
+                user = await _accRepo2.GetUserByPhoneAsync(request.Phone);
 
-                await _accRepo2.RegisterAccountAsync(user);
+                if (user == null)
+                {
+                    // Tạo user mới nếu chưa tồn tại
+                    user = new User
+                    {
+                        Email = request.Email,
+                        Phone = request.Phone,
+                        StatusId = 1,
+                        RoleId = 3,
+                        IsMale = true,
+                        CreateAt = DateTime.UtcNow
+                    };
+
+                    await _accRepo2.RegisterAccountAsync(user);
+                }
+                // Nếu user đã tồn tại theo phone, sử dụng user đó (không cần làm gì thêm)
             }
 
             // Gán slot vào sân
@@ -122,21 +130,30 @@ namespace B2P_API.Services
             var courtIds = slotToCourt.Values.Distinct().ToList();
             var courtDict = await _bookingRepo.GetCourtsByIdsAsync(courtIds);
 
-            // Tính tổng tiền
-            decimal total = 0;
-            foreach (var kvp in slotToCourt)
-            {
-                int slotId = kvp.Key;
-                int courtId = kvp.Value;
+			// Tính tổng tiền
+			decimal total = 0;
+			foreach (var kvp in slotToCourt)
+			{
+				int slotId = kvp.Key;
+				int courtId = kvp.Value;
 
-                var slot = slotList[slotId];
-                var court = courtDict[courtId];
+				var slot = slotList[slotId];
+				var court = courtDict[courtId];
 
-                total += (decimal)(slot.Discount ?? court.PricePerHour);
-            }
+				// Nếu Discount > 0 thì lấy Discount, ngược lại lấy PricePerHour
+				decimal finalPrice = (slot.Discount.HasValue && slot.Discount.Value > 0)
+					? slot.Discount.Value
+					: (court.PricePerHour ?? 0);
 
-            // Tạo booking
-            var booking = new Booking
+				// ✅ THÊM DÒNG NÀY
+				total += finalPrice;
+
+				// ✅ DEBUG: Log để kiểm tra
+				Console.WriteLine($"💰 Slot {slotId}, Court {courtId}: finalPrice = {finalPrice}, running total = {total}");
+			}
+
+			// Tạo booking
+			var booking = new Booking
             {
                 UserId = user.UserId,
                 CreateAt = DateTime.UtcNow,
@@ -186,14 +203,314 @@ namespace B2P_API.Services
                 }
             };
         }
+		public async Task<ApiResponse<object>> MarkSmartSlot(BookingRequestDto request)
+		{
+			User user;
+
+			// Kiểm tra user theo Id
+			if (request.UserId.HasValue)
+			{
+				user = await _accRepo.GetByIdAsync(request.UserId.Value);
+				if (user == null)
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 404,
+						Message = "Người dùng không tồn tại"
+					};
+				}
+			}
+			else
+			{
+				// Bắt buộc có cả email và số điện thoại
+				if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Khách đặt sân phải cung cấp email và số điện thoại"
+					};
+				}
+
+				// Kiểm tra email hợp lệ
+				bool isEmailValid = await IsRealEmailAsync(request.Email);
+				if (!isEmailValid)
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Email không hợp lệ"
+					};
+				}
+
+				// Kiểm tra số điện thoại hợp lệ
+				if (!IsValidPhone(request.Phone))
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Số điện thoại không hợp lệ"
+					};
+				}
+
+				// Tạo user mới
+				user = new User
+				{
+					Email = request.Email,
+					Phone = request.Phone,
+					StatusId = 1,
+					RoleId = 3,
+					IsMale = true,
+					CreateAt = DateTime.UtcNow
+				};
+
+				await _accRepo2.RegisterAccountAsync(user);
+			}
+
+			// Gán slot vào sân
+			var slotToCourt = await AssignCourtsAsync(request);
+			if (slotToCourt == null)
+			{
+				return new ApiResponse<object>
+				{
+					Success = false,
+					Status = 409,
+					Message = "Không đủ sân trống để đặt các slot đã chọn"
+				};
+			}
+
+			// Lấy danh sách time slot và court
+			var timeSlotIds = request.TimeSlotIds;
+			var slotList = await _bookingRepo.GetTimeSlotsByIdsAsync(timeSlotIds);
+
+			var courtIds = slotToCourt.Values.Distinct().ToList();
+			var courtDict = await _bookingRepo.GetCourtsByIdsAsync(courtIds);
+
+			// Tính tổng tiền
+			decimal total = 0;
+			foreach (var kvp in slotToCourt)
+			{
+				int slotId = kvp.Key;
+				int courtId = kvp.Value;
+
+				var slot = slotList[slotId];
+				var court = courtDict[courtId];
+
+				total += (decimal)(slot.Discount ?? court.PricePerHour);
+			}
+
+			// Tạo booking
+			var booking = new Booking
+			{
+				UserId = user.UserId,
+				CreateAt = DateTime.UtcNow,
+				StatusId = 7,
+				TotalPrice = total,
+				IsDayOff = false
+			};
+
+			await _bookingRepo.AddBookingAsync(booking);
+
+			// Tạo chi tiết đặt sân
+			var details = slotToCourt.Select(pair => new BookingDetail
+			{
+				BookingId = booking.BookingId,
+				CourtId = pair.Value,
+				TimeSlotId = pair.Key,
+				CheckInDate = request.CheckInDate.Date,
+				StatusId = 1,
+				CreateAt = DateTime.UtcNow
+			}).ToList();
+
+			await _bookingRepo.AddBookingDetailsAsync(details);
+
+			return new ApiResponse<object>
+			{
+				Success = true,
+				Status = 200,
+				Message = "Đặt sân thành công",
+				Data = new
+				{
+					bookingId = booking.BookingId,
+					checkInDate = request.CheckInDate.Date,
+					user = new
+					{
+						userId = booking.UserId,
+						email = user?.Email,
+						phone = user?.Phone
+					},
+					slots = details.Select(d => new
+					{
+						timeSlotId = d.TimeSlotId,
+						startTime = slotList[d.TimeSlotId].StartTime,
+						endTime = slotList[d.TimeSlotId].EndTime,
+						courtId = d.CourtId,
+						courtName = courtDict[d.CourtId].CourtName
+					})
+				}
+			};
+		}
 
 
 
-        /// <summary>
-        /// Gán sân tối ưu cho các TimeSlot được yêu cầu
-        /// </summary>
-        /// <returns>Dictionary TimeSlotId -> CourtId nếu thành công, null nếu không thể xếp</returns>
-        public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
+
+		public async Task<ApiResponse<object>> CreateSimpleBookingAsync(SimpleBookingDto request)
+		{
+			User user;
+
+			// ✅ COPY: Logic user từ hàm cũ
+			if (request.UserId.HasValue)
+			{
+				user = await _accRepo.GetByIdAsync(request.UserId.Value);
+				if (user == null)
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 404,
+						Message = "Người dùng không tồn tại"
+					};
+				}
+			}
+			else
+			{
+				// Bắt buộc có cả email và số điện thoại
+				if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Khách đặt sân phải cung cấp email và số điện thoại"
+					};
+				}
+
+				// Kiểm tra email hợp lệ
+				bool isEmailValid = await IsRealEmailAsync(request.Email);
+				if (!isEmailValid)
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Email không hợp lệ"
+					};
+				}
+
+				// Kiểm tra số điện thoại hợp lệ
+				if (!IsValidPhone(request.Phone))
+				{
+					return new ApiResponse<object>
+					{
+						Success = false,
+						Status = 400,
+						Message = "Số điện thoại không hợp lệ"
+					};
+				}
+
+				// Tạo user mới
+				user = new User
+				{
+					Email = request.Email,
+					Phone = request.Phone,
+					StatusId = 1,
+					RoleId = 3,
+					IsMale = true,
+					CreateAt = DateTime.UtcNow
+				};
+
+				await _accRepo2.RegisterAccountAsync(user);
+			}
+
+			// ✅ THAY: Thay vì AssignCourtsAsync - dùng direct mapping
+			var slotToCourt = new Dictionary<int, int>
+	{
+		{ request.TimeSlotId, request.CourtId }
+	};
+
+			// ✅ COPY: Logic lấy slot và court từ hàm cũ
+			var timeSlotIds = new List<int> { request.TimeSlotId };
+			var slotList = await _bookingRepo.GetTimeSlotsByIdsAsync(timeSlotIds);
+
+			var courtIds = new List<int> { request.CourtId };
+			var courtDict = await _bookingRepo.GetCourtsByIdsAsync(courtIds);
+
+			// ✅ COPY: Logic tính tổng tiền từ hàm cũ
+			decimal total = 0;
+			foreach (var kvp in slotToCourt)
+			{
+				int slotId = kvp.Key;
+				int courtId = kvp.Value;
+
+				var slot = slotList[slotId];
+				var court = courtDict[courtId];
+
+				total += (decimal)(slot.Discount ?? court.PricePerHour);
+			}
+
+			// ✅ COPY: Logic tạo booking từ hàm cũ
+			var booking = new Booking
+			{
+				UserId = user.UserId,
+				CreateAt = DateTime.UtcNow,
+				StatusId = 7,
+				TotalPrice = total,
+				IsDayOff = false
+			};
+
+			await _bookingRepo.AddBookingAsync(booking);
+
+			// ✅ COPY: Logic tạo chi tiết đặt sân từ hàm cũ
+			var details = slotToCourt.Select(pair => new BookingDetail
+			{
+				BookingId = booking.BookingId,
+				CourtId = pair.Value,
+				TimeSlotId = pair.Key,
+				CheckInDate = request.CheckInDate.Date,
+				StatusId = 1,
+				CreateAt = DateTime.UtcNow
+			}).ToList();
+
+			await _bookingRepo.AddBookingDetailsAsync(details);
+
+			// ✅ COPY: Logic response từ hàm cũ
+			return new ApiResponse<object>
+			{
+				Success = true,
+				Status = 200,
+				Message = "Đặt sân thành công",
+				Data = new
+				{
+					bookingId = booking.BookingId,
+					checkInDate = request.CheckInDate.Date,
+					user = new
+					{
+						userId = booking.UserId,
+						email = user?.Email,
+						phone = user?.Phone
+					},
+					slots = details.Select(d => new
+					{
+						timeSlotId = d.TimeSlotId,
+						startTime = slotList[d.TimeSlotId].StartTime,
+						endTime = slotList[d.TimeSlotId].EndTime,
+						courtId = d.CourtId,
+						courtName = courtDict[d.CourtId].CourtName
+					})
+				}
+			};
+		}
+
+
+		/// <summary>
+		/// Gán sân tối ưu cho các TimeSlot được yêu cầu
+		/// </summary>
+		/// <returns>Dictionary TimeSlotId -> CourtId nếu thành công, null nếu không thể xếp</returns>
+		public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
         {
             // Lấy thông tin sân và các slot không khả dụng
             var availability = await _bookingRepo.GetCourtAvailabilityAsync(

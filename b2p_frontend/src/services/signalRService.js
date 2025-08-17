@@ -11,7 +11,7 @@ class SignalRService {
         this.isEnabled = false;
         this.joinedGroups = new Set();
         this.currentUserId = null;
-        this.keepAliveInterval = null; // ✅ ADD
+        this.keepAliveInterval = null;
         this.initializeConnection();
     }
 
@@ -79,6 +79,7 @@ class SignalRService {
             this.eventHandlers.onConnectionChanged?.(true);
         });
 
+        // ✅ EXISTING: Booking events
         this.connection.on('BookingCreated', (notification) => {
             console.log('📅 New booking created:', notification);
             this.eventHandlers.onBookingCreated?.(notification);
@@ -102,6 +103,22 @@ class SignalRService {
         this.connection.on('ReceiveBookingUpdate', (notification) => {
             console.log('🔄 Received booking update:', notification);
             this.eventHandlers.onBookingUpdated?.(notification);
+        });
+
+        // ✅ NEW: Comment notification events
+        this.connection.on('NewComment', (notification) => {
+            console.log('💬 New comment notification:', notification);
+            this.eventHandlers.onNewComment?.(notification);
+        });
+
+        this.connection.on('CommentReply', (notification) => {
+            console.log('↩️ Comment reply notification:', notification);
+            this.eventHandlers.onCommentReply?.(notification);
+        });
+
+        this.connection.on('CommentNotification', (notification) => {
+            console.log('🔔 Comment notification received:', notification);
+            this.eventHandlers.onCommentNotification?.(notification);
         });
 
         this.connection.on('Error', (error) => {
@@ -136,9 +153,7 @@ class SignalRService {
                 console.log('✅ SignalR connected successfully!');
                 this.eventHandlers.onConnectionChanged?.(true);
 
-                // ✅ Start keep-alive
                 this.startKeepAlive();
-
                 return true;
             }
             return this.isConnected;
@@ -166,6 +181,7 @@ class SignalRService {
                 this.joinedGroups.clear();
                 console.log('SignalR connection stopped');
                 this.eventHandlers.onConnectionChanged?.(false);
+                this.stopKeepAlive();
             } catch (error) {
                 console.error('Error stopping SignalR connection:', error);
             }
@@ -190,7 +206,71 @@ class SignalRService {
         }, delay);
     }
 
-    // ✅ ADD THIS METHOD
+    // ✅ NEW: User group management for comment notifications
+    async joinUserGroup(userId) {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            console.log('Cannot join user group - SignalR not connected');
+            return;
+        }
+
+        try {
+            const groupKey = `user_${userId}`;
+            if (this.joinedGroups.has(groupKey)) {
+                console.log(`Already joined user group: ${userId}`);
+                return;
+            }
+
+            await this.connection.invoke('JoinUserGroup', userId.toString());
+            this.joinedGroups.add(groupKey);
+            this.currentUserId = userId;
+            console.log(`👤 Joined user group: ${userId}`);
+        } catch (error) {
+            console.error('❌ Error joining user group:', error);
+        }
+    }
+
+    async leaveUserGroup(userId) {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            return;
+        }
+
+        try {
+            const groupKey = `user_${userId}`;
+            await this.connection.invoke('LeaveUserGroup', userId.toString());
+            this.joinedGroups.delete(groupKey);
+            console.log(`📤 Left user group: ${userId}`);
+
+            if (this.currentUserId === userId) {
+                this.currentUserId = null;
+            }
+        } catch (error) {
+            console.error('❌ Error leaving user group:', error);
+            // Remove from local set anyway
+            this.joinedGroups.delete(`user_${userId}`);
+        }
+    }
+
+    // ✅ NEW: Send comment notification
+    async sendCommentNotification(notification) {
+        if (!this.connection || !this.isConnected || !this.isEnabled) {
+            console.log('Cannot send comment notification - SignalR not connected');
+            return;
+        }
+
+        try {
+            // Add timestamp if not present
+            if (!notification.timestamp) {
+                notification.timestamp = new Date().toISOString();
+            }
+
+            await this.connection.invoke('SendCommentNotification', notification);
+            console.log('📤 Comment notification sent via SignalR:', notification);
+        } catch (error) {
+            console.error('❌ Error sending comment notification:', error);
+        }
+    }
+
+    // ✅ EXISTING: Facility group management
     async joinUserFacilities(facilityIds) {
         if (!this.connection || !this.isConnected || !this.isEnabled || !Array.isArray(facilityIds)) {
             return;
@@ -202,8 +282,6 @@ class SignalRService {
                     await this.connection.invoke('JoinFacilityGroup', facilityId);
                     this.joinedGroups.add(`facility_${facilityId}`);
                     console.log(`📍 Joined facility group: ${facilityId}`);
-
-                    // Small delay between joins
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
             }
@@ -213,7 +291,6 @@ class SignalRService {
         }
     }
 
-    // ✅ ADD THIS METHOD  
     async leaveAllFacilityGroups() {
         if (!this.connection || !this.isConnected || !this.isEnabled) {
             return;
@@ -228,7 +305,6 @@ class SignalRService {
                     await this.connection.invoke('LeaveFacilityGroup', facilityId);
                     this.joinedGroups.delete(group);
                     console.log(`📤 Left facility group: ${facilityId}`);
-
                     await new Promise(resolve => setTimeout(resolve, 50));
                 } catch (error) {
                     console.warn(`⚠️ Could not leave facility group ${facilityId}:`, error.message);
@@ -285,13 +361,32 @@ class SignalRService {
                 if (group.startsWith('facility_')) {
                     const facilityId = group.replace('facility_', '');
                     await this.joinFacilityGroup(facilityId);
-
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                } else if (group.startsWith('user_')) {
+                    const userId = group.replace('user_', '');
+                    await this.joinUserGroup(parseInt(userId));
                 }
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
             console.log(`✅ Rejoined ${groupsToRejoin.length} groups after reconnection`);
         } catch (error) {
             console.error('Error rejoining groups:', error);
+        }
+    }
+
+    // ✅ NEW: Start SignalR with user setup
+    async start(userId = null) {
+        try {
+            const connected = await this.startConnection();
+
+            if (connected && userId) {
+                // Join user group for comment notifications
+                await this.joinUserGroup(userId);
+            }
+
+            return connected;
+        } catch (error) {
+            console.error('Error starting SignalR with user setup:', error);
+            return false;
         }
     }
 
@@ -318,6 +413,7 @@ class SignalRService {
     get joinedGroupsInfo() {
         return Array.from(this.joinedGroups);
     }
+
     async ensureConnection() {
         if (!this.isEnabled) {
             return false;
@@ -331,7 +427,6 @@ class SignalRService {
         return true;
     }
 
-    // ✅ ADD: Keep connection alive
     startKeepAlive() {
         if (this.keepAliveInterval) {
             clearInterval(this.keepAliveInterval);
@@ -344,7 +439,7 @@ class SignalRService {
                     await this.startConnection();
                 }
             }
-        }, 10000); // Check every 10 seconds
+        }, 10000);
     }
 
     stopKeepAlive() {
@@ -353,6 +448,7 @@ class SignalRService {
             this.keepAliveInterval = null;
         }
     }
+
     async sendBookingUpdate(notification) {
         if (this.connection && this.isConnected && this.isEnabled) {
             try {

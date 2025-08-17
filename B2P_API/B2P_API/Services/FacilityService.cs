@@ -376,14 +376,15 @@ namespace B2P_API.Services
                 };
             }
 
-            // Giờ mở < đóng
-            if (request.OpenHour >= request.CloseHour)
+            // ✅ FIXED: Kiểm tra giờ mở/đóng cửa hợp lệ
+            if (request.OpenHour < 0 || request.OpenHour > 23 ||
+                request.CloseHour < 0 || request.CloseHour > 24)
             {
                 return new ApiResponse<Facility>
                 {
                     Success = false,
                     Status = 400,
-                    Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                    Message = "Giờ mở/đóng cửa không hợp lệ (0-24)",
                     Data = null
                 };
             }
@@ -411,41 +412,80 @@ namespace B2P_API.Services
                     UserId = request.UserId
                 };
 
+                // ✅ FIXED: Logic tạo TimeSlots an toàn hơn
                 var timeSlots = new List<TimeSlot>();
-                var startTime = new TimeOnly(request.OpenHour, 0);
-                var endTime = new TimeOnly(request.CloseHour, 0);
+
+                // ✅ Handle cross-midnight scenario
+                var startHour = request.OpenHour;
+                var endHour = request.CloseHour;
                 var duration = TimeSpan.FromMinutes(request.SlotDuration);
 
-                var current = startTime;
-                int slotLimit = 1000;
-                int count = 0;
+                // ✅ Nếu đóng cửa là 0 (midnight), convert thành 24
+                if (endHour == 0) endHour = 24;
 
-                while (current.Add(duration) <= endTime && count < slotLimit)
+                // ✅ Kiểm tra logic giờ
+                if (startHour >= endHour)
                 {
-                    timeSlots.Add(new TimeSlot
+                    return new ApiResponse<Facility>
                     {
-                        StartTime = current,
-                        EndTime = current.Add(duration),
-                    });
-
-                    current = current.Add(duration);
-                    count++;
+                        Success = false,
+                        Status = 400,
+                        Message = "Giờ mở cửa phải nhỏ hơn giờ đóng cửa",
+                        Data = null
+                    };
                 }
 
-                facility.TimeSlots = timeSlots;
+                // ✅ Tính toán số slots tối đa có thể
+                var totalMinutes = (endHour - startHour) * 60;
+                var maxPossibleSlots = totalMinutes / request.SlotDuration;
 
+                // ✅ Giới hạn an toàn
+                var slotLimit = Math.Min(maxPossibleSlots, 50); // Tối đa 50 slots
+
+                Console.WriteLine($"🔍 Creating slots: {startHour}:00 to {endHour}:00, duration: {request.SlotDuration}min, max slots: {slotLimit}");
+
+                // ✅ Tạo slots với logic đơn giản hơn
+                for (int i = 0; i < slotLimit; i++)
+                {
+                    var slotStartMinutes = startHour * 60 + (i * request.SlotDuration);
+                    var slotEndMinutes = slotStartMinutes + request.SlotDuration;
+
+                    // ✅ Kiểm tra không vượt quá giờ đóng cửa
+                    if (slotEndMinutes > endHour * 60)
+                    {
+                        Console.WriteLine($"⏹️ Stopping at slot {i}: would exceed closing time");
+                        break;
+                    }
+
+                    var startTime = new TimeOnly(slotStartMinutes / 60, slotStartMinutes % 60);
+                    var endTime = new TimeOnly(slotEndMinutes / 60, slotEndMinutes % 60);
+
+                    timeSlots.Add(new TimeSlot
+                    {
+                        StartTime = startTime,
+                        EndTime = endTime,
+                        StatusId = 1 // ✅ Active by default
+                    });
+
+                    Console.WriteLine($"✅ Created slot {i + 1}: {startTime} - {endTime}");
+                }
+
+                Console.WriteLine($"🎯 Total slots created: {timeSlots.Count}");
+
+                facility.TimeSlots = timeSlots;
                 var created = await _facilityRepository.CreateFacilityAsync(facility);
 
                 return new ApiResponse<Facility>
                 {
                     Success = true,
                     Status = 200,
-                    Message = "Tạo cơ sở thành công",
+                    Message = $"Tạo cơ sở thành công với {timeSlots.Count} khung giờ",
                     Data = created
                 };
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error creating facility: {ex.Message}");
                 return new ApiResponse<Facility>
                 {
                     Success = false,

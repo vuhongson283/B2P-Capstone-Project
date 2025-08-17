@@ -7,8 +7,8 @@ import { MenuOutlined } from "@ant-design/icons";
 import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
 import NotificationBell from "../../components/NotificationBell";
 import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
+import { useAuth } from "../../context/AuthContext";
 
-const USER_ID = 13; // Your user ID
 
 const CourtOwner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -18,6 +18,8 @@ const CourtOwner = () => {
 
   // ✅ NEW: State for global notifications
   const [facilityIds, setFacilityIds] = useState([]);
+  const { user, userId, isLoading: authLoading, isLoggedIn } = useAuth();
+  const USER_ID = userId || user?.userId;
 
   // ✅ NEW: Load facilities for global notifications
   useEffect(() => {
@@ -133,12 +135,25 @@ const CourtOwner = () => {
           right: "20px",
           zIndex: 10002,
         }}>
-          <NotificationBell />
+          <div style={{
+            background: "linear-gradient(135deg, #ff6b6b, #ff8787)", // Gradient đỏ
+            borderRadius: "50%",
+            padding: "12px",
+            boxShadow: "0 6px 20px rgba(255, 107, 107, 0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            // Hoặc màu khác:
+            background: "linear-gradient(135deg, #52c41a, #73d13d)", // Xanh lá
+            // background: "linear-gradient(135deg, #1890ff, #40a9ff)", // Xanh dương  
+            // background: "linear-gradient(135deg, #faad14, #ffc53d)", // Vàng
+            // background: "linear-gradient(135deg, #722ed1, #9254de)", // Tím
+          }}>
+            <NotificationBell />
+          </div>
         </div>
 
-        <div>
-          Buồi
-        </div>
+
         <div className={getSidebarClasses()}>
           <CourtOwnerSideBar
             onClose={closeSidebar}

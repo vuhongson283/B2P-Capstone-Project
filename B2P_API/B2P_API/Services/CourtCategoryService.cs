@@ -254,7 +254,7 @@ namespace B2P_API.Services
                 return new ApiResponse<object>
                 {
                     Data = null!,
-                    Message = MessagesCodes.MSG_06 + ex.Message,
+                    Message = MessagesCodes.MSG_06 + "Thể loại sân này đang được sử dụng",
                     Success = false,
                     Status = 500
                 };

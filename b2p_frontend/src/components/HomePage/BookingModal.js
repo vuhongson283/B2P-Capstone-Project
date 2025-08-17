@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import "./BookingModal.scss";
 
-// ✅ UTILITY FUNCTIONS
+// Helper function to format time slot
 const formatTimeSlot = (startTime, endTime) => {
   const formatTime = (timeString) => {
     if (!timeString) return '';
@@ -10,6 +10,7 @@ const formatTimeSlot = (startTime, endTime) => {
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 };
 
+// Helper function to format currency
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -18,191 +19,169 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-// ✅ LOADING SPINNER COMPONENT
-const LoadingSpinner = ({ size = 'small' }) => (
-  <div className={`loading-spinner ${size}`}>
-    <div className="spinner-dot"></div>
-    <div className="spinner-dot"></div>
-    <div className="spinner-dot"></div>
-  </div>
-);
-
-// ✅ QUANTITY CONTROL COMPONENT
-const QuantityControl = ({ value, max, onChange, disabled = false }) => (
-  <div className="quantity-selector">
-    <button 
-      className="quantity-btn decrease"
-      onClick={() => onChange(Math.max(1, value - 1))}
-      disabled={disabled || value <= 1}
-      aria-label="Giảm số lượng"
-    >
-      <span>−</span>
-    </button>
-    <span className="quantity-display">{value}</span>
-    <button 
-      className="quantity-btn increase"
-      onClick={() => onChange(Math.min(max, value + 1))}
-      disabled={disabled || value >= max}
-      aria-label="Tăng số lượng"
-    >
-      <span>+</span>
-    </button>
-  </div>
-);
-
-// ✅ MAIN BOOKING MODAL COMPONENT
 export default function BookingModal({ 
   open, 
   onClose, 
   timeSlots = [], 
   selectedDate, 
   facilityData,
-  selectedCategory 
+  selectedCategory,
+  onProceedToDetail // New prop để chuyển sang BookingDetail
 }) {
   const [selectedSlots, setSelectedSlots] = useState({});
   const [quantities, setQuantities] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ COMPUTED VALUES
-  const availableSlots = useMemo(() => 
-    timeSlots.filter(slot => slot.availableCourtCount > 0),
-    [timeSlots]
-  );
-
-  const selectedCategoryName = useMemo(() => {
-    if (!facilityData?.categories || !selectedCategory) return 'N/A';
-    const category = facilityData.categories.find(cat => 
-      cat.categoryId.toString() === selectedCategory.toString()
-    );
-    return category?.categoryName || 'N/A';
-  }, [facilityData?.categories, selectedCategory]);
-
-  const bookingSummary = useMemo(() => {
-    const PRICE_PER_COURT = 100000;
-    const selectedCount = Object.values(selectedSlots).filter(Boolean).length;
-    const totalCourts = Object.entries(selectedSlots).reduce((sum, [slotId, isSelected]) => {
-      return isSelected ? sum + (quantities[slotId] || 1) : sum;
-    }, 0);
-    
-    return {
-      selectedSlots: selectedCount,
-      totalCourts,
-      totalPrice: totalCourts * PRICE_PER_COURT,
-      pricePerCourt: PRICE_PER_COURT
-    };
-  }, [selectedSlots, quantities]);
-
-  const isAllSelected = availableSlots.length > 0 && 
-    Object.values(selectedSlots).filter(Boolean).length === availableSlots.length;
-
-  // ✅ RESET STATE ON MODAL OPEN
+  // Reset state when modal opens/closes or timeSlots change
   useEffect(() => {
     if (open) {
       setSelectedSlots({});
       setQuantities({});
-      setIsSubmitting(false);
     }
   }, [open, timeSlots]);
 
-  // ✅ HANDLE ESCAPE KEY & BODY SCROLL
+  // Close modal when clicking outside
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // Close modal with Escape key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+      }
     };
 
     if (open) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
-      return () => {
-        document.removeEventListener('keydown', handleEscape);
-        document.body.style.overflow = 'unset';
-      };
     }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
   }, [open, onClose]);
-
-  // ✅ EVENT HANDLERS
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      const newSelected = {};
-      const newQuantities = {};
-      availableSlots.forEach(slot => {
-        newSelected[slot.timeSlotId] = true;
-        newQuantities[slot.timeSlotId] = 1;
-      });
-      setSelectedSlots(newSelected);
-      setQuantities(newQuantities);
-    } else {
-      setSelectedSlots({});
-      setQuantities({});
-    }
-  };
-
-  const handleSlotToggle = (slotId, checked) => {
-    setSelectedSlots(prev => ({ ...prev, [slotId]: checked }));
-    if (checked && !quantities[slotId]) {
-      setQuantities(prev => ({ ...prev, [slotId]: 1 }));
-    }
-  };
-
-  const handleQuantityChange = (slotId, value) => {
-    const slot = availableSlots.find(s => s.timeSlotId === slotId);
-    if (slot) {
-      setQuantities(prev => ({ 
-        ...prev, 
-        [slotId]: Math.max(1, Math.min(value, slot.availableCourtCount))
-      }));
-    }
-  };
-
-  const handleBooking = async () => {
-    setIsSubmitting(true);
-    try {
-      // TODO: API call
-      console.log('Booking data:', {
-        facilityId: facilityData?.facilityId,
-        categoryId: selectedCategory,
-        date: selectedDate,
-        slots: selectedSlots,
-        quantities: quantities,
-        summary: bookingSummary
-      });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Success
-      onClose();
-      // Show success toast/notification here
-    } catch (error) {
-      console.error('Booking error:', error);
-      // Show error toast/notification here
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (!open) return null;
 
+  // Filter slots that have available courts
+  const availableSlots = timeSlots.filter(slot => slot.availableCourtCount > 0);
+
+  // Check if all slots are selected
+  const isAllSelected = availableSlots.length > 0 && 
+    Object.values(selectedSlots).filter(Boolean).length === availableSlots.length;
+
+  // Chọn tất cả
+  const handleCheckAll = (e) => {
+    const checked = e.target.checked;
+    let newSelected = {};
+    let newQuantities = {};
+    
+    availableSlots.forEach(slot => {
+      newSelected[slot.timeSlotId] = checked;
+      newQuantities[slot.timeSlotId] = 1;
+    });
+    
+    setSelectedSlots(checked ? newSelected : {});
+    setQuantities(checked ? newQuantities : {});
+  };
+
+  // Chọn từng slot
+  const handleCheckSlot = (slotId, checked) => {
+    setSelectedSlots(prev => ({
+      ...prev,
+      [slotId]: checked
+    }));
+    setQuantities(prev => ({
+      ...prev,
+      [slotId]: checked ? 1 : prev[slotId]
+    }));
+  };
+
+  // Tăng/giảm số lượng với giới hạn theo số sân trống
+  const handleQuantity = (slotId, value) => {
+    const slot = timeSlots.find(s => s.timeSlotId === slotId);
+    const maxQuantity = slot ? slot.availableCourtCount : 1;
+    
+    setQuantities(prev => ({
+      ...prev,
+      [slotId]: Math.max(1, Math.min(value, maxQuantity))
+    }));
+  };
+
+  // Tính tổng (giả sử giá 100k/sân)
+  const PRICE_PER_COURT = 100000;
+  const selectedSlotsCount = Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId]).length;
+  const totalCourts = Object.keys(selectedSlots).reduce((sum, slotId) => {
+    if (selectedSlots[slotId]) {
+      return sum + (quantities[slotId] || 1);
+    }
+    return sum;
+  }, 0);
+  const totalPrice = totalCourts * PRICE_PER_COURT;
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Get selected category name
+  const getSelectedCategoryName = () => {
+    if (!facilityData?.categories || !selectedCategory) return '';
+    const category = facilityData.categories.find(cat => 
+      cat.categoryId.toString() === selectedCategory.toString()
+    );
+    return category ? category.categoryName : '';
+  };
+
+  // Handle proceed to booking detail
+  const handleProceedToDetail = () => {
+    if (selectedSlotsCount === 0) {
+      alert('Vui lòng chọn ít nhất một khung giờ!');
+      return;
+    }
+
+    // Tạo danh sách ID của các slot đã chọn
+    const listSlotId = Object.keys(selectedSlots)
+      .filter(slotId => selectedSlots[slotId])
+      .map(slotId => parseInt(slotId));
+
+    console.log('Selected slots:', selectedSlots);
+    console.log('List slot IDs:', listSlotId);
+
+    // Đóng modal hiện tại và chuyển sang BookingDetail
+    onClose();
+    
+    // Gọi callback để mở BookingDetail với dữ liệu cần thiết
+    if (onProceedToDetail) {
+      onProceedToDetail({
+        facilityId: facilityData?.facilityId,
+        categoryId: selectedCategory,
+        listSlotId: listSlotId, // Thêm danh sách ID slot đã chọn
+        totalPrice,
+        selectedSlots,
+        quantities,
+        selectedDate,
+        facilityData
+      });
+    }
+  };
+
   return (
     <div className="booking-modal-overlay" onClick={handleOverlayClick}>
-      <div className="booking-modal">
-        {/* ✅ MODAL HEADER */}
-        <header className="modal-header">
+      <div className="booking-modal" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="modal-header">
           <div className="header-content">
             <h2 className="modal-title">
               <span className="title-icon">🏟️</span>
@@ -210,100 +189,115 @@ export default function BookingModal({
             </h2>
             <p className="modal-subtitle">{formatDate(selectedDate)}</p>
           </div>
-          <button className="close-button" onClick={onClose} aria-label="Đóng modal">
+          <button className="close-btn" onClick={onClose} aria-label="Đóng">
             <span>×</span>
           </button>
-        </header>
+        </div>
         
-        {/* ✅ BOOKING INFORMATION */}
+        {/* Booking Info */}
         <div className="booking-info">
-          <div className="info-cards">
-            <div className="info-card">
-              <div className="info-icon">🏢</div>
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="info-icon">🏢</span>
               <div className="info-content">
                 <span className="info-label">Cơ sở</span>
                 <span className="info-value">{facilityData?.facilityName || 'N/A'}</span>
               </div>
             </div>
-            <div className="info-card">
-              <div className="info-icon">⚽</div>
+            <div className="info-item">
+              <span className="info-icon">⚽</span>
               <div className="info-content">
                 <span className="info-label">Loại sân</span>
-                <span className="info-value">{selectedCategoryName}</span>
+                <span className="info-value">{getSelectedCategoryName()}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ✅ MAIN CONTENT */}
+        {/* Content */}
         <div className="modal-content">
           {availableSlots.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📅</div>
-              <h3>Không có khung giờ</h3>
-              <p>Không có sân trống cho ngày này</p>
+              <h3>Không có khung giờ khả dụng</h3>
+              <p>Vui lòng chọn ngày khác hoặc loại sân khác</p>
             </div>
           ) : (
-            <div className="slots-section">
-              {/* ✅ SELECT ALL */}
-              <div className="select-all-bar">
-                <label className="select-all-control">
+            <div className="slots-container">
+              {/* Select All */}
+              <div className="select-all-section">
+                <label className="select-all-checkbox">
                   <input 
                     type="checkbox"
                     checked={isAllSelected}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    onChange={handleCheckAll}
                   />
-                  <span className="checkbox-custom"></span>
+                  <span className="checkmark"></span>
                   <span className="select-all-text">
                     Chọn tất cả ({availableSlots.length} khung giờ)
                   </span>
                 </label>
               </div>
               
-              {/* ✅ TIME SLOTS LIST */}
-              <div className="slots-grid">
+              {/* Time Slots */}
+              <div className="slots-list">
                 {availableSlots.map(slot => (
                   <div 
+                    className={`slot-item ${selectedSlots[slot.timeSlotId] ? "selected" : ""}`} 
                     key={slot.timeSlotId}
-                    className={`slot-card ${selectedSlots[slot.timeSlotId] ? 'selected' : ''}`}
                   >
-                    <div className="slot-header">
+                    <div className="slot-main">
                       <label className="slot-checkbox">
                         <input 
                           type="checkbox"
                           checked={!!selectedSlots[slot.timeSlotId]}
-                          onChange={(e) => handleSlotToggle(slot.timeSlotId, e.target.checked)}
+                          onChange={e => handleCheckSlot(slot.timeSlotId, e.target.checked)}
                         />
-                        <span className="checkbox-custom"></span>
+                        <span className="checkmark"></span>
                       </label>
                       
-                      <div className="slot-details">
+                      <div className="slot-info">
                         <div className="slot-time">
                           <span className="time-icon">🕐</span>
-                          <span>{formatTimeSlot(slot.startTime, slot.endTime)}</span>
+                          {formatTimeSlot(slot.startTime, slot.endTime)}
                         </div>
                         <div className="slot-availability">
-                          <span className="court-icon">🏟️</span>
-                          <span>{slot.availableCourtCount} sân trống</span>
+                          <span className="availability-icon">🏟️</span>
+                          {slot.availableCourtCount} sân trống
                         </div>
                       </div>
                       
                       <div className="slot-price">
-                        {formatCurrency(bookingSummary.pricePerCourt)}/sân
+                        {formatCurrency(PRICE_PER_COURT)}/sân
                       </div>
                     </div>
                     
                     {selectedSlots[slot.timeSlotId] && (
                       <div className="quantity-section">
-                        <div className="quantity-label">Số sân:</div>
-                        <QuantityControl
-                          value={quantities[slot.timeSlotId] || 1}
-                          max={slot.availableCourtCount}
-                          onChange={(value) => handleQuantityChange(slot.timeSlotId, value)}
-                          disabled={isSubmitting}
-                        />
+                        <label className="quantity-label">Số sân:</label>
+                        <div className="quantity-controls">
+                          <button 
+                            className="quantity-btn decrease"
+                            onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) - 1)}
+                            disabled={(quantities[slot.timeSlotId] || 1) <= 1}
+                            aria-label="Giảm số lượng"
+                          >
+                            <span>−</span>
+                          </button>
+                          <span className="quantity-value">
+                            {quantities[slot.timeSlotId] || 1}
+                          </span>
+                          <button 
+                            className="quantity-btn increase"
+                            onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) + 1)}
+                            disabled={(quantities[slot.timeSlotId] || 1) >= slot.availableCourtCount}
+                            aria-label="Tăng số lượng"
+                          >
+                            <span>+</span>
+                          </button>
+                        </div>
                         <div className="slot-subtotal">
-                          {formatCurrency((quantities[slot.timeSlotId] || 1) * bookingSummary.pricePerCourt)}
+                          {formatCurrency((quantities[slot.timeSlotId] || 1) * PRICE_PER_COURT)}
                         </div>
                       </div>
                     )}
@@ -313,53 +307,42 @@ export default function BookingModal({
             </div>
           )}
         </div>
-        
-        {/* ✅ MODAL FOOTER */}
-        <footer className="modal-footer">
+
+        {/* Footer */}
+        <div className="modal-footer">
           <div className="booking-summary">
-            <div className="summary-stats">
+            <div className="summary-info">
               <div className="summary-item">
-                <span className="summary-icon">🕐</span>
-                <span className="summary-text">Khung giờ: {bookingSummary.selectedSlots}</span>
+                <span className="summary-label">Khung giờ đã chọn:</span>
+                <span className="summary-value">{selectedSlotsCount}</span>
               </div>
               <div className="summary-item">
-                <span className="summary-icon">🏟️</span>
-                <span className="summary-text">Tổng sân: {bookingSummary.totalCourts}</span>
+                <span className="summary-label">Tổng số sân:</span>
+                <span className="summary-value">{totalCourts}</span>
               </div>
-            </div>
-            <div className="total-price">
-              <span className="total-label">Tổng tiền:</span>
-              <span className="total-amount">{formatCurrency(bookingSummary.totalPrice)}</span>
+              <div className="summary-total">
+                <span className="total-label">Tổng tiền:</span>
+                <span className="total-value">{formatCurrency(totalPrice)}</span>
+              </div>
             </div>
           </div>
           
-          <div className="action-buttons">
+          <div className="footer-actions">
             <button 
-              className="btn-secondary"
+              className="btn btn-secondary" 
               onClick={onClose}
-              disabled={isSubmitting}
             >
-              Hủy bỏ
+              Hủy
             </button>
             <button 
-              className="btn-primary"
-              onClick={handleBooking}
-              disabled={bookingSummary.selectedSlots === 0 || isSubmitting}
+              className={`btn btn-primary ${selectedSlotsCount === 0 ? 'disabled' : ''}`}
+              onClick={handleProceedToDetail}
+              disabled={selectedSlotsCount === 0}
             >
-              {isSubmitting ? (
-                <>
-                  <LoadingSpinner size="small" />
-                  <span>Đang xử lý...</span>
-                </>
-              ) : (
-                <>
-                  <span className="btn-icon">⚽</span>
-                  <span>Đặt sân ngay</span>
-                </>
-              )}
+              Tiếp tục đặt sân
             </button>
           </div>
-        </footer>
+        </div>
       </div>
     </div>
   );

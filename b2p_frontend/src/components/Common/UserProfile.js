@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./UserProfile.scss";
+import { useAuth } from "../../context/AuthContext";
 import {
   getUserById,
   updateUserProfile,
@@ -21,7 +22,8 @@ const UserProfile = (props) => {
   const [passwordStatus, setPasswordStatus] = useState(null);
 
   // Temporary userId - sẽ thay thế bằng userId từ authentication sau
-  const userId = 4;
+  const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
+  //const userId = 8;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -207,6 +209,20 @@ const UserProfile = (props) => {
     const fetchUserData = async () => {
       try {
         setPageLoading(true);
+        if (authLoading) {
+          console.log("⏳ Waiting for auth context to load...");
+          return; // ← DỪNG LẠI, CHƯA CALL API
+        }
+
+        // ✅ CHECK AUTHENTICATION
+        if (!isLoggedIn || !userId) {
+          console.error("❌ User not authenticated or missing userId");
+          setMessage("Người dùng chưa đăng nhập");
+          return;
+        }
+
+        console.log("👤 Auth loaded, fetching user data for userId:", userId);
+        setPageLoading(true);
 
         // Load bank types trước
         const bankTypesList = await fetchBankTypes();
@@ -300,7 +316,7 @@ const UserProfile = (props) => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [userId, isLoggedIn, authLoading]);
 
   // Simplified avatar upload handler
   const handleAvatarChange = async (e) => {
@@ -492,42 +508,83 @@ const UserProfile = (props) => {
     }
   };
 
-  // Updated validation - khớp với backend logic mới
+  // 🎯 Updated validation logic - chỉ thêm kiểm tra email và phone
   const validateProfile = () => {
     const newErrors = {};
 
-    // Basic checks only - let backend do the heavy lifting
+    // FullName - BẮT BUỘC
     if (!profileData.fullName?.trim()) {
-      newErrors.fullName = "Vui lòng nhập tên";
+      newErrors.fullName = "Tên người dùng không được để trống";
+    } else if (profileData.fullName.length > 50) {
+      newErrors.fullName = "Tên người dùng không được vượt quá 50 ký tự";
     }
 
-    if (!profileData.email?.trim()) {
-      newErrors.email = "Vui lòng nhập email";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email)) {
-      newErrors.email = "Định dạng email không đúng";
+    // 🎯 KIỂM TRA PHƯƠNG THỨC ĐĂNG NHẬP - ít nhất 1 trong 2 (email hoặc phone)
+    const hasEmail = profileData.email?.trim();
+    const hasPhone = profileData.phone?.trim();
+
+    if (!hasEmail && !hasPhone) {
+      newErrors.email = "Cần có ít nhất email hoặc số điện thoại";
+      newErrors.phone = "Cần có ít nhất email hoặc số điện thoại";
+    } else {
+      // Email - validate format nếu có giá trị
+      if (hasEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email)) {
+        newErrors.email = "Định dạng email không đúng";
+      }
     }
 
-    if (!profileData.address?.trim()) {
-      newErrors.address = "Vui lòng nhập địa chỉ";
+    // Address - validate length nếu có giá trị
+    if (profileData.address?.trim() && profileData.address.length > 255) {
+      newErrors.address = "Địa chỉ không được vượt quá 255 ký tự";
     }
 
-    if (!profileData.dob) {
-      newErrors.dob = "Vui lòng chọn ngày sinh";
+    // Date of Birth - validate nếu có giá trị
+    if (profileData.dob) {
+      const dobDate = new Date(profileData.dob);
+      const today = new Date();
+
+      if (dobDate > today) {
+        newErrors.dob = "Ngày sinh không được là ngày tương lai";
+      } else {
+        // Check age >= 15
+        const age = today.getFullYear() - dobDate.getFullYear();
+        const monthDiff = today.getMonth() - dobDate.getMonth();
+        const dayDiff = today.getDate() - dobDate.getDate();
+
+        let actualAge = age;
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+          actualAge--;
+        }
+
+        if (actualAge < 15) {
+          newErrors.dob = "Người dùng phải từ 15 tuổi trở lên";
+        }
+      }
     }
 
-    // 🎯 Bank account validation - CHỈ validate khi có đầy đủ thông tin
+    // Bank account validation - CHỈ validate khi có ít nhất 1 field được điền
     const hasAccountNumber = profileData.accountNumber?.trim();
     const hasAccountHolder = profileData.accountHolder?.trim();
     const hasBankTypeId = profileData.bankTypeId && profileData.bankTypeId > 0;
 
-    // Nếu có ít nhất 1 field bank account được điền, yêu cầu phải điền đầy đủ
     if (hasAccountNumber || hasAccountHolder || hasBankTypeId) {
       if (!hasAccountNumber) {
-        newErrors.accountNumber = "Vui lòng nhập số tài khoản";
+        newErrors.accountNumber =
+          "Số tài khoản không được để trống khi cập nhật thông tin ngân hàng";
+      } else {
+        const accountNumberRegex = /^[0-9]{9,16}$/;
+        if (!accountNumberRegex.test(hasAccountNumber)) {
+          newErrors.accountNumber =
+            "Số tài khoản không hợp lệ, chỉ chứa từ 9-16 ký tự số";
+        }
       }
 
       if (!hasAccountHolder) {
-        newErrors.accountHolder = "Vui lòng nhập tên chủ tài khoản";
+        newErrors.accountHolder =
+          "Tên chủ tài khoản không được để trống khi cập nhật thông tin ngân hàng";
+      } else if (hasAccountHolder.length > 50) {
+        newErrors.accountHolder =
+          "Tên chủ tài khoản không được vượt quá 50 ký tự";
       }
 
       if (!hasBankTypeId) {
@@ -576,7 +633,7 @@ const UserProfile = (props) => {
     return newErrors;
   };
 
-  // 🎯 Updated profile update handler - thêm refresh userData sau khi success
+  // 🎯 Updated profile update handler
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
 
@@ -592,21 +649,37 @@ const UserProfile = (props) => {
     setErrors({});
 
     try {
-      // 🎯 Chỉ gửi bank account data nếu có đầy đủ thông tin (khớp với backend logic)
+      // 🎯 Prepare update data theo backend logic mới
+      const updateData = {
+        fullName: profileData.fullName.trim(), // Required field
+      };
+
+      // 🎯 Chỉ thêm optional fields nếu có giá trị
+      if (profileData.email?.trim()) {
+        updateData.email = profileData.email.trim();
+      }
+
+      if (profileData.phone?.trim()) {
+        updateData.phone = profileData.phone.trim();
+      }
+
+      if (profileData.address?.trim()) {
+        updateData.address = profileData.address.trim();
+      }
+
+      if (profileData.dob) {
+        updateData.dob = profileData.dob;
+      }
+
+      // Gender luôn gửi (có default value)
+      updateData.isMale = profileData.isMale;
+
+      // 🎯 Chỉ thêm bank account fields nếu có đầy đủ thông tin
       const hasCompleteBank =
         profileData.accountNumber?.trim() &&
         profileData.accountHolder?.trim() &&
         profileData.bankTypeId > 0;
 
-      const updateData = {
-        fullName: profileData.fullName.trim(),
-        email: profileData.email.trim(),
-        address: profileData.address.trim(),
-        dob: profileData.dob,
-        isMale: profileData.isMale,
-      };
-
-      // 🎯 Chỉ thêm bank account fields nếu có đầy đủ thông tin
       if (hasCompleteBank) {
         updateData.accountNumber = profileData.accountNumber.trim();
         updateData.accountHolder = profileData.accountHolder.trim();
@@ -637,7 +710,7 @@ const UserProfile = (props) => {
         setTimeout(() => setMessage(""), 5000);
 
         // Update original email after successful update
-        setOriginalEmail(updateData.email);
+        setOriginalEmail(updateData.email || "");
 
         // 🎯 REFRESH USER DATA sau khi cập nhật thành công
         try {
@@ -723,9 +796,17 @@ const UserProfile = (props) => {
           ) {
             setErrors({ email: errorMessage });
             console.log("✅ Set email invalid error:", errorMessage);
-          } else if (errorMessage.includes("Email không được để trống")) {
-            setErrors({ email: errorMessage });
-            console.log("✅ Set email empty error:", errorMessage);
+
+            // PHONE ERRORS
+          } else if (
+            errorMessage.includes("Số điện thoại đã được sử dụng") ||
+            errorMessage.includes("số điện thoại này đã được sử dụng")
+          ) {
+            setErrors({ phone: errorMessage });
+            console.log("✅ Set phone duplicate error:", errorMessage);
+          } else if (errorMessage.includes("Số điện thoại không hợp lệ")) {
+            setErrors({ phone: errorMessage });
+            console.log("✅ Set phone invalid error:", errorMessage);
 
             // AGE/DOB ERRORS
           } else if (
@@ -741,9 +822,6 @@ const UserProfile = (props) => {
           ) {
             setErrors({ dob: errorMessage });
             console.log("✅ Set future date error:", errorMessage);
-          } else if (errorMessage.includes("Ngày sinh không được để trống")) {
-            setErrors({ dob: errorMessage });
-            console.log("✅ Set dob empty error:", errorMessage);
 
             // FULLNAME ERRORS
           } else if (
@@ -761,9 +839,6 @@ const UserProfile = (props) => {
             console.log("✅ Set fullName length error:", errorMessage);
 
             // ADDRESS ERRORS
-          } else if (errorMessage.includes("Địa chỉ không được để trống")) {
-            setErrors({ address: errorMessage });
-            console.log("✅ Set address empty error:", errorMessage);
           } else if (
             errorMessage.includes("Địa chỉ không được vượt quá 255 ký tự") ||
             errorMessage.includes("255 ký tự")
@@ -780,7 +855,7 @@ const UserProfile = (props) => {
             setErrors({ accountNumber: errorMessage });
             console.log("✅ Set accountNumber error:", errorMessage);
 
-            // ACCOUNT HOLDER ERRORS - 🎯 Chỉ còn lỗi length, bỏ empty error
+            // ACCOUNT HOLDER ERRORS
           } else if (
             errorMessage.includes(
               "Tên chủ tài khoản không được vượt quá 50 ký tự"
@@ -1099,7 +1174,7 @@ const UserProfile = (props) => {
               <div className="user-profile__form-group">
                 <label>
                   <i className="fas fa-envelope"></i>
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"
@@ -1107,7 +1182,7 @@ const UserProfile = (props) => {
                   value={profileData.email}
                   onChange={handleProfileChange}
                   className={errors.email ? "error" : ""}
-                  placeholder="Nhập địa chỉ email"
+                  placeholder="Nhập địa chỉ email (tùy chọn)"
                 />
                 {errors.email && (
                   <span className="error-text">{errors.email}</span>
@@ -1126,16 +1201,18 @@ const UserProfile = (props) => {
                   name="phone"
                   value={profileData.phone}
                   onChange={handleProfileChange}
-                  placeholder="Số điện thoại không thể thay đổi"
-                  disabled
-                  title="Số điện thoại không thể thay đổi"
+                  placeholder="Nhập số điện thoại (tùy chọn)"
+                  className={errors.phone ? "error" : ""}
                 />
+                {errors.phone && (
+                  <span className="error-text">{errors.phone}</span>
+                )}
               </div>
 
               <div className="user-profile__form-group">
                 <label>
                   <i className="fas fa-calendar"></i>
-                  Ngày sinh *
+                  Ngày sinh
                 </label>
                 <input
                   type="date"
@@ -1184,7 +1261,7 @@ const UserProfile = (props) => {
             <div className="user-profile__form-group">
               <label>
                 <i className="fas fa-map-marker-alt"></i>
-                Địa chỉ *
+                Địa chỉ
               </label>
               <input
                 type="text"
@@ -1192,7 +1269,7 @@ const UserProfile = (props) => {
                 value={profileData.address}
                 onChange={handleProfileChange}
                 className={errors.address ? "error" : ""}
-                placeholder="Nhập địa chỉ"
+                placeholder="Nhập địa chỉ (tùy chọn)"
               />
               {errors.address && (
                 <span className="error-text">{errors.address}</span>
@@ -1203,7 +1280,8 @@ const UserProfile = (props) => {
             <div className="user-profile__bank-section">
               <h3>Thông tin tài khoản ngân hàng (tùy chọn)</h3>
               <p className="bank-section-note">
-                Điền đầy đủ thông tin để cập nhật tài khoản ngân hàng
+                Điền đầy đủ tất cả thông tin bên dưới để cập nhật tài khoản ngân
+                hàng
               </p>
 
               <div className="user-profile__form-row">
@@ -1218,7 +1296,7 @@ const UserProfile = (props) => {
                     value={profileData.accountNumber}
                     onChange={handleProfileChange}
                     className={errors.accountNumber ? "error" : ""}
-                    placeholder="Nhập số tài khoản (tùy chọn)"
+                    placeholder="Nhập số tài khoản (9-16 chữ số)"
                   />
                   {errors.accountNumber && (
                     <span className="error-text">{errors.accountNumber}</span>
@@ -1236,7 +1314,7 @@ const UserProfile = (props) => {
                     value={profileData.accountHolder}
                     onChange={handleProfileChange}
                     className={errors.accountHolder ? "error" : ""}
-                    placeholder="Nhập tên chủ tài khoản (tùy chọn)"
+                    placeholder="Nhập tên chủ tài khoản"
                   />
                   {errors.accountHolder && (
                     <span className="error-text">{errors.accountHolder}</span>
@@ -1255,7 +1333,7 @@ const UserProfile = (props) => {
                   onChange={handleProfileChange}
                   className={errors.bankTypeId ? "error" : ""}
                 >
-                  <option value={0}>Chọn ngân hàng (tùy chọn)</option>
+                  <option value={0}>Chọn ngân hàng</option>
                   {bankTypes.map((bank) => (
                     <option key={bank.bankTypeId} value={bank.bankTypeId}>
                       {bank.bankName}
@@ -1353,8 +1431,8 @@ const UserProfile = (props) => {
                     className={errors.newPassword ? "error" : ""}
                     placeholder={
                       passwordStatus.RequireOldPassword
-                        ? "Nhập mật khẩu mới (ít nhất 8 ký tự)"
-                        : "Nhập mật khẩu (ít nhất 8 ký tự)"
+                        ? "Nhập mật khẩu mới (ít nhất 6 ký tự, có chữ hoa, thường, số)"
+                        : "Nhập mật khẩu (ít nhất 6 ký tự, có chữ hoa, thường, số)"
                     }
                     autoComplete="new-password"
                   />

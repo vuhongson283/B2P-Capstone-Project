@@ -1,7 +1,9 @@
-﻿using B2P_API.DTOs.CourtCategoryDTO;
+﻿using Microsoft.AspNetCore.Authorization;
+using B2P_API.DTOs.CourtCategoryDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
 using B2P_API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +27,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpPost("add-court-category")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> AddCourtCategory(string cateName)
         {
             var response = await _courtCategoryService.AddCourtCategoryAsync(cateName);
@@ -32,6 +35,7 @@ namespace B2P_API.Controllers
 
         }
         [HttpPut("update-court-category")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> UpdateCourtCategory([FromBody] CourtCategoryUpdateRequest request)
         {
             var response = await _courtCategoryService.UpdateCourtCategoryAsync(request);
@@ -40,6 +44,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpGet("get-court-category-by-id")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> GetCourtCategoryById(int categoryId)
         {
             var response = await _courtCategoryService.GetCourtCategoryByIdAsync(categoryId);
@@ -48,6 +53,7 @@ namespace B2P_API.Controllers
         }
 
         [HttpDelete("delete-court-category")]
+        [Authorize(Roles = "1")]
         public async Task<IActionResult> DeleteCourtCategory(int categoryId)
         {
             var response = await _courtCategoryService.DeleteCourtCategoryAsync(categoryId);
