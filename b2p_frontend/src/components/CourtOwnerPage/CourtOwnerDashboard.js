@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Button, Modal, Form } from "react-bootstrap";
 import { DatePicker } from "antd";
+import { useAuth } from '../../context/AuthContext';
 import {
   getReport,
   getTotalReport,
@@ -27,7 +28,7 @@ const OwnerDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const userId = 6;
+  const { userId, user, isLoggedIn, isLoading: authLoading } = useAuth();
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -357,7 +358,7 @@ const OwnerDashboard = () => {
 
       <div className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">Xin Chào, Nguyễn Văn A</h2>
+          <h2 className="dashboard-title">Xin Chào, {user?.fullName}</h2>
           <p className="dashboard-subtitle">
             Đây là trang web quản lý dành cho chủ sân
           </p>

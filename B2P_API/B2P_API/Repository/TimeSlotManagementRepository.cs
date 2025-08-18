@@ -62,6 +62,20 @@ namespace B2P_API.Repository
             }
         }
 
+        public async Task<bool> HasAnyActiveOrFutureBookingsAsync(int timeSlotId)
+        {
+            var today = DateTime.Today;
+
+            var hasBookings = await _context.BookingDetails
+                .AnyAsync(bd => bd.TimeSlotId == timeSlotId &&
+                               (
+                                   bd.StatusId == 1 || // Active booking (điều chỉnh StatusId theo system của bạn)
+                                   (bd.CheckInDate >= today && bd.StatusId != 3) // Future booking not cancelled
+                               ));
+
+            return hasBookings;
+        }
+
 
 
     }

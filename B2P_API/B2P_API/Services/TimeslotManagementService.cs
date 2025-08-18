@@ -86,37 +86,77 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<TimeSlot>> DeleteTimeSlot(int timeslotId)
         {
-            var slot = await _repository.GetByIdAsync(timeslotId);
-            if (slot == null)
+            try
             {
+                // ✅ VALIDATION: TimeSlot ID
+                if (timeslotId <= 0)
+                {
+                    return new ApiResponse<TimeSlot>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "TimeSlot ID không hợp lệ",
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK: TimeSlot tồn tại
+                var slot = await _repository.GetByIdAsync(timeslotId);
+                if (slot == null)
+                {
+                    return new ApiResponse<TimeSlot>
+                    {
+                        Success = false,
+                        Status = 404,
+                        Message = "Không tìm thấy TimeSlot",
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK: TimeSlot có đang được sử dụng hoặc có booking tương lai không
+                var hasActiveOrFutureBookings = await _repository.HasAnyActiveOrFutureBookingsAsync(timeslotId);
+                if (hasActiveOrFutureBookings)
+                {
+                    return new ApiResponse<TimeSlot>
+                    {
+                        Success = false,
+                        Status = 409, // Conflict
+                        Message = "Không thể xóa TimeSlot vì đang có booking hoặc có booking trong tương lai",
+                        Data = null
+                    };
+                }
+
+                // ✅ DELETE: Thực hiện xóa
+                var result = await _repository.DeleteAsync(timeslotId);
+                if (!result)
+                {
+                    return new ApiResponse<TimeSlot>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Xóa TimeSlot thất bại",
+                        Data = null
+                    };
+                }
+
                 return new ApiResponse<TimeSlot>
                 {
-                    Success = false,
-                    Status = 404,
-                    Message = "Không tìm thấy TimeSlot",
-                    Data = null
+                    Success = true,
+                    Status = 200,
+                    Message = "Xóa TimeSlot thành công",
+                    Data = slot
                 };
             }
-
-            var result = await _repository.DeleteAsync(timeslotId);
-            if (!result)
+            catch (Exception ex)
             {
                 return new ApiResponse<TimeSlot>
                 {
                     Success = false,
                     Status = 500,
-                    Message = "Xóa TimeSlot thất bại",
+                    Message = $"Lỗi hệ thống: {ex.Message}",
                     Data = null
                 };
             }
-
-            return new ApiResponse<TimeSlot>
-            {
-                Success = true,
-                Status = 200,
-                Message = "Xóa TimeSlot thành công",
-                Data = slot
-            };
         }
 
         public async Task<ApiResponse<PagedResponse<GetTimeslotDTO>>> GetTimeslotByFacilityIdAsync(
