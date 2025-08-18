@@ -56,20 +56,20 @@ namespace B2P_API.Services
             }
             else
             {
-                // Bắt buộc có cả email và số điện thoại
-                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
+                // Bắt buộc có email or số điện thoại
+                if (string.IsNullOrWhiteSpace(request.Email) && string.IsNullOrWhiteSpace(request.Phone))
                 {
                     return new ApiResponse<object>
                     {
                         Success = false,
                         Status = 400,
-                        Message = "Khách đặt sân phải cung cấp email và số điện thoại"
+                        Message = "Khách đặt sân phải cung cấp email hoặc số điện thoại"
                     };
                 }
 
                 // Kiểm tra email hợp lệ
                 bool isEmailValid = await IsRealEmailAsync(request.Email);
-                if (!isEmailValid)
+                if (!isEmailValid && request.Email != null)
                 {
                     return new ApiResponse<object>
                     {
@@ -159,7 +159,8 @@ namespace B2P_API.Services
                 CreateAt = DateTime.UtcNow,
                 StatusId = 8,
                 TotalPrice = total,
-                IsDayOff = false
+                IsDayOff = false,
+                PaymentTypeId = request.PaymentTypeId ?? null
             };
 
             await _bookingRepo.AddBookingAsync(booking);

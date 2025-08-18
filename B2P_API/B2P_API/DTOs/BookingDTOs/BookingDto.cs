@@ -13,6 +13,7 @@
         public List<int> TimeSlotIds { get; set; }
         public int FacilityId { get; set; }
         public int CategoryId { get; set; }
+        public int? PaymentTypeId { get; set; }
     }
 
 	public class SimpleBookingDto

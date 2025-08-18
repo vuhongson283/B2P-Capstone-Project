@@ -19,7 +19,11 @@ public partial class Booking
 
     public DateTime? UpdateAt { get; set; }
 
+    public int? PaymentTypeId { get; set; }
+
     public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
+
+    public virtual PaymentType? PaymentType { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 

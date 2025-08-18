@@ -86,10 +86,8 @@ export default function BookingDetail({
             newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
         }
 
-        // Email validation
-        if (!formData.email.trim()) {
-            newErrors.email = 'Vui lòng nhập email';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        // Email validation - cho phép để trống nhưng nếu nhập thì phải đúng định dạng
+        if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = 'Email không hợp lệ';
         }
 
@@ -180,14 +178,18 @@ export default function BookingDetail({
             console.log('categoryId:', categoryId);
             console.log('paymentMethod:', formData.paymentMethod);
 
+            // Xác định paymentTypeId dựa trên phương thức thanh toán
+            const paymentTypeId = formData.paymentMethod === 'international' ? 1 : 2;
+
             // Chuẩn bị dữ liệu theo đúng thứ tự API yêu cầu
             const apiData = {
-                email: formData.email,
+                email: formData.email.trim() || null, // Cho phép null nếu email trống
                 phone: formData.phone,
                 checkInDate: formatDateForAPI(selectedDate),
                 timeSlotIds: listSlotId && listSlotId.length > 0 ? listSlotId : [],
                 facilityId: parseInt(facilityId),
-                categoryId: parseInt(categoryId)
+                categoryId: parseInt(categoryId),
+                paymentTypeId: paymentTypeId // Thêm trường paymentTypeId
             };
 
             console.log('Final API request data:', apiData);
@@ -202,9 +204,8 @@ export default function BookingDetail({
             const result = await createBooking(apiData);
             console.log('API response:', result);
 
-            // FIX: Sửa lại logic kiểm tra response
-            // Từ API response, ta thấy structure là: result.success và result.data
-            if (result && result.success) {
+            // Kiểm tra response theo format mới
+            if (result && result.success === true) {
                 const bookingInfo = result.data;
                 const bookingId = bookingInfo.bookingId;
 
@@ -233,8 +234,9 @@ export default function BookingDetail({
                         onClose();
 
                         if (paymentId) {
-                            // Chuyển hướng đến trang Stripe payment trong tab mới
-                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}`;
+                            // Chuyển hướng đến trang Stripe payment trong tab mới, thêm cả VND và USD
+                            const usdAmount = convertVNDtoUSDCents(totalPrice) / 100; // Chuyển về USD (không phải cents)
+                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}&amount_vnd=${totalPrice}&amount_usd=${usdAmount.toFixed(2)}`;
                             window.open(stripePaymentUrl, '_blank');
                         } else {
                             console.warn('Không có payment ID trong Stripe response:', stripePaymentResult);
@@ -295,8 +297,14 @@ export default function BookingDetail({
                     }
                 });
 
+            } else if (result && result.success === false) {
+                // Nếu success = false, chỉ hiển thị message và không đóng modal
+                const errorMessage = result.message || 'Đặt sân thất bại';
+                alert(errorMessage);
+                console.error('Booking failed:', result);
             } else {
-                throw new Error(result?.message || 'Đặt sân thất bại');
+                // Trường hợp response không có success field hoặc format khác
+                throw new Error(result?.message || 'Đặt sân thất bại - Response không hợp lệ');
             }
         } catch (error) {
             console.error('Final booking error:', error);
@@ -424,13 +432,13 @@ export default function BookingDetail({
                         <div className="form-group">
                             <label className="form-label" htmlFor="email">
                                 <span className="label-icon">📧</span>
-                                Email *
+                                Email
                             </label>
                             <input
                                 type="email"
                                 id="email"
                                 className={`form-input ${errors.email ? 'error' : ''}`}
-                                placeholder="Nhập email"
+                                placeholder="Nhập email (tùy chọn)"
                                 value={formData.email}
                                 onChange={(e) => handleInputChange('email', e.target.value)}
                             />
