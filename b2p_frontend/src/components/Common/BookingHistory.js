@@ -1060,11 +1060,6 @@ const BookingHistory = () => {
                                     Hủy đặt sân
                                 </button>
                             )}
-                            {selectedBooking.status === 'completed' && (
-                                <button className="btn btn-primary btn-action">
-                                    Đặt lại sân này
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>

@@ -1619,7 +1619,7 @@ const BookingManagement = () => {
                                 onClick={openCreateBookingModal}
                                 className="mark-court-button"
                             >
-                                Tạo Đơn
+                                Đánh Dấu Sân Thông Minh
                             </Button>
                         </div>
                     </div>
@@ -2237,6 +2237,7 @@ const BookingManagement = () => {
                                     icon={<PlusOutlined />}
                                     className="submit-button"
                                     disabled={selectedTimeSlots.length === 0}
+                                    style={{ marginTop: '2.5%' }}
                                 >
                                     {loading.creating ? 'Đang tạo đơn...' : 'Tạo Đơn Đặt Sân'}
                                 </Button>
