@@ -5,10 +5,13 @@ import {
   addNewCourt, 
   updateCourt, 
   deleteCourt, 
+  lockCourt,
   getCourtDetail,
   getAllCourtCategories 
 } from '../../services/apiService';
 import { Form, InputGroup, Button, Modal } from 'react-bootstrap';
+import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import { Tooltip } from 'antd'; // Chỉ import Tooltip từ antd
 import './CourtManagement.scss';
 
 const CourtManagement = () => {
@@ -49,6 +52,28 @@ const CourtManagement = () => {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [courtDetail, setCourtDetail] = useState(null);
+
+  // Thêm state cho validation errors
+  const [validationErrors, setValidationErrors] = useState({
+    courtName: '',
+    categoryId: '',
+    pricePerHour: ''
+  });
+
+  // Thêm state mới cho edit validation
+  const [editValidationErrors, setEditValidationErrors] = useState({
+    courtName: '',
+    categoryId: '',
+    pricePerHour: ''
+  });
+
+  // Thêm state để track loading state cho từng sân
+  const [loadingCourtIds, setLoadingCourtIds] = useState([]);
+
+  // Thêm state cho modal thông báo
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState('');
 
   // Fetch courts data
   const fetchCourts = async () => {
@@ -101,6 +126,30 @@ const CourtManagement = () => {
 
   // Handle add new court
   const handleAddCourt = async () => {
+    // Reset validation errors
+    setValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+
+    // Validate form inputs
+    let isValid = true;
+    if (!newCourt.courtName) {
+      setValidationErrors(prev => ({ ...prev, courtName: 'Tên sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!newCourt.categoryId) {
+      setValidationErrors(prev => ({ ...prev, categoryId: 'Thể loại sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!newCourt.pricePerHour) {
+      setValidationErrors(prev => ({ ...prev, pricePerHour: 'Giá sân là bắt buộc' }));
+      isValid = false;
+    }
+
+    if (!isValid) return; // Ngừng thực hiện nếu có lỗi validation
+
     try {
       const courtData = {
         facilityId: parseInt(facilityId),
@@ -128,11 +177,12 @@ const CourtManagement = () => {
   // Handle edit court
   const handleEdit = (court) => {
     setEditCourt({
-        courtId: court.courtId,
-        statusId: court.status || court.statusId, // Sửa thành giá trị status thực tế từ API
-        courtName: court.courtName,
-        categoryId: court.categoryId,
-        pricePerHour: court.pricePerHour
+      courtId: court.courtId,
+      // Chuyển đổi trạng thái từ 'Active' thành giá trị tương ứng
+      statusId: court.statusName === 'Active' ? '1' : '2',
+      courtName: court.courtName,
+      categoryId: court.categoryId,
+      pricePerHour: court.pricePerHour
     });
     setShowEditModal(true);
     };
@@ -140,9 +190,77 @@ const CourtManagement = () => {
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditCourt(prev => ({ ...prev, [name]: value }));
+    
+    // Validate từng trường của form edit
+    switch (name) {
+      case 'courtName':
+        if (!value.trim()) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân không được để trống'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, courtName: '' }));
+        }
+        break;
+        
+      case 'categoryId':
+        if (!value) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            categoryId: 'Vui lòng chọn loại sân'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, categoryId: '' }));
+        }
+        break;
+        
+      case 'pricePerHour':
+        if (!value) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân không được để trống'
+          }));
+        } else if (parseInt(value) <= 0) {
+          setEditValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân phải lớn hơn 0'
+          }));
+        } else {
+          setEditValidationErrors(prev => ({ ...prev, pricePerHour: '' }));
+        }
+        break;
+        
+      default:
+        break;
+    }
   };
   
   const handleUpdateCourt = async () => {
+    // Reset edit validation errors
+    setEditValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+
+    // Validate form inputs
+    let isValid = true;
+    if (!editCourt.courtName) {
+      setEditValidationErrors(prev => ({ ...prev, courtName: 'Tên sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!editCourt.categoryId) {
+      setEditValidationErrors(prev => ({ ...prev, categoryId: 'Thể loại sân là bắt buộc' }));
+      isValid = false;
+    }
+    if (!editCourt.pricePerHour) {
+      setEditValidationErrors(prev => ({ ...prev, pricePerHour: 'Giá sân là bắt buộc' }));
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
     try {
         console.log('Edit court data before submit:', editCourt);
       const courtData = {
@@ -170,6 +288,49 @@ const CourtManagement = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewCourt(prev => ({ ...prev, [name]: value }));
+    
+    switch (name) {
+      case 'courtName':
+        if (!value.trim()) {
+          setValidationErrors(prev => ({
+            ...prev,
+            courtName: 'Tên sân không được để trống'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, courtName: '' }));
+        }
+        break;
+        
+      case 'categoryId':
+        if (!value) {
+          setValidationErrors(prev => ({
+            ...prev,
+            categoryId: 'Vui lòng chọn loại sân'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, categoryId: '' }));
+        }
+        break;
+        
+      case 'pricePerHour':
+        if (!value) {
+          setValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân không được để trống'
+          }));
+        } else if (parseInt(value) <= 0) {
+          setValidationErrors(prev => ({
+            ...prev,
+            pricePerHour: 'Giá sân phải lớn hơn 0'
+          }));
+        } else {
+          setValidationErrors(prev => ({ ...prev, pricePerHour: '' }));
+        }
+        break;
+        
+      default:
+        break;
+    }
   };
 
   const handleSearch = (e) => {
@@ -249,6 +410,70 @@ const CourtManagement = () => {
   useEffect(() => {
     fetchCourts();
   }, [facilityId, pagination.pageNumber, pagination.pageSize, selectedCategory, selectedStatus]);
+
+  // Thêm vào hàm đóng modal
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    // Reset form data
+    setEditCourt({
+      courtId: '',
+      statusId: '',
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+    // Reset validation errors
+    setEditValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+  };
+
+  // Thêm handler để xử lý khóa/mở khóa
+  const handleLockToggle = async (courtId, currentStatus) => {
+    try {
+      setLoadingCourtIds(prev => [...prev, courtId]);
+      
+      const newStatus = currentStatus === 'Active' ? 2 : 1;
+      const response = await lockCourt(courtId, newStatus, 6);
+      
+      if (response?.status === 200) {
+        fetchCourts();
+        setNotificationMessage(`${currentStatus === 'Active' ? 'Khóa' : 'Mở khóa'} sân thành công!`);
+        setNotificationType('success');
+        setShowNotification(true);
+      } else {
+        setNotificationMessage('Không thể cập nhật trạng thái sân');
+        setNotificationType('danger');
+        setShowNotification(true);
+      }
+    } catch (error) {
+      console.error('Error toggling court status:', error);
+      setNotificationMessage('Lỗi khi cập nhật trạng thái sân');
+      setNotificationType('danger');
+      setShowNotification(true);
+    } finally {
+      setLoadingCourtIds(prev => prev.filter(id => id !== courtId));
+    }
+  };
+
+  // Thêm hàm reset form
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    // Reset form data
+    setNewCourt({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+    // Reset validation errors
+    setValidationErrors({
+      courtName: '',
+      categoryId: '',
+      pricePerHour: ''
+    });
+  };
 
   if (loading) {
     return (
@@ -344,6 +569,7 @@ const CourtManagement = () => {
                   <th>Tên Sân</th>
                   <th>Loại Sân</th>
                   <th>Trạng Thái</th>
+                  <th>Khóa/Mở khóa</th>
                   <th>Hành Động</th>
                 </tr>
               </thead>
@@ -357,6 +583,26 @@ const CourtManagement = () => {
                       <span className={`status ${court.statusName === 'Active' ? 'active' : 'inactive'}`}>
                         {court.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                       </span>
+                    </td>
+                    <td>
+                      <div 
+                        className={`status-icon ${loadingCourtIds.includes(court.courtId) ? 'disabled' : ''}`}
+                        onClick={() => !loadingCourtIds.includes(court.courtId) && handleLockToggle(court.courtId, court.statusName)}
+                      >
+                        <div className="icon-tooltip">
+                          {court.statusName === 'Active' ? (
+                            <i className="fas fa-unlock" />
+                          ) : (
+                            <i className="fas fa-lock" />
+                          )}
+                          <span className="tooltip-text">
+                            {court.statusName === 'Active' ? 'Khóa sân' : 'Mở khóa sân'}
+                          </span>
+                        </div>
+                        {loadingCourtIds.includes(court.courtId) && (
+                          <i className="fas fa-spinner fa-spin ms-2"></i>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="action-buttons">
@@ -459,7 +705,7 @@ const CourtManagement = () => {
       </div>
 
       {/* Add Court Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal show={showAddModal} onHide={handleCloseAddModal}>
         <Modal.Header closeButton>
           <Modal.Title>
             <i className="fas fa-plus-circle me-2"></i>
@@ -479,8 +725,11 @@ const CourtManagement = () => {
                 value={newCourt.courtName}
                 onChange={handleInputChange}
                 placeholder="Nhập tên sân"
-                required
+                isInvalid={!!validationErrors.courtName}
               />
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.courtName}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -492,8 +741,8 @@ const CourtManagement = () => {
                 name="categoryId"
                 value={newCourt.categoryId}
                 onChange={handleInputChange}
-                required
                 disabled={categoryLoading}
+                isInvalid={!!validationErrors.categoryId}
               >
                 <option value="">Chọn thể loại sân</option>
                 {categories.map(category => (
@@ -502,6 +751,9 @@ const CourtManagement = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.categoryId}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -516,17 +768,24 @@ const CourtManagement = () => {
                 onChange={handleInputChange}
                 min="0"
                 placeholder="Nhập giá sân"
-                required
+                isInvalid={!!validationErrors.pricePerHour}
               />
+              <Form.Control.Feedback type="invalid">
+                {validationErrors.pricePerHour}
+              </Form.Control.Feedback>
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+          <Button variant="secondary" onClick={handleCloseAddModal}>
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleAddCourt}>
+          <Button 
+            variant="primary" 
+            onClick={handleAddCourt}
+            disabled={Object.values(validationErrors).some(error => error !== '')}
+          >
             <i className="fas fa-check me-2"></i>
             Thêm mới
           </Button>
@@ -534,7 +793,7 @@ const CourtManagement = () => {
       </Modal>
 
       {/* Edit Court Modal */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      <Modal show={showEditModal} onHide={handleCloseEditModal}>
         <Modal.Header closeButton>
           <Modal.Title>
             <i className="fas fa-edit me-2"></i>
@@ -563,7 +822,7 @@ const CourtManagement = () => {
               </Form.Label>
               <Form.Select
                 name="statusId"
-                value={editCourt.statusId || '1'} // Add fallback to '1'
+                value={editCourt.statusId}
                 onChange={handleEditInputChange}
                 required
               >
@@ -583,8 +842,11 @@ const CourtManagement = () => {
                 value={editCourt.courtName}
                 onChange={handleEditInputChange}
                 placeholder="Nhập tên sân"
-                required
+                isInvalid={!!editValidationErrors.courtName}
               />
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.courtName}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -596,7 +858,7 @@ const CourtManagement = () => {
                 name="categoryId"
                 value={editCourt.categoryId}
                 onChange={handleEditInputChange}
-                required
+                isInvalid={!!editValidationErrors.categoryId}
                 disabled={categoryLoading}
               >
                 <option value="">Chọn thể loại sân</option>
@@ -606,6 +868,9 @@ const CourtManagement = () => {
                   </option>
                 ))}
               </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.categoryId}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-4">
@@ -620,17 +885,24 @@ const CourtManagement = () => {
                 onChange={handleEditInputChange}
                 min="0"
                 placeholder="Nhập giá sân"
-                required
+                isInvalid={!!editValidationErrors.pricePerHour}
               />
+              <Form.Control.Feedback type="invalid">
+                {editValidationErrors.pricePerHour}
+              </Form.Control.Feedback>
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+          <Button variant="secondary" onClick={handleCloseEditModal}>
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button variant="primary" onClick={handleUpdateCourt}>
+          <Button 
+            variant="primary" 
+            onClick={handleUpdateCourt}
+            disabled={Object.values(editValidationErrors).some(error => error !== '')}
+          >
             <i className="fas fa-save me-2"></i>
             Lưu thay đổi
           </Button>
@@ -649,6 +921,32 @@ const CourtManagement = () => {
           {courtDetail && (
             <div className="court-detail">
               <div className="detail-item">
+                <label><i className="fas fa-hashtag"></i>ID Sân</label>
+                <span>{courtDetail.courtId}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-signature"></i>Tên sân</label>
+                <span>{courtDetail.courtName}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-money-bill"></i>Giá/Giờ</label>
+                <span className="price">{courtDetail.pricePerHour?.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-toggle-on"></i>Trạng thái</label>
+                <span className={`status ${courtDetail.statusName === 'Active' ? 'active' : 'inactive'}`}>
+                  {courtDetail.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+                </span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-th-large"></i>Loại sân</label>
+                <span>{courtDetail.categoryName}</span>
+              </div>
+              <div className="detail-item">
+                <label><i className="fas fa-building"></i>Cơ sở</label>
+                <span>{courtDetail.facilityName}</span>
+              </div>
+              <div className="detail-item">
                 <label><i className="fas fa-map-marker-alt"></i>Địa chỉ</label>
                 <span>{courtDetail.location}</span>
               </div>
@@ -662,6 +960,26 @@ const CourtManagement = () => {
         <Modal.Footer className="detail-footer">
           <Button variant="secondary" onClick={() => setShowDetailModal(false)} className="btn-close">
             <i className="fas fa-times"></i>
+            Đóng
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Thêm Modal thông báo */}
+      <Modal 
+        show={showNotification} 
+        onHide={() => setShowNotification(false)}
+        centered
+      >
+        <Modal.Header closeButton className={`bg-${notificationType} text-white`}>
+          <Modal.Title>
+            <i className={`fas ${notificationType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2`}></i>
+            {notificationType === 'success' ? 'Thành công' : 'Lỗi'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{notificationMessage}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowNotification(false)}>
             Đóng
           </Button>
         </Modal.Footer>

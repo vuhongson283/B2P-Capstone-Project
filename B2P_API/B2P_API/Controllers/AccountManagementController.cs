@@ -38,7 +38,7 @@ namespace B2P_API.Controllers
 		}
 
 		[HttpGet("get-user/{userId}")]
-        [Authorize(Roles = "1")]
+      
         public async Task<IActionResult> GetAccountById([FromRoute] int userId)
 		{
 			var response = await _accountManagementService.GetAccountByIdAsync(userId);

@@ -1027,62 +1027,72 @@ namespace B2P_API.Services
                 return CreateErrorResponse("Tên người dùng không được vượt quá 50 ký tự", 400);
             }
 
-            // Validate Email
-            if (string.IsNullOrEmpty(updateUserDto.Email))
+            // Validate Phone - Allow null but validate if provided
+            if (!string.IsNullOrEmpty(updateUserDto.Phone?.Trim()))
             {
-                return CreateErrorResponse("Email không được để trống", 400);
+                if (!IsValidPhoneNumber(updateUserDto.Phone))
+                {
+                    return CreateErrorResponse("Số điện thoại không hợp lệ", 400);
+                }
+
+                // Check phone exists only if phone is provided
+                var existingPhone = await _userRepository.CheckPhoneExistedByUserId(userId, updateUserDto.Phone);
+                if (existingPhone != null)
+                {
+                    return CreateErrorResponse("Số điện thoại đã được sử dụng", 400);
+                }
             }
 
-            if (!await IsRealEmailAsync(updateUserDto.Email))
+            // Validate Email - Allow null but validate if provided
+            if (!string.IsNullOrEmpty(updateUserDto.Email?.Trim()))
             {
-                return CreateErrorResponse("Địa chỉ Email không hợp lệ", 400);
+                if (!await IsRealEmailAsync(updateUserDto.Email))
+                {
+                    return CreateErrorResponse("Địa chỉ Email không hợp lệ", 400);
+                }
+
+                // Check email exists only if email is provided
+                var existingEmail = await _userRepository.CheckEmailExistedByUserId(userId, updateUserDto.Email);
+                if (existingEmail != null)
+                {
+                    return CreateErrorResponse("Email đã được sử dụng", 400);
+                }
             }
 
-            // Check email exists
-            var existingEmail = await _userRepository.CheckEmailExistedByUserId(userId, updateUserDto.Email);
-            if (existingEmail != null)
+            // Validate Address - Allow null but validate length if provided
+            if (!string.IsNullOrEmpty(updateUserDto.Address?.Trim()))
             {
-                return CreateErrorResponse("Email đã được sử dụng", 400);
+                if (updateUserDto.Address.Length > 255)
+                {
+                    return CreateErrorResponse("Địa chỉ không được vượt quá 255 ký tự", 400);
+                }
             }
 
-            // Validate Address
-            if (string.IsNullOrEmpty(updateUserDto.Address?.Trim()))
+            // Validate Date of Birth - Allow null but validate if provided
+            if (updateUserDto.Dob.HasValue)
             {
-                return CreateErrorResponse("Địa chỉ không được để trống", 400);
-            }
+                var today = DateOnly.FromDateTime(DateTime.Today);
 
-            if (updateUserDto.Address.Length > 255)
-            {
-                return CreateErrorResponse("Địa chỉ không được vượt quá 255 ký tự", 400);
-            }
+                if (updateUserDto.Dob.Value > today)
+                {
+                    return CreateErrorResponse("Ngày sinh không được là ngày tương lai", 400);
+                }
 
-            // Validate Date of Birth
-            if (!updateUserDto.Dob.HasValue)
-            {
-                return CreateErrorResponse("Ngày sinh không được để trống", 400);
-            }
+                var age = today.Year - updateUserDto.Dob.Value.Year;
+                if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
-
-            if (updateUserDto.Dob.Value > today)
-            {
-                return CreateErrorResponse("Ngày sinh không được là ngày tương lai", 400);
-            }
-
-            var age = today.Year - updateUserDto.Dob.Value.Year;
-            if (updateUserDto.Dob.Value > today.AddYears(-age)) age--;
-
-            if (age < 15)
-            {
-                return CreateErrorResponse("Người dùng phải từ 15 tuổi trở lên", 400);
+                if (age < 15)
+                {
+                    return CreateErrorResponse("Người dùng phải từ 15 tuổi trở lên", 400);
+                }
             }
 
             return CreateSuccessResponse();
         }
-
         private void UpdateUserProperties(User user, UpdateUserRequest updateUserDto)
         {
             user.FullName = updateUserDto.FullName.Trim();
+            user.Phone = updateUserDto.Phone?.Trim();
             user.Email = updateUserDto.Email;
             user.IsMale = updateUserDto.IsMale;
             user.Address = updateUserDto.Address.Trim();

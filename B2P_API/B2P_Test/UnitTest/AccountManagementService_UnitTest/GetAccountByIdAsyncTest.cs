@@ -25,8 +25,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         [Fact(DisplayName = "UTCID01 - User not found returns 404")]
         public async Task UTCID01_UserNotFound_Returns404()
         {
-            _repoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((User)null);
-
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(1)).ReturnsAsync((User)null);
             var service = CreateService();
 
             var result = await service.GetAccountByIdAsync(1);
@@ -58,8 +57,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
                     new Image{ UserId = 2, ImageUrl = "url0", Order = 0 }
                 }
             };
-            _repoMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(user);
-
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(2)).ReturnsAsync(user);
             var service = CreateService();
 
             var result = await service.GetAccountByIdAsync(2);
@@ -98,8 +96,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
                 Dob = null,
                 Images = new List<Image>() // empty list
             };
-            _repoMock.Setup(x => x.GetByIdAsync(3)).ReturnsAsync(user);
-
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(3)).ReturnsAsync(user);
             var service = CreateService();
 
             var result = await service.GetAccountByIdAsync(3);
@@ -130,8 +127,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
                     new Image{ UserId = 99, ImageUrl = "notforuser", Order = 1 }
                 }
             };
-            _repoMock.Setup(x => x.GetByIdAsync(4)).ReturnsAsync(user);
-
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(4)).ReturnsAsync(user);
             var service = CreateService();
 
             var result = await service.GetAccountByIdAsync(4);
@@ -144,7 +140,8 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         [Fact(DisplayName = "UTCID05 - Exception returns 500")]
         public async Task UTCID05_Exception_Returns500()
         {
-            _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail get user"));
+            var ex = new Exception("fail get user"); // <-- THÊM DÒNG NÀY
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(It.IsAny<int>())).ThrowsAsync(ex);
 
             var service = CreateService();
 
@@ -152,7 +149,6 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(500, result.Status);
-            // Accept any message that starts with the system error prefix, or just check for "fail get user"
             Assert.Contains("fail get user", result.Message);
         }
 
@@ -162,8 +158,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
             var innerEx = new Exception("inner error");
             var outerEx = new Exception("outer error", innerEx);
 
-            _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
-
+            _repoMock.Setup(x => x.GetByIdForDisplayAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
             var service = CreateService();
 
             var result = await service.GetAccountByIdAsync(10);

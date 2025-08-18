@@ -130,21 +130,30 @@ namespace B2P_API.Services
             var courtIds = slotToCourt.Values.Distinct().ToList();
             var courtDict = await _bookingRepo.GetCourtsByIdsAsync(courtIds);
 
-            // Tính tổng tiền
-            decimal total = 0;
-            foreach (var kvp in slotToCourt)
-            {
-                int slotId = kvp.Key;
-                int courtId = kvp.Value;
+			// Tính tổng tiền
+			decimal total = 0;
+			foreach (var kvp in slotToCourt)
+			{
+				int slotId = kvp.Key;
+				int courtId = kvp.Value;
 
-                var slot = slotList[slotId];
-                var court = courtDict[courtId];
+				var slot = slotList[slotId];
+				var court = courtDict[courtId];
 
-                total += (decimal)(slot.Discount ?? court.PricePerHour);
-            }
+				// Nếu Discount > 0 thì lấy Discount, ngược lại lấy PricePerHour
+				decimal finalPrice = (slot.Discount.HasValue && slot.Discount.Value > 0)
+					? slot.Discount.Value
+					: (court.PricePerHour ?? 0);
 
-            // Tạo booking
-            var booking = new Booking
+				// ✅ THÊM DÒNG NÀY
+				total += finalPrice;
+
+				// ✅ DEBUG: Log để kiểm tra
+				Console.WriteLine($"💰 Slot {slotId}, Court {courtId}: finalPrice = {finalPrice}, running total = {total}");
+			}
+
+			// Tạo booking
+			var booking = new Booking
             {
                 UserId = user.UserId,
                 CreateAt = DateTime.UtcNow,

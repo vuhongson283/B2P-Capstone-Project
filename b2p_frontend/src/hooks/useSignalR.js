@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { message, notification } from 'antd';
+import { useLocation } from 'react-router-dom';
 import signalRService from '../services/signalRService';
 
 export const useSignalR = (options = {}) => {
@@ -13,12 +14,20 @@ export const useSignalR = (options = {}) => {
         showNotifications = true
     } = options;
 
+    const location = useLocation();
     const previousFacilityId = useRef(null);
-    const localHandlersRef = useRef({}); // ✅ Store local handlers
+    const localHandlersRef = useRef({});
+
+    // ✅ Kiểm tra xem có phải trang court owner không
+    const isCourtOwnerPage = location.pathname.startsWith('/court-owner');
 
     // Show notification helper
     const showBookingNotification = useCallback((notif) => {
-        if (!showNotifications) return;
+        // ✅ Chỉ hiển thị thông báo ở trang court owner
+        if (!showNotifications || !isCourtOwnerPage) {
+            console.log('⏭️ Skipping notification - not on court owner page');
+            return;
+        }
 
         const config = {
             message: 'Cập nhật đặt sân',
@@ -58,7 +67,7 @@ export const useSignalR = (options = {}) => {
             default:
                 break;
         }
-    }, [showNotifications]);
+    }, [showNotifications, isCourtOwnerPage]);
 
     useEffect(() => {
         const ensureConnection = async () => {
@@ -98,9 +107,15 @@ export const useSignalR = (options = {}) => {
         }
     }, [facilityId]);
 
-    // ✅ FIXED: Setup LOCAL callbacks without interfering with SignalR handlers
+    // ✅ Setup LOCAL callbacks với điều kiện kiểm tra trang
     useEffect(() => {
-        // ✅ Only register if we have specific callbacks
+        // ✅ Chỉ setup callbacks nếu ở trang court owner
+        if (!isCourtOwnerPage) {
+            console.log('⏭️ Not on court owner page, skipping SignalR local setup');
+            return;
+        }
+
+        // Only register if we have specific callbacks
         if (!onBookingCreated && !onBookingUpdated && !onBookingCompleted && !onBookingCancelled && !onConnectionChanged) {
             console.log('🔄 LOCAL: No callbacks provided, skipping');
             return;
@@ -221,7 +236,8 @@ export const useSignalR = (options = {}) => {
         onBookingCompleted,
         onBookingCancelled,
         onConnectionChanged,
-        showBookingNotification
+        showBookingNotification,
+        isCourtOwnerPage
     ]);
 
     return {

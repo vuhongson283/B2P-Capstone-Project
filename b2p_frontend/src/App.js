@@ -26,7 +26,7 @@ const App = () => {
     if (savedUser) {
       return JSON.parse(savedUser);
     }
-    
+
     // Fallback current user info
     return {
       userId: 26,

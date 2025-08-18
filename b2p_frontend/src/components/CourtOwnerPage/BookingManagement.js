@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, useContext } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import "./BookingManagement.scss";
 import {
     Select,
@@ -51,29 +51,20 @@ import {
     createSimpleBooking,
     markSmartSlot
 } from "../../services/apiService";
-// ✅ THAY ĐỔI: Import signalRService trực tiếp thay vì useSignalR
 import signalRService from "../../services/signalRService";
 import { useAuth } from "../../context/AuthContext";
 
 const { Option } = Select;
 const { Text } = Typography;
 
-// Constants
-
-
 const BookingManagement = () => {
-
-    // ✅ DYNAMIC: Sử dụng userId từ AuthContext, fallback về 13
+    // ✅ STEP 1: All hooks first - Auth hooks
     const { user, userId, isLoading: authLoading, isLoggedIn } = useAuth();
 
-    // ✅ SIMPLE: Chỉ dùng userId và user từ AuthContext
-    const USER_ID = userId || user?.userId || 13;
-    const CUSTOMER_USER_ID = userId || user?.userId || 16;
-    const CUSTOMER_EMAIL = user?.email || "admin@courtowner.com";
-    const CUSTOMER_PHONE = user?.phone || user?.phoneNumber || "0000000000";
-
-    // State for facilities and courts data
+    // ✅ STEP 2: All useState hooks
+    const [hasInitialized, setHasInitialized] = useState(false);
     const [facilities, setFacilities] = useState([]);
+    const [totalFacilities, setTotalFacilities] = useState(0);
     const [courts, setCourts] = useState([]);
     const [timeSlots, setTimeSlots] = useState([]);
     const [rawTimeSlots, setRawTimeSlots] = useState([]);
@@ -88,12 +79,8 @@ const BookingManagement = () => {
     const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
     const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
     const [customerCache, setCustomerCache] = useState({});
-
-    // Modal states for notification detail
     const [notificationBookingDetail, setNotificationBookingDetail] = useState(null);
     const [isNotificationDetailVisible, setIsNotificationDetailVisible] = useState(false);
-
-    // ✅ NEW: State for slot context menu
     const [slotContextMenu, setSlotContextMenu] = useState({
         visible: false,
         x: 0,
@@ -102,8 +89,6 @@ const BookingManagement = () => {
         timeSlot: null,
         slotId: null
     });
-
-    // Loading states
     const [loading, setLoading] = useState({
         facilities: false,
         courts: false,
@@ -113,19 +98,26 @@ const BookingManagement = () => {
         completing: false,
         modalCategories: false,
         creating: false,
-        markingCourt: false, // ✅ NEW: Loading state for marking court
+        markingCourt: false,
     });
-
-    // Modal states
     const [isCreateBookingModalVisible, setIsCreateBookingModalVisible] = useState(false);
+
+    // ✅ STEP 3: Form hooks
     const [createBookingForm] = Form.useForm();
 
-    // ✅ THAY ĐỔI: Lấy trực tiếp từ signalRService thay vì useSignalR
-    const isConnected = signalRService.connected;
-    const connectionState = signalRService.connectionState;
-    const sendBookingUpdate = signalRService.sendBookingUpdate.bind(signalRService);
+    // ✅ STEP 4: Auth computed values
+    const getCourtOwnerId = useCallback(() => {
+        console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
 
-    // Utility functions
+        if (isLoggedIn && userId) {
+            return userId;
+        }
+
+        console.warn('⚠️ Court owner not logged in');
+        return null;
+    }, [isLoggedIn, userId]);
+
+    // ✅ STEP 5: Utility callbacks
     const updateLoading = useCallback((key, value) => {
         setLoading(prev => ({ ...prev, [key]: value }));
     }, []);
@@ -134,14 +126,13 @@ const BookingManagement = () => {
         return time ? time.substring(0, 5) : '';
     }, []);
 
-
     const getBookingStatusFromString = useCallback((status) => {
         const statusLower = status?.toLowerCase();
         switch (statusLower) {
             case 'paid':
                 return 'paid';
-            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
-                return 'Chưa thanh toán';
+            case 'unpaid':
+                return 'unpaid';
             case 'completed':
                 return 'completed';
             case 'cancelled':
@@ -160,7 +151,7 @@ const BookingManagement = () => {
                 return 'Đã thanh toán cọc';
             case 'completed':
                 return 'Đã hoàn thành';
-            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+            case 'unpaid':
                 return 'Chưa thanh toán';
             case 'cancelled':
                 return 'Đã hủy';
@@ -177,7 +168,7 @@ const BookingManagement = () => {
                 return 'Còn trống';
             case 'paid':
                 return 'Đã Cọc';
-            case 'unpaid':           // ✅ FIX: Hiển thị "Chưa thanh toán" cho Unpaid
+            case 'unpaid':
                 return 'Chưa thanh toán';
             case 'completed':
                 return 'Đã hoàn thành';
@@ -187,7 +178,6 @@ const BookingManagement = () => {
                 return 'Chưa thanh toán';
         }
     }, []);
-
 
     const getTimeSlotId = useCallback((timeSlotString) => {
         const foundSlot = rawTimeSlots.find(slot => {
@@ -204,7 +194,6 @@ const BookingManagement = () => {
         return `${courtId}_${date.format('YYYY-MM-DD')}_${timeSlot}`;
     }, []);
 
-    // ✅ NEW: Get selected category ID for simple booking
     const getSelectedCategoryId = useCallback(() => {
         if (selectedCategoryFilter === 'all' && modalCategories.length > 0) {
             return modalCategories[0].categoryId;
@@ -212,7 +201,6 @@ const BookingManagement = () => {
         return selectedCategoryFilter;
     }, [selectedCategoryFilter, modalCategories]);
 
-    // Process booking data
     const processBookingData = useCallback((bookingsData) => {
         const processedBookings = {};
 
@@ -318,7 +306,52 @@ const BookingManagement = () => {
         }
     }, []);
 
-    // ✅ MOVE: loadBookings function moved here before it's used
+    // ✅ FIXED: Correct API function with proper parameters
+    const loadFacilities = useCallback(async () => {
+        try {
+            updateLoading('facilities', true);
+            const courtOwnerId = getCourtOwnerId();
+
+            if (!courtOwnerId) {
+                console.error('❌ No court owner ID available');
+                message.error('Người dùng chưa đăng nhập');
+                setFacilities([]);
+                return;
+            }
+
+            console.log('🚀 Loading facilities for courtOwnerId:', courtOwnerId);
+
+            // ✅ FIXED: Correct parameters order
+            // getFacilitiesByCourtOwnerId(courtOwnerId, facilityName, statusId, currentPage, itemsPerPage)
+            const response = await getFacilitiesByCourtOwnerId(
+                courtOwnerId,  // courtOwnerId
+                "",           // facilityName - empty string, not null
+                null,         // statusId  
+                1,            // currentPage
+                100           // itemsPerPage
+            );
+
+            console.log('📡 API Response:', response);
+
+            const facilitiesData = response.data?.items || response.data || [];
+            setFacilities(facilitiesData);
+
+            if (facilitiesData.length > 0) {
+                setSelectedFacility(facilitiesData[0].facilityId);
+                console.log('✅ Auto-selected facility:', facilitiesData[0].facilityId, facilitiesData[0].facilityName);
+            }
+
+            console.log('✅ Facilities loaded successfully:', facilitiesData.length, 'facilities for user', courtOwnerId);
+        } catch (error) {
+            console.error('💥 Error loading facilities:', error);
+            console.error('💥 Error details:', error.response?.data);
+            message.error('Không thể tải danh sách cơ sở');
+            setFacilities([]);
+        } finally {
+            updateLoading('facilities', false);
+        }
+    }, [updateLoading, getCourtOwnerId]);
+
     const loadBookings = useCallback(async (facilityId) => {
         try {
             updateLoading('bookings', true);
@@ -336,478 +369,6 @@ const BookingManagement = () => {
             updateLoading('bookings', false);
         }
     }, [updateLoading, processBookingData]);
-
-    // ✅ NEW: Handle mark court (create simple booking) - NOW MOVED AFTER loadBookings
-    // ✅ ENHANCED: Better debugging and error handling for createSimpleBooking
-
-
-    // ✅ FIXED: Update handleMarkCourt with correct API format
-    const handleMarkCourt = useCallback(async (court, timeSlot) => {
-        try {
-            updateLoading('markingCourt', true);
-
-            // Get slot ID
-            const timeSlotId = getTimeSlotId(timeSlot); // ✅ RENAMED: slotId -> timeSlotId
-            const categoryId = getSelectedCategoryId();
-
-            if (!categoryId) {
-                message.error('Vui lòng chọn loại sân trước khi đánh dấu');
-                return;
-            }
-
-            // ✅ FIXED: Use correct format matching the API requirement
-            const bookingRequestData = {
-                userId: CUSTOMER_USER_ID, // ✅ ADD: Required userId
-                checkInDate: selectedDate.format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
-                facilityId: selectedFacility,
-                categoryId: parseInt(categoryId), // ✅ CONVERT: String to number
-                timeSlotId: timeSlotId, // ✅ RENAMED: slotId -> timeSlotId
-                courtId: court.courtId || court.id
-            };
-
-            console.log('📡 Creating simple booking with data:', bookingRequestData);
-            console.log('🔍 DEBUG - Court object:', court);
-            console.log('🔍 DEBUG - Time slot:', timeSlot);
-            console.log('🔍 DEBUG - Selected facility:', selectedFacility);
-            console.log('🔍 DEBUG - Selected category:', categoryId);
-            console.log('🔍 DEBUG - Selected date:', selectedDate.format('YYYY-MM-DD'));
-
-            const response = await createSimpleBooking(bookingRequestData);
-
-            console.log('📡 CreateSimpleBooking response:', response);
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response data:', response.data);
-
-            // ✅ ENHANCED ERROR CHECKING
-            if (response.status === 400) {
-                console.error('❌ 400 Bad Request - Invalid data sent to server');
-                console.error('❌ Request data was:', bookingRequestData);
-
-                // Get error message from response
-                let errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
-
-                if (response.message) {
-                    errorMessage = response.message;
-                } else if (response.data?.message) {
-                    errorMessage = response.data.message;
-                } else if (response.data?.error) {
-                    errorMessage = response.data.error;
-                }
-
-                message.error(`Không thể đánh dấu sân: ${errorMessage}`);
-                return;
-            }
-
-            if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
-                console.error('❌ API returned error status:', response.status);
-                message.error(`Lỗi API: ${response.status}`);
-                return;
-            }
-
-            // ✅ SUCCESS CASES
-            console.log('✅ API call successful with status:', response.status);
-            message.success('Đánh dấu sân thành công!');
-
-            // ✅ UPDATE LOCAL STATE
-            const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
-            const newBooking = {
-                id: response.data?.bookingId || Date.now(),
-                userId: CUSTOMER_USER_ID,
-                courtId: court.courtId || court.id,
-                courtName: court.courtName || court.name,
-                timeSlot: timeSlot,
-                date: selectedDate.format('DD/MM/YYYY'),
-                price: 0,
-                status: 'paid',
-                paymentStatus: 'deposit',
-                bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
-                checkInDate: selectedDate.format('YYYY-MM-DD'),
-                statusId: 7,
-                originalStatus: 'Paid',
-                customerName: 'Admin (Đánh dấu)',
-                customerPhone: CUSTOMER_PHONE,
-                customerEmail: CUSTOMER_EMAIL
-            };
-
-            setBookingData(prev => ({
-                ...prev,
-                [bookingKey]: newBooking
-            }));
-
-            // ✅ SEND SIGNALR NOTIFICATION
-            if (isConnected) {
-                const notification = {
-                    bookingId: newBooking.id,
-                    facilityId: selectedFacility,
-                    courtId: court.courtId || court.id,
-                    timeSlot: timeSlot,
-                    date: selectedDate.format('DD/MM/YYYY'),
-                    checkInTime: timeSlot.split(' - ')[0],
-                    status: 'paid',
-                    action: 'created',
-                    message: `Sân ${court.courtName || court.name} đã được đánh dấu`,
-                    courtName: court.courtName || court.name,
-                    customerName: 'Admin',
-                    customerEmail: CUSTOMER_EMAIL,
-                    customerPhone: CUSTOMER_PHONE,
-                    totalAmount: 0,
-                    timestamp: new Date().toISOString()
-                };
-
-                await sendBookingUpdate(notification);
-            }
-
-
-
-        } catch (error) {
-            console.error('❌ Error marking court:', error);
-            console.error('❌ Error response:', error.response);
-
-            let errorMessage = 'Có lỗi xảy ra khi đánh dấu sân';
-
-            if (error.response?.status === 400) {
-                if (error.response.data?.message) {
-                    errorMessage = error.response.data.message;
-                } else if (error.message) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
-                }
-            } else if (error.response?.status === 401) {
-                errorMessage = 'Không có quyền thực hiện thao tác này';
-            } else if (error.response?.status === 500) {
-                errorMessage = 'Lỗi server, vui lòng thử lại sau';
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
-            message.error(errorMessage);
-        } finally {
-            updateLoading('markingCourt', false);
-            setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
-        }
-    }, [selectedFacility, selectedDate, getTimeSlotId, getSelectedCategoryId, getBookingKey, loadBookings, updateLoading, isConnected, sendBookingUpdate]);
-    // ✅ NEW: Handle context menu for empty slots
-    // ✅ ENHANCED: Better context menu positioning
-    const handleEmptySlotClick = useCallback((event, court, timeSlot) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const slotId = getTimeSlotId(timeSlot);
-
-        // ✅ GET: Clicked element position
-        const clickedElement = event.currentTarget;
-        const rect = clickedElement.getBoundingClientRect();
-
-        // ✅ POSITION: Menu below and to the right of the clicked slot
-        const x = rect.left + window.scrollX;
-        const y = rect.bottom + window.scrollY + 5; // 5px below the slot
-
-        // ✅ FALLBACK: If menu would go off-screen, position above
-        const menuHeight = 80;
-        const finalY = (y + menuHeight > window.innerHeight + window.scrollY)
-            ? rect.top + window.scrollY - menuHeight - 5
-            : y;
-
-        // ✅ ENSURE: Menu doesn't go off-screen horizontally
-        const menuWidth = 160;
-        const finalX = (x + menuWidth > window.innerWidth + window.scrollX)
-            ? window.innerWidth + window.scrollX - menuWidth - 10
-            : x;
-
-        console.log('🎯 Slot-relative menu position:', {
-            slotRect: rect,
-            finalX,
-            finalY,
-            court: court.courtName || court.name,
-            timeSlot
-        });
-
-        setSlotContextMenu({
-            visible: true,
-            x: finalX,
-            y: finalY,
-            court: court,
-            timeSlot: timeSlot,
-            slotId: slotId
-        });
-    }, [getTimeSlotId]);
-
-    // ✅ NEW: Hide context menu when clicking outside
-    const hideContextMenu = useCallback(() => {
-        setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
-    }, []);
-
-    // ✅ NEW: Context menu items
-    const contextMenuItems = useMemo(() => [
-        {
-            key: 'mark',
-            icon: <FlagOutlined />,
-            label: 'Đánh dấu sân',
-            onClick: () => {
-                if (slotContextMenu.court && slotContextMenu.timeSlot) {
-                    handleMarkCourt(slotContextMenu.court, slotContextMenu.timeSlot);
-                }
-            }
-        },
-        {
-            key: 'block',
-            icon: <LockOutlined />,
-            label: 'Block sân',
-            disabled: true, // Temporarily disabled as requested
-            onClick: () => {
-                // TODO: Implement block functionality
-                message.info('Chức năng Block sân sẽ được phát triển sau');
-                hideContextMenu();
-            }
-        }
-    ], [slotContextMenu.court, slotContextMenu.timeSlot, handleMarkCourt, hideContextMenu]);
-
-    // ✅ Quản lý facility groups trực tiếp
-    useEffect(() => {
-        if (!selectedFacility) return;
-
-        const manageFacilityGroups = async () => {
-            await signalRService.joinFacilityGroup(selectedFacility);
-            console.log(`📍 LOCAL: Joined facility group ${selectedFacility}`);
-        };
-
-        if (signalRService.connected) {
-            manageFacilityGroups();
-        }
-
-        return () => {
-            if (selectedFacility) {
-                signalRService.leaveFacilityGroup(selectedFacility);
-                console.log(`📤 LOCAL: Left facility group ${selectedFacility}`);
-            }
-        };
-    }, [selectedFacility]);
-
-    // ✅ Event listener cho global notifications
-    useEffect(() => {
-        const handleOpenNotificationDetail = (event) => {
-            console.log('🔔 Received notification detail event:', event.detail);
-            setNotificationBookingDetail(event.detail);
-            setIsNotificationDetailVisible(true);
-        };
-
-        window.addEventListener('openNotificationDetail', handleOpenNotificationDetail);
-
-        return () => {
-            window.removeEventListener('openNotificationDetail', handleOpenNotificationDetail);
-        };
-    }, []);
-
-    // ✅ NEW: Add click outside listener for context menu
-    useEffect(() => {
-        const handleClickOutside = () => {
-            if (slotContextMenu.visible) {
-                hideContextMenu();
-            }
-        };
-
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, [slotContextMenu.visible, hideContextMenu]);
-
-    // ✅ CÁCH 1: Listen for global SignalR events to update UI slots
-    useEffect(() => {
-        // Global booking created handler for UI updates
-        const handleGlobalBookingCreated = (notification) => {
-            console.log('🔔 LOCAL UI: Global booking created received!', notification);
-
-            if (notification.facilityId === selectedFacility) {
-                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
-                const currentDate = selectedDate;
-
-                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
-                    console.log('📱 LOCAL UI: Updating slot status directly...');
-
-                    const timeSlot = notification.timeSlot;
-                    const courtId = notification.courtId;
-
-                    if (courtId && timeSlot) {
-                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
-
-                        // ✅ FIX: Lấy status thực từ notification
-                        const actualStatus = getBookingStatusFromString(notification.status);
-
-                        console.log('🔍 DEBUG: Notification status:', notification.status);
-                        console.log('🔍 DEBUG: Mapped status:', actualStatus);
-
-                        // ✅ FIX: Map đúng status thay vì hardcode
-                        let paymentStatus = 'pending';
-                        let statusId = 8;
-                        let originalStatus = notification.status || 'Unpaid';
-
-                        switch (actualStatus) {
-                            case 'paid':
-                                paymentStatus = 'deposit';
-                                statusId = 7;
-                                break;
-                            case 'completed':
-                                paymentStatus = 'paid';
-                                statusId = 10;
-                                break;
-                            case 'cancelled':
-                                paymentStatus = 'cancelled';
-                                statusId = 9;
-                                break;
-                            case 'unpaid':
-                            default:
-                                paymentStatus = 'pending';
-                                statusId = 8;
-                                break;
-                        }
-
-                        const newBooking = {
-                            id: notification.bookingId || Date.now(),
-                            userId: notification.userId,
-                            courtId: courtId,
-                            courtName: notification.courtName || 'Sân thể thao',
-                            timeSlot: timeSlot,
-                            date: currentDate.format('DD/MM/YYYY'),
-                            price: notification.totalAmount || 0,
-                            // ✅ FIX: Sử dụng actualStatus thay vì hardcode 'paid'
-                            status: actualStatus,
-                            paymentStatus: paymentStatus,
-                            bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
-                            checkInDate: currentDate.format('YYYY-MM-DD'),
-                            statusId: statusId,
-                            originalStatus: originalStatus,
-                            customerName: notification.customerName || 'Admin',
-                            customerPhone: notification.customerPhone || 'N/A',
-                            customerEmail: notification.customerEmail || 'N/A'
-                        };
-
-                        setBookingData(prev => ({
-                            ...prev,
-                            [bookingKey]: newBooking
-                        }));
-
-                        console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${actualStatus.toUpperCase()} status`);
-                    }
-                }
-            }
-        };
-
-
-        // Global booking updated handler for UI updates
-        const handleGlobalBookingUpdated = (notification) => {
-            console.log('🔔 LOCAL UI: Global booking updated received!', notification);
-
-            // Cập nhật UI slots
-            if (notification.facilityId === selectedFacility) {
-                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
-                const currentDate = selectedDate;
-
-                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
-                    console.log('📱 LOCAL UI: Updating slot status to:', notification.status);
-
-                    const timeSlot = notification.timeSlot;
-                    const courtId = notification.courtId;
-
-                    if (courtId && timeSlot) {
-                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
-
-                        setBookingData(prev => {
-                            if (prev[bookingKey]) {
-                                const updatedBooking = {
-                                    ...prev[bookingKey],
-                                    status: getBookingStatusFromString(notification.status),
-                                    originalStatus: notification.status,
-                                    paymentStatus: notification.status === 'completed' ? 'paid' : prev[bookingKey].paymentStatus,
-                                    statusId: notification.status === 'completed' ? 10 : prev[bookingKey].statusId
-                                };
-
-                                console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${notification.status.toUpperCase()} status`);
-
-                                return {
-                                    ...prev,
-                                    [bookingKey]: updatedBooking
-                                };
-                            }
-                            return prev;
-                        });
-
-                        if (selectedBooking && selectedBooking.id.toString() === notification.bookingId.toString()) {
-                            setSelectedBooking(prev => prev ? {
-                                ...prev,
-                                status: getBookingStatusFromString(notification.status),
-                                originalStatus: notification.status,
-                                paymentStatus: notification.status === 'completed' ? 'paid' : prev.paymentStatus,
-                                statusId: notification.status === 'completed' ? 10 : prev.statusId
-                            } : null);
-                        }
-                    }
-                }
-            }
-        };
-
-        // ✅ TAP INTO EXISTING SIGNALR CONNECTION EVENTS
-        if (signalRService.connection) {
-            // Add listeners directly to SignalR connection for UI updates
-            signalRService.connection.on('BookingCreated', handleGlobalBookingCreated);
-            signalRService.connection.on('BookingUpdated', handleGlobalBookingUpdated);
-            signalRService.connection.on('BookingCompleted', handleGlobalBookingUpdated);
-            signalRService.connection.on('BookingCancelled', handleGlobalBookingUpdated);
-
-            console.log('✅ LOCAL UI: Added SignalR event listeners for slot updates');
-        }
-
-        return () => {
-            // Cleanup
-            if (signalRService.connection) {
-                signalRService.connection.off('BookingCreated', handleGlobalBookingCreated);
-                signalRService.connection.off('BookingUpdated', handleGlobalBookingUpdated);
-                signalRService.connection.off('BookingCompleted', handleGlobalBookingUpdated);
-                signalRService.connection.off('BookingCancelled', handleGlobalBookingUpdated);
-
-                console.log('🧹 LOCAL UI: Removed SignalR event listeners');
-            }
-        };
-    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString]);
-
-    // ✅ Monitor connection state  
-    useEffect(() => {
-        const updateConnectionState = () => {
-            const currentConnected = signalRService.connected;
-            if (currentConnected !== isRealTimeConnected) {
-                setIsRealTimeConnected(currentConnected);
-                console.log(`🔗 LOCAL: Connection state updated: ${currentConnected}`);
-            }
-        };
-
-        // Check immediately
-        updateConnectionState();
-
-        // Check periodically
-        const interval = setInterval(updateConnectionState, 2000);
-
-        return () => clearInterval(interval);
-    }, [isRealTimeConnected]);
-
-    // API calls khác
-    const loadFacilities = useCallback(async () => {
-        try {
-            updateLoading('facilities', true);
-            const response = await getFacilitiesByCourtOwnerId(USER_ID, "", null, 1, 100);
-
-            const facilitiesData = response.data?.items || [];
-            setFacilities(facilitiesData);
-
-            if (facilitiesData.length > 0) {
-                setSelectedFacility(facilitiesData[0].facilityId);
-            }
-        } catch (error) {
-            console.error('Error loading facilities:', error);
-            message.error('Không thể tải danh sách cơ sở');
-            setFacilities([]);
-        } finally {
-            updateLoading('facilities', false);
-        }
-    }, [updateLoading]);
 
     const loadCourts = useCallback(async (facilityId) => {
         try {
@@ -873,7 +434,6 @@ const BookingManagement = () => {
 
     const loadCustomerDetails = useCallback(async (userId) => {
         try {
-            // ✅ CHECK: Cache trước
             if (customerCache[userId]) {
                 console.log(`✅ Using cached customer data for userId: ${userId}`);
                 return customerCache[userId];
@@ -904,7 +464,6 @@ const BookingManagement = () => {
                 customerAvatar: customerData?.avatar || null
             };
 
-            // ✅ CACHE: Lưu lại để lần sau không gọi API
             setCustomerCache(prev => ({
                 ...prev,
                 [userId]: result
@@ -923,7 +482,181 @@ const BookingManagement = () => {
         }
     }, [customerCache]);
 
-    // Event handlers
+    const handleMarkCourt = useCallback(async (court, timeSlot) => {
+        try {
+            updateLoading('markingCourt', true);
+
+            const timeSlotId = getTimeSlotId(timeSlot);
+            const categoryId = getSelectedCategoryId();
+
+            if (!categoryId) {
+                message.error('Vui lòng chọn loại sân trước khi đánh dấu');
+                return;
+            }
+
+            const USER_ID = getCourtOwnerId();
+            const CUSTOMER_USER_ID = getCourtOwnerId();
+            const CUSTOMER_EMAIL = user?.email || "admin@courtowner.com";
+            const CUSTOMER_PHONE = user?.phone || user?.phoneNumber || "0000000000";
+
+            const bookingRequestData = {
+                userId: CUSTOMER_USER_ID,
+                checkInDate: selectedDate.format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z',
+                facilityId: selectedFacility,
+                categoryId: parseInt(categoryId),
+                timeSlotId: timeSlotId,
+                courtId: court.courtId || court.id
+            };
+
+            console.log('📡 Creating simple booking with data:', bookingRequestData);
+
+            const response = await createSimpleBooking(bookingRequestData);
+
+            if (response.status === 400) {
+                console.error('❌ 400 Bad Request - Invalid data sent to server');
+                let errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
+
+                if (response.message) {
+                    errorMessage = response.message;
+                } else if (response.data?.message) {
+                    errorMessage = response.data.message;
+                } else if (response.data?.error) {
+                    errorMessage = response.data.error;
+                }
+
+                message.error(`Không thể đánh dấu sân: ${errorMessage}`);
+                return;
+            }
+
+            if (response.status !== 200 && response.status !== 201 && response.status !== 204) {
+                console.error('❌ API returned error status:', response.status);
+                message.error(`Lỗi API: ${response.status}`);
+                return;
+            }
+
+            console.log('✅ API call successful with status:', response.status);
+            message.success('Đánh dấu sân thành công!');
+
+            const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
+            const newBooking = {
+                id: response.data?.bookingId || Date.now(),
+                userId: CUSTOMER_USER_ID,
+                courtId: court.courtId || court.id,
+                courtName: court.courtName || court.name,
+                timeSlot: timeSlot,
+                date: selectedDate.format('DD/MM/YYYY'),
+                price: 0,
+                status: 'paid',
+                paymentStatus: 'deposit',
+                bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                checkInDate: selectedDate.format('YYYY-MM-DD'),
+                statusId: 7,
+                originalStatus: 'Paid',
+                customerName: 'Admin (Đánh dấu)',
+                customerPhone: CUSTOMER_PHONE,
+                customerEmail: CUSTOMER_EMAIL
+            };
+
+            setBookingData(prev => ({
+                ...prev,
+                [bookingKey]: newBooking
+            }));
+
+            const isConnected = signalRService.connected;
+            if (isConnected) {
+                const notification = {
+                    bookingId: newBooking.id,
+                    facilityId: selectedFacility,
+                    courtId: court.courtId || court.id,
+                    timeSlot: timeSlot,
+                    date: selectedDate.format('DD/MM/YYYY'),
+                    checkInTime: timeSlot.split(' - ')[0],
+                    status: 'paid',
+                    action: 'created',
+                    message: `Sân ${court.courtName || court.name} đã được đánh dấu`,
+                    courtName: court.courtName || court.name,
+                    customerName: 'Admin',
+                    customerEmail: CUSTOMER_EMAIL,
+                    customerPhone: CUSTOMER_PHONE,
+                    totalAmount: 0,
+                    timestamp: new Date().toISOString()
+                };
+
+                await signalRService.sendBookingUpdate(notification);
+            }
+
+        } catch (error) {
+            console.error('❌ Error marking court:', error);
+
+            let errorMessage = 'Có lỗi xảy ra khi đánh dấu sân';
+
+            if (error.response?.status === 400) {
+                if (error.response.data?.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'Dữ liệu không hợp lệ (400 Bad Request)';
+                }
+            } else if (error.response?.status === 401) {
+                errorMessage = 'Không có quyền thực hiện thao tác này';
+            } else if (error.response?.status === 500) {
+                errorMessage = 'Lỗi server, vui lòng thử lại sau';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            message.error(errorMessage);
+        } finally {
+            updateLoading('markingCourt', false);
+            setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
+        }
+    }, [selectedFacility, selectedDate, getTimeSlotId, getSelectedCategoryId, getBookingKey, updateLoading, getCourtOwnerId, user]);
+
+    const handleEmptySlotClick = useCallback((event, court, timeSlot) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const slotId = getTimeSlotId(timeSlot);
+
+        const clickedElement = event.currentTarget;
+        const rect = clickedElement.getBoundingClientRect();
+
+        const x = rect.left + window.scrollX;
+        const y = rect.bottom + window.scrollY + 5;
+
+        const menuHeight = 80;
+        const finalY = (y + menuHeight > window.innerHeight + window.scrollY)
+            ? rect.top + window.scrollY - menuHeight - 5
+            : y;
+
+        const menuWidth = 160;
+        const finalX = (x + menuWidth > window.innerWidth + window.scrollX)
+            ? window.innerWidth + window.scrollX - menuWidth - 10
+            : x;
+
+        console.log('🎯 Slot-relative menu position:', {
+            slotRect: rect,
+            finalX,
+            finalY,
+            court: court.courtName || court.name,
+            timeSlot
+        });
+
+        setSlotContextMenu({
+            visible: true,
+            x: finalX,
+            y: finalY,
+            court: court,
+            timeSlot: timeSlot,
+            slotId: slotId
+        });
+    }, [getTimeSlotId]);
+
+    const hideContextMenu = useCallback(() => {
+        setSlotContextMenu({ visible: false, x: 0, y: 0, court: null, timeSlot: null, slotId: null });
+    }, []);
+
     const handleFacilityChange = useCallback((value) => {
         setSelectedFacility(value);
         setSelectedCategoryFilter('all');
@@ -949,10 +682,7 @@ const BookingManagement = () => {
 
         if (!booking) return;
 
-        // ✅ DEBUG: Log toàn bộ booking object
         console.log('🔍 DEBUG: Full booking object:', JSON.stringify(booking, null, 2));
-        console.log('🔍 DEBUG: booking.userId:', booking.userId);
-        console.log('🔍 DEBUG: booking.userId type:', typeof booking.userId);
 
         updateLoading('customer', true);
         setIsModalVisible(true);
@@ -962,7 +692,6 @@ const BookingManagement = () => {
             date: selectedDate.format('DD/MM/YYYY')
         });
 
-        // ✅ DEBUG: Kiểm tra userId trước khi gọi API
         if (booking.userId && booking.userId !== 0 && booking.userId !== '0') {
             try {
                 console.log('🔍 DEBUG: Calling getAccountById with userId:', booking.userId);
@@ -990,7 +719,6 @@ const BookingManagement = () => {
                 }
             } catch (error) {
                 console.error('❌ Error loading customer details:', error);
-                console.error('❌ Error response:', error.response?.data);
                 setSelectedBooking(prev => prev ? {
                     ...prev,
                     customerName: 'Lỗi tải thông tin',
@@ -1000,9 +728,11 @@ const BookingManagement = () => {
             }
         } else {
             console.log('⚠️ Invalid userId:', booking.userId);
-            console.log('🔍 DEBUG: Full booking object:', JSON.stringify(booking, null, 2));
 
-            // ✅ FIX: Check nếu có customer info trong booking
+            const USER_ID = getCourtOwnerId();
+            const CUSTOMER_EMAIL = user?.email || "admin@courtowner.com";
+            const CUSTOMER_PHONE = user?.phone || user?.phoneNumber || "0000000000";
+
             if (booking.customerName && booking.customerPhone && booking.customerEmail) {
                 console.log('✅ Using existing customer info from booking object');
                 setSelectedBooking(prev => prev ? {
@@ -1012,7 +742,6 @@ const BookingManagement = () => {
                     customerEmail: booking.customerEmail,
                     customerAvatar: null
                 } : null);
-                console.log('✅ Customer details set from booking object');
             } else {
                 console.log('🔄 Fallback to Admin info - no customer data in booking');
                 setSelectedBooking(prev => prev ? {
@@ -1025,7 +754,7 @@ const BookingManagement = () => {
         }
 
         updateLoading('customer', false);
-    }, [bookingData, selectedDate, getBookingKey, loadCustomerDetails, updateLoading]);
+    }, [bookingData, selectedDate, getBookingKey, loadCustomerDetails, updateLoading, getCourtOwnerId, user]);
 
     const openModal = useCallback(async (bookingId) => {
         try {
@@ -1075,7 +804,7 @@ const BookingManagement = () => {
                     }
                 }));
 
-                // Send SignalR notification
+                const isConnected = signalRService.connected;
                 if (isConnected) {
                     const notification = {
                         bookingId: selectedBooking.id,
@@ -1090,7 +819,7 @@ const BookingManagement = () => {
                         courtName: selectedBooking.courtName,
                         customerName: selectedBooking.customerName
                     };
-                    await sendBookingUpdate(notification);
+                    await signalRService.sendBookingUpdate(notification);
                 }
 
                 setTimeout(() => closeModal(), 1000);
@@ -1105,7 +834,7 @@ const BookingManagement = () => {
         } finally {
             updateLoading('completing', false);
         }
-    }, [selectedBooking, selectedDate, selectedFacility, loadBookings, updateLoading, isConnected, sendBookingUpdate]);
+    }, [selectedBooking, selectedDate, selectedFacility, loadBookings, updateLoading]);
 
     const handleCreateBooking = useCallback(async (values) => {
         if (selectedTimeSlots.length === 0) {
@@ -1115,6 +844,12 @@ const BookingManagement = () => {
 
         try {
             updateLoading('creating', true);
+
+            const USER_ID = getCourtOwnerId();
+            const CUSTOMER_USER_ID = getCourtOwnerId();
+            const CUSTOMER_EMAIL = user?.email || "admin@courtowner.com";
+            const CUSTOMER_PHONE = user?.phone || user?.phoneNumber || "0000000000";
+
             const timeSlotIds = selectedTimeSlots.map(timeSlot => getTimeSlotId(timeSlot));
             const checkInDate = selectedDate.format('YYYY-MM-DDTHH:mm:ss.SSS') + 'Z';
 
@@ -1139,11 +874,9 @@ const BookingManagement = () => {
             if (isSuccess) {
                 message.success('Tạo đơn đặt sân thành công với trạng thái đã cọc!');
 
-                // ✅ UPDATE: Local state trước, sau đó delay 2s rồi đóng modal
                 const responseData = response.data?.data || response.data;
 
                 if (responseData?.slots?.length > 0) {
-                    // Update local state
                     for (const slot of responseData.slots) {
                         const timeSlot = `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
                         const bookingKey = getBookingKey(slot.courtId, selectedDate, timeSlot);
@@ -1173,7 +906,6 @@ const BookingManagement = () => {
                         }));
                     }
                 } else if (responseData?.bookingId) {
-                    // Handle single booking response
                     for (const timeSlot of selectedTimeSlots) {
                         const courtId = responseData.courtId || (courts.length > 0 ? courts[0].courtId : null);
                         const courtName = responseData.courtName || (courts.length > 0 ? courts[0].courtName : 'Unknown Court');
@@ -1208,19 +940,17 @@ const BookingManagement = () => {
                     }
                 }
 
-                // ✅ DELAY: 2 giây trước khi đóng modal và reload data
                 setTimeout(() => {
                     setIsCreateBookingModalVisible(false);
                     createBookingForm.resetFields();
                     setSelectedTimeSlots([]);
-                }, 3000); // ✅ THAY ĐỔI: Delay 2s thay vì đóng ngay lập tức
+                }, 3000);
 
-                // ✅ RELOAD: Data sau 3s để đảm bảo modal đã đóng
                 setTimeout(() => {
                     if (selectedFacility) {
                         loadBookings(selectedFacility);
                     }
-                }, 3000); // ✅ 3s để đảm bảo modal đã đóng xong
+                }, 3000);
 
             } else {
                 const errorMessage = response.data?.message || response.data?.error || 'Không thể tạo đơn đặt sân';
@@ -1232,7 +962,6 @@ const BookingManagement = () => {
             if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
                 message.warning('Yêu cầu quá thời gian chờ. Vui lòng kiểm tra lại!');
 
-                // ✅ DELAY: Cho timeout cũng delay 2s
                 setTimeout(() => {
                     setIsCreateBookingModalVisible(false);
                     createBookingForm.resetFields();
@@ -1249,12 +978,12 @@ const BookingManagement = () => {
                 message.error(errorMessage);
             }
         } finally {
-            // ✅ DELAY: Reset loading state sau 2.5s để user thấy được success message
             setTimeout(() => {
                 updateLoading('creating', false);
             }, 2500);
         }
-    }, [selectedTimeSlots, selectedDate, selectedFacility, getTimeSlotId, loadBookings, updateLoading, formatTime, courts, createBookingForm]);
+    }, [selectedTimeSlots, selectedDate, selectedFacility, getTimeSlotId, loadBookings, updateLoading, formatTime, courts, createBookingForm, getCourtOwnerId, user]);
+
     const openCreateBookingModal = useCallback(async () => {
         if (!selectedFacility) {
             message.warning('Vui lòng chọn cơ sở trước');
@@ -1281,12 +1010,30 @@ const BookingManagement = () => {
         updateLoading('completing', false);
     }, [updateLoading]);
 
-    // Memoized computations
     const getSlotStatus = useCallback((court, timeSlot) => {
         const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
         const booking = bookingData[bookingKey];
         return booking ? booking.status : 'available';
     }, [bookingData, selectedDate, getBookingKey]);
+
+    const handleCategoryChange = useCallback((categoryId) => {
+        createBookingForm.setFieldsValue({ categoryId });
+        setSelectedTimeSlots([]);
+    }, [createBookingForm]);
+
+    // ✅ STEP 6: All useMemo hooks - BEFORE render callbacks
+    const contextMenuItems = useMemo(() => [
+        {
+            key: 'mark',
+            icon: <FlagOutlined />,
+            label: 'Đánh dấu sân',
+            onClick: () => {
+                if (slotContextMenu.court && slotContextMenu.timeSlot) {
+                    handleMarkCourt(slotContextMenu.court, slotContextMenu.timeSlot);
+                }
+            }
+        },
+    ], [slotContextMenu.court, slotContextMenu.timeSlot, handleMarkCourt, hideContextMenu]);
 
     const filteredCourts = useMemo(() => {
         if (selectedCategoryFilter === 'all') return courts;
@@ -1306,55 +1053,21 @@ const BookingManagement = () => {
 
         return {
             available: totalSlots - bookingValues.length,
-            unpaid: bookingValues.filter(b => b.status === 'unpaid').length,    // ✅ THÊM
+            unpaid: bookingValues.filter(b => b.status === 'unpaid').length,
             paid: bookingValues.filter(b => b.status === 'paid').length,
             completed: bookingValues.filter(b => b.status === 'completed').length,
             cancelled: bookingValues.filter(b => b.status === 'cancelled').length,
         };
     }, [courts.length, timeSlots.length, bookingData]);
 
-    // Effects
-    useEffect(() => {
-        loadFacilities();
-    }, [loadFacilities]);
-
-    useEffect(() => {
-        if (selectedFacility) {
-            loadCourts(selectedFacility);
-            loadTimeSlots(selectedFacility);
-            loadBookings(selectedFacility);
-            loadModalCategories(selectedFacility);
-        } else {
-            setCourts([]);
-            setTimeSlots([]);
-            setRawTimeSlots([]);
-            setBookings([]);
-            setBookingData({});
-            setModalCategories([]);
-        }
-    }, [selectedFacility, loadCourts, loadTimeSlots, loadBookings, loadModalCategories]);
-
-    useEffect(() => {
-        if (selectedFacility) {
-            loadBookings(selectedFacility);
-        }
-    }, [selectedDate, selectedFacility, loadBookings]);
-
-    useEffect(() => {
-        if (isCreateBookingModalVisible) {
-            createBookingForm.setFieldsValue({ categoryId: undefined });
-        }
-        // eslint-disable-next-line
-    }, [modalCategories, isCreateBookingModalVisible]);
-
+    // ✅ Render callbacks AFTER useMemo
     const getAvailableTimeSlots = useCallback(() => {
         const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
 
         if (!selectedCategoryId) {
-            return []; // Không hiển thị time slot nếu chưa chọn category
+            return [];
         }
 
-        // Lấy tất cả courts của category đã chọn
         const selectedCategory = modalCategories.find(
             cat => String(cat.categoryId) === String(selectedCategoryId)
         );
@@ -1368,12 +1081,10 @@ const BookingManagement = () => {
 
         if (courtsOfSelectedCategory.length === 0) return [];
 
-        // Lọc time slots có ít nhất 1 sân trống
         const availableTimeSlots = timeSlots.filter(timeSlot => {
-            // Kiểm tra xem có ít nhất 1 sân trống trong category này không
             const hasAvailableSlot = courtsOfSelectedCategory.some(court => {
                 const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
-                return !bookingData[bookingKey]; // Không có booking = slot trống
+                return !bookingData[bookingKey];
             });
 
             return hasAvailableSlot;
@@ -1382,8 +1093,6 @@ const BookingManagement = () => {
         return availableTimeSlots;
     }, [modalCategories, courts, timeSlots, selectedDate, getBookingKey, bookingData, createBookingForm]);
 
-
-    // Render helpers
     const renderTimeSlotGrid = useCallback(() => {
         if (loading.timeSlots) {
             return (
@@ -1394,7 +1103,6 @@ const BookingManagement = () => {
             );
         }
 
-        // ✅ SỬ DỤNG: Available time slots thay vì tất cả time slots
         const availableSlots = getAvailableTimeSlots();
 
         if (availableSlots.length === 0) {
@@ -1414,7 +1122,6 @@ const BookingManagement = () => {
         }
 
         return availableSlots.map(slot => {
-            // ✅ HIỂN THỊ: Số sân trống cho mỗi slot
             const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
             const selectedCategory = modalCategories.find(
                 cat => String(cat.categoryId) === String(selectedCategoryId)
@@ -1465,6 +1172,7 @@ const BookingManagement = () => {
         bookingData,
         createBookingForm
     ]);
+
     const renderBookingTable = useCallback(() => {
         if (loading.courts || loading.bookings) {
             return (
@@ -1559,16 +1267,306 @@ const BookingManagement = () => {
         handleEmptySlotClick,
         getSlotDisplayText
     ]);
-    const handleCategoryChange = useCallback((categoryId) => {
-        createBookingForm.setFieldsValue({ categoryId });
-        // Reset selected time slots khi đổi category
-        setSelectedTimeSlots([]);
-    }, [createBookingForm]);
 
+    // ✅ STEP 7: All useEffect hooks
+    useEffect(() => {
+        console.log('🔄 Auth state changed:', {
+            authLoading,
+            isLoggedIn,
+            userId,
+            hasInitialized
+        });
+
+        if (!authLoading && isLoggedIn && userId && !hasInitialized) {
+            console.log('🚀 Conditions met, loading facilities...');
+            loadFacilities();
+            setHasInitialized(true);
+        }
+    }, [authLoading, isLoggedIn, userId, hasInitialized, loadFacilities]);
+
+    useEffect(() => {
+        if (!authLoading && (!isLoggedIn || !userId)) {
+            console.log('🔄 User logged out or changed, resetting...');
+            setHasInitialized(false);
+            setFacilities([]);
+        }
+    }, [authLoading, isLoggedIn, userId]);
+
+    useEffect(() => {
+        console.log('📋 BookingManagement - Current Values:', {
+            authLoading,
+            isLoggedIn,
+            userId,
+            hasInitialized,
+            userEmail: user?.email,
+            facilitiesCount: facilities.length
+        });
+    }, [authLoading, isLoggedIn, userId, hasInitialized, user, facilities.length]);
+
+    useEffect(() => {
+        if (!selectedFacility) return;
+
+        const manageFacilityGroups = async () => {
+            await signalRService.joinFacilityGroup(selectedFacility);
+            console.log(`📍 LOCAL: Joined facility group ${selectedFacility}`);
+        };
+
+        if (signalRService.connected) {
+            manageFacilityGroups();
+        }
+
+        return () => {
+            if (selectedFacility) {
+                signalRService.leaveFacilityGroup(selectedFacility);
+                console.log(`📤 LOCAL: Left facility group ${selectedFacility}`);
+            }
+        };
+    }, [selectedFacility]);
+
+    useEffect(() => {
+        const handleOpenNotificationDetail = (event) => {
+            console.log('🔔 Received notification detail event:', event.detail);
+            setNotificationBookingDetail(event.detail);
+            setIsNotificationDetailVisible(true);
+        };
+
+        window.addEventListener('openNotificationDetail', handleOpenNotificationDetail);
+
+        return () => {
+            window.removeEventListener('openNotificationDetail', handleOpenNotificationDetail);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (slotContextMenu.visible) {
+                hideContextMenu();
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [slotContextMenu.visible, hideContextMenu]);
+
+    useEffect(() => {
+        const handleGlobalBookingCreated = (notification) => {
+            console.log('🔔 LOCAL UI: Global booking created received!', notification);
+
+            if (notification.facilityId === selectedFacility) {
+                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
+                const currentDate = selectedDate;
+
+                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
+                    console.log('📱 LOCAL UI: Updating slot status directly...');
+
+                    const timeSlot = notification.timeSlot;
+                    const courtId = notification.courtId;
+
+                    if (courtId && timeSlot) {
+                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
+
+                        const actualStatus = getBookingStatusFromString(notification.status);
+
+                        console.log('🔍 DEBUG: Notification status:', notification.status);
+                        console.log('🔍 DEBUG: Mapped status:', actualStatus);
+
+                        let paymentStatus = 'pending';
+                        let statusId = 8;
+                        let originalStatus = notification.status || 'Unpaid';
+
+                        switch (actualStatus) {
+                            case 'paid':
+                                paymentStatus = 'deposit';
+                                statusId = 7;
+                                break;
+                            case 'completed':
+                                paymentStatus = 'paid';
+                                statusId = 10;
+                                break;
+                            case 'cancelled':
+                                paymentStatus = 'cancelled';
+                                statusId = 9;
+                                break;
+                            case 'unpaid':
+                            default:
+                                paymentStatus = 'pending';
+                                statusId = 8;
+                                break;
+                        }
+
+                        const newBooking = {
+                            id: notification.bookingId || Date.now(),
+                            userId: notification.userId,
+                            courtId: courtId,
+                            courtName: notification.courtName || 'Sân thể thao',
+                            timeSlot: timeSlot,
+                            date: currentDate.format('DD/MM/YYYY'),
+                            price: notification.totalAmount || 0,
+                            status: actualStatus,
+                            paymentStatus: paymentStatus,
+                            bookingTime: dayjs().format('DD/MM/YYYY HH:mm:ss'),
+                            checkInDate: currentDate.format('YYYY-MM-DD'),
+                            statusId: statusId,
+                            originalStatus: originalStatus,
+                            customerName: notification.customerName || 'Admin',
+                            customerPhone: notification.customerPhone || 'N/A',
+                            customerEmail: notification.customerEmail || 'N/A'
+                        };
+
+                        setBookingData(prev => ({
+                            ...prev,
+                            [bookingKey]: newBooking
+                        }));
+
+                        console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${actualStatus.toUpperCase()} status`);
+                    }
+                }
+            }
+        };
+
+        const handleGlobalBookingUpdated = (notification) => {
+            console.log('🔔 LOCAL UI: Global booking updated received!', notification);
+
+            if (notification.facilityId === selectedFacility) {
+                const notificationDate = dayjs(notification.date, 'DD/MM/YYYY');
+                const currentDate = selectedDate;
+
+                if (notificationDate.format('YYYY-MM-DD') === currentDate.format('YYYY-MM-DD')) {
+                    console.log('📱 LOCAL UI: Updating slot status to:', notification.status);
+
+                    const timeSlot = notification.timeSlot;
+                    const courtId = notification.courtId;
+
+                    if (courtId && timeSlot) {
+                        const bookingKey = `${courtId}_${currentDate.format('YYYY-MM-DD')}_${timeSlot}`;
+
+                        setBookingData(prev => {
+                            if (prev[bookingKey]) {
+                                const updatedBooking = {
+                                    ...prev[bookingKey],
+                                    status: getBookingStatusFromString(notification.status),
+                                    originalStatus: notification.status,
+                                    paymentStatus: notification.status === 'completed' ? 'paid' : prev[bookingKey].paymentStatus,
+                                    statusId: notification.status === 'completed' ? 10 : prev[bookingKey].statusId
+                                };
+
+                                console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${notification.status.toUpperCase()} status`);
+
+                                return {
+                                    ...prev,
+                                    [bookingKey]: updatedBooking
+                                };
+                            }
+                            return prev;
+                        });
+
+                        if (selectedBooking && selectedBooking.id.toString() === notification.bookingId.toString()) {
+                            setSelectedBooking(prev => prev ? {
+                                ...prev,
+                                status: getBookingStatusFromString(notification.status),
+                                originalStatus: notification.status,
+                                paymentStatus: notification.status === 'completed' ? 'paid' : prev.paymentStatus,
+                                statusId: notification.status === 'completed' ? 10 : prev.statusId
+                            } : null);
+                        }
+                    }
+                }
+            }
+        };
+
+        if (signalRService.connection) {
+            signalRService.connection.on('BookingCreated', handleGlobalBookingCreated);
+            signalRService.connection.on('BookingUpdated', handleGlobalBookingUpdated);
+            signalRService.connection.on('BookingCompleted', handleGlobalBookingUpdated);
+            signalRService.connection.on('BookingCancelled', handleGlobalBookingUpdated);
+
+            console.log('✅ LOCAL UI: Added SignalR event listeners for slot updates');
+        }
+
+        return () => {
+            if (signalRService.connection) {
+                signalRService.connection.off('BookingCreated', handleGlobalBookingCreated);
+                signalRService.connection.off('BookingUpdated', handleGlobalBookingUpdated);
+                signalRService.connection.off('BookingCompleted', handleGlobalBookingUpdated);
+                signalRService.connection.off('BookingCancelled', handleGlobalBookingUpdated);
+
+                console.log('🧹 LOCAL UI: Removed SignalR event listeners');
+            }
+        };
+    }, [selectedFacility, selectedDate, selectedBooking, getBookingStatusFromString]);
+
+    useEffect(() => {
+        const updateConnectionState = () => {
+            const currentConnected = signalRService.connected;
+            if (currentConnected !== isRealTimeConnected) {
+                setIsRealTimeConnected(currentConnected);
+                console.log(`🔗 LOCAL: Connection state updated: ${currentConnected}`);
+            }
+        };
+
+        updateConnectionState();
+
+        const interval = setInterval(updateConnectionState, 2000);
+
+        return () => clearInterval(interval);
+    }, [isRealTimeConnected]);
+
+    useEffect(() => {
+        if (selectedFacility) {
+            loadCourts(selectedFacility);
+            loadTimeSlots(selectedFacility);
+            loadBookings(selectedFacility);
+            loadModalCategories(selectedFacility);
+        } else {
+            setCourts([]);
+            setTimeSlots([]);
+            setRawTimeSlots([]);
+            setBookings([]);
+            setBookingData({});
+            setModalCategories([]);
+        }
+    }, [selectedFacility, loadCourts, loadTimeSlots, loadBookings, loadModalCategories]);
+
+    useEffect(() => {
+        if (selectedFacility) {
+            loadBookings(selectedFacility);
+        }
+    }, [selectedDate, selectedFacility, loadBookings]);
+
+    useEffect(() => {
+        if (isCreateBookingModalVisible) {
+            createBookingForm.setFieldsValue({ categoryId: undefined });
+        }
+    }, [modalCategories, isCreateBookingModalVisible, createBookingForm]);
+
+    // ✅ STEP 8: Early returns AFTER all hooks
+    if (authLoading) {
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <div>⏳ Đang tải thông tin người dùng...</div>
+                <div style={{ fontSize: '12px', marginTop: '10px' }}>
+                    Auth Loading: true | User ID: {userId || 'null'}
+                </div>
+            </div>
+        );
+    }
+    if (!isLoggedIn || !getCourtOwnerId()) {
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <div>❌ Vui lòng đăng nhập để tiếp tục</div>
+                <div style={{ fontSize: '12px', marginTop: '10px' }}>
+                    Is Logged In: {isLoggedIn ? 'true' : 'false'} | User ID: {getCourtOwnerId() || 'null'}
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ STEP 9: Main render
     return (
         <div className="booking-management" onClick={hideContextMenu}>
+            {/* ✅ DEBUG: Show current user */}
             <div className="main-container">
-                {/* Header with connection status */}
+                {/* Header */}
                 <div className="header">
                     <div className="header-content">
                         <HomeOutlined className="header-icon" />
@@ -1715,7 +1713,7 @@ const BookingManagement = () => {
                 </div>
             </div>
 
-            {/* ✅ NEW: Context Menu for Empty Slots */}
+            {/* ✅ Context Menu for Empty Slots */}
             {slotContextMenu.visible && (
                 <div
                     className="slot-context-menu"
@@ -1982,7 +1980,6 @@ const BookingManagement = () => {
                 styles={{ body: { padding: '24px' } }}
             >
                 {notificationBookingDetail && (() => {
-                    // ✅ Map statusId to display text and style
                     const getStatusInfo = (statusId) => {
                         switch (statusId) {
                             case 7:
@@ -2028,15 +2025,7 @@ const BookingManagement = () => {
                         }
                     };
 
-                    // ✅ Get status info based on statusId
                     const statusInfo = getStatusInfo(notificationBookingDetail.statusId || 8);
-
-                    // ✅ DEBUG: Log status info
-                    console.log('🔍 DEBUG: Modal status info:', {
-                        statusId: notificationBookingDetail.statusId,
-                        statusDescription: notificationBookingDetail.statusDescription,
-                        statusInfo
-                    });
 
                     return (
                         <div className="notification-booking-detail">
@@ -2051,12 +2040,12 @@ const BookingManagement = () => {
                                     >
                                         <Statistic
                                             title="Trạng thái"
-                                            value={statusInfo.text} // ✅ SỬ DỤNG STATUS THỰC TẾ
+                                            value={statusInfo.text}
                                             valueStyle={{
                                                 color: statusInfo.color,
                                                 fontSize: '16px'
                                             }}
-                                            prefix={statusInfo.icon} // ✅ ICON ĐỘNG THEO STATUS
+                                            prefix={statusInfo.icon}
                                         />
                                     </Card>
                                 </Col>
@@ -2108,6 +2097,7 @@ const BookingManagement = () => {
                                         <Text>{notificationBookingDetail.timeSlot}</Text>
                                     </div>
                                 </Col>
+
                                 {notificationBookingDetail.totalAmount != null && (
                                     <Col span={24}>
                                         <Card size="small" style={{ backgroundColor: '#fff7e6', border: '1px solid #ffd591' }}>
@@ -2121,6 +2111,7 @@ const BookingManagement = () => {
                                         </Card>
                                     </Col>
                                 )}
+
                                 <Col span={24}>
                                     <div className="detail-item">
                                         <Text strong>Thời gian tạo:</Text>

@@ -4,28 +4,268 @@
     left           : 50%;
     transform      : translateX(-50%);
     width          : 80%;
-    max-width      : 900px;
-    padding        : 25px;
+    max-width      : 1000px;
+    padding        : 40px; // 🎯 Increased padding for more height
     border         : 1px solid #e0e0e0;
     border-radius  : 15px;
     background     : rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     box-shadow     : 0 8px 32px rgba(0, 0, 0, 0.2);
     z-index        : 20;
+    min-height     : 360px; // 🎯 Added minimum height for better proportion
 
     .title {
-        font-size    : clamp(1.2rem, 3vw, 1.8rem);
+        font-size    : clamp(1.5rem, 4vw, 2.2rem); // 🎯 Increased font size significantly
         font-weight  : 600;
         color        : #28a745;
         text-align   : center;
-        margin-bottom: 20px;
+        margin-bottom: 30px; // 🎯 Increased margin
         text-shadow  : none;
     }
 
-    .search-input {
-        margin-bottom: 20px;
+    .search-category {
+        display        : flex;
+        flex-direction : row;
+        justify-content: space-between;
+        align-items    : center;
+        gap            : 20px; // 🎯 Increased gap
+        margin-bottom  : 30px; // 🎯 Increased margin
+        flex-wrap      : wrap;
 
-        .form-control {
+        >div {
+            flex       : 1;
+            min-width  : 180px;
+            align-items: center;
+
+            i {
+                font-size   : 1.1rem; // 🎯 Increased icon size
+                color       : #28a745;
+                margin-right: 8px; // 🎯 Increased margin
+                width       : 20px; // 🎯 Increased width
+                text-align  : center;
+            }
+
+            .form-select {
+                flex         : 1;
+                height       : 42px; // 🎯 Increased height
+                border-radius: 8px;
+                border       : 1px solid #ddd;
+                padding      : 0 15px; // 🎯 Increased padding
+                font-size    : 15px; // 🎯 Increased font size
+                transition   : all 0.3s ease;
+                font-weight  : bold;
+
+                &:focus {
+                    border-color: #28a745;
+                    box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2);
+                }
+            }
+        }
+
+        // Custom dropdown styles
+        .custom-dropdown {
+            position: relative;
+
+            .custom-select-wrapper {
+                flex    : 1;
+                position: relative;
+
+                // 🎯 Input with clear button wrapper
+                .input-with-clear {
+                    position   : relative;
+                    display    : flex;
+                    align-items: center;
+
+                    .custom-select-input {
+                        height       : 42px; // 🎯 Increased height to match select
+                        border-radius: 8px;
+                        border       : 1px solid #ddd;
+                        padding      : 0 40px 0 15px; // 🎯 Increased padding
+                        font-size    : 15px; // 🎯 Increased font size
+                        transition   : all 0.3s ease;
+                        cursor       : text;
+                        width        : 100%;
+                        font-weight  : bold;
+
+                        &:focus {
+                            border-color: #28a745;
+                            box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2);
+                        }
+
+                        &:disabled {
+                            background-color: #f8f9fa;
+                            cursor          : not-allowed;
+                            padding-right   : 15px; // Reset padding when disabled
+                        }
+
+                        &::placeholder {
+                            color     : #6c757d;
+                            font-style: italic;
+                            font-size : 14px; // 🎯 Increased placeholder font
+                        }
+                    }
+
+                    // 🎯 Clear button styles
+                    .clear-button {
+                        position       : absolute;
+                        right          : 10px; // 🎯 Adjusted position
+                        top            : 50%;
+                        transform      : translateY(-50%);
+                        background     : none;
+                        border         : none;
+                        color          : #6c757d;
+                        cursor         : pointer;
+                        padding        : 5px; // 🎯 Increased padding
+                        border-radius  : 50%;
+                        width          : 24px; // 🎯 Increased size
+                        height         : 24px; // 🎯 Increased size
+                        display        : flex;
+                        align-items    : center;
+                        justify-content: center;
+                        font-size      : 12px; // 🎯 Increased font size
+                        transition     : all 0.2s ease;
+                        z-index        : 10;
+
+                        &:hover {
+                            background-color: #f8f9fa;
+                            color           : #dc3545;
+                        }
+
+                        &:active {
+                            background-color: #e9ecef;
+                        }
+
+                        i {
+                            margin: 0;
+                            width : auto;
+                        }
+                    }
+                }
+
+                .custom-dropdown-menu {
+                    position     : absolute;
+                    top          : 100%;
+                    left         : 0;
+                    right        : 0;
+                    background   : white;
+                    border       : 1px solid #ddd;
+                    border-radius: 8px;
+                    box-shadow   : 0 8px 32px rgba(0, 0, 0, 0.25); // 🎯 Stronger shadow
+                    max-height   : 220px; // 🎯 Increased max height
+                    overflow-y   : auto;
+                    z-index      : 99999; // 🎯 Very high z-index
+                    margin-top   : 3px; // 🎯 Slightly increased margin
+
+                    .custom-dropdown-item {
+                        padding   : 10px 15px; // 🎯 Increased padding
+                        cursor    : pointer;
+                        font-size : 15px; // 🎯 Increased font size
+                        transition: background-color 0.2s ease;
+
+                        &:hover {
+                            background-color: #f8f9fa;
+                        }
+
+                        &.selected {
+                            background-color: #28a745;
+                            color           : white;
+                        }
+
+                        &.no-results {
+                            color     : #6c757d;
+                            font-style: italic;
+                            cursor    : default;
+                            text-align: center;
+
+                            &:hover {
+                                background-color: transparent;
+                            }
+                        }
+                    }
+
+                    // Custom scrollbar
+                    &::-webkit-scrollbar {
+                        width: 8px; // 🎯 Increased scrollbar width
+                    }
+
+                    &::-webkit-scrollbar-track {
+                        background: #f1f1f1;
+                    }
+
+                    &::-webkit-scrollbar-thumb {
+                        background   : #c1c1c1;
+                        border-radius: 4px; // 🎯 Increased border radius
+
+                        &:hover {
+                            background: #a8a8a8;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 🎯 Secondary search input styles (made much smaller and less prominent)
+    .search-input {
+        margin-bottom: 30px; // 🎯 Increased margin
+
+        &.secondary {
+            margin-bottom: 35px; // 🎯 Increased margin
+
+            .form-control {
+                height       : 100px; // 🎯 Much smaller height
+                border-radius: 4px; // 🎯 Smaller border radius
+                border       : 1px solid #e8e8e8; // 🎯 Very light border
+                padding      : 0 8px; // 🎯 Reduced padding
+                font-size    : 10px; // 🎯 Much smaller font
+                background   : #f8f9fa; // 🎯 Subtle background
+                transition   : all 0.3s ease;
+                font-weight  : 300; // 🎯 Light font weight
+
+                &:focus {
+                    border-color: #adb5bd; // 🎯 Muted focus color
+                    box-shadow  : 0 0 0 0.05rem rgba(173, 181, 189, 0.1); // 🎯 Subtle shadow
+                    background  : white;
+                }
+
+                &::placeholder {
+                    color      : #ced4da; // 🎯 Very light placeholder
+                    font-style : italic;
+                    font-size  : 9px; // 🎯 Tiny placeholder text
+                    font-weight: 300;
+                }
+            }
+
+            // 🎯 Alternative style with secondary-input class
+            .secondary-input {
+                width        : 50%;
+                margin       : auto;
+                height       : 40px; // 🎯 Much smaller
+                border-radius: 20px;
+                border       : 1px solid #e8e8e8;
+                padding      : 0 8px;
+                font-size    : 15px; // 🎯 Much smaller font
+                background   : #f8f9fa;
+                transition   : all 0.3s ease;
+                font-weight  : 600;
+
+                &:focus {
+                    border-color: #adb5bd;
+                    box-shadow  : 0 0 0 0.05rem rgba(173, 181, 189, 0.1);
+                    background  : white;
+                }
+
+                &::placeholder {
+                    color      : #5a5c5e;
+                    font-style : italic;
+                    font-size  : 15px; // 🎯 Tiny placeholder
+                    font-weight: 450;
+                }
+            }
+        }
+
+        // 🎯 Keep original primary styles for reference
+        .form-control:not(.secondary-input) {
             height       : 42px;
             border-radius: 20px;
             border       : 1px solid #ddd;
@@ -45,51 +285,12 @@
         }
     }
 
-    .search-category {
-        display        : flex;
-        flex-direction : row;
-        justify-content: space-between;
-        align-items    : center;
-        gap            : 12px;
-        margin-bottom  : 20px;
-        flex-wrap      : wrap;
-
-        >div {
-            flex       : 1;
-            min-width  : 180px;
-            align-items: center;
-
-            i {
-                font-size   : 1rem;
-                color       : #28a745;
-                margin-right: 6px;
-                width       : 18px;
-                text-align  : center;
-            }
-
-            .form-select {
-                flex         : 1;
-                height       : 38px;
-                border-radius: 8px;
-                border       : 1px solid #ddd;
-                padding      : 0 12px;
-                font-size    : 13px;
-                transition   : all 0.3s ease;
-
-                &:focus {
-                    border-color: #28a745;
-                    box-shadow  : 0 0 0 0.15rem rgba(40, 167, 69, 0.2);
-                }
-            }
-        }
-    }
-
     .btn-search {
-        width         : 150px;
-        height        : 42px;
-        border-radius : 20px;
-        font-size     : 14px;
-        font-weight   : 500;
+        width         : 180px; // 🎯 Increased button width
+        height        : 50px; // 🎯 Increased button height
+        border-radius : 24px; // 🎯 Increased border radius
+        font-size     : 20px; // 🎯 Increased font size
+        font-weight   : 600; // 🎯 Increased font weight
         display       : block;
         margin        : 0 auto;
         transition    : all 0.3s ease;
@@ -98,8 +299,8 @@
 
         &:hover {
             background-color: #218838;
-            transform       : translateY(-1px);
-            box-shadow      : 0 2px 4px rgba(0, 0, 0, 0.15);
+            transform       : translateY(-2px); // 🎯 Increased hover effect
+            box-shadow      : 0 4px 8px rgba(0, 0, 0, 0.2); // 🎯 Stronger shadow
         }
     }
 }
@@ -112,52 +313,205 @@
         left         : unset;
         bottom       : unset;
         transform    : none;
-        margin       : 16px auto 0 auto;
+        margin       : 20px auto 0 auto; // 🎯 Increased margin
         z-index      : 1;
         width        : 90%;
-        padding      : 18px;
+        padding      : 25px; // 🎯 Increased padding
         border-radius: 12px;
+        min-height   : 280px; // 🎯 Minimum height for mobile
 
         .title {
-            font-size    : 1.5rem;
-            margin-bottom: 16px;
+            font-size    : 1.7rem; // 🎯 Increased mobile title size
+            margin-bottom: 25px; // 🎯 Increased margin
         }
 
         .search-category {
             flex-direction: column;
-            gap           : 12px;
+            gap           : 15px; // 🎯 Increased gap
+            margin-bottom : 20px; // 🎯 Increased margin
 
             >div {
                 width    : 100%;
                 min-width: unset;
+
+                i {
+                    font-size: 1rem;
+                }
+
+                .form-select {
+                    height   : 40px; // 🎯 Slightly smaller on mobile
+                    font-size: 14px; // 🎯 Adjusted font size
+                }
+            }
+
+            .custom-dropdown {
+                .custom-select-wrapper {
+                    .input-with-clear {
+                        .custom-select-input {
+                            height   : 40px; // 🎯 Match select height
+                            font-size: 14px; // 🎯 Adjusted font size
+
+                            &::placeholder {
+                                font-size: 13px;
+                            }
+                        }
+
+                        .clear-button {
+                            width    : 22px;
+                            height   : 22px;
+                            font-size: 11px;
+                        }
+                    }
+
+                    .custom-dropdown-menu {
+                        z-index   : 99999;
+                        max-height: 180px; // 🎯 Adjusted for mobile
+
+                        .custom-dropdown-item {
+                            padding  : 8px 12px;
+                            font-size: 14px;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 🎯 Adjust secondary input on mobile
+        .search-input.secondary {
+            margin-bottom: 25px; // 🎯 Increased margin
+
+            .secondary-input {
+                height   : 24px; // 🎯 Very small on mobile
+                font-size: 9px;
+                padding  : 0 6px;
+
+                &::placeholder {
+                    font-size: 8px;
+                }
             }
         }
 
         .btn-search {
-            width : 100%;
-            height: 40px;
+            width    : 100%;
+            height   : 44px; // 🎯 Increased height
+            font-size: 15px; // 🎯 Increased font size
         }
     }
 }
 
 @media (max-width: 768px) {
     .search-field {
-        width  : 95%;
-        padding: 15px;
-        margin : 12px auto 0 auto;
+        width     : 95%;
+        padding   : 20px; // 🎯 Increased padding
+        margin    : 15px auto 0 auto; // 🎯 Increased margin
+        min-height: 260px; // 🎯 Adjusted min height
 
         .title {
-            font-size    : 1.3rem;
-            margin-bottom: 12px;
+            font-size    : 1.5rem; // 🎯 Increased font size
+            margin-bottom: 20px; // 🎯 Increased margin
+        }
+
+        .search-category {
+            margin-bottom: 18px; // 🎯 Increased margin
+
+            .custom-dropdown {
+                .custom-select-wrapper {
+                    .input-with-clear {
+                        .clear-button {
+                            width    : 20px;
+                            height   : 20px;
+                            font-size: 10px;
+                        }
+                    }
+
+                    .custom-dropdown-menu {
+                        max-height: 150px;
+                        z-index   : 99999;
+                    }
+                }
+            }
+        }
+
+        // 🎯 Further adjust secondary input on smaller mobile
+        .search-input.secondary {
+            margin-bottom: 20px; // 🎯 Increased margin
+
+            .secondary-input {
+                height   : 22px; // 🎯 Tiny on small mobile
+                font-size: 8px;
+                padding  : 0 5px;
+
+                &::placeholder {
+                    font-size: 7px;
+                }
+            }
         }
     }
 }
 
 @media (max-width: 480px) {
     .search-field {
-        width  : 98%;
-        padding: 12px;
-        margin : 8px auto 0 auto;
+        width     : 98%;
+        padding   : 15px; // 🎯 Reasonable padding for small screens
+        margin    : 10px auto 0 auto;
+        min-height: 240px; // 🎯 Adjusted min height
+
+        .title {
+            font-size    : 1.3rem;
+            margin-bottom: 18px;
+        }
+
+        .search-category {
+            margin-bottom: 15px;
+
+            .custom-dropdown {
+                .custom-select-wrapper {
+                    .input-with-clear {
+                        .custom-select-input {
+                            padding-right: 35px;
+                            font-size    : 13px;
+                        }
+
+                        .clear-button {
+                            width    : 18px;
+                            height   : 18px;
+                            font-size: 9px;
+                            right    : 8px;
+                        }
+                    }
+
+                    .custom-dropdown-menu {
+                        max-height: 120px;
+                        z-index   : 99999;
+
+                        .custom-dropdown-item {
+                            padding  : 6px 10px;
+                            font-size: 13px;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 🎯 Minimal secondary input on very small screens
+        .search-input.secondary {
+            margin-bottom: 18px;
+
+            .secondary-input {
+                height   : 20px; // 🎯 Very tiny
+                font-size: 7px;
+                padding  : 0 4px;
+
+                &::placeholder {
+                    font-size: 6px;
+                }
+            }
+        }
+
+        .btn-search {
+            height   : 42px;
+            font-size: 14px;
+        }
     }
 }
 
@@ -178,7 +532,7 @@
     border-radius: 12px;
     padding      : 2rem;
     box-shadow   : 0 2px 10px rgba(0, 0, 0, 0.05);
-    grid-column  : 1 / -1; // Chiếm toàn bộ grid
+    grid-column  : 1 / -1;
 
     .fa-search {
         opacity: 0.3;
