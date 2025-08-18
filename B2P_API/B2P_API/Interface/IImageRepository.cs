@@ -16,5 +16,6 @@ namespace B2P_API.Interface
         Task<Image?> GetByIdAsync(int imageId);
         Task<bool> DeleteAsync(int imageId);
         Task<int> GetNextOrderAsync(string imageType, int entityId);
+        Task<Image> CreateUserDefaultImageAsync(int userId);
     }
 }

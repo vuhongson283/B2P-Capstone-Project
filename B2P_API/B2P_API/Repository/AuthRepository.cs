@@ -19,25 +19,26 @@ namespace B2P_API.Repository
             _jwtHelper = jWTHelper;
         }
 
-        public async Task<int> CreateUserAsync(User user)
+        public async Task<User> CreateUserAsync(User user)
         {
             user.CreateAt = DateTime.UtcNow;
             user.StatusId = 1; // Active
-            user.RoleId = 1;   // User role
+            user.RoleId = 2;   // User role
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
-            return user.UserId;
+            return user;
         }
 
         public async Task<User?> GetUserByEmailAsync(string email)
         {
             return await _context.Users
-                 .Include(u => u.Role)
-                 .Include(u => u.Status)
-                 .FirstOrDefaultAsync(u => u.Email == email);
+                .Include(u => u.Role)
+                .Include(u => u.Status)
+                .Include(u => u.Images)
+                .FirstOrDefaultAsync(u => u.Email == email);
         }
+
 
         public async Task<User?> GetUserByIdAsync(int userId)
         {
