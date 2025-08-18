@@ -179,7 +179,7 @@ const CourtManagement = () => {
     setEditCourt({
       courtId: court.courtId,
       // Chuyển đổi trạng thái từ 'Active' thành giá trị tương ứng
-      statusId: court.statusName === 'Active' ? '1' : '2',
+      statusId: court.status.statusName === 'Active' ? '1' : '2',
       courtName: court.courtName,
       categoryId: court.categoryId,
       pricePerHour: court.pricePerHour
@@ -578,25 +578,25 @@ const CourtManagement = () => {
                   <tr key={court.courtId}>
                     <td>{court.courtId}</td>
                     <td>{court.courtName}</td>
-                    <td>{court.categoryName || 'Chưa phân loại'}</td>
+                    <td>{court.category.categoryName || 'Chưa phân loại'}</td>
                     <td>
-                      <span className={`status ${court.statusName === 'Active' ? 'active' : 'inactive'}`}>
-                        {court.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+                      <span className={`status ${court.status.statusName === 'Active' ? 'active' : 'inactive'}`}>
+                        {court.status.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                       </span>
                     </td>
                     <td>
                       <div 
                         className={`status-icon ${loadingCourtIds.includes(court.courtId) ? 'disabled' : ''}`}
-                        onClick={() => !loadingCourtIds.includes(court.courtId) && handleLockToggle(court.courtId, court.statusName)}
+                        onClick={() => !loadingCourtIds.includes(court.courtId) && handleLockToggle(court.courtId, court.status.statusName)}
                       >
                         <div className="icon-tooltip">
-                          {court.statusName === 'Active' ? (
+                          {court.status.statusName === 'Active' ? (
                             <i className="fas fa-unlock" />
                           ) : (
                             <i className="fas fa-lock" />
                           )}
                           <span className="tooltip-text">
-                            {court.statusName === 'Active' ? 'Khóa sân' : 'Mở khóa sân'}
+                            {court.status.statusName === 'Active' ? 'Khóa sân' : 'Mở khóa sân'}
                           </span>
                         </div>
                         {loadingCourtIds.includes(court.courtId) && (
@@ -934,25 +934,25 @@ const CourtManagement = () => {
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-toggle-on"></i>Trạng thái</label>
-                <span className={`status ${courtDetail.statusName === 'Active' ? 'active' : 'inactive'}`}>
-                  {courtDetail.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+                <span className={`status ${courtDetail.status.statusName === 'Active' ? 'active' : 'inactive'}`}>
+                  {courtDetail.status.statusName === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
                 </span>
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-th-large"></i>Loại sân</label>
-                <span>{courtDetail.categoryName}</span>
+                <span>{courtDetail.category.categoryName}</span>
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-building"></i>Cơ sở</label>
-                <span>{courtDetail.facilityName}</span>
+                <span>{courtDetail.facility.facilityName}</span>
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-map-marker-alt"></i>Địa chỉ</label>
-                <span>{courtDetail.location}</span>
+                <span>{courtDetail.facility.location}</span>
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-phone"></i>Liên hệ</label>
-                <span>{courtDetail.contact}</span>
+                <span>{courtDetail.facility.contact}</span>
               </div>
             </div>
           )}

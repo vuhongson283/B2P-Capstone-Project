@@ -6,8 +6,8 @@ namespace B2P_API.Interface
 {
     public interface ICourtRepository
     {
-        Task<PagedResponse<CourtDTO>> GetAllCourts(CourtRequestDTO req);
-        Task<CourtDetailDTO> GetCourtDetail(int courtId);
+        Task<PagedResponse<Court>> GetAllCourts(CourtRequestDTO req);
+        Task<Court> GetCourtDetail(int courtId);
         Task<Court> CreateCourt(CreateCourt court);
         Task<bool> UpdateCourt(UpdateCourtRequest court);
         Task<bool> DeleteCourt(int courtId);

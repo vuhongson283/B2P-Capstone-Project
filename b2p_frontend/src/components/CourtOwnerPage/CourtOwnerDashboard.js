@@ -25,17 +25,26 @@ const OwnerDashboard = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
   const { userId, user, isLoggedIn, isLoading: authLoading } = useAuth();
+
+  const getMonthRange = (date) => {
+    if (!date) {
+      date = new Date(); // Mặc định là tháng hiện tại
+    }
+    const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    return { startDate, endDate };
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const totalReportResponse = await getTotalReport(userId, null, null);
+        const { startDate, endDate } = getMonthRange(selectedMonth);
 
-        // Kiểm tra và set data cho totalReport trước
+        const totalReportResponse = await getTotalReport(userId, startDate, endDate);
+
         if (totalReportResponse.success) {
           setDashboardData((prev) => ({
             ...prev,
@@ -49,45 +58,44 @@ const OwnerDashboard = () => {
           return;
         }
 
-        // Tiếp tục fetch reportResponse
-        try {
-          const reportResponse = await getReport(userId, null, null, null, 1, 10);
-          if (reportResponse.success) {
-            setDashboardData((prev) => ({
-              ...prev,
-              recentBookings: reportResponse.data.items || [],
-            }));
-          } else {
-            // Chỉ set error message cho phần recent bookings
-            setError(reportResponse.message || "Không thể tải dữ liệu đơn đặt sân");
-          }
-        } catch (error) {
-          // Xử lý lỗi cho phần recent bookings
-          console.error("Error fetching recent bookings:", error);
-          setError("Không thể tải dữ liệu đơn đặt sân");
+        const reportResponse = await getReport(
+          userId, 
+          startDate,
+          endDate,
+          null,
+          1,
+          10
+        );
+
+        if (reportResponse.success) {
+          setDashboardData((prev) => ({
+            ...prev,
+            recentBookings: reportResponse.data.items || [],
+          }));
+        } else {
+          setError(reportResponse.message || "Không thể tải dữ liệu đơn đặt sân");
         }
       } catch (error) {
-        console.error("Error fetching total report:", error);
-        setError(error.message || "Không thể tải dữ liệu tổng quan");
+        console.error("Error fetching dashboard data:", error);
+        setError(error.message || "Không thể tải dữ liệu dashboard");
       } finally {
         setLoading(false);
       }
     };
 
-    if (!startDate && !endDate) {
-      fetchDashboardData();
-    }
-  }, []);
+    fetchDashboardData();
+  }, [selectedMonth, userId]);
 
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
+      const { startDate, endDate } = getMonthRange(selectedMonth);
       const response = await exportReportToExcel(
         userId,
-        startDate, // Ngày bắt đầu
-        endDate, // Ngày kết thúc
-        null, // facilityId (nếu cần)
-        1 // pageNumber
+        startDate,
+        endDate,
+        null,
+        1
       );
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
@@ -156,41 +164,6 @@ const OwnerDashboard = () => {
           userId,
           selectedDate,
           selectedDate,
-          null,
-          1,
-          10
-        );
-
-        setDashboardData({
-          totalFacilities: totalReportResponse.data.totalFacility || 0,
-          totalCourts: totalReportResponse.data.totalCourt || 0,
-          totalBookings: totalReportResponse.data.totalBooking || 0,
-          totalRevenue: totalReportResponse.data.totalCost || 0,
-          recentBookings: reportResponse.data.items || [],
-        });
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleDateRangeChange = async (dates) => {
-    if (dates && dates.length === 2) {
-      const [startDate, endDate] = dates;
-      setLoading(true);
-      try {
-        const totalReportResponse = await getTotalReport(
-          userId,
-          startDate.toDate(),
-          endDate.toDate()
-        );
-        const reportResponse = await getReport(
-          userId,
-          startDate.toDate(),
-          endDate.toDate(),
           null,
           1,
           10
@@ -364,11 +337,16 @@ const OwnerDashboard = () => {
           </p>
         </div>
         <div className="d-flex align-items-center gap-3">
-          <DatePicker.RangePicker
-            onChange={handleDateRangeChange}
-            format="DD/MM/YYYY"
-            placeholder={["Từ ngày", "Đến ngày"]}
-            style={{ width: "300px" }}
+          <DatePicker
+            picker="month"
+            onChange={(date) => {
+              console.log('Selected month:', date);
+              setSelectedMonth(date ? date.toDate() : null);
+            }}
+            placeholder="Chọn tháng"
+            format="MM/YYYY"
+            allowClear={true}
+            style={{ width: "200px" }}
           />
           <Button
             variant="success"
@@ -392,7 +370,6 @@ const OwnerDashboard = () => {
       </div>
 
       <Row className="stats-row">
-        {/* Các thẻ thống kê giữ nguyên */}
         <Col md={3}>
           <Card className="stat-card">
             <Card.Body>
