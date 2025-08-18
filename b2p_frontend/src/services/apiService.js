@@ -534,6 +534,10 @@ const deleteCourt = (courtId, userId = 6) => {
   return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
 };
 
+const lockCourt = (courtId, statusId, userId) => {
+  return loggedAxios.put(`CourtManagement/LockCourt?courtId=${courtId}&statusId=${statusId}&userId=${userId}`);
+}
+
 const getCourtDetail = (courtId) => axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 
 /* ===============================
@@ -657,6 +661,27 @@ const confirmStripePayment = async (paymentIntentId) => {
 /* ===============================
    🔐 AUTH SERVICES
 ================================ */
+const checkUserExistAxios = async (requestData) => {
+  try {
+    console.log('📤 Exact request payload:', JSON.stringify(requestData));
+    console.log('📤 Request headers:', axios.defaults.headers);
+
+    const response = await axios.post('/auth/check-user', requestData);
+    console.log('✅ Success response:', response);
+    return response;
+  } catch (error) {
+    console.error('❌ Request failed');
+    console.error('❌ Request data was:', JSON.stringify(requestData));
+    console.error('❌ Error response:', error.response?.data);
+
+    // ✅ Vẫn return response để handle ở component
+    if (error.response) {
+      return error.response;
+    }
+    throw error;
+  }
+};
+
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -699,10 +724,6 @@ const verifyOtpAxios = async (data) => {
     throw error;
   }
 };
-const lockCourt = (courtId, statusId, userId) => {
-  return loggedAxios.put(`CourtManagement/LockCourt?courtId=${courtId}&statusId=${statusId}&userId=${userId}`);
-}
-
 const loginAxios = async (data) => {
   try {
     console.log('📡 Calling login API with data:', data);
@@ -809,7 +830,9 @@ export {
   getAdminReport, // ✅ THÊM MỚI
 
   // Courts
+
   lockCourt,
+
   getAllCourts,
   addNewCourt,
   updateCourt,
@@ -841,5 +864,6 @@ export {
   googleLoginAxios, // ✅ THÊM MỚI
   verifyOtpAxios, // ✅ THÊM MỚI
   sendOtpAxios, // ✅ THÊM MỚI
-  loginAxios // ✅ THÊM MỚI
+  loginAxios,// ✅ THÊM MỚI
+  checkUserExistAxios // ✅ THÊM MỚI
 };
