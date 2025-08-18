@@ -13,7 +13,7 @@ class Logger {
 
   static log(level, message, data = {}) {
     if (this.levels[level] > this.currentLevel) return;
-    
+
     const logEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -55,7 +55,7 @@ class Logger {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logEntry)
-      }).catch(() => {}); // Silent fail
+      }).catch(() => { }); // Silent fail
     } catch (error) {
       // Ne pas logger les erreurs de logging pour éviter les boucles
     }
@@ -67,7 +67,7 @@ const loggedAxios = {
   async request(config) {
     const startTime = Date.now();
     const { method, url, data } = config;
-    
+
     Logger.info(`🚀 API Request: ${method?.toUpperCase()} ${url}`, {
       method,
       url,
@@ -77,24 +77,24 @@ const loggedAxios = {
     try {
       const response = await axios.request(config);
       const duration = Date.now() - startTime;
-      
+
       Logger.info(`✅ API Success: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
         status: response.status,
         duration,
         dataSize: response.data ? JSON.stringify(response.data).length : 0
       });
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       Logger.error(`❌ API Error: ${method?.toUpperCase()} ${url} (${duration}ms)`, {
         status: error.response?.status,
         message: error.message,
         duration,
         errorData: error.response?.data
       });
-      
+
       throw error;
     }
   },
@@ -105,44 +105,44 @@ const loggedAxios = {
   delete: (url, config) => loggedAxios.request({ ...config, method: 'DELETE', url })
 };
 
-// Configuration timeout
-axios.defaults.timeout = 5000;
+// ✅ TĂNG TIMEOUT từ 5 giây lên 20 giây
+axios.defaults.timeout = 20000;
 
 /* ===============================
    🏟️ COURT CATEGORY MANAGEMENT
 ================================ */
 const getAllCourtCategories = (search, pageNumber, pageSize) => {
-  return loggedAxios.get(
+  return axios.get(
     `CourtCategory/get-all-court-categories?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`
   );
 };
 
 const addCourtCategory = async (categoryName) => {
   try {
-    Logger.debug('Adding court category', { categoryName });
-    const response = await loggedAxios.post(
+    const response = await axios.post(
       `CourtCategory/add-court-category?cateName=${encodeURIComponent(categoryName)}`
     );
-    Logger.info('Court category added successfully', { categoryName });
     return response;
   } catch (error) {
-    Logger.error("Failed to add court category", { categoryName, error: error.message });
+    console.error("Error adding court category:", error);
     throw error;
   }
 };
 
 const updateCourtCategory = (categoryData) => {
-  Logger.debug('Updating court category', { categoryData });
-  return loggedAxios.put("CourtCategory/update-court-category", categoryData);
+  return axios.put("CourtCategory/update-court-category", categoryData);
 };
 
 const getCourtCategoryById = (categoryId) => {
-  return loggedAxios.get(`CourtCategory/get-court-category-by-id?categoryId=${categoryId}`);
+  return axios.get(`CourtCategory/get-court-category-by-id?categoryId=${categoryId}`);
 };
 
 const deleteCourtCategory = (categoryId) => {
-  Logger.warn('Deleting court category', { categoryId });
-  return loggedAxios.delete(`CourtCategory/delete-court-category?categoryId=${categoryId}`);
+  return axios.delete(`CourtCategory/delete-court-category?categoryId=${categoryId}`);
+};
+
+const completeBooking = (bookingId) => {
+  return axios.post(`Booking/${bookingId}/complete`);
 };
 
 /* ===============================
@@ -157,7 +157,7 @@ const getAllBlogs = (queryParams = {}) => {
     sortDirection = "desc",
   } = queryParams;
 
-  return loggedAxios.get("Blog", {
+  return axios.get("Blog", {
     params: {
       Search: search,
       Page: page,
@@ -168,16 +168,10 @@ const getAllBlogs = (queryParams = {}) => {
   });
 };
 
-const getBlogById = (blogId) => loggedAxios.get(`Blog/${blogId}`);
-const createBlog = (blogData) => {
-  Logger.info('Creating new blog', { title: blogData.title });
-  return loggedAxios.post("Blog", blogData);
-};
-const updateBlog = (blogId, blogData) => loggedAxios.put(`Blog/${blogId}`, blogData);
-const deleteBlog = (blogId, userId) => {
-  Logger.warn('Deleting blog', { blogId, userId });
-  return loggedAxios.delete(`Blog/${blogId}?userId=${userId}`);
-};
+const getBlogById = (blogId) => axios.get(`Blog/${blogId}`);
+const createBlog = (blogData) => axios.post("Blog", blogData);
+const updateBlog = (blogId, blogData) => axios.put(`Blog/${blogId}`, blogData);
+const deleteBlog = (blogId, userId) => axios.delete(`Blog/${blogId}?userId=${userId}`);
 
 const getBlogsByUserId = (userId, queryParams = {}) => {
   const {
@@ -188,7 +182,7 @@ const getBlogsByUserId = (userId, queryParams = {}) => {
     sortDirection = "desc",
   } = queryParams;
 
-  return loggedAxios.get(`Blog/user/${userId}`, {
+  return axios.get(`Blog/user/${userId}`, {
     params: {
       Search: search,
       Page: page,
@@ -211,7 +205,7 @@ const getAllComments = (queryParams = {}) => {
     sortDirection = "desc",
   } = queryParams;
 
-  return loggedAxios.get("Comment", {
+  return axios.get("Comment", {
     params: {
       Search: search,
       Page: page,
@@ -222,10 +216,10 @@ const getAllComments = (queryParams = {}) => {
   });
 };
 
-const createComment = (commentData) => loggedAxios.post("Comment", commentData);
-const updateComment = (commentId, commentData) => loggedAxios.put(`Comment/${commentId}`, commentData);
+const createComment = (commentData) => axios.post("Comment", commentData);
+const updateComment = (commentId, commentData) => axios.put(`Comment/${commentId}`, commentData);
 const deleteComment = (commentId, userId, roleId) =>
-  loggedAxios.delete(`Comment/${commentId}?userId=${userId}&roleId=${roleId}`);
+  axios.delete(`Comment/${commentId}?userId=${userId}&roleId=${roleId}`);
 
 const getCommentsByUserId = (userId, queryParams = {}) => {
   const {
@@ -236,7 +230,7 @@ const getCommentsByUserId = (userId, queryParams = {}) => {
     sortDirection = "desc",
   } = queryParams;
 
-  return loggedAxios.get(`Comment/user/${userId}`, {
+  return axios.get(`Comment/user/${userId}`, {
     params: {
       Search: search,
       Page: page,
@@ -250,17 +244,17 @@ const getCommentsByUserId = (userId, queryParams = {}) => {
 /* ===============================
    🖼️ IMAGE MANAGEMENT
 ================================ */
-const getUserImage = (userId) => loggedAxios.get(`Image/user/${userId}`);
+const getUserImage = (userId) => axios.get(`Image/user/${userId}`);
 
 const uploadUserImage = (file, userId, caption = null) => {
   Logger.info('Uploading user image', { userId, fileName: file.name, fileSize: file.size });
-  
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("entityId", userId.toString());
   if (caption) formData.append("caption", caption);
 
-  return loggedAxios.post("Image/upload-user", formData, {
+  return axios.post("Image/upload-user", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 30000,
   });
@@ -272,7 +266,7 @@ const uploadslideImage = (file, slideId, caption = null) => {
   formData.append("entityId", slideId.toString());
   if (caption) formData.append("caption", caption);
 
-  return loggedAxios.post("Image/upload-slide", formData, {
+  return axios.post("Image/upload-slide", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 30000,
   });
@@ -284,7 +278,7 @@ const updateUserImage = (imageId, file, order = null, caption = null) => {
   if (order !== null) formData.append("order", order.toString());
   if (caption) formData.append("caption", caption);
 
-  return loggedAxios.put(`Image/update-image/${imageId}`, formData, {
+  return axios.put(`Image/update-image/${imageId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 30000,
   });
@@ -299,136 +293,120 @@ const uploadBlogImage = (file, blogId, caption = null) => {
   formData.append("entityId", blogId.toString());
   if (caption) formData.append("caption", caption);
 
-  return loggedAxios.post("Image/upload-blog", formData, {
+  return axios.post("Image/upload-blog", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 30000,
   });
 };
 
-const getBlogImages = (blogId) => loggedAxios.get(`Image/blog/${blogId}`);
-const deleteImage = (imageId) => {
-  Logger.warn('Deleting image', { imageId });
-  return loggedAxios.delete(`Image/${imageId}`);
-};
+const getBlogImages = (blogId) => axios.get(`Image/blog/${blogId}`);
+const deleteImage = (imageId) => axios.delete(`Image/${imageId}`);
 
 /* ===============================
-   🔒 PASSWORD RESET
+   🔒 PASSWORD
 ================================ */
-const forgotPasswordByEmail = (email) => {
-  Logger.info('Password reset requested by email', { email: email.substring(0, 3) + '***' });
-  return loggedAxios.post("User/forgot-password-by-email", { email });
-};
-
+const forgotPasswordByEmail = (email) => axios.post("User/forgot-password-by-email", { email });
 const resetPasswordByEmail = (email, otpCode, newPassword, confirmPassword) => {
-  Logger.info('Resetting password by email', { email: email.substring(0, 3) + '***' });
-  return loggedAxios.post("User/reset-password-by-email", {
+  return axios.post("User/reset-password-by-email", {
     email,
     otpCode,
     newPassword,
     confirmPassword,
   });
 };
+const resendOtpByEmail = (email) => axios.post("User/resend-otp-by-email", { email });
 
-const resendOtpByEmail = (email) => loggedAxios.post("User/resend-otp-by-email", { email });
-
-const forgotPasswordBySms = (phoneNumber) => {
-  Logger.info('Password reset requested by SMS', { phone: phoneNumber.substring(0, 3) + '***' });
-  return loggedAxios.post("User/forgot-password-by-sms", { phoneNumber });
-};
-
+const forgotPasswordBySms = (phoneNumber) => axios.post("User/forgot-password-by-sms", { phoneNumber });
 const resetPasswordBySms = (phoneNumber, otpCode, newPassword, confirmPassword) => {
-  return loggedAxios.post("User/reset-password-by-sms", {
+  return axios.post("User/reset-password-by-sms", {
     phoneNumber,
     otpCode,
     newPassword,
     confirmPassword,
   });
 };
-const resendOtpBySms = (phoneNumber) => loggedAxios.post("User/resend-otp-by-sms", { phoneNumber });
+const resendOtpBySms = (phoneNumber) => axios.post("User/resend-otp-by-sms", { phoneNumber });
 
 /* ===============================
    📋 USER MANAGEMENT
 ================================ */
-const getUserById = (userId) => loggedAxios.get(`User/get-user-by-id?userId=${userId}`);
-const updateUserProfile = (userId, body) => {
-  Logger.info('Updating user profile', { userId });
-  return loggedAxios.put(`User/update-user?userId=${userId}`, body);
-};
-const changePassword = (body) => {
-  Logger.info('Changing user password', { userId: body.userId });
-  return loggedAxios.put(`User/change-password`, body);
-};
-const checkPasswordStatus = (userId) => loggedAxios.get(`User/check-password-status/${userId}`);
+const getUserById = (userId) => axios.get(`User/get-user-by-id?userId=${userId}`);
+const updateUserProfile = (userId, body) => axios.put(`User/update-user?userId=${userId}`, body);
+const changePassword = (body) => axios.put(`User/change-password`, body);
+const checkPasswordStatus = (userId) => axios.get(`User/check-password-status/${userId}`);
 
 /* ===============================
    🏦 BANK TYPE
 ================================ */
 const getAllBankType = (search, pageNumber, pageSize) => {
-  return loggedAxios.get(`BankType/get-all-bank-type?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
+  return axios.get(`BankType/get-all-bank-type?search=${search}&pageNumber=${pageNumber}&pageSize=${pageSize}`);
 };
 
 /* ===============================
    🧑‍💼 ACCOUNT MANAGEMENT
 ================================ */
-const getAccountList = (data) => loggedAxios.post("AccountManagement/account-list", data);
-const getAccountById = (userId) => loggedAxios.get(`AccountManagement/get-user/${userId}`);
-const banUser = (userId) => {
-  Logger.warn('Banning user', { userId });
-  return loggedAxios.put(`AccountManagement/${userId}/ban`);
-};
-const unbanUser = (userId) => {
-  Logger.info('Unbanning user', { userId });
-  return loggedAxios.put(`AccountManagement/${userId}/unban`);
-};
-const deleteUser = (userId) => {
-  Logger.error('Deleting user account', { userId });
-  return loggedAxios.delete(`AccountManagement/${userId}`);
+const getAccountList = (data) => axios.post("AccountManagement/account-list", data);
+
+// ✅ SỬA: Thêm error handling và timeout riêng cho getAccountById
+const getAccountById = async (userId) => {
+  try {
+    console.log(`🔍 API Call: AccountManagement/get-user/${userId}`);
+    const response = await axios.get(`AccountManagement/get-user/${userId}`, {
+      timeout: 15000 // ✅ 15 giây riêng cho API này
+    });
+    console.log('✅ API Success:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ getAccountById Error:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      url: error.config?.url
+    });
+    throw error;
+  }
 };
 
+const banUser = (userId) => axios.put(`AccountManagement/${userId}/ban`);
+const unbanUser = (userId) => axios.put(`AccountManagement/${userId}/unban`);
+const deleteUser = (userId) => axios.delete(`AccountManagement/${userId}`);
+
 const registerCourtOwner = (payload) => {
-  Logger.info('Registering new court owner', { email: payload.email });
-  return loggedAxios.post("Account/register-court-owner", payload, { validateStatus: () => true });
+  return axios.post("Account/register-court-owner", payload, { validateStatus: () => true });
 };
 
 /* ===============================
    🖼️ SLIDER MANAGEMENT
 ================================ */
 const getAllActiveSliders = (pageNumber, pageSize) => {
-  return loggedAxios.get(`SliderManagement/get-all-active-sliders/${pageNumber}/${pageSize}`);
+  return axios.get(`SliderManagement/get-all-active-sliders/${pageNumber}/${pageSize}`);
 };
 
-const getSliderList = (data) => loggedAxios.post("SliderManagement/slider-list", data);
-const getSliderById = (slideId) => loggedAxios.get(`SliderManagement/get-slider/${slideId}`);
-const createSlider = (sliderData) => {
-  Logger.info('Creating new slider', { title: sliderData.title });
-  return loggedAxios.post("SliderManagement/create-slider", sliderData);
-};
-const updateSlider = (slideId, sliderData) => loggedAxios.put(`SliderManagement/${slideId}`, sliderData);
-const deleteSlider = (slideId) => {
-  Logger.warn('Deleting slider', { slideId });
-  return loggedAxios.delete(`SliderManagement/${slideId}`);
-};
-const activateSlider = (slideId) => loggedAxios.put(`SliderManagement/${slideId}/activate`);
-const deactivateSlider = (slideId) => loggedAxios.put(`SliderManagement/${slideId}/deactivate`);
+const getSliderList = (data) => axios.post("SliderManagement/slider-list", data);
+const getSliderById = (slideId) => axios.get(`SliderManagement/get-slider/${slideId}`);
+const createSlider = (sliderData) => axios.post("SliderManagement/create-slider", sliderData);
+const updateSlider = (slideId, sliderData) => axios.put(`SliderManagement/${slideId}`, sliderData);
+const deleteSlider = (slideId) => axios.delete(`SliderManagement/${slideId}`);
+const activateSlider = (slideId) => axios.put(`SliderManagement/${slideId}/activate`);
+const deactivateSlider = (slideId) => axios.put(`SliderManagement/${slideId}/deactivate`);
 
 /* ===============================
    🏟️ FACILITY + COURT + REPORT
 ================================ */
 const getAllFacilitiesByPlayer = (pageNumber, pageSize, body) => {
-  return loggedAxios.post(
+  return axios.post(
     `Facilities/get-all-facility-by-player?pageNumber=${pageNumber}&pageSize=${pageSize}`,
     body
   );
 };
 
 const getAvailableSlots = (facilityId, categoryId, checkInDate) => {
-  Logger.debug('Fetching available slots', { facilityId, categoryId, checkInDate });
-  return loggedAxios.get(
+  return axios.get(
     `Booking/available-slots?facilityId=${facilityId}&categoryId=${categoryId}&checkInDate=${checkInDate}`
   );
 };
 
-const getFacilityDetailsById = (facilityId) => loggedAxios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
+const getFacilityDetailsById = (facilityId) => axios.get(`Facilities/get-facility-by-id?id=${facilityId}`);
 
 const getFacilitiesByCourtOwnerId = (
   courtOwnerId,
@@ -444,32 +422,19 @@ const getFacilitiesByCourtOwnerId = (
   params.append("itemsPerPage", itemsPerPage);
 
   const url = `FacilitiesManage/listCourt/${courtOwnerId}?${params.toString()}`;
-  return loggedAxios.get(url);
+  return axios.get(url);
 };
 
-const createFacility = (facilityData) => {
-  Logger.info('Creating new facility', { name: facilityData.name });
-  return loggedAxios.post(`FacilitiesManage/createFacility`, facilityData);
-};
-
-const uploadFacilityImages = (formData) => {
-  Logger.info('Uploading facility images');
-  return loggedAxios.post(`Image/upload-facility`, formData, {
+const createFacility = (facilityData) => axios.post(`FacilitiesManage/createFacility`, facilityData);
+const uploadFacilityImages = (formData) =>
+  axios.post(`Image/upload-facility`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
     timeout: 60000,
   });
-};
-
-const getFacilityById = (facilityId) => loggedAxios.get(`FacilitiesManage/getFacilityById/${facilityId}`);
-const updateFacility = (facilityId, updateData) => {
-  Logger.info('Updating facility', { facilityId });
-  return loggedAxios.put(`FacilitiesManage/updateFacility/${facilityId}`, updateData);
-};
-const deleteFacility = (facilityId) => {
-  Logger.warn('Deleting facility', { facilityId });
-  return loggedAxios.delete(`FacilitiesManage/${facilityId}`);
-};
-const deleteFacilityImage = (imageId) => loggedAxios.delete(`Image/${imageId}`);
+const getFacilityById = (facilityId) => axios.get(`FacilitiesManage/getFacilityById/${facilityId}`);
+const updateFacility = (facilityId, updateData) => axios.put(`FacilitiesManage/updateFacility/${facilityId}`, updateData);
+const deleteFacility = (facilityId) => axios.delete(`FacilitiesManage/${facilityId}`);
+const deleteFacilityImage = (imageId) => axios.delete(`Image/${imageId}`);
 
 const getReport = (
   userId = 6,
@@ -479,11 +444,10 @@ const getReport = (
   pageNumber = 1,
   pageSize = 10
 ) => {
-  Logger.debug('Generating report', { userId, startDate, endDate, facilityId });
   const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
   const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
 
-  return loggedAxios.get(`Report/ReportList`, {
+  return axios.get(`Report/ReportList`, {
     params: {
       userId,
       startDate: formattedStartDate,
@@ -499,26 +463,10 @@ const getTotalReport = (userId = 6, startDate, endDate) => {
   const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
   const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
 
-  return loggedAxios.get(`Report/TotalReport`, {
+  return axios.get(`Report/TotalReport`, {
     params: { userId, startDate: formattedStartDate, endDate: formattedEndDate },
   });
 };
-
-const getAdminReport = async (month, year) => {
-  try {
-    const response = await axios.get(`Report/AdminReport`, {
-      params: {
-        year,
-        month
-      }
-    });
-    console.log('API Response:', response.data);
-    return response;
-  } catch (error) {
-    console.error('Error fetching admin report:', error);
-    throw error;
-  }
-}
 
 const exportReportToExcel = (
   userId = 6,
@@ -527,18 +475,37 @@ const exportReportToExcel = (
   facilityId,
   pageNumber = 1
 ) => {
-  Logger.info('Exporting report to Excel', { userId, facilityId });
   const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
   const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
 
-  return loggedAxios.get(`Report/Export-Report-CourtOwner`, {
+  return axios.get(`Report/Export-Report-CourtOwner`, {
     params: { userId, startDate: formattedStartDate, endDate: formattedEndDate, facilityId, pageNumber },
     responseType: "arraybuffer",
   });
 };
 
+// ✅ THÊM: getAdminReport
+const getAdminReport = (
+  startDate,
+  endDate,
+  pageNumber = 1,
+  pageSize = 10
+) => {
+  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
+  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
+
+  return axios.get(`Report/AdminReport`, {
+    params: {
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+      pageNumber,
+      pageSize,
+    },
+  });
+};
+
 const getAllCourts = (params) => {
-  return loggedAxios.get("CourtManagement/CourtList", {
+  return axios.get("CourtManagement/CourtList", {
     params: {
       PageNumber: params.pageNumber || 1,
       PageSize: params.pageSize || 10,
@@ -550,14 +517,10 @@ const getAllCourts = (params) => {
   });
 };
 
-const addNewCourt = (courtData) => {
-  Logger.info('Adding new court', { courtName: courtData.courtName });
-  return loggedAxios.post("CourtManagement/CreateCourt", courtData);
-};
+const addNewCourt = (courtData) => axios.post("CourtManagement/CreateCourt", courtData);
 
 const updateCourt = (courtData, userId = 6) => {
-  Logger.info('Updating court', { courtId: courtData.courtId, courtName: courtData.courtName });
-  return loggedAxios.put(`CourtManagement/UpdateCourt?userId=${userId}`, {
+  return axios.put(`CourtManagement/UpdateCourt?userId=${userId}`, {
     courtId: courtData.courtId,
     statusId: courtData.status,
     courtName: courtData.courtName,
@@ -568,21 +531,16 @@ const updateCourt = (courtData, userId = 6) => {
 };
 
 const deleteCourt = (courtId, userId = 6) => {
-  Logger.warn('Deleting court', { courtId, userId });
-  return loggedAxios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
+  return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
 };
 
-const lockCourt = (courtId, statusId, userId) => {
-  return loggedAxios.put(`CourtManagement/LockCourt?courtId=${courtId}&statusId=${statusId}&userId=${userId}`);
-}
-
-const getCourtDetail = (courtId) => loggedAxios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
+const getCourtDetail = (courtId) => axios.get(`CourtManagement/CourtDetail?courtId=${courtId}`);
 
 /* ===============================
    📅 TIMESLOT MANAGEMENT
 ================================ */
 const getTimeSlotsByFacilityId = (facilityId) => {
-  return loggedAxios.get(`TimeslotManagement/facility/${facilityId}`);
+  return axios.get(`TimeslotManagement/facility/${facilityId}`);
 };
 
 const getTimeslotsByFacilityId = (
@@ -595,47 +553,110 @@ const getTimeslotsByFacilityId = (
   if (statusId != null) params.append("statusId", statusId);
   params.append("pageNumber", pageNumber);
   params.append("pageSize", pageSize);
-  return loggedAxios.get(`TimeslotManagement/facility/${facilityId}?${params.toString()}`);
+  return axios.get(`TimeslotManagement/facility/${facilityId}?${params.toString()}`);
 };
 
-const createTimeslot = (createRequest) => {
-  Logger.info('Creating new timeslot', { facilityId: createRequest.facilityId });
-  return loggedAxios.post(`TimeslotManagement/create`, createRequest);
-};
-const deleteTimeslot = (timeSlotId) => {
-  Logger.warn('Deleting timeslot', { timeSlotId });
-  return loggedAxios.delete(`TimeslotManagement/delete/${timeSlotId}`);
-};
-const updateTimeslot = (timeSlotId, updateRequest) => {
-  Logger.info('Updating timeslot', { timeSlotId });
-  return loggedAxios.put(`TimeslotManagement/update/${timeSlotId}`, updateRequest);
-};
+const createTimeslot = (createRequest) => axios.post(`TimeslotManagement/create`, createRequest);
+const deleteTimeslot = (timeSlotId) => axios.delete(`TimeslotManagement/delete/${timeSlotId}`);
+const updateTimeslot = (timeSlotId, updateRequest) => axios.put(`TimeslotManagement/update/${timeSlotId}`, updateRequest);
 
 const createRating = (ratingData) => {
-  Logger.info('Creating rating', { facilityId: ratingData.facilityId, rating: ratingData.rating });
-  return loggedAxios.post("Ratings", ratingData, { validateStatus: () => true });
+  return axios.post("Ratings", ratingData, { validateStatus: () => true });
 };
 
 /* ===============================
    📅 BOOKING MANAGEMENT
 ================================ */
+
+const createSimpleBooking = async (bookingData) => {
+  try {
+    console.log('📡 Calling createSimpleBooking API with data:', bookingData);
+
+    const response = await axios.post("Booking/create-simple", bookingData, {
+      validateStatus: () => true, // Accept all status codes
+      timeout: 15000
+    });
+
+    console.log('✅ CreateSimpleBooking API full response:', {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+      headers: response.headers
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ CreateSimpleBooking API error:', error);
+    console.error('❌ Error response:', error.response);
+    throw error;
+  }
+};
+
+const markSmartSlot = async (bookingData) => {
+  try {
+    console.log('📡 Calling markSmartSlot API with data:', bookingData);
+
+    const response = await axios.post("Booking/mark-smart-slot", bookingData, {
+      validateStatus: () => true,
+      timeout: 10000 // ✅ REDUCED: 30s → 10s for faster feedback
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ MarkSmartSlot API error:', error);
+    throw error;
+  }
+};
 const getBookingsByFacilityId = (facilityId, pageNumber = 1, pageSize = 10) => {
-  return loggedAxios.get(`Booking/court-owner`, { params: { facilityId, pageNumber, pageSize } });
+  return axios.get(`Booking/court-owner`, { params: { facilityId, pageNumber, pageSize } });
 };
 
 const getBookingsByUserId = (userId, page = 1, pageSize = 10) => {
-  return loggedAxios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
+  return axios.get(`Booking`, { params: { userId, Page: page, PageSize: pageSize } });
 };
 
+// ✅ THÊM: getBookingById
 const getBookingById = (bookingId) => {
-  return loggedAxios.get(`Booking/${bookingId}`);
+  return axios.get(`Booking/${bookingId}`);
 };
 
 const createBookingForCO = (bookingData) => {
-  Logger.info('Creating booking for court owner', { facilityId: bookingData.facilityId });
-  return loggedAxios.post("Booking", bookingData, { validateStatus: () => true });
+  return axios.post("Booking", bookingData, { validateStatus: () => true });
 };
-//Auth
+
+// ✅ THÊM: createBookingForPlayer
+const createBookingForPlayer = (bookingData) => {
+  return axios.post("Booking", bookingData, { validateStatus: () => true });
+};
+
+// ✅ THÊM: createPaymentOrder
+const createPaymentOrder = (paymentData) => {
+  return axios.post("Payment/create-order", paymentData, { validateStatus: () => true });
+};
+
+const createStripePaymentOrder = (paymentData) => {
+  return axios.post("Payments/create", paymentData, { validateStatus: () => true });
+};
+
+// ✅ THÊM MỚI: Confirm Stripe Payment
+const confirmStripePayment = async (paymentIntentId) => {
+  try {
+    console.log('📡 Calling confirm payment API with ID:', paymentIntentId);
+    const response = await axios.post(`Payments/confirm/${paymentIntentId}`, {}, {
+      timeout: 20000, // 20 giây
+      validateStatus: () => true // Cho phép tất cả status codes
+    });
+    console.log('✅ Confirm payment API response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Confirm payment API error:', error);
+    throw error;
+  }
+};
+
+/* ===============================
+   🔐 AUTH SERVICES
+================================ */
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -653,6 +674,7 @@ const googleLoginAxios = async (googleToken) => {
     throw error;
   }
 };
+
 const sendOtpAxios = async (data) => {
   try {
     console.log('📡 Calling sendOtp API with data:', data);
@@ -664,6 +686,7 @@ const sendOtpAxios = async (data) => {
     throw error;
   }
 };
+
 // Verify OTP API (CHUNG CHO CẢ REGULAR VÀ GOOGLE)
 const verifyOtpAxios = async (data) => {
   try {
@@ -676,6 +699,10 @@ const verifyOtpAxios = async (data) => {
     throw error;
   }
 };
+const lockCourt = (courtId, statusId, userId) => {
+  return loggedAxios.put(`CourtManagement/LockCourt?courtId=${courtId}&statusId=${statusId}&userId=${userId}`);
+}
+
 const loginAxios = async (data) => {
   try {
     console.log('📡 Calling login API with data:', data);
@@ -688,28 +715,13 @@ const loginAxios = async (data) => {
   }
 };
 
-const createBookingForPlayer = (bookingData) => {
-  Logger.info('Creating booking for player', { facilityId: bookingData.facilityId, userId: bookingData.userId });
-  return loggedAxios.post("Booking", bookingData, { validateStatus: () => true });
-};
-
-const createPaymentOrder = (paymentData) => {
-  Logger.info('Creating payment order', { amount: paymentData.amount, bookingId: paymentData.bookingId });
-  return loggedAxios.post("Payment/create-order", paymentData, { validateStatus: () => true });
-};
-
-const completeBooking = (bookingId) => {
-  Logger.info('Completing booking', { bookingId });
-  return loggedAxios.post(`Booking/${bookingId}/complete`);
-};
-
 /* ===============================
    ✅ EXPORT ALL
 ================================ */
 export {
-  // Logger pour usage externe
+  // Logger
   Logger,
-  
+
   // Court Category
   getAllCourtCategories,
   addCourtCategory,
@@ -743,8 +755,7 @@ export {
   deleteImage,
   updateImage,
 
-  // Password Reset
-
+  // Password
   forgotPasswordByEmail,
   resetPasswordByEmail,
   resendOtpByEmail,
@@ -762,7 +773,6 @@ export {
   getAllBankType,
 
   // Account Management
-
   getAccountList,
   getAccountById,
   banUser,
@@ -780,7 +790,7 @@ export {
   activateSlider,
   deactivateSlider,
 
-  // Facility & Reports
+  // Facility
   getAllFacilitiesByPlayer,
   getAvailableSlots,
   getFacilityDetailsById,
@@ -793,41 +803,43 @@ export {
   deleteFacilityImage,
 
   // Report
-
   getReport,
   getTotalReport,
-  getAdminReport,
   exportReportToExcel,
+  getAdminReport, // ✅ THÊM MỚI
 
-  // Court Management
+  // Courts
+  lockCourt,
   getAllCourts,
   addNewCourt,
   updateCourt,
   deleteCourt,
-  lockCourt,
   getCourtDetail,
 
-  // Timeslot (✅ Fixed duplicates)
-  getTimeSlotsByFacilityId,        // Simple version
-  getTimeslotsByFacilityId,        // Advanced version with pagination
+  // Timeslot
+  getTimeSlotsByFacilityId,
+  getTimeslotsByFacilityId,
   createTimeslot,
   deleteTimeslot,
   updateTimeslot,
+  createRating,
 
   // Booking
+  createSimpleBooking,
   getBookingsByFacilityId,
   getBookingsByUserId,
-  getBookingById,
+  getBookingById, // ✅ THÊM MỚI
   createBookingForCO,
-  createBookingForPlayer,
-  createPaymentOrder,
+  createBookingForPlayer, // ✅ THÊM MỚI
+  createPaymentOrder, // ✅ THÊM MỚI
+  createStripePaymentOrder,
+  confirmStripePayment,
   completeBooking,
-  // Auth
-  googleLoginAxios,
-  verifyOtpAxios,
-  sendOtpAxios,
-  loginAxios,
+  markSmartSlot,
 
-  //Rating
-  createRating
+  // Auth
+  googleLoginAxios, // ✅ THÊM MỚI
+  verifyOtpAxios, // ✅ THÊM MỚI
+  sendOtpAxios, // ✅ THÊM MỚI
+  loginAxios // ✅ THÊM MỚI
 };
