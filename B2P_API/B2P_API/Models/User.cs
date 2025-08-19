@@ -11,7 +11,7 @@ public partial class User
 
     public string? Password { get; set; }
 
-    public string? Email { get; set; }
+    public string Email { get; set; } = null!;
 
     public string? Phone { get; set; }
 
@@ -35,9 +35,13 @@ public partial class User
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
+    public virtual ICollection<CommissionPaymentHistory> CommissionPaymentHistories { get; set; } = new List<CommissionPaymentHistory>();
+
     public virtual ICollection<Facility> Facilities { get; set; } = new List<Facility>();
 
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
+
+    public virtual ICollection<MerchantPayment> MerchantPayments { get; set; } = new List<MerchantPayment>();
 
     public virtual Role Role { get; set; } = null!;
 

@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Button, Modal, Form } from "react-bootstrap";
 import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import { useAuth } from '../../context/AuthContext';
 import {
   getReport,
   getTotalReport,
   exportReportToExcel,
+  checkCommission, // ✅ THÊM MỚI
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
 import { Chart as ChartJS, registerables } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
+import { Pagination } from "antd";
 ChartJS.register(...registerables);
 
 const { RangePicker } = DatePicker;
@@ -28,23 +31,80 @@ const OwnerDashboard = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    // Mặc định là tháng hiện tại
+    return new Date();
+  });
   const { userId, user, isLoggedIn, isLoading: authLoading } = useAuth();
+
+  // Thêm state cho phân trang booking
+  const [bookingPagination, setBookingPagination] = useState({
+    pageNumber: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0,
+  });
+
+  // ✅ THÊM STATE CHO COMMISSION
+  const [commissionExists, setCommissionExists] = useState(true); // Mặc định ẩn button
+  const [checkingCommission, setCheckingCommission] = useState(false);
+
+  // ✅ THÊM STATE CHO COMMISSION MODAL
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+
+  // Hàm lấy ngày đầu và cuối tháng từ selectedMonth
+  const getMonthRange = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth();
+    const start = new Date(year, month, 1, 0, 0, 0, 0);
+    const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    return [start, end];
+  };
+
+  // ✅ HÀM KIỂM TRA COMMISSION
+  const checkCommissionStatus = async () => {
+    if (!userId || !selectedMonth) return;
+
+    try {
+      setCheckingCommission(true);
+      const month = selectedMonth.getMonth() + 1; // getMonth() trả về 0-11
+      const year = selectedMonth.getFullYear();
+
+      console.log(`🔍 Checking commission for userId: ${userId}, month: ${month}, year: ${year}`);
+
+      const response = await checkCommission(userId, month, year);
+      
+      console.log('📊 Commission check response:', response);
+      
+      if (response && response.data) {
+        setCommissionExists(response.data.exists);
+        console.log(`✅ Commission exists: ${response.data.exists}`);
+      } else {
+        setCommissionExists(false);
+        console.log('❌ No response data, setting commission exists to false');
+      }
+    } catch (error) {
+      console.error("Error checking commission:", error);
+      setCommissionExists(false); // Nếu lỗi, hiển thị button
+    } finally {
+      setCheckingCommission(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Reset error state khi bắt đầu fetch
       setError(null);
       setLoading(true);
-      
+
       try {
-        console.log('Fetching dashboard data for userId:', userId);
-        
+        // Lấy ngày đầu và cuối tháng
+        const [start, end] = getMonthRange(selectedMonth);
+
+        // ✅ KIỂM TRA COMMISSION TRƯỚC KHI FETCH DATA
+        await checkCommissionStatus();
+
         // Fetch total report
-        const totalReportResponse = await getTotalReport(userId, null, null);
-        console.log('Total report response:', totalReportResponse);
+        const totalReportResponse = await getTotalReport(userId, start, end);
 
         if (totalReportResponse && totalReportResponse.success) {
           setDashboardData((prev) => ({
@@ -55,31 +115,36 @@ const OwnerDashboard = () => {
             totalRevenue: totalReportResponse.data?.totalCost || 0,
           }));
         } else {
-          console.error('Total report failed:', totalReportResponse);
           setError(totalReportResponse?.message || "Không thể tải dữ liệu tổng quan");
         }
 
-        // Fetch recent bookings (tiếp tục fetch dù total report có lỗi)
+        // Fetch recent bookings với phân trang
         try {
-          const reportResponse = await getReport(userId, null, null, null, 1, 10);
-          console.log('Report response:', reportResponse);
-          
+          const reportResponse = await getReport(
+            userId,
+            start,
+            end,
+            null,
+            bookingPagination.pageNumber,
+            bookingPagination.pageSize
+          );
+
           if (reportResponse && reportResponse.success) {
             setDashboardData((prev) => ({
               ...prev,
               recentBookings: reportResponse.data?.items || [],
             }));
+            setBookingPagination((prev) => ({
+              ...prev,
+              totalItems: reportResponse.data?.totalItems || 0,
+              totalPages: reportResponse.data?.totalPages || 0,
+            }));
           } else {
-            console.error('Report failed:', reportResponse);
-            // Không set error để không override error từ total report
-            // Chỉ log lỗi
             console.warn("Không thể tải dữ liệu đơn đặt sân:", reportResponse?.message);
           }
         } catch (reportError) {
           console.error("Error fetching recent bookings:", reportError);
-          // Không set error state để không ảnh hưởng đến UI chính
         }
-
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError(error.message || "Không thể tải dữ liệu dashboard");
@@ -88,24 +153,33 @@ const OwnerDashboard = () => {
       }
     };
 
-    // Chỉ fetch khi có userId và không đang loading auth
     if (userId && !authLoading && isLoggedIn) {
       fetchDashboardData();
     } else if (!authLoading && !isLoggedIn) {
       setLoading(false);
       setError("Vui lòng đăng nhập để xem dashboard");
     }
-  }, [userId, authLoading, isLoggedIn]); // Thêm dependencies
+  }, [userId, authLoading, isLoggedIn, selectedMonth, bookingPagination.pageNumber, bookingPagination.pageSize]);
+
+  // ✅ THÊM useEffect RIÊNG ĐỂ CHECK COMMISSION KHI THAY ĐỔI THÁNG
+  useEffect(() => {
+    if (userId && selectedMonth) {
+      checkCommissionStatus();
+    }
+  }, [userId, selectedMonth]);
 
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
+      // Lấy ngày đầu và cuối tháng từ selectedMonth
+      const [startDate, endDate] = getMonthRange(selectedMonth);
+
       const response = await exportReportToExcel(
         userId,
         startDate, // Ngày bắt đầu
-        endDate, // Ngày kết thúc
-        null, // facilityId (nếu cần)
-        1 // pageNumber
+        endDate,   // Ngày kết thúc
+        null,      // facilityId (nếu cần)
+        1          // pageNumber
       );
       
       // Kiểm tra nếu response không phải là ArrayBuffer
@@ -166,145 +240,97 @@ const OwnerDashboard = () => {
     setShowDetailModal(true);
   };
 
-  const handleDateChange = async (date) => {
+  // Handler đổi trang
+  const handleBookingPageChange = (page, pageSize) => {
+    setBookingPagination((prev) => ({
+      ...prev,
+      pageNumber: page,
+      pageSize: pageSize || prev.pageSize,
+    }));
+  };
+
+  // Handler đổi pageSize
+  const handleBookingPageSizeChange = (current, size) => {
+    setBookingPagination((prev) => ({
+      ...prev,
+      pageNumber: 1, // Reset về trang 1 khi đổi pageSize
+      pageSize: size,
+    }));
+  };
+
+  // Xử lý khi chọn tháng mới
+  const handleMonthChange = (date) => {
     if (date) {
-      setLoading(true);
-      setError(null); // Reset error
-      
-      try {
-        const selectedDate = date.toDate();
-        const [totalReportResponse, reportResponse] = await Promise.all([
-          getTotalReport(userId, selectedDate, selectedDate),
-          getReport(userId, selectedDate, selectedDate, null, 1, 10)
-        ]);
-
-        if (totalReportResponse?.success && reportResponse?.success) {
-          setDashboardData({
-            totalFacilities: totalReportResponse.data?.totalFacility || 0,
-            totalCourts: totalReportResponse.data?.totalCourt || 0,
-            totalBookings: totalReportResponse.data?.totalBooking || 0,
-            totalRevenue: totalReportResponse.data?.totalCost || 0,
-            recentBookings: reportResponse.data?.items || [],
-          });
-        } else {
-          setError("Không thể tải dữ liệu cho ngày đã chọn");
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
+      setSelectedMonth(date.toDate());
     }
   };
 
-  const handleDateRangeChange = async (dates) => {
-    if (dates && dates.length === 2) {
-      const [start, end] = dates;
-      setStartDate(start.toDate());
-      setEndDate(end.toDate());
-      setLoading(true);
-      setError(null); // Reset error
+  const prepareChartData = () => {
+    const revenueByCourtType = {};
+    const statusDistribution = {};
+
+    dashboardData.recentBookings.forEach(booking => {
+      // CHỈ TÍNH DOANH THU NẾU ĐÃ THANH TOÁN
+      const isPaid = booking.bookingStatus === "Đã hoàn thành";
       
-      try {
-        const [totalReportResponse, reportResponse] = await Promise.all([
-          getTotalReport(userId, start.toDate(), end.toDate()),
-          getReport(userId, start.toDate(), end.toDate(), null, 1, 10)
-        ]);
-
-        if (totalReportResponse?.success && reportResponse?.success) {
-          setDashboardData({
-            totalFacilities: totalReportResponse.data?.totalFacility || 0,
-            totalCourts: totalReportResponse.data?.totalCourt || 0,
-            totalBookings: totalReportResponse.data?.totalBooking || 0,
-            totalRevenue: totalReportResponse.data?.totalCost || 0,
-            recentBookings: reportResponse.data?.items || [],
-          });
-        } else {
-          setError("Không thể tải dữ liệu cho khoảng thời gian đã chọn");
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    } else if (dates === null) {
-      // User cleared date range, reload default data
-      setStartDate(null);
-      setEndDate(null);
-      // Trigger useEffect to reload default data
-      window.location.reload(); // Simple solution, hoặc có thể gọi fetchDashboardData trực tiếp
-    }
-  };
-
-  // Thêm hàm prepareChartData vào component (trước phần return)
-const prepareChartData = () => {
-  const revenueByCourtType = {};
-  const statusDistribution = {};
-
-  dashboardData.recentBookings.forEach(booking => {
-    // CHỈ TÍNH DOANH THU NẾU ĐÃ THANH TOÁN
-    const isPaid = booking.bookingStatus === "Đã hoàn thành";
-    
-    if (booking.courtCategories && booking.totalPrice && isPaid) {
-      const courtTypes = booking.courtCategories.split(', ').filter(type => type.trim());
-      const courtCount = courtTypes.length;
-      
-      if (courtCount > 0) {
-        const revenuePerCourt = booking.totalPrice / courtCount;
+      if (booking.courtCategories && booking.totalPrice && isPaid) {
+        const courtTypes = booking.courtCategories.split(', ').filter(type => type.trim());
+        const courtCount = courtTypes.length;
         
-        courtTypes.forEach(type => {
-          const courtType = type.trim();
-          if (courtType) {
-            if (!revenueByCourtType[courtType]) {
-              revenueByCourtType[courtType] = 0;
+        if (courtCount > 0) {
+          const revenuePerCourt = booking.totalPrice / courtCount;
+          
+          courtTypes.forEach(type => {
+            const courtType = type.trim();
+            if (courtType) {
+              if (!revenueByCourtType[courtType]) {
+                revenueByCourtType[courtType] = 0;
+              }
+              revenueByCourtType[courtType] += revenuePerCourt;
             }
-            revenueByCourtType[courtType] += revenuePerCourt;
-          }
-        });
+          });
+        }
       }
-    }
 
-    // Phần status distribution vẫn tính tất cả
-    if (booking.bookingStatus) {
-      if (!statusDistribution[booking.bookingStatus]) {
-        statusDistribution[booking.bookingStatus] = 0;
+      // Phần status distribution vẫn tính tất cả
+      if (booking.bookingStatus) {
+        if (!statusDistribution[booking.bookingStatus]) {
+          statusDistribution[booking.bookingStatus] = 0;
+        }
+        statusDistribution[booking.bookingStatus]++;
       }
-      statusDistribution[booking.bookingStatus]++;
-    }
-  });
+    });
 
-  return {
-    revenueData: {
-      labels: Object.keys(revenueByCourtType),
-      datasets: [{
-        label: 'Doanh thu (VND)',
-        data: Object.values(revenueByCourtType),
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    },
-    statusData: {
-      labels: Object.keys(statusDistribution),
-      datasets: [{
-        data: Object.values(statusDistribution),
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-          'rgba(255, 99, 132, 0.5)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)'
-        ],
-        borderWidth: 1
-      }]
-    }
+    return {
+      revenueData: {
+        labels: Object.keys(revenueByCourtType),
+        datasets: [{
+          label: 'Doanh thu (VND)',
+          data: Object.values(revenueByCourtType),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }]
+      },
+      statusData: {
+        labels: Object.keys(statusDistribution),
+        datasets: [{
+          data: Object.values(statusDistribution),
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.5)',
+            'rgba(255, 206, 86, 0.5)',
+            'rgba(255, 99, 132, 0.5)'
+          ],
+          borderColor: [
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(255, 99, 132, 1)'
+          ],
+          borderWidth: 1
+        }]
+      }
+    };
   };
-};
   
 
   const BookingDetailModal = ({ booking, show, onHide }) => {
@@ -424,6 +450,113 @@ const prepareChartData = () => {
     );
   };
 
+  // ✅ HÀM MỞ MODAL COMMISSION
+  const handleCreateCommissionClick = () => {
+    setShowCommissionModal(true);
+  };
+
+  // ✅ HÀM ĐÓNG MODAL
+  const handleCloseCommissionModal = () => {
+    setShowCommissionModal(false);
+  };
+
+  // ✅ COMPONENT MODAL THANH TOÁN COMMISSION
+  const CommissionModal = ({ show, onHide }) => {
+    const commissionAmount = dashboardData.totalRevenue * 0.05; // 5% tổng doanh thu
+    const month = selectedMonth.getMonth() + 1;
+    const year = selectedMonth.getFullYear();
+
+    return (
+      <Modal show={show} onHide={onHide} size="md" centered>
+        <Modal.Header closeButton className="commission-modal-header">
+          <Modal.Title>
+            <i className="fas fa-percentage me-2"></i>
+            Thanh toán Commission
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="commission-modal-body">
+          <div className="commission-info">
+            <div className="info-section">
+              <h5>
+                <i className="fas fa-info-circle me-2"></i>
+                Thông tin Commission
+              </h5>
+              <div className="info-grid">
+                <div className="info-item">
+                  <label>Tháng/Năm:</label>
+                  <span className="value">{month}/{year}</span>
+                </div>
+                <div className="info-item">
+                  <label>Chủ sân:</label>
+                  <span className="value">{user?.fullName || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <label>Tổng doanh thu:</label>
+                  <span className="value revenue">{formatPrice(dashboardData.totalRevenue)}đ</span>
+                </div>
+                <div className="info-item">
+                  <label>Tỷ lệ commission:</label>
+                  <span className="value percentage">5%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="payment-section">
+              <h5>
+                <i className="fas fa-money-bill-wave me-2"></i>
+                Thông tin thanh toán
+              </h5>
+              <div className="payment-amount">
+                <label>Số tiền cần thanh toán:</label>
+                <div className="amount-display">
+                  {formatPrice(commissionAmount)}đ
+                </div>
+              </div>
+              
+              <div className="payment-note">
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                <small>
+                  Commission sẽ được tính dựa trên 5% tổng doanh thu của tháng {month}/{year}
+                </small>
+              </div>
+            </div>
+
+            <div className="calculation-breakdown">
+              <h6>Chi tiết tính toán:</h6>
+              <div className="breakdown-item">
+                <span>Doanh thu tháng {month}/{year}:</span>
+                <span>{formatPrice(dashboardData.totalRevenue)}đ</span>
+              </div>
+              <div className="breakdown-item">
+                <span>Commission (5%):</span>
+                <span>{formatPrice(commissionAmount)}đ</span>
+              </div>
+              <hr />
+              <div className="breakdown-total">
+                <span><strong>Tổng cần thanh toán:</strong></span>
+                <span className="total-amount"><strong>{formatPrice(commissionAmount)}đ</strong></span>
+              </div>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="commission-modal-footer">
+          <Button variant="secondary" onClick={onHide}>
+            <i className="fas fa-times me-2"></i>
+            Hủy
+          </Button>
+          <Button 
+            variant="primary" 
+            className="confirm-payment-btn"
+            disabled={commissionAmount <= 0}
+          >
+            <i className="fas fa-credit-card me-2"></i>
+            Thanh toán
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    );
+  };
+
   // Hiển thị loading khi đang xác thực
   if (authLoading) {
     return <div className="loading-spinner">Đang xác thực...</div>;
@@ -463,13 +596,38 @@ const prepareChartData = () => {
           </p>
         </div>
         <div className="d-flex align-items-center gap-3">
-          <DatePicker.RangePicker
-            onChange={handleDateRangeChange}
-            format="DD/MM/YYYY"
-            placeholder={["Từ ngày", "Đến ngày"]}
-            style={{ width: "300px" }}
-            allowClear={true}
+          <DatePicker
+            picker="month"
+            onChange={handleMonthChange}
+            format="MM/YYYY"
+            placeholder="Chọn tháng"
+            allowClear={false}
+            value={selectedMonth ? dayjs(selectedMonth) : null}
+            style={{ width: "180px" }}
           />
+          
+          {/* ✅ BUTTON CHỈ HIỂN THỊ KHI CHƯA CÓ COMMISSION */}
+          {!commissionExists && dashboardData.totalRevenue > 0 && (
+            <Button
+              variant="warning"
+              className="create-commission-btn"
+              onClick={handleCreateCommissionClick} // ✅ THÊM ONCLICK
+              disabled={checkingCommission}
+            >
+              {checkingCommission ? (
+                <>
+                  <i className="fas fa-spinner fa-spin me-2"></i>
+                  Đang kiểm tra...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-percentage me-2"></i>
+                  Tạo Commission
+                </>
+              )}
+            </Button>
+          )}
+
           <Button
             variant="success"
             className="export-excel-btn"
@@ -490,6 +648,14 @@ const prepareChartData = () => {
           </Button>
         </div>
       </div>
+
+      {/* ✅ HIỂN THỊ TRẠNG THÁI COMMISSION (Tùy chọn) */}
+      {checkingCommission && (
+        <div className="commission-status mb-3">
+          <i className="fas fa-spinner fa-spin me-2"></i>
+          Đang kiểm tra commission...
+        </div>
+      )}
 
       <Row className="stats-row">
         <Col md={3}>
@@ -612,49 +778,72 @@ const prepareChartData = () => {
           </div>
 
           {dashboardData.recentBookings.length > 0 ? (
-            <div className="booking-list">
-              {dashboardData.recentBookings.map((booking) => (
-                <div key={booking.bookingId} className="booking-item">
-                  <div className="booking-info">
-                    <div className="customer-info">
-                      <strong>{booking.customerName ? booking.customerName : "N/A"}</strong>
-                      <div>{booking.customerPhone}</div>
-                      <div>{booking.customerEmail}</div>
-                    </div>
-                    <div className="booking-details">
-                      <div>
-                        <strong>Ngày check-in:</strong> {booking.checkInDate}
+            <>
+              <div className="booking-list">
+                {dashboardData.recentBookings.map((booking) => (
+                  <div key={booking.bookingId} className="booking-item">
+                    <div className="booking-info">
+                      <div className="customer-info">
+                        <strong>{booking.customerName ? booking.customerName : "N/A"}</strong>
+                        <div>{booking.customerPhone}</div>
+                        <div>{booking.customerEmail}</div>
                       </div>
-                      <div>
-                        <strong>Lượt đặt sân:</strong> {booking.timeSlotCount}
+                      <div className="booking-details">
+                        <div>
+                          <strong>Ngày check-in:</strong> {booking.checkInDate}
+                        </div>
+                        <div>
+                          <strong>Lượt đặt sân:</strong> {booking.timeSlotCount}
+                        </div>
+                      </div>
+                      <div className="booking-status">
+                        <div
+                          className={`status-badge ${getStatusClass(
+                            booking.bookingStatus
+                          )}`}
+                        >
+                          {booking.bookingStatus}
+                        </div>
+                        <div className="booking-price">
+                          {formatPrice(booking.totalPrice)}đ
+                        </div>
                       </div>
                     </div>
-                    <div className="booking-status">
-                      <div
-                        className={`status-badge ${getStatusClass(
-                          booking.bookingStatus
-                        )}`}
+                    <div className="booking-actions d-flex justify-content-center mt-3">
+                      <Button
+                        variant="success"
+                        className="detail-btn"
+                        onClick={() => handleViewDetail(booking)}
                       >
-                        {booking.bookingStatus}
-                      </div>
-                      <div className="booking-price">
-                        {formatPrice(booking.totalPrice)}đ
-                      </div>
+                        <i className="fas fa-eye me-2"></i>
+                        Xem chi tiết
+                      </Button>
                     </div>
                   </div>
-                  <div className="booking-actions d-flex justify-content-center mt-3">
-                    <Button
-                      variant="success"
-                      className="detail-btn"
-                      onClick={() => handleViewDetail(booking)}
-                    >
-                      <i className="fas fa-eye me-2"></i>
-                      Xem chi tiết
-                    </Button>
-                  </div>
+                ))}
+              </div>
+              
+              {/* Thêm phân trang */}
+              {bookingPagination.totalItems > 0 && (
+                <div className="booking-pagination mt-3 d-flex justify-content-center">
+                  <Pagination
+                    current={bookingPagination.pageNumber}
+                    pageSize={bookingPagination.pageSize}
+                    total={bookingPagination.totalItems}
+                    showSizeChanger
+                    pageSizeOptions={['3', '5', '10']}
+                    onChange={handleBookingPageChange}
+                    onShowSizeChange={handleBookingPageSizeChange}
+                    showTotal={(total, range) => 
+                      `${range[0]}-${range[1]} / ${total} đơn đặt sân`
+                    }
+                    showQuickJumper
+                    size="default"
+                    className="custom-pagination"
+                  />
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className="no-bookings">
               {error ? "Không thể tải dữ liệu booking" : "Không có đơn đặt sân gần đây"}
@@ -662,6 +851,12 @@ const prepareChartData = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* ✅ MODAL COMMISSION */}
+      <CommissionModal
+        show={showCommissionModal}
+        onHide={handleCloseCommissionModal}
+      />
 
       <BookingDetailModal
         show={showDetailModal}

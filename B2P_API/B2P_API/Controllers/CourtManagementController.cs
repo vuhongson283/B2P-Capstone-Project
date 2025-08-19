@@ -47,7 +47,7 @@ namespace B2P_API.Controllers
 
         [HttpPost("CreateCourt")]
         [Authorize(Roles = "3")]
-        public async Task<IActionResult> Create([FromBody] CreateCourt request)
+        public async Task<IActionResult> Create([FromBody] CreateCourtRequest request)
         {
             var response = await _courseService.CreateCourtAsync(request);
             return StatusCode(response.Status, response);

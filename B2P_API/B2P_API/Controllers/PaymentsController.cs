@@ -3,6 +3,7 @@ using Stripe;
 using Stripe.Checkout;
 using System.Text.Json;
 using B2P_API.Services;
+using B2P_API.DTOs.PaymentDTOs;
 
 namespace B2P_API.Controllers
 {
@@ -11,11 +12,13 @@ namespace B2P_API.Controllers
     public class PaymentsController : ControllerBase
     {
         private readonly BookingService _bookingService;
-        public PaymentsController(IConfiguration config, BookingService bookingService)
+        private readonly PaymentService _paymentService;
+        public PaymentsController(IConfiguration config, BookingService bookingService, PaymentService paymentService)
         {
             // Set Stripe API Key (test key)
             StripeConfiguration.ApiKey = config["Stripe:SecretKey"];
             _bookingService = bookingService;
+            _paymentService = paymentService;
         }
 
         [HttpPost("connected-account")]
@@ -203,9 +206,24 @@ namespace B2P_API.Controllers
             return Ok();
         }
 
+        [HttpGet("CheckCommission")]
+        public IActionResult CheckCommission(int userId, int month, int year)
+        {
+            return _paymentService.IsCommissionExist(userId, month, year)
+                ? Ok(new { exists = true })
+                : NotFound(new { exists = false });
+        }
 
-
-
+        [HttpPost("CreateCommission")]
+        public async Task<IActionResult> CreateCommission([FromBody] CreateCommissionRequest request)
+        {
+            var payment = await _paymentService.CreateCommissionAsync(request);
+            if (payment == null)
+            {
+                return StatusCode(500, "Không thể tạo commission");
+            }
+            return Ok(payment);
+        }
 
     }
 

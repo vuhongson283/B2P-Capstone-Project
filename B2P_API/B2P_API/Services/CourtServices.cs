@@ -120,7 +120,7 @@ namespace B2P_API.Services
             }
         }
 
-        public async Task<ApiResponse<Court>> CreateCourtAsync(CreateCourt request)
+        public async Task<ApiResponse<Court>> CreateCourtAsync(CreateCourtRequest request)
         {
             if (request.FacilityId == null)
                 return new ApiResponse<Court> { Success = false, Message = "FacilityId là bắt buộc.", Status = 400 };
@@ -264,7 +264,7 @@ namespace B2P_API.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Đã xảy ra lỗi trong quá trình xóa: " + ex.Message,
+                    Message = "Không thể xóa sân này vì đã có dữ liệu đặt sân",
                     Status = 500,
                     Data = false
                 };

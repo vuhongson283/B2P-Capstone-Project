@@ -730,6 +730,28 @@ const loginAxios = async (data) => {
 };
 
 /* ===============================
+   💰 PAYMENT SERVICES
+================================ */
+
+// ✅ Check if commission exists for user in specific month/year
+const checkCommission = (userId, month, year) => {
+  return axios.get(`Payments/CheckCommission`, {
+    params: {
+      userId,
+      month,
+      year
+    }
+  });
+};
+
+// ✅ Create commission for user
+const createCommission = (commissionData) => {
+  return axios.post(`Payments/CreateCommission`, commissionData, {
+    validateStatus: () => true // Accept all status codes
+  });
+};
+
+/* ===============================
    ✅ EXPORT ALL
 ================================ */
 export {
@@ -820,12 +842,10 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
-  getAdminReport, // ✅ THÊM MỚI
+  getAdminReport,
 
   // Courts
-
   lockCourt,
-
   getAllCourts,
   addNewCourt,
   updateCourt,
@@ -844,19 +864,23 @@ export {
   createSimpleBooking,
   getBookingsByFacilityId,
   getBookingsByUserId,
-  getBookingById, // ✅ THÊM MỚI
+  getBookingById,
   createBookingForCO,
-  createBookingForPlayer, // ✅ THÊM MỚI
-  createPaymentOrder, // ✅ THÊM MỚI
+  createBookingForPlayer,
+  createPaymentOrder,
   createStripePaymentOrder,
   confirmStripePayment,
   completeBooking,
   markSmartSlot,
 
+  // Payment Commission ✅ THÊM MỚI
+  checkCommission,
+  createCommission,
+
   // Auth
-  googleLoginAxios, // ✅ THÊM MỚI
-  verifyOtpAxios, // ✅ THÊM MỚI
-  sendOtpAxios, // ✅ THÊM MỚI
-  loginAxios,// ✅ THÊM MỚI
-  checkUserExistAxios // ✅ THÊM MỚI
+  googleLoginAxios,
+  verifyOtpAxios,
+  sendOtpAxios,
+  loginAxios,
+  checkUserExistAxios
 };
