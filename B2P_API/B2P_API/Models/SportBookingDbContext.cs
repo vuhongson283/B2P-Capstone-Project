@@ -15,10 +15,6 @@ public partial class SportBookingDbContext : DbContext
     {
     }
 
-    public virtual DbSet<BankAccount> BankAccounts { get; set; }
-
-    public virtual DbSet<BankType> BankTypes { get; set; }
-
     public virtual DbSet<Blog> Blogs { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -26,6 +22,8 @@ public partial class SportBookingDbContext : DbContext
     public virtual DbSet<BookingDetail> BookingDetails { get; set; }
 
     public virtual DbSet<Comment> Comments { get; set; }
+
+    public virtual DbSet<CommissionPaymentHistory> CommissionPaymentHistories { get; set; }
 
     public virtual DbSet<Court> Courts { get; set; }
 
@@ -35,7 +33,13 @@ public partial class SportBookingDbContext : DbContext
 
     public virtual DbSet<Image> Images { get; set; }
 
+    public virtual DbSet<MerchantPayment> MerchantPayments { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
+
+    public virtual DbSet<PaymentMethod> PaymentMethods { get; set; }
+
+    public virtual DbSet<PaymentType> PaymentTypes { get; set; }
 
     public virtual DbSet<Rating> Ratings { get; set; }
 
@@ -57,40 +61,6 @@ public partial class SportBookingDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<BankAccount>(entity =>
-        {
-            entity.HasKey(e => e.BankAccountId).HasName("PK__BankAcco__4FC8E4A10DC8BFBE");
-
-            entity.ToTable("BankAccount");
-
-            entity.HasIndex(e => e.UserId, "UQ__BankAcco__1788CC4D5620CE97").IsUnique();
-
-            entity.Property(e => e.AccountHolder).HasMaxLength(100);
-            entity.Property(e => e.AccountNumber).HasMaxLength(50);
-
-            entity.HasOne(d => d.BankType).WithMany(p => p.BankAccounts)
-                .HasForeignKey(d => d.BankTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BankAccou__BankT__45F365D3");
-
-            entity.HasOne(d => d.User).WithOne(p => p.BankAccount)
-                .HasForeignKey<BankAccount>(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BankAccou__UserI__44FF419A");
-        });
-
-        modelBuilder.Entity<BankType>(entity =>
-        {
-            entity.HasKey(e => e.BankTypeId).HasName("PK__BankType__91F2C37980E59A97");
-
-            entity.ToTable("BankType");
-
-            entity.HasIndex(e => e.BankName, "UQ__BankType__DA9ADFAA11A8C8EA").IsUnique();
-
-            entity.Property(e => e.BankName).HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(255);
-        });
-
         modelBuilder.Entity<Blog>(entity =>
         {
             entity.HasKey(e => e.BlogId).HasName("PK__Blog__54379E3020B0B253");
@@ -119,7 +89,12 @@ public partial class SportBookingDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IsDayOff).HasDefaultValue(false);
             entity.Property(e => e.TotalPrice).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.TransactionCode).HasMaxLength(100);
             entity.Property(e => e.UpdateAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.PaymentType).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.PaymentTypeId)
+                .HasConstraintName("FK_Booking_PaymentType");
 
             entity.HasOne(d => d.Status).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.StatusId)
@@ -184,6 +159,27 @@ public partial class SportBookingDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__Comment__UserId__5441852A");
+        });
+
+        modelBuilder.Entity<CommissionPaymentHistory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Commissi__3214EC07B39154E0");
+
+            entity.ToTable("CommissionPaymentHistory");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.CommissionPaymentHistories)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Commission_Status");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CommissionPaymentHistories)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Commission_User");
         });
 
         modelBuilder.Entity<Court>(entity =>
@@ -264,6 +260,34 @@ public partial class SportBookingDbContext : DbContext
                 .HasConstraintName("FK_Image_User");
         });
 
+        modelBuilder.Entity<MerchantPayment>(entity =>
+        {
+            entity.HasKey(e => e.MerchantPaymentId).HasName("PK__Merchant__6528F24361E071EB");
+
+            entity.ToTable("MerchantPayment");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.PaymentKey).HasMaxLength(255);
+            entity.Property(e => e.StatusId).HasDefaultValue(1);
+
+            entity.HasOne(d => d.PaymentMethod).WithMany(p => p.MerchantPayments)
+                .HasForeignKey(d => d.PaymentMethodId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MerchantPayment_Method");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.MerchantPayments)
+                .HasForeignKey(d => d.StatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MerchantPayment_Status");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MerchantPayments)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MerchantPayment_User");
+        });
+
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.PaymentId).HasName("PK__Payment__9B556A380DC9AEB0");
@@ -283,6 +307,24 @@ public partial class SportBookingDbContext : DbContext
                 .HasForeignKey(d => d.StatusId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Payment_Status");
+        });
+
+        modelBuilder.Entity<PaymentMethod>(entity =>
+        {
+            entity.HasKey(e => e.PaymentMethodId).HasName("PK__PaymentM__DC31C1D3C245C6DB");
+
+            entity.ToTable("PaymentMethod");
+
+            entity.Property(e => e.Description).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<PaymentType>(entity =>
+        {
+            entity.HasKey(e => e.PaymentTypeId).HasName("PK__PaymentT__BA430B35279D3CDA");
+
+            entity.ToTable("PaymentType");
+
+            entity.Property(e => e.Name).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Rating>(entity =>
@@ -358,11 +400,13 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("User");
 
+            entity.HasIndex(e => e.Email, "IX_User_Email_NotNull")
+                .IsUnique()
+                .HasFilter("([Email] IS NOT NULL)");
+
             entity.HasIndex(e => e.Phone, "IX_User_Phone_NotNull")
                 .IsUnique()
                 .HasFilter("([Phone] IS NOT NULL)");
-
-            entity.HasIndex(e => e.Email, "UQ__User__A9D10534D6ABFED3").IsUnique();
 
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.CreateAt)

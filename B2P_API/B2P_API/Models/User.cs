@@ -27,17 +27,19 @@ public partial class User
 
     public string FullName { get; set; } = null!;
 
-    public virtual BankAccount? BankAccount { get; set; }
-
     public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
+    public virtual ICollection<CommissionPaymentHistory> CommissionPaymentHistories { get; set; } = new List<CommissionPaymentHistory>();
+
     public virtual ICollection<Facility> Facilities { get; set; } = new List<Facility>();
 
     public virtual ICollection<Image> Images { get; set; } = new List<Image>();
+
+    public virtual ICollection<MerchantPayment> MerchantPayments { get; set; } = new List<MerchantPayment>();
 
     public virtual Role Role { get; set; } = null!;
 
