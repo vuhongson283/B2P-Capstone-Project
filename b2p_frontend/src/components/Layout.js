@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import { ConfigProvider, App as AntdApp } from 'antd';
-import 'antd/dist/reset.css'; 
+import 'antd/dist/reset.css';
 import App from "../App";
 import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
@@ -22,11 +22,11 @@ import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
-import PaymentManager from "./CourtOwnerPage/PaymentManager";
+import PaymentManager from "./CourtOwnerPage/PaymentManager.js";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
-import UnauthorizedPage from "./Common/UnauthorizedPage";
+import UnauthorizedPage from "./Common/UnauthorizedPage.js";
 import Login from './Auth/Login';
 import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../context/AuthContext";
 
@@ -40,7 +40,7 @@ const Layout = (props) => {
             <Login />
           </PublicRoute>
         } />
-        
+
         {/* 🚫 Unauthorized page */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
@@ -114,7 +114,7 @@ const Layout = (props) => {
         {/* 🏠 ROOT REDIRECT - Redirect to appropriate dashboard based on role */}
         <Route path="/" element={
           <ProtectedRoute>
-            <RoleBasedRedirect 
+            <RoleBasedRedirect
               adminRedirect="/admin"
               playerRedirect="/player"
               courtOwnerRedirect="/court-owner"
@@ -125,7 +125,7 @@ const Layout = (props) => {
         {/* 🚫 Catch all - redirect to appropriate dashboard */}
         <Route path="*" element={
           <ProtectedRoute fallbackPath="/login">
-            <RoleBasedRedirect 
+            <RoleBasedRedirect
               adminRedirect="/admin"
               playerRedirect="/"
               courtOwnerRedirect="/court-owner"

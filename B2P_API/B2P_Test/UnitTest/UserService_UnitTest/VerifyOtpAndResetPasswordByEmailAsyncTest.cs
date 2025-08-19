@@ -18,7 +18,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<IMemoryCache> _cacheMock;
         private readonly Mock<ISMSService> _smsServiceMock;
-        private readonly Mock<IBankAccountRepository> _bankAccountRepositoryMock;
         private readonly Mock<IImageRepository> _imageRepositoryMock;
 
         public VerifyOtpAndResetPasswordByEmailAsyncTest()
@@ -27,7 +26,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             _emailServiceMock = new Mock<IEmailService>();
             _cacheMock = new Mock<IMemoryCache>();
             _smsServiceMock = new Mock<ISMSService>();
-            _bankAccountRepositoryMock = new Mock<IBankAccountRepository>();
             _imageRepositoryMock = new Mock<IImageRepository>();
         }
 
@@ -38,7 +36,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
                 _imageRepositoryMock.Object,
                 emailValidationResult
             );
@@ -349,10 +346,9 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             IEmailService emailService,
             ISMSService smsService,
             IMemoryCache cache,
-            IBankAccountRepository bankAccountRepository,
             IImageRepository imageRepository,
             bool emailValidationResult = true)
-            : base(userRepository, emailService, smsService, cache, bankAccountRepository, imageRepository)
+            : base(userRepository, emailService, smsService, cache, imageRepository)
         {
             _emailValidationResult = emailValidationResult;
         }

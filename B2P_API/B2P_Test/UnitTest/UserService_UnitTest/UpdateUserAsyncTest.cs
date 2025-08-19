@@ -17,7 +17,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         private readonly Mock<IEmailService> _emailServiceMock = new();
         private readonly Mock<IMemoryCache> _cacheMock = new();
         private readonly Mock<ISMSService> _smsServiceMock = new();
-        private readonly Mock<IBankAccountRepository> _bankRepoMock = new();
         private readonly Mock<IImageRepository> _imageRepoMock = new();
 
         private UserService CreateService()
@@ -26,7 +25,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
-                _bankRepoMock.Object,
                 _imageRepoMock.Object);
 
         // --------- Basic request validation ---------
@@ -379,9 +377,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Email = "valid@email.com",
                 Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Valid Holder",
-                BankTypeId = 999 // Invalid bank type ID
+
             };
             var user = new User { UserId = userId };
 
@@ -389,8 +385,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                         .ReturnsAsync((User)null);
             _userRepoMock.Setup(x => x.GetUserByIdAsync(userId))
                         .ReturnsAsync(user);
-            _bankRepoMock.Setup(x => x.GetBankTypeByIdAsync(999))
-                        .ReturnsAsync((BankType)null);
 
             var service = CreateService();
 
@@ -412,9 +406,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Email = "valid@email.com",
                 Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123", // Invalid account number
-                AccountHolder = "Valid Holder",
-                BankTypeId = 1
             };
             var user = new User { UserId = userId };
 
@@ -442,10 +433,7 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 FullName = "Valid Name",
                 Email = "valid@email.com",
                 Address = "Valid Address",
-                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = new string('a', 51), // Too long
-                BankTypeId = 1
+                Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20))
             };
             var user = new User { UserId = userId };
 
@@ -475,9 +463,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Email = "valid@email.com",
                 Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                // AccountNumber missing
-                AccountHolder = "Valid Holder",
-                BankTypeId = 1
             };
             var user = new User { UserId = userId };
             _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email)).ReturnsAsync((User)null);
@@ -503,9 +488,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Email = "valid@email.com",
                 Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                // AccountHolder missing
-                BankTypeId = 1
             };
             var user = new User { UserId = userId };
             _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email)).ReturnsAsync((User)null);
@@ -531,9 +513,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Email = "valid@email.com",
                 Address = "Valid Address",
                 Dob = DateOnly.FromDateTime(DateTime.Today.AddYears(-20)),
-                AccountNumber = "123456789",
-                AccountHolder = "Valid Holder",
-                BankTypeId = 0 // invalid
             };
             var user = new User { UserId = userId };
             _userRepoMock.Setup(x => x.CheckEmailExistedByUserId(userId, updateUserDto.Email)).ReturnsAsync((User)null);
