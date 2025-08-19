@@ -56,20 +56,20 @@ namespace B2P_API.Services
             }
             else
             {
-                // Bắt buộc có cả email và số điện thoại
-                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Phone))
+                // Bắt buộc có email or số điện thoại
+                if (string.IsNullOrWhiteSpace(request.Email) && string.IsNullOrWhiteSpace(request.Phone))
                 {
                     return new ApiResponse<object>
                     {
                         Success = false,
                         Status = 400,
-                        Message = "Khách đặt sân phải cung cấp email và số điện thoại"
+                        Message = "Khách đặt sân phải cung cấp email hoặc số điện thoại"
                     };
                 }
 
                 // Kiểm tra email hợp lệ
                 bool isEmailValid = await IsRealEmailAsync(request.Email);
-                if (!isEmailValid)
+                if (!isEmailValid && request.Email != null)
                 {
                     return new ApiResponse<object>
                     {
@@ -159,7 +159,8 @@ namespace B2P_API.Services
                 CreateAt = DateTime.UtcNow,
                 StatusId = 8,
                 TotalPrice = total,
-                IsDayOff = false
+                IsDayOff = false,
+                PaymentTypeId = request.PaymentTypeId ?? null
             };
 
             await _bookingRepo.AddBookingAsync(booking);
@@ -738,6 +739,8 @@ namespace B2P_API.Services
             {
                 UserId = b.UserId,
                 BookingId = b.BookingId,
+                PaymentTypeId = b.PaymentTypeId ?? null,
+                TransactionCode = b.TransactionCode ?? null,
                 CreateDate = b.CreateAt,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
@@ -979,11 +982,11 @@ namespace B2P_API.Services
                 };
             }
 
-            booking.StatusId = 10;
+            booking.StatusId = 9;
 
             foreach (var detail in booking.BookingDetails)
             {
-                detail.StatusId = 10;
+                detail.StatusId = 9;
             }
 
             var success = await _bookingRepo.SaveAsync();
@@ -1020,7 +1023,7 @@ namespace B2P_API.Services
                 Message = "Đã đánh dấu cancel booking thành công."
             };
         }
-        public async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId)
+        public async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId, string? TransactionCode)
         {
             var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 
@@ -1061,6 +1064,9 @@ namespace B2P_API.Services
                 };
             }
 
+            if (TransactionCode != null) {
+                booking.TransactionCode = TransactionCode;
+            }
             booking.StatusId = 7;
 
             foreach (var detail in booking.BookingDetails)

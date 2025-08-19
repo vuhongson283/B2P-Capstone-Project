@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
@@ -48,6 +49,7 @@ const isValidImageUrl = (url) => {
   if (!url) return false;
   return true;
 };
+
 
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
@@ -988,6 +990,7 @@ const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
 
 // Main Component
 const FacilityDetails = () => {
+  const { userId } = useAuth(); //lay userid
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [bookingDetailOpen, setBookingDetailOpen] = useState(false); // State cho BookingDetail modal
@@ -1178,6 +1181,7 @@ const FacilityDetails = () => {
           createBooking={createBookingForPlayer}
           createPayment={createPaymentOrder}
           createStripePaymentOrder={createStripePaymentOrder}
+          userId = {userId}
         />
       )}
     </div>

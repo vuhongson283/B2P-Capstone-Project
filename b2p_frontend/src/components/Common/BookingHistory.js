@@ -362,46 +362,40 @@ const BookingHistory = () => {
         try {
             setIsSubmittingRating(true);
 
-            const ratingPayload = {
-                bookingId: selectedBooking.id,
-                userId: userId,
-                courtId: selectedBooking.courtId,
-                facilityId: selectedBooking.facilityId,
-                rating: ratingData.rating,
-                comment: ratingData.comment.trim(),
-                ratingDate: new Date().toISOString()
+            const payload = {
+                bookingId: selectedBooking.id,          // int
+                comment: ratingData.comment.trim(),     // string
+                stars: Number(ratingData.rating),       // int 1..5
             };
 
-            console.log('📝 Submitting rating:', ratingPayload);
+            console.log('📝 Submitting rating:', payload);
+            const res = await createRating(payload);
 
-            const response = await createRating(ratingPayload);
+            if (res.status === 200 || res.status === 201) {
+                message.success('Đánh giá đã được gửi!');
+                const stars = payload.stars;
+                const reviewText = payload.comment;
 
-            if (response.status === 200 || response.status === 201) {
-                message.success('Đánh giá của bạn đã được gửi thành công!');
-
-                // Set existing rating data để hiển thị
                 setExistingRating({
-                    rating: ratingData.rating,
-                    comment: ratingData.comment,
-                    ratingDate: new Date().toISOString()
+                    rating: stars,
+                    comment: reviewText,
+                    ratingDate: new Date().toISOString(),
                 });
-
                 setHasRated(true);
                 setRatingData({ rating: 0, comment: '' });
 
-                // Cập nhật booking trong state để reflect hasRated = true
-                setBookings(prevBookings =>
-                    prevBookings.map(b =>
+                setBookings(prev =>
+                    prev.map(b =>
                         b.id === selectedBooking.id
-                            ? { ...b, hasRated: true, ratingInfo: { rating: ratingData.rating, comment: ratingData.comment } }
+                            ? { ...b, hasRated: true, ratingInfo: { rating: stars, comment: reviewText } }
                             : b
                     )
                 );
             } else {
                 throw new Error('Failed to submit rating');
             }
-        } catch (error) {
-            console.error('❌ Error submitting rating:', error);
+        } catch (e) {
+            console.error('❌ Error submitting rating:', e);
             message.error('Không thể gửi đánh giá. Vui lòng thử lại!');
         } finally {
             setIsSubmittingRating(false);
@@ -430,16 +424,13 @@ const BookingHistory = () => {
     };
 
     const formatPrice = (price) => {
-        console.log('💰 [formatPrice] Input price:', price, typeof price);
 
         // ✅ Kiểm tra null/undefined/empty
         if (price === null || price === undefined || price === '' || isNaN(price)) {
-            console.log('💰 [formatPrice] Invalid price, returning 0');
             return '0 VNĐ';
         }
 
         const numPrice = Number(price);
-        console.log('💰 [formatPrice] Converted to number:', numPrice);
 
         if (numPrice === 0) {
             return '0 VNĐ';
@@ -450,7 +441,6 @@ const BookingHistory = () => {
             currency: 'VND'
         }).format(numPrice);
 
-        console.log('💰 [formatPrice] Formatted result:', formatted);
         return formatted;
     };
 

@@ -32,19 +32,21 @@ const StripePayment = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentId = urlParams.get('payment_id');
     const bookingId = urlParams.get('booking_id');
+    const amountVND = urlParams.get('amount_vnd'); // Số tiền VND gốc
+    const amountUSD = urlParams.get('amount_usd'); // Số tiền USD đã chuyển đổi
 
     useEffect(() => {
-        // Simulate loading payment data với mock data để demo
+        // Simulate loading payment data với dữ liệu từ URL parameters
         setTimeout(() => {
             setPaymentData({
                 paymentId: paymentId || 'pi_3OxxxxxxxxxxxxxFake123',
                 bookingId: bookingId || '12345',
-                amount: 25.00, // USD amount from API
+                amount: parseFloat(amountUSD) || 25.00, // Lấy từ URL hoặc default
                 currency: 'USD'
             });
             setLoading(false);
         }, 1500);
-    }, [paymentId, bookingId]);
+    }, [paymentId, bookingId, amountUSD, amountVND]);
 
     // Format card number with spaces
     const formatCardNumber = (value) => {
@@ -70,6 +72,15 @@ const StripePayment = () => {
             return match[1] + '/' + match[2];
         }
         return cleaned;
+    };
+
+    // Format currency VND
+    const formatVND = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+        }).format(amount);
     };
 
     // Handle input changes
@@ -157,39 +168,37 @@ const StripePayment = () => {
         );
     };
 
-
-
     // ✅ XỬ LÝ ĐÚNG STRIPE RESPONSE
-const handlePayment = async () => {
-    if (!validateCardData()) {
-        return;
-    }
-    
-    setProcessing(true);
-    setError(null);
-    
-    try {
-        // Simulate payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // ✅ GỌI API (nhưng không quan tâm kết quả)
-        try {
-            const confirmResult = await confirmStripePayment(paymentData.paymentId);
-            console.log('📊 API called:', confirmResult);
-        } catch (apiError) {
-            console.log('API error (ignored):', apiError);
+    const handlePayment = async () => {
+        if (!validateCardData()) {
+            return;
         }
         
-        // ✅ LUÔN LUÔN THÀNH CÔNG
-        console.log('✅ Payment success - always successful!');
-        setPaymentSuccess(true);
+        setProcessing(true);
+        setError(null);
         
-    } catch (err) {
-        // Trường hợp này gần như không bao giờ xảy ra
-        console.error('❌ Unexpected error:', err);
-        setPaymentSuccess(true); // Vẫn báo thành công!
-    }
-};
+        try {
+            // Simulate payment processing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // ✅ GỌI API (nhưng không quan tâm kết quả)
+            try {
+                const confirmResult = await confirmStripePayment(paymentData.paymentId);
+                console.log('📊 API called:', confirmResult);
+            } catch (apiError) {
+                console.log('API error (ignored):', apiError);
+            }
+            
+            // ✅ LUÔN LUÔN THÀNH CÔNG
+            console.log('✅ Payment success - always successful!');
+            setPaymentSuccess(true);
+            
+        } catch (err) {
+            // Trường hợp này gần như không bao giờ xảy ra
+            console.error('❌ Unexpected error:', err);
+            setPaymentSuccess(true); // Vẫn báo thành công!
+        }
+    };
 
     const handleCancel = () => {
         if (window.confirm('Bạn có chắc muốn hủy thanh toán?')) {
@@ -260,9 +269,10 @@ const handlePayment = async () => {
                         </div>
                         <h2 className="text-2xl font-bold text-green-600 mb-4">Thanh toán thành công!</h2>
                         <div className="success-details">
-                            <p className="text-gray-700 mb-2">Mã booking: <strong>#{bookingId}</strong></p>
-                            <p className="text-gray-700 mb-2">Mã thanh toán: <strong>{paymentData.paymentId}</strong></p>
-                            <p className="text-gray-700 mb-6">Số tiền: <strong>${paymentData.amount} USD</strong></p>
+                            <p className="text-gray-700 mb-6">
+                                Số tiền: <strong>${paymentData.amount} USD</strong> 
+                                
+                            </p>
                         </div>
                         <div className="success-info">
                             <div className="info-box success">
@@ -491,21 +501,13 @@ const handlePayment = async () => {
                     <div className="sidebar">
                         {/* Payment Summary */}
                         <div className="summary-card">
-                            <h3 className="summary-title">Tóm tắt đơn hàng</h3>
+                            <h3 className="summary-title">Tóm tắt thanh toán</h3>
                             
                             <div className="summary-content">
-                                <div className="summary-row">
-                                    <span className="summary-label">Mã booking:</span>
-                                    <span className="summary-value">#{bookingId}</span>
-                                </div>
                                 
-                                <div className="summary-row">
-                                    <span className="summary-label">Mã thanh toán:</span>
-                                    <span className="summary-value mono">{paymentId}</span>
-                                </div>
                                 
-                                <div className="summary-row">
-                                    <span className="summary-label">Số tiền:</span>
+                                <div className="summary-row total">
+                                    <span className="summary-label">Số tiền thanh toán:</span>
                                     <span className="summary-value amount">
                                         ${paymentData?.amount} USD
                                     </span>
@@ -515,10 +517,10 @@ const handlePayment = async () => {
                                     <div className="info-content">
                                         <span className="info-icon">💡</span>
                                         <div>
-                                            <p className="info-text">Thông tin thanh toán</p>
+                                            <p className="info-text">Tỷ giá chuyển đổi</p>
                                             <p className="info-description">
-                                                Đây là giao dịch thanh toán quốc tế qua Stripe. 
-                                                Tiền tệ được chuyển đổi từ VND sang USD.
+                                                Tiền tệ được chuyển đổi từ VND sang USD với tỷ giá hiện tại.
+                                                Giao dịch thanh toán quốc tế qua Stripe.
                                             </p>
                                         </div>
                                     </div>

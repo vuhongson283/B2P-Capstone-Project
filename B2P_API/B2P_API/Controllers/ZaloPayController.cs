@@ -92,7 +92,7 @@ namespace B2P_API.Controllers
 
                 if (verifyResult.Data is CallbackData callbackData)
                 {
-                    _logger.LogInformation($"Payment successful - BookingId: {callbackData.EmbedData}");
+                   
 
                     // Nếu cần xử lý business logic phụ, có thể gọi thêm tại đây
                     // await ProcessPaymentSuccess(callbackData);

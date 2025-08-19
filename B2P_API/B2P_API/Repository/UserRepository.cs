@@ -42,7 +42,6 @@ namespace B2P_API.Repository
         public async Task<User?> GetUserByIdAsync(int userId)
         {
             return await _context.Users
-                .Include(u => u.BankAccount).ThenInclude(u => u.BankType)
                 .Include(u => u.Status).Include(u => u.Images)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
         }

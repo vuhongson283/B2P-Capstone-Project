@@ -16,7 +16,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         private readonly Mock<IEmailService> _emailServiceMock = new();
         private readonly Mock<IMemoryCache> _cacheMock = new();
         private readonly Mock<ISMSService> _smsServiceMock = new();
-        private readonly Mock<IBankAccountRepository> _bankAccountRepositoryMock = new();
         private readonly Mock<IImageRepository> _imageRepositoryMock = new();
 
         private UserService CreateUserService()
@@ -26,7 +25,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
                 _imageRepositoryMock.Object
             );
         }

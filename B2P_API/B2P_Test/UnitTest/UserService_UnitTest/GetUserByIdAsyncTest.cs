@@ -14,7 +14,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly Mock<IMemoryCache> _cacheMock;
         private readonly Mock<ISMSService> _smsServiceMock;
-        private readonly Mock<IBankAccountRepository> _bankAccountRepositoryMock;
         private readonly Mock<IImageRepository> _imageRepositoryMock;
         private readonly UserService _service;
 
@@ -24,7 +23,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             _emailServiceMock = new Mock<IEmailService>();
             _cacheMock = new Mock<IMemoryCache>();
             _smsServiceMock = new Mock<ISMSService>();
-            _bankAccountRepositoryMock = new Mock<IBankAccountRepository>();
             _imageRepositoryMock = new Mock<IImageRepository>();
 
             _service = new UserService(
@@ -32,7 +30,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 _emailServiceMock.Object,
                 _smsServiceMock.Object,
                 _cacheMock.Object,
-                _bankAccountRepositoryMock.Object,
                 _imageRepositoryMock.Object);
         }
 
@@ -91,7 +88,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Dob = null,                // Nullable DateOnly
                 Address = null,            // Nullable string
                 CreateAt = null,           // Nullable DateTime
-                BankAccount = null,        // Null bank account
                 Status = null,             // Null status
                 Images = new List<Image>() // Empty images
             };
@@ -165,17 +161,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
                 Dob = new DateOnly(1985, 5, 15),          // DateOnly
                 Address = "123 Test Street, Test City",
                 CreateAt = new DateTime(2023, 1, 1),      // DateTime
-                BankAccount = new BankAccount
-                {
-                    AccountHolder = "John Doe Account",
-                    AccountNumber = "123456789",
-                    BankTypeId = 1,
-                    BankType = new BankType
-                    {
-                        BankTypeId = 1,
-                        BankName = "Test Bank"
-                    }
-                },
                 Status = new Status
                 {
                     StatusId = 1,
@@ -208,11 +193,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Equal(user.Address, userInfo.Address);         // string? to string?
             Assert.Equal(user.CreateAt, userInfo.CreateAt);       // DateTime? to DateTime?
 
-            // Verify bank account mapping
-            Assert.Equal(user.BankAccount?.AccountHolder, userInfo.AccountHolder);
-            Assert.Equal(user.BankAccount?.AccountNumber ?? string.Empty, userInfo.AccountNumber);
-            Assert.Equal(user.BankAccount?.BankTypeId ?? 0, userInfo.BankTypeId);
-            Assert.Equal(user.BankAccount?.BankType?.BankName ?? "Unknown", userInfo.BankName);
 
             // Verify status mapping
             Assert.Equal(user.Status?.StatusDescription, userInfo.StatusDescription); // Both nullable

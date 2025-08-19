@@ -59,6 +59,12 @@ const AdminSideBar = ({
       icon: "fas fa-list-ul",
       path: "/admin/manage-court-categories",
     },
+    {
+      id: "blog-management",
+      title: "Blog",
+      icon: "fas fa-newspaper",
+      path: "/admin/blog",
+    },
   ];
 
   // Toggle menu expansion
@@ -151,7 +157,7 @@ const AdminSideBar = ({
             {userInfo.userId && (
               <div className="user-actions">
                 <Link
-                  to="/user-profile"
+                  to="/admin/user-profile"
                   className="profile-link"
                   style={{
                     color: 'white',

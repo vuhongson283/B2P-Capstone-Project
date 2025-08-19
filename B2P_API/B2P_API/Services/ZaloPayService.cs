@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Utilities;
+using B2P_API.DTOs.CommissionPaymentHistoryDTOs;
 
 namespace B2P_API.Services
 {
@@ -13,17 +14,20 @@ namespace B2P_API.Services
         private readonly ZaloPayConfig _config;
         private readonly ILogger<ZaloPayService> _logger;
         private readonly BookingService _bookingService;
+        private readonly CommissionPaymentHistoryService _commissionService;
 
         public ZaloPayService(
             HttpClient httpClient,
             BookingService bookingService,
             IOptions<ZaloPayConfig> config,
-            ILogger<ZaloPayService> logger)
+            ILogger<ZaloPayService> logger,
+            CommissionPaymentHistoryService commissionService)
         {
             _httpClient = httpClient;
             _config = config.Value;
             _logger = logger;
             _bookingService = bookingService;
+            _commissionService = commissionService;
         }
 
         public async Task<PaymentResult> CreateOrderAsync(CreateOrderRequest request)
@@ -167,31 +171,42 @@ namespace B2P_API.Services
                 _logger.LogInformation($"Raw data received: {data}");
 
                 // ===========================
-                // 🔒 PHẦN KIỂM TRA MAC (
+                // 🔒 PHẦN KIỂM TRA MAC
                 // ===========================
-
-                /*
-                _logger.LogInformation($"Received MAC: {receivedMac}");
-                _logger.LogInformation($"Using Key1: {_config.Key1}");
-
-                var computedMac = CreateHmacSha256(data, _config.Key1);
-                _logger.LogInformation($"Computed MAC: {computedMac}");
-
-                var isValid = computedMac.Equals(receivedMac, StringComparison.OrdinalIgnoreCase);
-                if (!isValid)
+               /* try
                 {
-                    _logger.LogWarning($"Invalid MAC. Received: {receivedMac}, Computed: {computedMac}");
+                    _logger.LogInformation($"Received MAC: {receivedMac}");
+                    _logger.LogInformation($"Using Key1: {_config.Key1}");
+
+                    var computedMac = CreateHmacSha256(data, _config.Key1);
+                    _logger.LogInformation($"Computed MAC: {computedMac}");
+
+                    var isValid = computedMac.Equals(receivedMac, StringComparison.OrdinalIgnoreCase);
+                    if (!isValid)
+                    {
+                        _logger.LogWarning($"Invalid MAC. Received: {receivedMac}, Computed: {computedMac}");
+                        return new PaymentResult
+                        {
+                            Success = false,
+                            Message = "Invalid MAC signature",
+                            ErrorCode = -1
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error validating MAC.");
                     return new PaymentResult
                     {
                         Success = false,
-                        Message = "Invalid MAC signature",
+                        Message = "Error validating MAC",
                         ErrorCode = -1
                     };
-                }
-                */
+                }*/
 
-                // PARSE DỮ LIỆU CALLBACK
-
+                // ===========================
+                // 📦 PARSE DỮ LIỆU CALLBACK
+                // ===========================
                 string unescapedJson;
                 try
                 {
@@ -210,9 +225,12 @@ namespace B2P_API.Services
                 }
 
                 var callbackData = JsonSerializer.Deserialize<CallbackData>(unescapedJson);
-                _logger.LogInformation("Parsed callbackData (detailed): {@CallbackData}", callbackData);
+                _logger.LogInformation("Parsed callbackData: {@CallbackData}", callbackData);
                 _logger.LogInformation("AppTransId = {AppTransId}, Amount = {Amount}", callbackData.AppTransId, callbackData.Amount);
 
+                // ===========================
+                // 🛠️ XỬ LÝ EMBED_DATA
+                // ===========================
                 if (!string.IsNullOrEmpty(callbackData.EmbedData))
                 {
                     try
@@ -220,29 +238,57 @@ namespace B2P_API.Services
                         var embedData = JsonSerializer.Deserialize<Dictionary<string, object>>(callbackData.EmbedData);
                         callbackData.EmbedDict = embedData ?? new();
 
+                        // ✅ Trường hợp Booking
                         if (callbackData.EmbedDict.TryGetValue("bookingid", out var bookingIdObj))
                         {
                             if (bookingIdObj != null && int.TryParse(bookingIdObj.ToString(), out var bookingId))
                             {
                                 _logger.LogInformation($"Booking ID extracted: {bookingId}");
 
-                                // ✅ Gọi xử lý booking (cập nhật trạng thái DB, gọi SignalR, v.v.)
-                                await _bookingService.MarkBookingPaidAsync(bookingId);
-                                Console.WriteLine($"MarkBookingPaidAsync ok");
+                                await _bookingService.MarkBookingPaidAsync(bookingId, callbackData.ZpTransId.ToString());
+                                _logger.LogInformation("MarkBookingPaidAsync executed successfully.");
                             }
                             else
                             {
                                 _logger.LogWarning("Booking ID is not a valid integer.");
                             }
                         }
+                        // ✅ Trường hợp Commission
+                        else if (callbackData.EmbedDict.TryGetValue("commissionid", out var commissionIdObj))
+                        {
+                            if (commissionIdObj != null && int.TryParse(commissionIdObj.ToString(), out var commissionId))
+                            {
+                                _logger.LogInformation($"Commission ID extracted: {commissionId}");
+
+                                var updateDto = new CommissionPaymentHistoryUpdateDto
+                                {
+                                    StatusId = 7, // Paid
+                                    Note = $"Thanh toán thành công, ZpTransId = {callbackData.ZpTransId}"
+                                };
+
+                                var result = await _commissionService.UpdateAsync(commissionId, updateDto);
+                                if (result.Success)
+                                {
+                                    _logger.LogInformation($"Commission {commissionId} updated successfully");
+                                }
+                                else
+                                {
+                                    _logger.LogWarning($"Failed to update commission {commissionId}: {result.Message}");
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Commission ID is not a valid integer.");
+                            }
+                        }
                         else
                         {
-                            _logger.LogWarning("Booking ID not found in embed_data.");
+                            _logger.LogWarning("Neither bookingid nor commissionid found in embed_data.");
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Failed to parse embed_data or process booking ID");
+                        _logger.LogWarning(ex, "Failed to parse embed_data or process booking/commission ID");
                     }
                 }
 
@@ -264,6 +310,7 @@ namespace B2P_API.Services
                 };
             }
         }
+
 
 
 

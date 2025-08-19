@@ -717,6 +717,7 @@ const verifyOtpAxios = async (data) => {
     throw error;
   }
 };
+
 const loginAxios = async (data) => {
   try {
     console.log('📡 Calling login API with data:', data);
@@ -727,6 +728,42 @@ const loginAxios = async (data) => {
     console.error('❌ Login API error:', error);
     throw error;
   }
+};
+
+/* ===============================
+   💳 MERCHANT PAYMENT MANAGEMENT
+================================ */
+
+// GET /api/MerchantPayment - Lấy tất cả merchant payments
+const getAllMerchantPayments = (pageNumber = 1, pageSize = 10, search = "") => {
+  return axios.get("MerchantPayment", {
+    params: { pageNumber, pageSize, search }
+  });
+};
+
+// POST /api/MerchantPayment - Tạo merchant payment mới
+const createMerchantPayment = (paymentData) => {
+  return axios.post("MerchantPayment", paymentData);
+};
+
+// GET /api/MerchantPayment/{id} - Lấy merchant payment theo ID
+const getMerchantPaymentById = (id) => {
+  return axios.get(`MerchantPayment/${id}`);
+};
+
+// PUT /api/MerchantPayment/{id} - Cập nhật merchant payment
+const updateMerchantPayment = (id, updateData) => {
+  return axios.put(`MerchantPayment/${id}`, updateData);
+};
+
+// DELETE /api/MerchantPayment/{id} - Xóa merchant payment
+const deleteMerchantPayment = (id) => {
+  return axios.delete(`MerchantPayment/${id}`);
+};
+
+// GET /api/MerchantPayment/user/{userId} - Lấy merchant payments theo userId
+const getMerchantPaymentsByUserId = (userId) => {
+  return axios.get(`MerchantPayment/user/${userId}`);
 };
 
 /* ===============================
@@ -820,12 +857,10 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
-  getAdminReport, // ✅ THÊM MỚI
+  getAdminReport,
 
   // Courts
-
   lockCourt,
-
   getAllCourts,
   addNewCourt,
   updateCourt,
@@ -844,19 +879,27 @@ export {
   createSimpleBooking,
   getBookingsByFacilityId,
   getBookingsByUserId,
-  getBookingById, // ✅ THÊM MỚI
+  getBookingById,
   createBookingForCO,
-  createBookingForPlayer, // ✅ THÊM MỚI
-  createPaymentOrder, // ✅ THÊM MỚI
+  createBookingForPlayer,
+  createPaymentOrder,
   createStripePaymentOrder,
   confirmStripePayment,
   completeBooking,
   markSmartSlot,
 
   // Auth
-  googleLoginAxios, // ✅ THÊM MỚI
-  verifyOtpAxios, // ✅ THÊM MỚI
-  sendOtpAxios, // ✅ THÊM MỚI
-  loginAxios,// ✅ THÊM MỚI
-  checkUserExistAxios // ✅ THÊM MỚI
+  checkUserExistAxios,
+  googleLoginAxios,
+  verifyOtpAxios,
+  sendOtpAxios,
+  loginAxios,
+
+  // Merchant Payment
+  getAllMerchantPayments,
+  createMerchantPayment,
+  getMerchantPaymentById,
+  updateMerchantPayment,
+  deleteMerchantPayment,
+  getMerchantPaymentsByUserId,
 };

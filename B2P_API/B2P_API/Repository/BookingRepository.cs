@@ -39,7 +39,7 @@ namespace B2P_API.Repository
                     courtIds.Contains(bd.CourtId) &&
                     timeSlotIds.Contains(bd.TimeSlotId) &&
                     bd.CheckInDate.Date == checkInDate.Date &&
-                    bd.StatusId != 3 // Trạng thái khác "Đã hủy"
+                    bd.StatusId != 9 // Trạng thái khác "Đã hủy"
                 )
                 .ToListAsync();
 

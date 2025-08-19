@@ -53,6 +53,8 @@ const Layout = (props) => {
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
           <Route path="manage-court-categories" element={<ManageCourtCategories />} />
+          <Route path="user-profile" element={<UserProfile />} />
+          <Route path="blog" element={<Blog />} />
         </Route>
 
         {/* 🏢 COURT OWNER ROUTES - Only for Court Owner */}
@@ -69,6 +71,7 @@ const Layout = (props) => {
           <Route path="facility/general" element={<FacilityTable />} />
           <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
           <Route path="facility/time-slots" element={<TimeslotManagement />} />
+          <Route path="blog" element={<Blog />} />
         </Route>
 
         {/* 🌐 HOME PAGE ROUTES - For Guest and Player (some routes require login) */}
@@ -78,7 +81,7 @@ const Layout = (props) => {
           <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
           <Route path="blog" element={
-            <ProtectedRoute fallbackPath="/login">
+            <ProtectedRoute playerOnly fallbackPath="/login">
               <Blog />
             </ProtectedRoute>
           } />
