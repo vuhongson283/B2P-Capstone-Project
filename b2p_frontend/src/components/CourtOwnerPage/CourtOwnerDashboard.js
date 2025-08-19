@@ -8,6 +8,9 @@ import {
   exportReportToExcel,
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
+import { Chart as ChartJS, registerables } from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+ChartJS.register(...registerables);
 
 const { RangePicker } = DatePicker;
 
@@ -235,9 +238,79 @@ const OwnerDashboard = () => {
     }
   };
 
+  // Thêm hàm prepareChartData vào component (trước phần return)
+const prepareChartData = () => {
+  const revenueByCourtType = {};
+  const statusDistribution = {};
+
+  dashboardData.recentBookings.forEach(booking => {
+    // CHỈ TÍNH DOANH THU NẾU ĐÃ THANH TOÁN
+    const isPaid = booking.bookingStatus === "Đã hoàn thành";
+    
+    if (booking.courtCategories && booking.totalPrice && isPaid) {
+      const courtTypes = booking.courtCategories.split(', ').filter(type => type.trim());
+      const courtCount = courtTypes.length;
+      
+      if (courtCount > 0) {
+        const revenuePerCourt = booking.totalPrice / courtCount;
+        
+        courtTypes.forEach(type => {
+          const courtType = type.trim();
+          if (courtType) {
+            if (!revenueByCourtType[courtType]) {
+              revenueByCourtType[courtType] = 0;
+            }
+            revenueByCourtType[courtType] += revenuePerCourt;
+          }
+        });
+      }
+    }
+
+    // Phần status distribution vẫn tính tất cả
+    if (booking.bookingStatus) {
+      if (!statusDistribution[booking.bookingStatus]) {
+        statusDistribution[booking.bookingStatus] = 0;
+      }
+      statusDistribution[booking.bookingStatus]++;
+    }
+  });
+
+  return {
+    revenueData: {
+      labels: Object.keys(revenueByCourtType),
+      datasets: [{
+        label: 'Doanh thu (VND)',
+        data: Object.values(revenueByCourtType),
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    statusData: {
+      labels: Object.keys(statusDistribution),
+      datasets: [{
+        data: Object.values(statusDistribution),
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.5)',
+          'rgba(255, 206, 86, 0.5)',
+          'rgba(255, 99, 132, 0.5)'
+        ],
+        borderColor: [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(255, 99, 132, 1)'
+        ],
+        borderWidth: 1
+      }]
+    }
+  };
+};
+  
+
   const BookingDetailModal = ({ booking, show, onHide }) => {
     if (!booking) return null;
 
+    
     return (
       <Modal show={show} onHide={onHide} size="lg">
         <Modal.Header closeButton className="detail-header">
@@ -315,6 +388,9 @@ const OwnerDashboard = () => {
                       {formatPrice(booking.totalPrice)}đ
                     </span>
                   </div>
+                  
+                </Col>
+                <Col md={6}>
                   <div className="detail-item">
                     <label>Trạng thái đặt sân:</label>
                     <span
@@ -323,24 +399,6 @@ const OwnerDashboard = () => {
                       )}`}
                     >
                       {booking.bookingStatus}
-                    </span>
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className="detail-item">
-                    <label>Số tiền đã thanh toán:</label>
-                    <span className="price">
-                      {formatPrice(booking.paymentAmount)}đ
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Trạng thái thanh toán:</label>
-                    <span
-                      className={`status-badge ${getStatusClass(
-                        booking.paymentStatus
-                      )}`}
-                    >
-                      {booking.paymentStatus}
                     </span>
                   </div>
                 </Col>
@@ -476,6 +534,75 @@ const OwnerDashboard = () => {
         </Col>
       </Row>
 
+<div className="chart-container">
+  <Row>
+    <Col md={8}>
+      <div className="chart-card">
+        <h4>Doanh thu theo loại sân</h4>
+        {dashboardData.recentBookings.length > 0 ? (
+          <Bar 
+            data={prepareChartData().revenueData}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      return ` ${formatPrice(context.raw)}đ`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: (value) => formatPrice(value) + 'đ'
+                  }
+                }
+              }
+            }}
+          />
+        ) : (
+          <p>Không có dữ liệu để hiển thị</p>
+        )}
+      </div>
+    </Col>
+    <Col md={4}>
+      <div className="chart-card">
+        <h4>Phân bổ trạng thái đơn</h4>
+        {dashboardData.recentBookings.length > 0 ? (
+          <Pie 
+            data={prepareChartData().statusData}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: (context) => {
+                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                      const percentage = Math.round((context.raw / total) * 100);
+                      return `${context.label}: ${context.raw} đơn (${percentage}%)`;
+                    }
+                  }
+                }
+              }
+            }}
+          />
+        ) : (
+          <p>Không có dữ liệu để hiển thị</p>
+        )}
+      </div>
+    </Col>
+  </Row>
+</div>
+
       <Card className="recent-bookings-card">
         <Card.Body>
           <div className="card-header">
@@ -490,7 +617,7 @@ const OwnerDashboard = () => {
                 <div key={booking.bookingId} className="booking-item">
                   <div className="booking-info">
                     <div className="customer-info">
-                      <strong>{booking.customerName}</strong>
+                      <strong>{booking.customerName ? booking.customerName : "N/A"}</strong>
                       <div>{booking.customerPhone}</div>
                       <div>{booking.customerEmail}</div>
                     </div>
@@ -500,9 +627,6 @@ const OwnerDashboard = () => {
                       </div>
                       <div>
                         <strong>Lượt đặt sân:</strong> {booking.timeSlotCount}
-                      </div>
-                      <div>
-                        <strong>Loại sân:</strong> {booking.courtCategories}
                       </div>
                     </div>
                     <div className="booking-status">
