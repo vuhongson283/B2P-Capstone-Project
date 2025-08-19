@@ -26,45 +26,47 @@ import PaymentManager from "./CourtOwnerPage/PaymentManager";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
+import UnauthorizedPage from "./Common/UnauthorizedPage";
 import Login from './Auth/Login';
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../context/AuthContext";
 
 const Layout = (props) => {
   return (
-    
     <AuthProvider>
-      {/* ✅ WRAP tất cả Routes trong 1 Routes element */}
       <Routes>
-        {/* ✅ Login route - standalone */}
-        <Route path="/login" element={<Login />} />
+        {/* 🚪 PUBLIC ROUTES */}
+        <Route path="/login" element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } />
         
-        {/* ✅ Main App routes với nested routes */}
-        <Route path="/" element={<App />}>
+        {/* 🚫 Unauthorized page */}
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* 🏃‍♂️ PLAYER ROUTES */}
+        <Route path="/" element={
+          <ProtectedRoute playerOnly fallbackPath="/unauthorized">
+            <App />
+          </ProtectedRoute>
+        }>
+          {/* Player dashboard - redirect to search as default */}
+          <Route index element={<FacilitiesWithCondition />} />
           <Route path="search" element={<FacilitiesWithCondition />} />
-          <Route path="court-owner-register" element={<CourtOwnerRegister />} />
-          <Route path="court-owner-policy" element={<CourtOwnerPolicy />} />
           <Route path="user-profile" element={<UserProfile />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="blog" element={<Blog />} />
           <Route path="booking-history" element={<BookingHistory />} />
-          <Route
-            path="facility-details/:facilityId"
-            element={<FacilityDetails />}
-          />
-          <Route
-            path="/bookingprocess"
-            element={
-              <BookingProcess />
-            }
-          />
-           <Route
-    path="stripepayment"
-    element={<StripePayment />}
-  />
+          <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
+          <Route path="bookingprocess" element={<BookingProcess />} />
+          <Route path="stripepayment" element={<StripePayment />} />
         </Route>
 
-        {/* ✅ Court Owner routes */}
-        <Route path="/court-owner" element={<CourtOwner />}>
+        {/* 🏢 COURT OWNER ROUTES */}
+        <Route path="/court-owner" element={
+          <ProtectedRoute courtOwnerOnly fallbackPath="/unauthorized">
+            <CourtOwner />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardField />} />
           <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="booking-management" element={<BookingManagement />} />
@@ -75,13 +77,61 @@ const Layout = (props) => {
           <Route path="facility/time-slots" element={<TimeslotManagement />} />
         </Route>
 
-        {/* ✅ Admin routes */}
-        <Route path="/admin" element={<Admin />}>
-        <Route index element={<AdminDashboard />} />
+        {/* 👑 ADMIN ROUTES */}
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly fallbackPath="/unauthorized">
+            <Admin />
+          </ProtectedRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
           <Route path="manage-court-categories" element={<ManageCourtCategories />} />
         </Route>
+
+        {/* 🌐 SHARED PUBLIC ROUTES (accessible when logged in) */}
+        <Route path="/public" element={
+          <ProtectedRoute>
+            <App />
+          </ProtectedRoute>
+        }>
+          <Route path="court-owner-register" element={<CourtOwnerRegister />} />
+          <Route path="court-owner-policy" element={<CourtOwnerPolicy />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+        </Route>
+
+        {/* 🔄 ALTERNATIVE: Routes accessible by multiple roles */}
+        <Route path="/shared" element={
+          <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.COURTOWNER]}>
+            <App />
+          </ProtectedRoute>
+        }>
+          <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
+          <Route path="search" element={<FacilitiesWithCondition />} />
+        </Route>
+
+        {/* 🏠 ROOT REDIRECT - Redirect to appropriate dashboard based on role */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <RoleBasedRedirect 
+              adminRedirect="/admin"
+              playerRedirect="/player"
+              courtOwnerRedirect="/court-owner"
+            />
+          </ProtectedRoute>
+        } />
+
+        {/* 🚫 Catch all - redirect to appropriate dashboard */}
+        <Route path="*" element={
+          <ProtectedRoute fallbackPath="/login">
+            <RoleBasedRedirect 
+              adminRedirect="/admin"
+              playerRedirect="/player"
+              courtOwnerRedirect="/court-owner"
+              defaultRedirect="/login"
+            />
+          </ProtectedRoute>
+        } />
       </Routes>
 
       <ToastContainer

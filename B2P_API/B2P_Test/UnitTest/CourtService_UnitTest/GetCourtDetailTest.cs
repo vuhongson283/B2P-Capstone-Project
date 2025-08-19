@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Interface;
+using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Services;
 using Moq;
@@ -22,20 +23,17 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         public async Task UTCID01_ValidCourtId_ReturnsFullCourtDetail()
         {
             // Arrange
-            var mockCourtDetail = new CourtDetailDTO
+            var mockCourtDetail = new Court
             {
                 CourtId = 1,
                 CourtName = "Sân bóng A",
                 PricePerHour = 200000,
                 StatusId = 1,
-                StatusName = "Hoạt động",
-                StatusDescription = "Sân đang hoạt động bình thường",
+                Status = new Status { StatusId = 1, StatusName = "Hoạt động", StatusDescription = "Sân đang hoạt động bình thường" },
                 CategoryId = 2,
-                CategoryName = "Bóng đá",
+                Category = new CourtCategory { CategoryId = 2, CategoryName = "Bóng đá" },
                 FacilityId = 3,
-                FacilityName = "Trung tâm thể thao X",
-                Location = "123 Đường ABC, Quận 1",
-                Contact = "0909123456"
+                Facility = new Facility { FacilityId = 3, FacilityName = "Trung tâm thể thao X", Location = "123 Đường ABC, Quận 1", Contact = "0909123456" }
             };
 
             _courtRepoMock.Setup(x => x.GetCourtDetail(1))
@@ -55,28 +53,28 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Equal("Sân bóng A", court.CourtName);
             Assert.Equal(200000, court.PricePerHour);
             Assert.Equal(1, court.StatusId);
-            Assert.Equal("Hoạt động", court.StatusName);
-            Assert.Equal("Sân đang hoạt động bình thường", court.StatusDescription);
+            Assert.Equal("Hoạt động", court.Status.StatusName);
+            Assert.Equal("Sân đang hoạt động bình thường", court.Status.StatusDescription);
             Assert.Equal(2, court.CategoryId);
-            Assert.Equal("Bóng đá", court.CategoryName);
+            Assert.Equal("Bóng đá", court.Category.CategoryName);
             Assert.Equal(3, court.FacilityId);
-            Assert.Equal("Trung tâm thể thao X", court.FacilityName);
-            Assert.Equal("123 Đường ABC, Quận 1", court.Location);
-            Assert.Equal("0909123456", court.Contact);
+            Assert.Equal("Trung tâm thể thao X", court.Facility.FacilityName);
+            Assert.Equal("123 Đường ABC, Quận 1", court.Facility.Location);
+            Assert.Equal("0909123456", court.Facility.Contact);
         }
 
         [Fact(DisplayName = "UTCID02 - Should handle partial court details")]
         public async Task UTCID02_PartialCourtDetails_ReturnsSuccess()
         {
             // Arrange
-            var mockCourtDetail = new CourtDetailDTO
+            var mockCourtDetail = new Court
             {
                 CourtId = 2,
                 CourtName = "Sân bóng B",
                 PricePerHour = 150000,
                 // Các trường khác null
                 StatusId = null,
-                StatusName = null,
+                Status = null,
                 CategoryId = null,
                 FacilityId = null
             };
@@ -97,7 +95,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Equal("Sân bóng B", court.CourtName);
             Assert.Equal(150000, court.PricePerHour);
             Assert.Null(court.StatusId);
-            Assert.Null(court.StatusName);
+            Assert.Null(court.Status.StatusName);
             Assert.Null(court.CategoryId);
             Assert.Null(court.FacilityId);
         }
@@ -107,7 +105,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         {
             // Arrange
             _courtRepoMock.Setup(x => x.GetCourtDetail(It.IsAny<int>()))
-                .ReturnsAsync((CourtDetailDTO)null);
+                .ReturnsAsync((Court)null);
 
             // Act
             var result = await _service.GetCourtDetail(999);

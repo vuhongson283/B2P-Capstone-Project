@@ -486,20 +486,13 @@ const exportReportToExcel = (
 
 // ✅ THÊM: getAdminReport
 const getAdminReport = (
-  startDate,
-  endDate,
-  pageNumber = 1,
-  pageSize = 10
+  month,
+  year
 ) => {
-  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
-  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
-
   return axios.get(`Report/AdminReport`, {
     params: {
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
-      pageNumber,
-      pageSize,
+      month,
+      year
     },
   });
 };
@@ -661,6 +654,27 @@ const confirmStripePayment = async (paymentIntentId) => {
 /* ===============================
    🔐 AUTH SERVICES
 ================================ */
+const checkUserExistAxios = async (requestData) => {
+  try {
+    console.log('📤 Exact request payload:', JSON.stringify(requestData));
+    console.log('📤 Request headers:', axios.defaults.headers);
+
+    const response = await axios.post('/auth/check-user', requestData);
+    console.log('✅ Success response:', response);
+    return response;
+  } catch (error) {
+    console.error('❌ Request failed');
+    console.error('❌ Request data was:', JSON.stringify(requestData));
+    console.error('❌ Error response:', error.response?.data);
+
+    // ✅ Vẫn return response để handle ở component
+    if (error.response) {
+      return error.response;
+    }
+    throw error;
+  }
+};
+
 const googleLoginAxios = async (googleToken) => {
   try {
     const response = await axios.post('/auth/google-login', {
@@ -843,14 +857,14 @@ export {
   getReport,
   getTotalReport,
   exportReportToExcel,
-  getAdminReport, // ✅ THÊM MỚI
+  getAdminReport,
 
   // Courts
+  lockCourt,
   getAllCourts,
   addNewCourt,
   updateCourt,
   deleteCourt,
-  lockCourt,
   getCourtDetail,
 
   // Timeslot
@@ -865,20 +879,21 @@ export {
   createSimpleBooking,
   getBookingsByFacilityId,
   getBookingsByUserId,
-  getBookingById, // ✅ THÊM MỚI
+  getBookingById,
   createBookingForCO,
-  createBookingForPlayer, // ✅ THÊM MỚI
-  createPaymentOrder, // ✅ THÊM MỚI
+  createBookingForPlayer,
+  createPaymentOrder,
   createStripePaymentOrder,
   confirmStripePayment,
   completeBooking,
   markSmartSlot,
 
   // Auth
-  googleLoginAxios, // ✅ THÊM MỚI
-  verifyOtpAxios, // ✅ THÊM MỚI
-  sendOtpAxios, // ✅ THÊM MỚI
-  loginAxios, // ✅ THÊM MỚI
+  checkUserExistAxios,
+  googleLoginAxios,
+  verifyOtpAxios,
+  sendOtpAxios,
+  loginAxios,
 
   // Merchant Payment
   getAllMerchantPayments,

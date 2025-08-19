@@ -161,5 +161,87 @@ namespace B2P_API.Repository
                 return true;
             }
         }
+        public async Task<Image> CreateUserDefaultImageAsync(int userId)
+        {
+            try
+            {
+                Console.WriteLine($"👉 Start CreateUserDefaultImageAsync with userId = {userId}");
+
+                // ✅ Kiểm tra userId hợp lệ
+                if (userId <= 0)
+                {
+                    Console.WriteLine("❌ Invalid userId provided!");
+                    throw new ArgumentException("UserId must be greater than 0", nameof(userId));
+                }
+
+                // ✅ Kiểm tra _context
+                if (_context == null)
+                {
+                    Console.WriteLine("❌ _context is NULL!");
+                    throw new InvalidOperationException("DbContext is not initialized");
+                }
+
+                // ✅ Kiểm tra _context.Images
+                if (_context.Images == null)
+                {
+                    Console.WriteLine("❌ _context.Images is NULL!");
+                    throw new InvalidOperationException("Images DbSet is not initialized");
+                }
+
+                // ✅ Kiểm tra user có tồn tại không
+                var userExists = await _context.Users.AnyAsync(u => u.UserId == userId);
+                if (!userExists)
+                {
+                    Console.WriteLine($"❌ User with ID {userId} does not exist!");
+                    throw new InvalidOperationException($"User with ID {userId} does not exist");
+                }
+
+                // ✅ Check user đã có ảnh đại diện chưa
+                var existingImage = await _context.Images
+                    .FirstOrDefaultAsync(img => img.UserId == userId);
+
+                if (existingImage != null)
+                {
+                    Console.WriteLine($"⚠️ User {userId} đã có image -> ImageId = {existingImage.ImageId}");
+                    return existingImage;
+                }
+
+                // ✅ Tạo ảnh mặc định
+                var defaultImage = new Image
+                {
+                    UserId = userId,
+                    ImageUrl = "https://drive.google.com/uc?id=1Y4hmnhcxFrHQV26tOmDrHbYf6huEhoru",
+                    Caption = "Default Profile Picture",
+                    Order = 1,
+                    // Thêm các trường khác nếu cần thiết
+                    BlogId = null,
+                    FacilityId = null,
+                    SlideId = null
+                };
+
+                // ✅ Thêm vào context
+                await _context.Images.AddAsync(defaultImage);
+
+                // ✅ Lưu changes
+                var result = await _context.SaveChangesAsync();
+
+                if (result <= 0)
+                {
+                    Console.WriteLine("❌ SaveChanges returned 0 - no changes were saved!");
+                    throw new InvalidOperationException("Failed to save image to database");
+                }
+
+                Console.WriteLine($"✅ Created default image for user {userId}, ImageId = {defaultImage.ImageId}");
+                return defaultImage;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in CreateUserDefaultImageAsync: {ex.Message}");
+                Console.WriteLine($"❌ StackTrace: {ex.StackTrace}");
+                throw; // Re-throw để caller có thể xử lý
+            }
+        }
+
+
     }
 }

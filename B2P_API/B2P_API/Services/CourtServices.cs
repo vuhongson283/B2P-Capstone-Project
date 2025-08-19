@@ -16,7 +16,7 @@ namespace B2P_API.Services
             _repository = repository;
         }
 
-        public async Task<ApiResponse<PagedResponse<CourtDTO>>> GetAllCourts(CourtRequestDTO req)
+        public async Task<ApiResponse<PagedResponse<Court>>> GetAllCourts(CourtRequestDTO req)
         {
             if (req.PageNumber <= 0) req.PageNumber = 1;
             if (req.PageSize <= 0 || req.PageSize > 10) req.PageSize = 10;
@@ -30,7 +30,7 @@ namespace B2P_API.Services
                 if (!string.IsNullOrEmpty(req.Search) || req.Status.HasValue || req.CategoryId.HasValue)
                 {
                     // Nếu có thêm điều kiện tìm kiếm (Search, Status, CategoryId) nhưng không có kết quả
-                    return new ApiResponse<PagedResponse<CourtDTO>>
+                    return new ApiResponse<PagedResponse<Court>>
                     {
                         Success = false,
                         Message = "Không có kết quả tìm kiếm phù hợp.",
@@ -41,7 +41,7 @@ namespace B2P_API.Services
                 else
                 {
                     // Nếu chỉ tìm theo facilityId mà không có sân nào
-                    return new ApiResponse<PagedResponse<CourtDTO>>
+                    return new ApiResponse<PagedResponse<Court>>
                     {
                         Success = false,
                         Message = "Cơ sở này không tồn tại sân nào trong hệ thống.",
@@ -51,7 +51,7 @@ namespace B2P_API.Services
                 }
             }
 
-            var response = new PagedResponse<CourtDTO>
+            var response = new PagedResponse<Court>
             {
                 CurrentPage = paginatedResult.CurrentPage,
                 ItemsPerPage = paginatedResult.ItemsPerPage,
@@ -60,7 +60,7 @@ namespace B2P_API.Services
                 Items = paginatedResult.Items
             };
 
-            return new ApiResponse<PagedResponse<CourtDTO>>
+            return new ApiResponse<PagedResponse<Court>>
             {
                 Success = true,
                 Message = paginatedResult.Items.Any()
@@ -71,14 +71,14 @@ namespace B2P_API.Services
             };
         }
 
-        public async Task<ApiResponse<CourtDetailDTO>> GetCourtDetail(int courtId)
+        public async Task<ApiResponse<Court>> GetCourtDetail(int courtId)
         {
             try
             {
                 // Validate input
                 if (courtId <= 0)
                 {
-                    return new ApiResponse<CourtDetailDTO>
+                    return new ApiResponse<Court>
                     {
                         Success = false,
                         Message = "ID sân không hợp lệ",
@@ -91,7 +91,7 @@ namespace B2P_API.Services
 
                 if (court == null)
                 {
-                    return new ApiResponse<CourtDetailDTO>
+                    return new ApiResponse<Court>
                     {
                         Success = false,
                         Message = "Không tìm thấy thông tin sân",
@@ -100,7 +100,7 @@ namespace B2P_API.Services
                     };
                 }
 
-                return new ApiResponse<CourtDetailDTO>
+                return new ApiResponse<Court>
                 {
                     Success = true,
                     Message = "Lấy thông tin chi tiết sân thành công",
@@ -110,7 +110,7 @@ namespace B2P_API.Services
             }
             catch (Exception ex)
             {
-                return new ApiResponse<CourtDetailDTO>
+                return new ApiResponse<Court>
                 {
                     Success = false,
                     Message = $"Lỗi hệ thống: {ex.Message}",

@@ -9,5 +9,6 @@ namespace B2P_API.Interface
         Task<bool> DeleteAsync(int id);
         Task<List<TimeSlot>> GetByFacilityIdAsync(int facilityId);
         Task<TimeSlot> GetByIdAsync(int id);
+        Task<bool> HasAnyActiveOrFutureBookingsAsync(int timeSlotId);
     }
 }

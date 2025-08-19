@@ -16,9 +16,10 @@
 
         private DriveService GetDriveService()
         {
+            var path = @"D:\credentials.json";
             GoogleCredential credential;
 
-            using (var stream = new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
                 credential = GoogleCredential.FromStream(stream)
                     .CreateScoped(new[] { DriveService.Scope.Drive });

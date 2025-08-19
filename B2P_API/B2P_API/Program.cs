@@ -118,6 +118,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 
 // Đăng ký các Repository & Services
+builder.Services.AddScoped<IImageRepository, ImageRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<UserService>();
 
