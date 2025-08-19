@@ -6,7 +6,6 @@ import {
   updateUserProfile,
   changePassword,
   checkPasswordStatus,
-  getAllBankType,
   updateUserImage,
 } from "../../services/apiService";
 
@@ -16,14 +15,11 @@ const UserProfile = (props) => {
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [bankTypes, setBankTypes] = useState([]);
   const [originalEmail, setOriginalEmail] = useState("");
   const [imageLoadError, setImageLoadError] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState(null);
 
-  // Temporary userId - sẽ thay thế bằng userId từ authentication sau
   const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
-  //const userId = 8;
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -33,10 +29,6 @@ const UserProfile = (props) => {
     isMale: true,
     address: "",
     dob: "",
-    accountNumber: "",
-    accountHolder: "",
-    bankTypeId: 0,
-    bankName: "",
     imageUrl: "",
     imageId: null,
   });
@@ -62,7 +54,6 @@ const UserProfile = (props) => {
           console.log("=== PASSWORD STATUS RESPONSE ===");
           console.log(JSON.stringify(response, null, 2));
 
-          // 🎯 Fix: response có lowercase properties do axios interceptor
           const isSuccess = response?.success === true;
 
           if (isSuccess && response.data) {
@@ -162,48 +153,6 @@ const UserProfile = (props) => {
     setImageLoadError(false);
   }, [profileData.imageUrl, avatarPreview]);
 
-  // Helper function để tìm bank type ID từ bank name
-  const findBankTypeIdByName = (bankName, bankTypesList) => {
-    if (!bankName || !bankTypesList.length) return 0;
-
-    const foundBank = bankTypesList.find(
-      (bank) =>
-        bank.bankName &&
-        bank.bankName.toLowerCase().trim() === bankName.toLowerCase().trim()
-    );
-
-    console.log("Finding bank:", bankName, "Found:", foundBank);
-    return foundBank ? foundBank.bankTypeId : 0;
-  };
-
-  // Load danh sách ngân hàng
-  const fetchBankTypes = async () => {
-    try {
-      const response = await getAllBankType("", 1, 100);
-
-      // Check both possible response structures
-      if (response && (response.success || response.Success)) {
-        const bankTypesList =
-          response.data?.items ||
-          response.data ||
-          response.Data?.items ||
-          response.Data ||
-          [];
-        setBankTypes(bankTypesList);
-        console.log("Bank types loaded:", bankTypesList);
-        return bankTypesList;
-      } else {
-        console.warn("Could not load bank types:", response);
-        setBankTypes([]);
-        return [];
-      }
-    } catch (error) {
-      console.error("Error fetching bank types:", error);
-      setBankTypes([]);
-      return [];
-    }
-  };
-
   // Load dữ liệu người dùng từ API - SIMPLIFIED
   useEffect(() => {
     const fetchUserData = async () => {
@@ -224,16 +173,12 @@ const UserProfile = (props) => {
         console.log("👤 Auth loaded, fetching user data for userId:", userId);
         setPageLoading(true);
 
-        // Load bank types trước
-        const bankTypesList = await fetchBankTypes();
-
         // Load user data
         const userDataResult = await getUserById(userId);
 
         console.log("=== GET USER RESPONSE ===");
         console.log(JSON.stringify(userDataResult, null, 2));
 
-        // Check both possible response structures for getUserById
         const isSuccess =
           userDataResult?.success === true || userDataResult?.Success === true;
         const userData = userDataResult?.data || userDataResult?.Data;
@@ -242,42 +187,6 @@ const UserProfile = (props) => {
           // Store original email for comparison
           setOriginalEmail(userData.email || "");
 
-          // Tự động khớp bankTypeId từ bankName nếu có
-          let matchedBankTypeId = userData.bankTypeId || 0;
-
-          if (userData.bankName && bankTypesList.length > 0) {
-            const foundBankTypeId = findBankTypeIdByName(
-              userData.bankName,
-              bankTypesList
-            );
-            if (foundBankTypeId > 0) {
-              matchedBankTypeId = foundBankTypeId;
-              console.log(
-                `Matched bank "${userData.bankName}" with ID: ${foundBankTypeId}`
-              );
-            } else {
-              const existsInList = bankTypesList.find(
-                (bank) => bank.bankTypeId === userData.bankTypeId
-              );
-              if (!existsInList) {
-                matchedBankTypeId = 0;
-                console.log(
-                  `Bank "${userData.bankName}" not found in bank types list, reset to default`
-                );
-              }
-            }
-          } else if (userData.bankTypeId && bankTypesList.length > 0) {
-            const existsInList = bankTypesList.find(
-              (bank) => bank.bankTypeId === userData.bankTypeId
-            );
-            if (!existsInList) {
-              matchedBankTypeId = 0;
-              console.log(
-                `BankTypeId ${userData.bankTypeId} not found in bank types list, reset to default`
-              );
-            }
-          }
-
           setProfileData({
             fullName: userData.fullName || "",
             email: userData.email || "",
@@ -285,10 +194,6 @@ const UserProfile = (props) => {
             isMale: userData.isMale !== undefined ? userData.isMale : true,
             address: userData.address || "",
             dob: userData.dob ? userData.dob.split("T")[0] : "",
-            accountNumber: userData.accountNumber || "",
-            accountHolder: userData.accountHolder || "",
-            bankTypeId: matchedBankTypeId,
-            bankName: userData.bankName || "",
             imageUrl: userData.imageUrl || "",
             imageId: userData.imageId || null,
           });
@@ -508,7 +413,7 @@ const UserProfile = (props) => {
     }
   };
 
-  // 🎯 Updated validation logic - chỉ thêm kiểm tra email và phone
+  // Updated validation logic - loại bỏ bank validation
   const validateProfile = () => {
     const newErrors = {};
 
@@ -519,7 +424,7 @@ const UserProfile = (props) => {
       newErrors.fullName = "Tên người dùng không được vượt quá 50 ký tự";
     }
 
-    // 🎯 KIỂM TRA PHƯƠNG THỨC ĐĂNG NHẬP - ít nhất 1 trong 2 (email hoặc phone)
+    // KIỂM TRA PHƯƠNG THỨC ĐĂNG NHẬP - ít nhất 1 trong 2 (email hoặc phone)
     const hasEmail = profileData.email?.trim();
     const hasPhone = profileData.phone?.trim();
 
@@ -562,40 +467,9 @@ const UserProfile = (props) => {
       }
     }
 
-    // Bank account validation - CHỈ validate khi có ít nhất 1 field được điền
-    const hasAccountNumber = profileData.accountNumber?.trim();
-    const hasAccountHolder = profileData.accountHolder?.trim();
-    const hasBankTypeId = profileData.bankTypeId && profileData.bankTypeId > 0;
-
-    if (hasAccountNumber || hasAccountHolder || hasBankTypeId) {
-      if (!hasAccountNumber) {
-        newErrors.accountNumber =
-          "Số tài khoản không được để trống khi cập nhật thông tin ngân hàng";
-      } else {
-        const accountNumberRegex = /^[0-9]{9,16}$/;
-        if (!accountNumberRegex.test(hasAccountNumber)) {
-          newErrors.accountNumber =
-            "Số tài khoản không hợp lệ, chỉ chứa từ 9-16 ký tự số";
-        }
-      }
-
-      if (!hasAccountHolder) {
-        newErrors.accountHolder =
-          "Tên chủ tài khoản không được để trống khi cập nhật thông tin ngân hàng";
-      } else if (hasAccountHolder.length > 50) {
-        newErrors.accountHolder =
-          "Tên chủ tài khoản không được vượt quá 50 ký tự";
-      }
-
-      if (!hasBankTypeId) {
-        newErrors.bankTypeId = "Vui lòng chọn ngân hàng";
-      }
-    }
-
     return newErrors;
   };
 
-  // Sửa lại function validatePassword trong UserProfile.js
   const validatePassword = () => {
     const newErrors = {};
 
@@ -607,11 +481,10 @@ const UserProfile = (props) => {
       newErrors.oldPassword = "Mật khẩu cũ không được để trống";
     }
 
-    // 🎯 NEW: Validate new password với regex mới từ backend
+    // NEW: Validate new password với regex mới từ backend
     if (!passwordData.newPassword?.trim()) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới";
     } else {
-      // 🎯 Backend regex: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
       if (!passwordRegex.test(passwordData.newPassword)) {
@@ -620,20 +493,17 @@ const UserProfile = (props) => {
       }
     }
 
-    // 🎯 Validate confirm password - khớp với backend
+    // Validate confirm password - khớp với backend
     if (!passwordData.confirmPassword?.trim()) {
       newErrors.confirmPassword = "Xác nhận mật khẩu không được để trống";
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu xác nhận không trùng khớp";
     }
 
-    // 🎯 REMOVED: Check if new password is same as old password
-    // Backend sẽ handle việc này, frontend không cần check nữa
-
     return newErrors;
   };
 
-  // 🎯 Updated profile update handler
+  // Updated profile update handler - Send NULL for empty fields
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
 
@@ -649,24 +519,17 @@ const UserProfile = (props) => {
     setErrors({});
 
     try {
-      // 🎯 Prepare update data theo backend logic mới
+      // Prepare update data
       const updateData = {
-        fullName: profileData.fullName.trim(), // Required field
+        fullName: profileData.fullName.trim(), // Required field - always has value
       };
 
-      // 🎯 Chỉ thêm optional fields nếu có giá trị
-      if (profileData.email?.trim()) {
-        updateData.email = profileData.email.trim();
-      }
+      // 🎯 FIX: Send NULL for empty optional fields instead of empty string
+      updateData.email = profileData.email?.trim() || null;
+      updateData.phone = profileData.phone?.trim() || null;
+      updateData.address = profileData.address?.trim() || "";
 
-      if (profileData.phone?.trim()) {
-        updateData.phone = profileData.phone.trim();
-      }
-
-      if (profileData.address?.trim()) {
-        updateData.address = profileData.address.trim();
-      }
-
+      // DOB: send value if exists, otherwise don't include field
       if (profileData.dob) {
         updateData.dob = profileData.dob;
       }
@@ -674,20 +537,7 @@ const UserProfile = (props) => {
       // Gender luôn gửi (có default value)
       updateData.isMale = profileData.isMale;
 
-      // 🎯 Chỉ thêm bank account fields nếu có đầy đủ thông tin
-      const hasCompleteBank =
-        profileData.accountNumber?.trim() &&
-        profileData.accountHolder?.trim() &&
-        profileData.bankTypeId > 0;
-
-      if (hasCompleteBank) {
-        updateData.accountNumber = profileData.accountNumber.trim();
-        updateData.accountHolder = profileData.accountHolder.trim();
-        updateData.bankTypeId = parseInt(profileData.bankTypeId);
-      }
-
       console.log("Updating profile with data:", updateData);
-      console.log("Has complete bank info:", hasCompleteBank);
 
       const response = await updateUserProfile(userId, updateData);
 
@@ -712,7 +562,7 @@ const UserProfile = (props) => {
         // Update original email after successful update
         setOriginalEmail(updateData.email || "");
 
-        // 🎯 REFRESH USER DATA sau khi cập nhật thành công
+        // REFRESH USER DATA sau khi cập nhật thành công
         try {
           console.log("🔄 Refreshing user data after successful update...");
           const userResponse = await getUserById(userId);
@@ -725,23 +575,6 @@ const UserProfile = (props) => {
           const refreshedUserData = userResponse?.data || userResponse?.Data;
 
           if (isRefreshSuccess && refreshedUserData) {
-            // 🎯 Cập nhật lại toàn bộ profileData với dữ liệu mới từ server
-            let matchedBankTypeId = refreshedUserData.bankTypeId || 0;
-
-            // Tự động khớp bankTypeId từ bankName nếu có (như logic ban đầu)
-            if (refreshedUserData.bankName && bankTypes.length > 0) {
-              const foundBankTypeId = findBankTypeIdByName(
-                refreshedUserData.bankName,
-                bankTypes
-              );
-              if (foundBankTypeId > 0) {
-                matchedBankTypeId = foundBankTypeId;
-                console.log(
-                  `🔄 Re-matched bank "${refreshedUserData.bankName}" with ID: ${foundBankTypeId}`
-                );
-              }
-            }
-
             setProfileData({
               fullName: refreshedUserData.fullName || "",
               email: refreshedUserData.email || "",
@@ -754,15 +587,11 @@ const UserProfile = (props) => {
               dob: refreshedUserData.dob
                 ? refreshedUserData.dob.split("T")[0]
                 : "",
-              accountNumber: refreshedUserData.accountNumber || "",
-              accountHolder: refreshedUserData.accountHolder || "",
-              bankTypeId: matchedBankTypeId,
-              bankName: refreshedUserData.bankName || "",
               imageUrl: refreshedUserData.imageUrl || "",
               imageId: refreshedUserData.imageId || null,
             });
 
-            // 🎯 Cập nhật lại originalEmail với email mới từ server
+            // Cập nhật lại originalEmail với email mới từ server
             setOriginalEmail(refreshedUserData.email || "");
 
             console.log("✅ User data refreshed successfully after update");
@@ -774,7 +603,6 @@ const UserProfile = (props) => {
           }
         } catch (refreshError) {
           console.error("❌ Error refreshing user data:", refreshError);
-          // Không làm gì cả, chỉ log error - user vẫn thấy success message
         }
       } else {
         // Error case - map to specific fields
@@ -846,39 +674,6 @@ const UserProfile = (props) => {
             setErrors({ address: errorMessage });
             console.log("✅ Set address length error:", errorMessage);
 
-            // ACCOUNT NUMBER ERRORS
-          } else if (
-            errorMessage.includes("Số tài khoản không hợp lệ") ||
-            errorMessage.includes("9-16 ký tự") ||
-            errorMessage.includes("tài khoản")
-          ) {
-            setErrors({ accountNumber: errorMessage });
-            console.log("✅ Set accountNumber error:", errorMessage);
-
-            // ACCOUNT HOLDER ERRORS
-          } else if (
-            errorMessage.includes(
-              "Tên chủ tài khoản không được vượt quá 50 ký tự"
-            )
-          ) {
-            setErrors({ accountHolder: errorMessage });
-            console.log("✅ Set accountHolder length error:", errorMessage);
-
-            // BANK TYPE ERRORS
-          } else if (
-            errorMessage.includes("Loại ngân hàng không hợp lệ") ||
-            errorMessage.includes("ngân hàng không hợp lệ")
-          ) {
-            setErrors({ bankTypeId: errorMessage });
-            console.log("✅ Set bankTypeId invalid error:", errorMessage);
-          } else if (
-            errorMessage.includes("Không tìm thấy kiểu ngân hàng đã chọn") ||
-            errorMessage.includes("không tìm thấy") ||
-            errorMessage.includes("ngân hàng")
-          ) {
-            setErrors({ bankTypeId: errorMessage });
-            console.log("✅ Set bankTypeId not found error:", errorMessage);
-
             // GENERAL ERRORS
           } else {
             setMessage(errorMessage);
@@ -899,7 +694,7 @@ const UserProfile = (props) => {
     }
   };
 
-  // 🎯 Xử lý đổi mật khẩu - FIXED
+  // Xử lý đổi mật khẩu - FIXED
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
@@ -920,7 +715,7 @@ const UserProfile = (props) => {
         confirmPassword: passwordData.confirmPassword,
       };
 
-      // 🎯 Chỉ thêm oldPassword nếu RequireOldPassword = true
+      // Chỉ thêm oldPassword nếu RequireOldPassword = true
       if (passwordStatus?.RequireOldPassword) {
         changePasswordRequest.oldPassword = passwordData.oldPassword;
       }
@@ -932,13 +727,12 @@ const UserProfile = (props) => {
       console.log("=== CHANGE PASSWORD RESPONSE ===");
       console.log(JSON.stringify(response, null, 2));
 
-      // 🎯 Fix: Check cả uppercase và lowercase cho change password response
       const isSuccess =
         response?.success === true || response?.Success === true;
       const errorMessage = response?.message || response?.Message;
 
       if (isSuccess) {
-        // 🎯 Success - show appropriate message
+        // Success - show appropriate message
         const successMessage = passwordStatus?.HasPassword
           ? "Đổi mật khẩu thành công"
           : "Thiết lập mật khẩu thành công";
@@ -952,7 +746,7 @@ const UserProfile = (props) => {
           confirmPassword: "",
         });
 
-        // 🎯 Update password status sau khi thành công
+        // Update password status sau khi thành công
         setPasswordStatus((prev) => ({
           ...prev,
           HasPassword: true,
@@ -1027,21 +821,6 @@ const UserProfile = (props) => {
       .join("")
       .substring(0, 2)
       .toUpperCase();
-  };
-
-  // Get bank name by ID
-  const getBankNameById = (bankTypeId) => {
-    const bank = bankTypes.find(
-      (bank) => bank.bankTypeId === parseInt(bankTypeId)
-    );
-    return bank ? bank.bankName : "";
-  };
-
-  // Check if current bank selection is valid
-  const isCurrentBankSelectionValid = () => {
-    return (
-      profileData.bankTypeId > 0 && getBankNameById(profileData.bankTypeId)
-    );
   };
 
   // Show loading screen while fetching user data
@@ -1276,88 +1055,6 @@ const UserProfile = (props) => {
               )}
             </div>
 
-            {/* 🎯 Bank Account Section - Updated labels */}
-            <div className="user-profile__bank-section">
-              <h3>Thông tin tài khoản ngân hàng (tùy chọn)</h3>
-              <p className="bank-section-note">
-                Điền đầy đủ tất cả thông tin bên dưới để cập nhật tài khoản ngân
-                hàng
-              </p>
-
-              <div className="user-profile__form-row">
-                <div className="user-profile__form-group">
-                  <label>
-                    <i className="fas fa-credit-card"></i>
-                    Số tài khoản
-                  </label>
-                  <input
-                    type="text"
-                    name="accountNumber"
-                    value={profileData.accountNumber}
-                    onChange={handleProfileChange}
-                    className={errors.accountNumber ? "error" : ""}
-                    placeholder="Nhập số tài khoản (9-16 chữ số)"
-                  />
-                  {errors.accountNumber && (
-                    <span className="error-text">{errors.accountNumber}</span>
-                  )}
-                </div>
-
-                <div className="user-profile__form-group">
-                  <label>
-                    <i className="fas fa-user-tie"></i>
-                    Tên chủ tài khoản
-                  </label>
-                  <input
-                    type="text"
-                    name="accountHolder"
-                    value={profileData.accountHolder}
-                    onChange={handleProfileChange}
-                    className={errors.accountHolder ? "error" : ""}
-                    placeholder="Nhập tên chủ tài khoản"
-                  />
-                  {errors.accountHolder && (
-                    <span className="error-text">{errors.accountHolder}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="user-profile__form-group">
-                <label>
-                  <i className="fas fa-university"></i>
-                  Ngân hàng
-                </label>
-                <select
-                  name="bankTypeId"
-                  value={profileData.bankTypeId}
-                  onChange={handleProfileChange}
-                  className={errors.bankTypeId ? "error" : ""}
-                >
-                  <option value={0}>Chọn ngân hàng</option>
-                  {bankTypes.map((bank) => (
-                    <option key={bank.bankTypeId} value={bank.bankTypeId}>
-                      {bank.bankName}
-                      {bank.description && ` - ${bank.description}`}
-                    </option>
-                  ))}
-                </select>
-                {errors.bankTypeId && (
-                  <span className="error-text">{errors.bankTypeId}</span>
-                )}
-
-                {/* Hiển thị cảnh báo nếu bankName từ server không khớp với danh sách */}
-                {profileData.bankName &&
-                  !isCurrentBankSelectionValid() &&
-                  profileData.bankTypeId === 0 && (
-                    <span className="bank-name-display bank-not-matched">
-                      <i className="fas fa-exclamation-triangle"></i>
-                      Ngân hàng từ hệ thống: "{profileData.bankName}" - Không
-                      tìm thấy trong danh sách
-                    </span>
-                  )}
-              </div>
-            </div>
-
             <button
               type="submit"
               className="user-profile__submit-btn"
@@ -1369,7 +1066,7 @@ const UserProfile = (props) => {
           </form>
         )}
 
-        {/* 🎯 Password Tab - FINAL VERSION */}
+        {/* Password Tab - FINAL VERSION */}
         {activeTab === "password" && (
           <div className="user-profile__password-section">
             {/* Loading state */}
@@ -1386,7 +1083,7 @@ const UserProfile = (props) => {
                 className="user-profile__form"
                 onSubmit={handleChangePassword}
               >
-                {/* 🎯 Old Password - CHỈ hiển thị khi RequireOldPassword = true */}
+                {/* Old Password - CHỈ hiển thị khi RequireOldPassword = true */}
                 {passwordStatus.RequireOldPassword && (
                   <div className="user-profile__form-group">
                     <label>
@@ -1408,7 +1105,7 @@ const UserProfile = (props) => {
                   </div>
                 )}
 
-                {/* 🎯 Notice cho first-time setup */}
+                {/* Notice cho first-time setup */}
                 {!passwordStatus.RequireOldPassword && (
                   <div className="password-setup-notice">
                     <i className="fas fa-info-circle"></i>

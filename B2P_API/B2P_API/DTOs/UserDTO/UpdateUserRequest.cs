@@ -12,9 +12,6 @@ namespace B2P_API.DTOs.UserDTO
         public string? Email { get; set; }
         public string? Address { get; set; }
         public DateOnly? Dob { get; set; }
-        public string? AccountNumber { get; set; } = null!;
-        public string? AccountHolder { get; set; }
-        public int? BankTypeId { get; set; }
         public bool? IsMale { get; set; }
 
     }

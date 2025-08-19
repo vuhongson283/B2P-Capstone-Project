@@ -171,9 +171,6 @@ builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 
-builder.Services.AddScoped<BankAccountService>();
-builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
-
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 

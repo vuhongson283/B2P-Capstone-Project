@@ -11,7 +11,7 @@ public partial class User
 
     public string? Password { get; set; }
 
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
 
     public string? Phone { get; set; }
 
@@ -26,8 +26,6 @@ public partial class User
     public DateOnly? Dob { get; set; }
 
     public string FullName { get; set; } = null!;
-
-    public virtual BankAccount? BankAccount { get; set; }
 
     public virtual ICollection<Blog> Blogs { get; set; } = new List<Blog>();
 
