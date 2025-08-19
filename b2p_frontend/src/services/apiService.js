@@ -486,20 +486,13 @@ const exportReportToExcel = (
 
 // ✅ THÊM: getAdminReport
 const getAdminReport = (
-  startDate,
-  endDate,
-  pageNumber = 1,
-  pageSize = 10
+  month,
+  year
 ) => {
-  const formattedStartDate = startDate ? new Date(startDate).toISOString() : null;
-  const formattedEndDate = endDate ? new Date(endDate).toISOString() : null;
-
   return axios.get(`Report/AdminReport`, {
     params: {
-      startDate: formattedStartDate,
-      endDate: formattedEndDate,
-      pageNumber,
-      pageSize,
+      month,
+      year
     },
   });
 };

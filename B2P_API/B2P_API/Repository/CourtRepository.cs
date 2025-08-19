@@ -18,7 +18,7 @@ namespace B2P_API.Repository
             _context = context;
         }
 
-        public async Task<PagedResponse<CourtDTO>> GetAllCourts(CourtRequestDTO req)
+        public async Task<PagedResponse<Court>> GetAllCourts(CourtRequestDTO req)
         {
             var query = _context.Courts.AsQueryable();
 
@@ -45,48 +45,47 @@ namespace B2P_API.Repository
             var data = await query
                 .Skip((req.PageNumber - 1) * req.PageSize)
                 .Take(req.PageSize)
-                .Select(c => new CourtDTO
+                .Select(c => new Court
                 {
                     CourtId = c.CourtId,
                     CourtName = c.CourtName,
                     CategoryId = c.CategoryId,
-                    CategoryName = c.Category != null ? c.Category.CategoryName : null,
-                    StatusName = c.Status != null ? c.Status.StatusName : null,
-                    PricePerHour = c.PricePerHour
+                    PricePerHour = c.PricePerHour,
+                    Category = c.Category,
+                    Status = c.Status,
+                    FacilityId = c.FacilityId,
+                    StatusId = c.StatusId
                 })
                 .ToListAsync();
 
-            return new PagedResponse<CourtDTO>
+            return new PagedResponse<Court>
             {
                 CurrentPage = req.PageNumber,
                 ItemsPerPage = req.PageSize,
                 TotalItems = totalItems,
                 TotalPages = totalPages,
-                Items = data.Any() ? data : null
+                Items = data
             };
         }
 
-        public async Task<CourtDetailDTO> GetCourtDetail(int courtId)
+        public async Task<Court> GetCourtDetail(int courtId)
         {
             return await _context.Courts
             .Include(c => c.Category)
             .Include(c => c.Facility)
             .Include(c => c.Status)
             .Where(c => c.CourtId == courtId)
-            .Select(c => new CourtDetailDTO
+            .Select(c => new Court
             {
                 CourtId = c.CourtId,
                 CourtName = c.CourtName,
-                PricePerHour = c.PricePerHour,
-                StatusId = c.StatusId,
-                StatusName = c.Status != null ? c.Status.StatusName : null,
-                StatusDescription = c.Status != null ? c.Status.StatusDescription : null,
                 CategoryId = c.CategoryId,
-                CategoryName = c.Category != null ? c.Category.CategoryName : null,
+                PricePerHour = c.PricePerHour,
+                Category = c.Category,
+                Facility = c.Facility,
+                Status = c.Status,
                 FacilityId = c.FacilityId,
-                FacilityName = c.Facility != null ? c.Facility.FacilityName : null,
-                Location = c.Facility != null ? c.Facility.Location : null,
-                Contact = c.Facility != null? c.Facility.Contact : null
+                StatusId = c.StatusId
             })
             .FirstOrDefaultAsync();
         }

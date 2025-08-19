@@ -17,11 +17,17 @@ const CourtOwnerDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Sử dụng toàn tử optional chaining để tránh lỗi khi selectedDate là undefined
-        const month = selectedDate?.month() + 1 || new Date().getMonth() + 1;
-        const year = selectedDate?.year() || new Date().getFullYear();
+        // Sửa lại cách lấy month và year
+        let month, year;
         
-        console.log('Calling API with:', { month, year }); // Log tham số gọi API
+        if (selectedDate) {
+          month = selectedDate.month() + 1;
+          year = selectedDate.year();
+        } else {
+          const currentDate = new Date();
+          month = currentDate.getMonth() + 1;
+          year = currentDate.getFullYear();
+        }
         
         const response = await getAdminReport(month, year);
         console.log('Response received:', response); // Log response
@@ -97,7 +103,10 @@ const CourtOwnerDashboard = () => {
         </Title>
         <DatePicker 
           picker="month" 
-          onChange={(date) => setSelectedDate(date || undefined)} // Thêm check undefined
+          onChange={(date) => {
+            console.log('DatePicker onChange:', date);
+            setSelectedDate(date);
+          }}
           placeholder="Chọn tháng"
           format="MM/YYYY"
           value={selectedDate}

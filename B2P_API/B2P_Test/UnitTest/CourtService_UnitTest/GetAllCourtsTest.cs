@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Interface;
+using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Services;
 using Moq;
@@ -31,16 +32,16 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 PageSize = 5
             };
 
-            var mockResult = new PagedResponse<CourtDTO>
+            var mockResult = new PagedResponse<Court>
             {
                 CurrentPage = 1,
                 ItemsPerPage = 5,
                 TotalItems = 10,
                 TotalPages = 2,
-                Items = new List<CourtDTO>
+                Items = new List<Court>
                 {
-                    new CourtDTO { CourtId = 1, CourtName = "Sân 1" },
-                    new CourtDTO { CourtId = 2, CourtName = "Sân 2" }
+                    new Court { CourtId = 1, CourtName = "Sân 1" },
+                    new Court { CourtId = 2, CourtName = "Sân 2" }
                 }
             };
 
@@ -72,15 +73,15 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 PageSize = inputSize
             };
 
-            var mockResult = new PagedResponse<CourtDTO>
+            var mockResult = new PagedResponse<Court>
             {
                 CurrentPage = expectedPage,
                 ItemsPerPage = expectedSize,
                 TotalItems = 10,
                 TotalPages = 2,
-                Items = new List<CourtDTO>
+                Items = new List<Court>
                 {
-                    new CourtDTO { CourtId = 1, CourtName = "Sân 1" }
+                    new Court { CourtId = 1, CourtName = "Sân 1" }
                 }
             };
 
@@ -108,10 +109,10 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 Search = "Không tồn tại"
             };
 
-            var mockResult = new PagedResponse<CourtDTO>
+            var mockResult = new PagedResponse<Court>
             {
                 TotalItems = 0,
-                Items = new List<CourtDTO>()
+                Items = new List<Court>()
             };
 
             _courtRepoMock.Setup(x => x.GetAllCourts(request))
@@ -138,10 +139,10 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 // No search criteria
             };
 
-            var mockResult = new PagedResponse<CourtDTO>
+            var mockResult = new PagedResponse<Court>
             {
                 TotalItems = 0,
-                Items = new List<CourtDTO>()
+                Items = new List<Court>()
             };
 
             _courtRepoMock.Setup(x => x.GetAllCourts(request))
@@ -167,13 +168,13 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 PageSize = 10
             };
 
-            var mockResult = new PagedResponse<CourtDTO>
+            var mockResult = new PagedResponse<Court>
             {
                 CurrentPage = 1,
                 ItemsPerPage = 10,
                 TotalItems = 0,
                 TotalPages = 0,
-                Items = new List<CourtDTO>()
+                Items = new List<Court>()
             };
 
             _courtRepoMock.Setup(x => x.GetAllCourts(request))
