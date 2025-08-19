@@ -22,11 +22,11 @@ import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
-import PaymentManager from "./CourtOwnerPage/PaymentManager";
+import PaymentManager from "./CourtOwnerPage/PaymentManager.js";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
-import UnauthorizedPage from "./Common/UnauthorizedPage";
+import UnauthorizedPage from "./Common/UnauthorizedPage.js";
 import Login from './Auth/Login';
 import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../context/AuthContext";
 
