@@ -67,11 +67,11 @@ public partial class SportBookingDbContext : DbContext
     {
         modelBuilder.Entity<BankAccount>(entity =>
         {
-            entity.HasKey(e => e.BankAccountId).HasName("PK__BankAcco__4FC8E4A1B9F16EDD");
+            entity.HasKey(e => e.BankAccountId).HasName("PK__BankAcco__4FC8E4A178130BBF");
 
             entity.ToTable("BankAccount");
 
-            entity.HasIndex(e => e.UserId, "UQ__BankAcco__1788CC4DAADA5925").IsUnique();
+            entity.HasIndex(e => e.UserId, "UQ__BankAcco__1788CC4D4366CC7D").IsUnique();
 
             entity.Property(e => e.AccountHolder).HasMaxLength(100);
             entity.Property(e => e.AccountNumber).HasMaxLength(50);
@@ -79,7 +79,7 @@ public partial class SportBookingDbContext : DbContext
             entity.HasOne(d => d.BankType).WithMany(p => p.BankAccounts)
                 .HasForeignKey(d => d.BankTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BankAccou__BankT__797309D9");
+                .HasConstraintName("FK__BankAccou__BankT__6754599E");
 
             entity.HasOne(d => d.User).WithOne(p => p.BankAccount)
                 .HasForeignKey<BankAccount>(d => d.UserId)
@@ -89,11 +89,11 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<BankType>(entity =>
         {
-            entity.HasKey(e => e.BankTypeId).HasName("PK__BankType__91F2C3792491327E");
+            entity.HasKey(e => e.BankTypeId).HasName("PK__BankType__91F2C3798B47CF33");
 
             entity.ToTable("BankType");
 
-            entity.HasIndex(e => e.BankName, "UQ__BankType__DA9ADFAABCB90144").IsUnique();
+            entity.HasIndex(e => e.BankName, "UQ__BankType__DA9ADFAADD855B4D").IsUnique();
 
             entity.Property(e => e.BankName).HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -101,7 +101,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<Blog>(entity =>
         {
-            entity.HasKey(e => e.BlogId).HasName("PK__Blog__54379E30E667045D");
+            entity.HasKey(e => e.BlogId).HasName("PK__Blog__54379E307B34C652");
 
             entity.ToTable("Blog");
 
@@ -177,7 +177,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCAA5B14A59");
+            entity.HasKey(e => e.CommentId).HasName("PK__Comment__C3B4DFCAC3B22144");
 
             entity.ToTable("Comment");
 
@@ -188,11 +188,11 @@ public partial class SportBookingDbContext : DbContext
 
             entity.HasOne(d => d.Blog).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.BlogId)
-                .HasConstraintName("FK__Comment__BlogId__02084FDA");
+                .HasConstraintName("FK__Comment__BlogId__6FE99F9F");
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .HasConstraintName("FK__Comment__ParentC__02FC7413");
+                .HasConstraintName("FK__Comment__ParentC__70DDC3D8");
 
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.UserId)
@@ -201,7 +201,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<CommissionPaymentHistory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Commissi__3214EC07F42FDB31");
+            entity.HasKey(e => e.Id).HasName("PK__Commissi__3214EC0745638DFD");
 
             entity.ToTable("CommissionPaymentHistory");
 
@@ -244,7 +244,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<CourtCategory>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__CourtCat__19093A0B8CD37145");
+            entity.HasKey(e => e.CategoryId).HasName("PK__CourtCat__19093A0B85B9E6FC");
 
             entity.Property(e => e.CategoryName).HasMaxLength(100);
         });
@@ -300,7 +300,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<MerchantPayment>(entity =>
         {
-            entity.HasKey(e => e.MerchantPaymentId).HasName("PK__Merchant__6528F243F17AFA5C");
+            entity.HasKey(e => e.MerchantPaymentId).HasName("PK__Merchant__6528F2433AF48546");
 
             entity.ToTable("MerchantPayment");
 
@@ -349,7 +349,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<PaymentMethod>(entity =>
         {
-            entity.HasKey(e => e.PaymentMethodId).HasName("PK__PaymentM__DC31C1D362C791DA");
+            entity.HasKey(e => e.PaymentMethodId).HasName("PK__PaymentM__DC31C1D3C394A3ED");
 
             entity.ToTable("PaymentMethod");
 
@@ -358,7 +358,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<PaymentType>(entity =>
         {
-            entity.HasKey(e => e.PaymentTypeId).HasName("PK__PaymentT__BA430B35959FE673");
+            entity.HasKey(e => e.PaymentTypeId).HasName("PK__PaymentT__BA430B35B028DA5F");
 
             entity.ToTable("PaymentType");
 
@@ -367,7 +367,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<Rating>(entity =>
         {
-            entity.HasKey(e => e.RatingId).HasName("PK__Rating__FCCDF87CAD54FD71");
+            entity.HasKey(e => e.RatingId).HasName("PK__Rating__FCCDF87CEDC28A62");
 
             entity.ToTable("Rating");
 
@@ -382,11 +382,11 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1ACF5F4EAC");
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1A067D3E78");
 
             entity.ToTable("Role");
 
-            entity.HasIndex(e => e.RoleName, "UQ__Role__8A2B61600B0BCD10").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__Role__8A2B61604B500CFC").IsUnique();
 
             entity.Property(e => e.RoleName).HasMaxLength(50);
         });
@@ -397,13 +397,12 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("Slider");
 
-            entity.Property(e => e.SlideId).ValueGeneratedNever();
             entity.Property(e => e.SlideDescription).HasMaxLength(500);
             entity.Property(e => e.SlideUrl).HasMaxLength(500);
 
             entity.HasOne(d => d.Status).WithMany(p => p.Sliders)
                 .HasForeignKey(d => d.StatusId)
-                .HasConstraintName("FK_Sliders_Status");
+                .HasConstraintName("FK_Slider_Status");
         });
 
         modelBuilder.Entity<Status>(entity =>
@@ -439,10 +438,6 @@ public partial class SportBookingDbContext : DbContext
 
             entity.ToTable("User");
 
-            entity.HasIndex(e => e.Phone, "IX_User_Phone_NotNull")
-                .IsUnique()
-                .HasFilter("([Phone] IS NOT NULL)");
-
             entity.HasIndex(e => e.Email, "UQ__User__A9D10534D6ABFED3").IsUnique();
 
             entity.Property(e => e.Address).HasMaxLength(255);
@@ -453,7 +448,7 @@ public partial class SportBookingDbContext : DbContext
             entity.Property(e => e.FullName)
                 .HasMaxLength(100)
                 .HasDefaultValue("");
-            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.StatusId).HasDefaultValue(1);
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
@@ -469,7 +464,7 @@ public partial class SportBookingDbContext : DbContext
 
         modelBuilder.Entity<UserToken>(entity =>
         {
-            entity.HasKey(e => e.UserTokenId).HasName("PK__UserToke__BD92DEDBE211E39F");
+            entity.HasKey(e => e.UserTokenId).HasName("PK__UserToke__BD92DEDB5AAE75B4");
 
             entity.ToTable("UserToken");
 
