@@ -15,9 +15,13 @@ public partial class Status
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
+    public virtual ICollection<CommissionPaymentHistory> CommissionPaymentHistories { get; set; } = new List<CommissionPaymentHistory>();
+
     public virtual ICollection<Court> Courts { get; set; } = new List<Court>();
 
     public virtual ICollection<Facility> Facilities { get; set; } = new List<Facility>();
+
+    public virtual ICollection<MerchantPayment> MerchantPayments { get; set; } = new List<MerchantPayment>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 

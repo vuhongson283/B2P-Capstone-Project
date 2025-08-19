@@ -22,6 +22,7 @@ import CourtOwnerRegister from "./CourtOwnerRegister/CourtOwnerRegister";
 import DashboardField from "./CourtOwnerPage/CourtOwnerDashboard";
 import BookingManagement from "./CourtOwnerPage/BookingManagement"
 import CourtManagement from "./CourtOwnerPage/CourtManagement";
+import PaymentManager from "./CourtOwnerPage/PaymentManager";
 import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
@@ -67,6 +68,7 @@ const Layout = (props) => {
           <Route index element={<DashboardField />} />
           <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="booking-management" element={<BookingManagement />} />
+          <Route path="payment-management" element={<PaymentManager />} />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
           <Route path="facility/general" element={<FacilityTable />} />
           <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />

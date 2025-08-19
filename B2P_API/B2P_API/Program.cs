@@ -180,6 +180,13 @@ builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
 
+builder.Services.AddScoped<IMerchantPaymentRepository, MerchantPaymentRepository>();
+builder.Services.AddScoped<MerchantPaymentService>();
+
+builder.Services.AddScoped<ICommissionPaymentHistoryRepository, CommissionPaymentHistoryRepository>();
+builder.Services.AddScoped<CommissionPaymentHistoryService>();
+
+
 builder.Services.AddScoped<JWTHelper>();
 builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();

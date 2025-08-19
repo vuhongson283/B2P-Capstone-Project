@@ -23,13 +23,36 @@ namespace B2P_API.Controllers
         {
             var options = new AccountCreateOptions
             {
-                Type = "express",
+                Type = "custom", // dùng custom để có thể active luôn
                 Country = "US",
-                Email = $"test{Guid.NewGuid()}@example.com",
+                Email = $"test{Guid.NewGuid()}@example.com", // random => tạo được nhiều account
+                BusinessType = "individual",
                 Capabilities = new AccountCapabilitiesOptions
                 {
                     CardPayments = new AccountCapabilitiesCardPaymentsOptions { Requested = true },
                     Transfers = new AccountCapabilitiesTransfersOptions { Requested = true }
+                },
+                Individual = new AccountIndividualOptions
+                {
+                    FirstName = "Jenny",
+                    LastName = "Rosen",
+                    Dob = new DobOptions { Day = 1, Month = 1, Year = 1990 },
+                    Address = new AddressOptions
+                    {
+                        Line1 = "123 Main Street",
+                        City = "San Francisco",
+                        State = "CA",
+                        PostalCode = "94111",
+                        Country = "US"
+                    },
+                    Email = "jenny.rosen@example.com"
+                },
+                ExternalAccount = new AccountBankAccountOptions
+                {
+                    Country = "US",
+                    Currency = "usd",
+                    RoutingNumber = "110000000", // test value
+                    AccountNumber = "000123456789" // test value
                 }
             };
 
@@ -92,8 +115,8 @@ namespace B2P_API.Controllers
             var options = new AccountLinkCreateOptions
             {
                 Account = request.AccountId, // ID của connected account vừa tạo
-                RefreshUrl = "https://example.com/reauth", // URL khi user bấm refresh hoặc session hết hạn
-                ReturnUrl = "https://example.com/return",  // URL Stripe redirect về sau khi xong onboarding
+                RefreshUrl = "https://example.com/reauth",
+                ReturnUrl = "https://example.com/return",
                 Type = "account_onboarding"
             };
 
@@ -151,57 +174,78 @@ namespace B2P_API.Controllers
         [HttpPost("test-webhook")]
         public async Task<IActionResult> TestWebhook([FromBody] JsonElement payload)
         {
-            Console.WriteLine(payload); // In toàn bộ JSON để debug
+            Console.WriteLine(payload); // Log toàn bộ JSON để debug
 
-            if (payload.TryGetProperty("type", out var typeProp))
+            // Lấy eventType
+            if (!payload.TryGetProperty("type", out var typeProp))
             {
-                int bookingId = 0;
+                Console.WriteLine("Webhook không có type");
+                return Ok();
+            }
+            var eventType = typeProp.GetString();
 
-                var eventType = typeProp.GetString();
-                if (payload.TryGetProperty("data", out var dataProp) &&
-                    dataProp.TryGetProperty("object", out var objectProp) &&
-                    objectProp.TryGetProperty("metadata", out var metadataProp) &&
+            int bookingId = 0;
+            string stripePaymentIntentId = string.Empty;
+
+            // Lấy data.object
+            if (payload.TryGetProperty("data", out var dataProp) &&
+                dataProp.TryGetProperty("object", out var objectProp))
+            {
+                // Stripe PaymentIntent Id
+                if (objectProp.TryGetProperty("id", out var stripeIdProp))
+                {
+                    stripePaymentIntentId = stripeIdProp.GetString();
+                    Console.WriteLine($"Stripe PaymentIntentId: {stripePaymentIntentId}");
+                }
+
+                // BookingId trong metadata
+                if (objectProp.TryGetProperty("metadata", out var metadataProp) &&
                     metadataProp.TryGetProperty("BookingId", out var bookingIdProp))
                 {
                     var bookingIdStr = bookingIdProp.GetString();
                     if (!int.TryParse(bookingIdStr, out bookingId))
-                    {
                         Console.WriteLine($"BookingId không hợp lệ: {bookingIdStr}");
-                    }
                     else
-                    {
                         Console.WriteLine($"BookingId: {bookingId}");
-                    }
                 }
+            }
 
-                if (bookingId != 0)
-                {
-                    switch (eventType)
-                    {
-                        case "payment_intent.succeeded":
-                            await _bookingService.MarkBookingCompleteAsync(bookingId);
-                            Console.WriteLine("merchant da nhan tien");
-                            break;
+            if (bookingId == 0)
+            {
+                Console.WriteLine("Webhook không có BookingId, bỏ qua xử lý.");
+                return Ok();
+            }
 
-                        case "payment_intent.canceled":
-                            await _bookingService.MarkBookingCancelledAsync(bookingId);
-                            Console.WriteLine("huy don");
-                            break;
+            // Xử lý theo loại sự kiện Stripe
+            switch (eventType)
+            {
+                case "payment_intent.succeeded":
+                    await _bookingService.MarkBookingCompleteAsync(bookingId);
+                    Console.WriteLine("Merchant đã nhận tiền");
+                    break;
 
-                        case "payment_intent.created":
-                            Console.WriteLine("tao don thanh cong");
-                            break;
+                case "payment_intent.canceled":
+                    await _bookingService.MarkBookingCancelledAsync(bookingId);
+                    Console.WriteLine("Hủy đơn");
+                    break;
 
-                        case "payment_intent.amount_capturable_updated":
-                            await _bookingService.MarkBookingPaidAsync(bookingId);
-                            Console.WriteLine("player da tra tien");
-                            break;
-                    }
-                }
+                case "payment_intent.amount_capturable_updated":
+                    await _bookingService.MarkBookingPaidAsync(bookingId, stripePaymentIntentId);
+                    Console.WriteLine("Player đã trả tiền (chờ capture)");
+                    break;
+
+                case "payment_intent.created":
+                    Console.WriteLine("Tạo PaymentIntent thành công (không xử lý DB)");
+                    break;
+
+                default:
+                    Console.WriteLine($"Sự kiện chưa xử lý: {eventType}");
+                    break;
             }
 
             return Ok();
         }
+
 
 
 

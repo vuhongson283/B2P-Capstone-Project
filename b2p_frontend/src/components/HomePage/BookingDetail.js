@@ -24,7 +24,8 @@ export default function BookingDetail({
     quantities,
     createBooking, // Thêm prop function từ parent để gọi API
     createPayment, // Thêm prop function để gọi API tạo thanh toán nội địa
-    createStripePaymentOrder // Thêm prop function để gọi API tạo thanh toán quốc tế
+    createStripePaymentOrder, // Thêm prop function để gọi API tạo thanh toán quốc tế
+    userId
 }) {
     const navigate = useNavigate(); // Hook để điều hướng
     const [formData, setFormData] = useState({
@@ -79,16 +80,19 @@ export default function BookingDetail({
     const validateForm = () => {
         const newErrors = {};
 
-        // Phone validation
-        if (!formData.phone.trim()) {
-            newErrors.phone = 'Vui lòng nhập số điện thoại';
-        } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
-            newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
-        }
+        // Chỉ validate phone và email nếu userId không có giá trị
+        if (!userId) {
+            // Phone validation
+            if (!formData.phone.trim()) {
+                newErrors.phone = 'Vui lòng nhập số điện thoại';
+            } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
+                newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
+            }
 
-        // Email validation - cho phép để trống nhưng nếu nhập thì phải đúng định dạng
-        if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Email không hợp lệ';
+            // Email validation - cho phép để trống nhưng nếu nhập thì phải đúng định dạng
+            if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                newErrors.email = 'Email không hợp lệ';
+            }
         }
 
         // Payment method validation
@@ -177,20 +181,32 @@ export default function BookingDetail({
             console.log('facilityId:', facilityId);
             console.log('categoryId:', categoryId);
             console.log('paymentMethod:', formData.paymentMethod);
+            console.log('userId:', userId);
 
             // Xác định paymentTypeId dựa trên phương thức thanh toán
             const paymentTypeId = formData.paymentMethod === 'international' ? 1 : 2;
 
             // Chuẩn bị dữ liệu theo đúng thứ tự API yêu cầu
             const apiData = {
-                email: formData.email.trim() || null, // Cho phép null nếu email trống
-                phone: formData.phone,
                 checkInDate: formatDateForAPI(selectedDate),
                 timeSlotIds: listSlotId && listSlotId.length > 0 ? listSlotId : [],
                 facilityId: parseInt(facilityId),
                 categoryId: parseInt(categoryId),
-                paymentTypeId: paymentTypeId // Thêm trường paymentTypeId
+                paymentTypeId: paymentTypeId
             };
+
+            // Chỉ thêm các trường có giá trị
+            if (userId) {
+                apiData.userId = parseInt(userId);
+            }
+            
+            if (!userId && formData.phone.trim()) {
+                apiData.phone = formData.phone.trim();
+            }
+            
+            if (!userId && formData.email.trim()) {
+                apiData.email = formData.email.trim();
+            }
 
             console.log('Final API request data:', apiData);
 
@@ -256,7 +272,7 @@ export default function BookingDetail({
                         description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
                         redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
                         callbackUrl: window.location.origin + "/payment-callback", // URL callback
-                        appUser: formData.phone,
+                        appUser: userId ? userId.toString() : formData.phone,
                         paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
                         embedData: {
                             bookingid: bookingId.toString()
@@ -333,6 +349,9 @@ export default function BookingDetail({
         return sum;
     }, 0) : 0;
 
+    // Kiểm tra xem có cần hiển thị form liên hệ không
+    const shouldShowContactForm = !userId;
+
     return (
         <div className="booking-detail-overlay" onClick={handleOverlayClick}>
             <div className="booking-detail-modal" onClick={e => e.stopPropagation()}>
@@ -343,7 +362,9 @@ export default function BookingDetail({
                             <span className="title-icon">📋</span>
                             Chi tiết đặt sân
                         </h2>
-                        <p className="modal-subtitle">Vui lòng điền thông tin liên hệ</p>
+                        <p className="modal-subtitle">
+                            {userId ? 'Xác nhận thông tin đặt sân' : 'Vui lòng điền thông tin liên hệ'}
+                        </p>
                     </div>
                     <button className="close-btn" onClick={onClose} aria-label="Đóng">
                         <span>×</span>
@@ -406,51 +427,70 @@ export default function BookingDetail({
                     </div>
                 </div>
 
-                {/* Contact Form */}
-                <div className="contact-form-section">
-                    <h3 className="section-title">
-                        <span className="section-icon">📞</span>
-                        Thông tin liên hệ
-                    </h3>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label" htmlFor="phone">
-                                <span className="label-icon">📱</span>
-                                Số điện thoại *
-                            </label>
-                            <input
-                                type="tel"
-                                id="phone"
-                                className={`form-input ${errors.phone ? 'error' : ''}`}
-                                placeholder="Nhập số điện thoại"
-                                value={formData.phone}
-                                onChange={(e) => handleInputChange('phone', e.target.value)}
-                            />
-                            {errors.phone && <span className="error-message">{errors.phone}</span>}
-                        </div>
-
-                        <div className="form-group">
-                            <label className="form-label" htmlFor="email">
-                                <span className="label-icon">📧</span>
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                id="email"
-                                className={`form-input ${errors.email ? 'error' : ''}`}
-                                placeholder="Nhập email (tùy chọn)"
-                                value={formData.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
-                            />
-                            {errors.email && <span className="error-message">{errors.email}</span>}
+                {/* User Status Section */}
+                {userId && (
+                    <div className="user-status-section">
+                        <h3 className="section-title">
+                            <span className="section-icon">👤</span>
+                            Trạng thái đăng nhập
+                        </h3>
+                        <div className="user-status-info">
+                            <span className="status-icon">✅</span>
+                            <div className="status-content">
+                                <strong>Bạn đã đăng nhập</strong>
+                                <p>Thông tin liên hệ sẽ được lấy từ tài khoản của bạn</p>
+                            </div>
                         </div>
                     </div>
+                )}
 
-                    <div className="form-note">
-                        <span className="note-icon">ℹ️</span>
-                        Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
+                {/* Contact Form - Chỉ hiển thị khi chưa đăng nhập */}
+                {shouldShowContactForm && (
+                    <div className="contact-form-section">
+                        <h3 className="section-title">
+                            <span className="section-icon">📞</span>
+                            Thông tin liên hệ
+                        </h3>
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="phone">
+                                    <span className="label-icon">📱</span>
+                                    Số điện thoại *
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    className={`form-input ${errors.phone ? 'error' : ''}`}
+                                    placeholder="Nhập số điện thoại"
+                                    value={formData.phone}
+                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                />
+                                {errors.phone && <span className="error-message">{errors.phone}</span>}
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="email">
+                                    <span className="label-icon">📧</span>
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    className={`form-input ${errors.email ? 'error' : ''}`}
+                                    placeholder="Nhập email (tùy chọn)"
+                                    value={formData.email}
+                                    onChange={(e) => handleInputChange('email', e.target.value)}
+                                />
+                                {errors.email && <span className="error-message">{errors.email}</span>}
+                            </div>
+                        </div>
+
+                        <div className="form-note">
+                            <span className="note-icon">ℹ️</span>
+                            Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Payment Method Section */}
                 <div className="payment-method-section">
