@@ -739,6 +739,8 @@ namespace B2P_API.Services
             {
                 UserId = b.UserId,
                 BookingId = b.BookingId,
+                PaymentTypeId = b.PaymentTypeId ?? null,
+                TransactionCode = b.TransactionCode ?? null,
                 CreateDate = b.CreateAt,
                 TotalPrice = b.TotalPrice ?? 0,
                 CheckInDate = b.BookingDetails.Min(d => d.CheckInDate),
