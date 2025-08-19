@@ -68,6 +68,7 @@ const Layout = (props) => {
           </ProtectedRoute>
         }>
           <Route index element={<DashboardField />} />
+          <Route path="user-profile" element={<UserProfile />} />
           <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="booking-management" element={<BookingManagement />} />
           <Route path="payment-management" element={<PaymentManager />} />
@@ -90,7 +91,7 @@ const Layout = (props) => {
         </Route>
 
         {/* 🌐 SHARED PUBLIC ROUTES (accessible when logged in) */}
-        <Route path="/public" element={
+        <Route path="/" element={
           <ProtectedRoute>
             <App />
           </ProtectedRoute>
@@ -101,7 +102,7 @@ const Layout = (props) => {
         </Route>
 
         {/* 🔄 ALTERNATIVE: Routes accessible by multiple roles */}
-        <Route path="/shared" element={
+        <Route path="/" element={
           <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.COURTOWNER]}>
             <App />
           </ProtectedRoute>
@@ -126,7 +127,7 @@ const Layout = (props) => {
           <ProtectedRoute fallbackPath="/login">
             <RoleBasedRedirect 
               adminRedirect="/admin"
-              playerRedirect="/player"
+              playerRedirect="/"
               courtOwnerRedirect="/court-owner"
               defaultRedirect="/login"
             />
