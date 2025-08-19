@@ -29,55 +29,70 @@ const OwnerDashboard = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const { userId, user, isLoggedIn, isLoading: authLoading } = useAuth();
+
   useEffect(() => {
     const fetchDashboardData = async () => {
+      // Reset error state khi bắt đầu fetch
+      setError(null);
       setLoading(true);
+      
       try {
+        console.log('Fetching dashboard data for userId:', userId);
+        
+        // Fetch total report
         const totalReportResponse = await getTotalReport(userId, null, null);
+        console.log('Total report response:', totalReportResponse);
 
-        // Kiểm tra và set data cho totalReport trước
-        if (totalReportResponse.success) {
+        if (totalReportResponse && totalReportResponse.success) {
           setDashboardData((prev) => ({
             ...prev,
-            totalFacilities: totalReportResponse.data.totalFacility || 0,
-            totalCourts: totalReportResponse.data.totalCourt || 0,
-            totalBookings: totalReportResponse.data.totalBooking || 0,
-            totalRevenue: totalReportResponse.data.totalCost || 0,
+            totalFacilities: totalReportResponse.data?.totalFacility || 0,
+            totalCourts: totalReportResponse.data?.totalCourt || 0,
+            totalBookings: totalReportResponse.data?.totalBooking || 0,
+            totalRevenue: totalReportResponse.data?.totalCost || 0,
           }));
         } else {
-          setError(totalReportResponse.message || "Không thể tải dữ liệu tổng quan");
-          return;
+          console.error('Total report failed:', totalReportResponse);
+          setError(totalReportResponse?.message || "Không thể tải dữ liệu tổng quan");
         }
 
-        // Tiếp tục fetch reportResponse
+        // Fetch recent bookings (tiếp tục fetch dù total report có lỗi)
         try {
           const reportResponse = await getReport(userId, null, null, null, 1, 10);
-          if (reportResponse.success) {
+          console.log('Report response:', reportResponse);
+          
+          if (reportResponse && reportResponse.success) {
             setDashboardData((prev) => ({
               ...prev,
-              recentBookings: reportResponse.data.items || [],
+              recentBookings: reportResponse.data?.items || [],
             }));
           } else {
-            // Chỉ set error message cho phần recent bookings
-            setError(reportResponse.message || "Không thể tải dữ liệu đơn đặt sân");
+            console.error('Report failed:', reportResponse);
+            // Không set error để không override error từ total report
+            // Chỉ log lỗi
+            console.warn("Không thể tải dữ liệu đơn đặt sân:", reportResponse?.message);
           }
-        } catch (error) {
-          // Xử lý lỗi cho phần recent bookings
-          console.error("Error fetching recent bookings:", error);
-          setError("Không thể tải dữ liệu đơn đặt sân");
+        } catch (reportError) {
+          console.error("Error fetching recent bookings:", reportError);
+          // Không set error state để không ảnh hưởng đến UI chính
         }
+
       } catch (error) {
-        console.error("Error fetching total report:", error);
-        setError(error.message || "Không thể tải dữ liệu tổng quan");
+        console.error("Error fetching dashboard data:", error);
+        setError(error.message || "Không thể tải dữ liệu dashboard");
       } finally {
         setLoading(false);
       }
     };
 
-    if (!startDate && !endDate) {
+    // Chỉ fetch khi có userId và không đang loading auth
+    if (userId && !authLoading && isLoggedIn) {
       fetchDashboardData();
+    } else if (!authLoading && !isLoggedIn) {
+      setLoading(false);
+      setError("Vui lòng đăng nhập để xem dashboard");
     }
-  }, []);
+  }, [userId, authLoading, isLoggedIn]); // Thêm dependencies
 
   const handleExportExcel = async () => {
     setExportLoading(true);
@@ -89,6 +104,12 @@ const OwnerDashboard = () => {
         null, // facilityId (nếu cần)
         1 // pageNumber
       );
+      
+      // Kiểm tra nếu response không phải là ArrayBuffer
+      if (!response || !(response instanceof ArrayBuffer)) {
+        throw new Error("Dữ liệu trả về không hợp lệ");
+      }
+
       // Kiểm tra magic number
       const header = new Uint8Array(response.slice(0, 4));
       if (
@@ -120,7 +141,7 @@ const OwnerDashboard = () => {
       // Tạo thẻ a ẩn để tải xuống
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`; // Dùng tên file từ server hoặc tự đặt
+      a.download = `Report_${formattedDate}_${formattedTime}.xlsx`;
       document.body.appendChild(a);
       a.click();
 
@@ -145,29 +166,26 @@ const OwnerDashboard = () => {
   const handleDateChange = async (date) => {
     if (date) {
       setLoading(true);
+      setError(null); // Reset error
+      
       try {
-        const selectedDate = date.toDate(); // Chuyển moment object sang Date
-        const totalReportResponse = await getTotalReport(
-          userId,
-          selectedDate,
-          selectedDate
-        );
-        const reportResponse = await getReport(
-          userId,
-          selectedDate,
-          selectedDate,
-          null,
-          1,
-          10
-        );
+        const selectedDate = date.toDate();
+        const [totalReportResponse, reportResponse] = await Promise.all([
+          getTotalReport(userId, selectedDate, selectedDate),
+          getReport(userId, selectedDate, selectedDate, null, 1, 10)
+        ]);
 
-        setDashboardData({
-          totalFacilities: totalReportResponse.data.totalFacility || 0,
-          totalCourts: totalReportResponse.data.totalCourt || 0,
-          totalBookings: totalReportResponse.data.totalBooking || 0,
-          totalRevenue: totalReportResponse.data.totalCost || 0,
-          recentBookings: reportResponse.data.items || [],
-        });
+        if (totalReportResponse?.success && reportResponse?.success) {
+          setDashboardData({
+            totalFacilities: totalReportResponse.data?.totalFacility || 0,
+            totalCourts: totalReportResponse.data?.totalCourt || 0,
+            totalBookings: totalReportResponse.data?.totalBooking || 0,
+            totalRevenue: totalReportResponse.data?.totalCost || 0,
+            recentBookings: reportResponse.data?.items || [],
+          });
+        } else {
+          setError("Không thể tải dữ liệu cho ngày đã chọn");
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
@@ -179,36 +197,41 @@ const OwnerDashboard = () => {
 
   const handleDateRangeChange = async (dates) => {
     if (dates && dates.length === 2) {
-      const [startDate, endDate] = dates;
+      const [start, end] = dates;
+      setStartDate(start.toDate());
+      setEndDate(end.toDate());
       setLoading(true);
+      setError(null); // Reset error
+      
       try {
-        const totalReportResponse = await getTotalReport(
-          userId,
-          startDate.toDate(),
-          endDate.toDate()
-        );
-        const reportResponse = await getReport(
-          userId,
-          startDate.toDate(),
-          endDate.toDate(),
-          null,
-          1,
-          10
-        );
+        const [totalReportResponse, reportResponse] = await Promise.all([
+          getTotalReport(userId, start.toDate(), end.toDate()),
+          getReport(userId, start.toDate(), end.toDate(), null, 1, 10)
+        ]);
 
-        setDashboardData({
-          totalFacilities: totalReportResponse.data.totalFacility || 0,
-          totalCourts: totalReportResponse.data.totalCourt || 0,
-          totalBookings: totalReportResponse.data.totalBooking || 0,
-          totalRevenue: totalReportResponse.data.totalCost || 0,
-          recentBookings: reportResponse.data.items || [],
-        });
+        if (totalReportResponse?.success && reportResponse?.success) {
+          setDashboardData({
+            totalFacilities: totalReportResponse.data?.totalFacility || 0,
+            totalCourts: totalReportResponse.data?.totalCourt || 0,
+            totalBookings: totalReportResponse.data?.totalBooking || 0,
+            totalRevenue: totalReportResponse.data?.totalCost || 0,
+            recentBookings: reportResponse.data?.items || [],
+          });
+        } else {
+          setError("Không thể tải dữ liệu cho khoảng thời gian đã chọn");
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.");
       } finally {
         setLoading(false);
       }
+    } else if (dates === null) {
+      // User cleared date range, reload default data
+      setStartDate(null);
+      setEndDate(null);
+      // Trigger useEffect to reload default data
+      window.location.reload(); // Simple solution, hoặc có thể gọi fetchDashboardData trực tiếp
     }
   };
 
@@ -343,8 +366,18 @@ const OwnerDashboard = () => {
     );
   };
 
+  // Hiển thị loading khi đang xác thực
+  if (authLoading) {
+    return <div className="loading-spinner">Đang xác thực...</div>;
+  }
+
+  // Hiển thị yêu cầu đăng nhập
+  if (!isLoggedIn) {
+    return <div className="error-alert">Vui lòng đăng nhập để xem dashboard</div>;
+  }
+
   if (loading) {
-    return <div className="loading-spinner">Loading...</div>;
+    return <div className="loading-spinner">Đang tải dữ liệu...</div>;
   }
 
   return (
@@ -353,12 +386,20 @@ const OwnerDashboard = () => {
         <div className="error-alert">
           <i className="fas fa-exclamation-circle"></i>
           <span className="error-text">{error}</span>
+          <Button 
+            variant="link" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+            className="ms-2"
+          >
+            Thử lại
+          </Button>
         </div>
       )}
 
       <div className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">Xin Chào, {user?.fullName}</h2>
+          <h2 className="dashboard-title">Xin Chào, {user?.fullName || 'Chủ sân'}</h2>
           <p className="dashboard-subtitle">
             Đây là trang web quản lý dành cho chủ sân
           </p>
@@ -369,6 +410,7 @@ const OwnerDashboard = () => {
             format="DD/MM/YYYY"
             placeholder={["Từ ngày", "Đến ngày"]}
             style={{ width: "300px" }}
+            allowClear={true}
           />
           <Button
             variant="success"
@@ -392,7 +434,6 @@ const OwnerDashboard = () => {
       </div>
 
       <Row className="stats-row">
-        {/* Các thẻ thống kê giữ nguyên */}
         <Col md={3}>
           <Card className="stat-card">
             <Card.Body>
@@ -491,7 +532,9 @@ const OwnerDashboard = () => {
               ))}
             </div>
           ) : (
-            <div className="no-bookings">Không có đơn đặt sân gần đây</div>
+            <div className="no-bookings">
+              {error ? "Không thể tải dữ liệu booking" : "Không có đơn đặt sân gần đây"}
+            </div>
           )}
         </Card.Body>
       </Card>

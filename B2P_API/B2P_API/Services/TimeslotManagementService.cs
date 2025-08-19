@@ -271,80 +271,137 @@ namespace B2P_API.Services
 
         public async Task<ApiResponse<UpdateTimeslotDTO>> UpdateTimeSlot(CreateTimeslotRequestDTO request, int timeslotId)
         {
-            var existing = await _repository.GetByIdAsync(timeslotId);
-            if (existing == null)
+            try
             {
+                // ✅ VALIDATION: TimeSlot ID
+                if (timeslotId <= 0)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "TimeSlot ID không hợp lệ",
+                        Data = null
+                    };
+                }
+
+                // ✅ VALIDATION: Request data
+                if (request == null)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Dữ liệu đầu vào không hợp lệ",
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK: TimeSlot tồn tại
+                var existing = await _repository.GetByIdAsync(timeslotId);
+                if (existing == null)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 404,
+                        Message = "Không tìm thấy TimeSlot cần cập nhật",
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK: TimeSlot có đang được sử dụng hoặc có booking tương lai không
+                var hasActiveOrFutureBookings = await _repository.HasAnyActiveOrFutureBookingsAsync(timeslotId);
+                if (hasActiveOrFutureBookings)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 408, // Conflict
+                        Message = "Không thể cập nhật khung giờ vì đang có booking hoặc có booking trong tương lai",
+                        Data = null
+                    };
+                }
+
+                // ✅ VALIDATION: Time range
+                if (request.StartTime >= request.EndTime)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 400,
+                        Message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc",
+                        Data = null
+                    };
+                }
+
+                // ✅ CHECK: Time overlap with other timeslots
+                var allSlots = await _repository.GetByFacilityIdAsync(existing.FacilityId ?? 0);
+                bool isOverlapping = allSlots
+                    .Where(x => x.TimeSlotId != timeslotId) // bỏ qua chính nó
+                    .Any(slot => request.StartTime < slot.EndTime && request.EndTime > slot.StartTime);
+
+                if (isOverlapping)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 409,
+                        Message = "Khung giờ cập nhật bị trùng với TimeSlot khác",
+                        Data = null
+                    };
+                }
+
+                // ✅ UPDATE: Áp dụng cập nhật
+                existing.StartTime = request.StartTime;
+                existing.EndTime = request.EndTime;
+                existing.StatusId = request.StatusId;
+                existing.Discount = request.Discount;
+                // existing.UpdatedAt = DateTime.UtcNow; // Add if you have audit fields
+                // existing.UpdatedBy = currentUserId; // Add if you have audit fields
+
+                var updated = await _repository.UpdateAsync(existing);
+                if (updated == null)
+                {
+                    return new ApiResponse<UpdateTimeslotDTO>
+                    {
+                        Success = false,
+                        Status = 500,
+                        Message = "Cập nhật TimeSlot thất bại",
+                        Data = null
+                    };
+                }
+
+                // ✅ RESPONSE: Map sang DTO để tránh circular reference
+                var updateDto = new UpdateTimeslotDTO
+                {
+                    StatusId = updated.StatusId,
+                    StartTime = updated.StartTime,
+                    EndTime = updated.EndTime,
+                    Discount = updated.Discount
+                };
+
                 return new ApiResponse<UpdateTimeslotDTO>
                 {
-                    Success = false,
-                    Status = 404,
-                    Message = "Không tìm thấy TimeSlot cần cập nhật",
-                    Data = null
+                    Success = true,
+                    Status = 200,
+                    Message = "Cập nhật TimeSlot thành công",
+                    Data = updateDto
                 };
             }
-
-            if (request.StartTime >= request.EndTime)
+            catch (Exception ex)
             {
-                return new ApiResponse<UpdateTimeslotDTO>
-                {
-                    Success = false,
-                    Status = 400,
-                    Message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc",
-                    Data = null
-                };
-            }
+                // Log the exception
+                // _logger.LogError(ex, "Error updating timeslot {TimeslotId}", timeslotId);
 
-            var allSlots = await _repository.GetByFacilityIdAsync(existing.FacilityId ?? 0);
-
-            bool isOverlapping = allSlots
-                .Where(x => x.TimeSlotId != timeslotId) // bỏ qua chính nó
-                .Any(slot => request.StartTime < slot.EndTime && request.EndTime > slot.StartTime);
-
-            if (isOverlapping)
-            {
-                return new ApiResponse<UpdateTimeslotDTO>
-                {
-                    Success = false,
-                    Status = 409,
-                    Message = "Khung giờ cập nhật bị trùng với TimeSlot khác",
-                    Data = null
-                };
-            }
-
-            // Áp dụng cập nhật
-            existing.StartTime = request.StartTime;
-            existing.EndTime = request.EndTime;
-            existing.StatusId = request.StatusId;
-            existing.Discount = request.Discount;
-
-            var updated = await _repository.UpdateAsync(existing);
-            if (updated == null)
-            {
                 return new ApiResponse<UpdateTimeslotDTO>
                 {
                     Success = false,
                     Status = 500,
-                    Message = "Cập nhật TimeSlot thất bại",
+                    Message = $"Lỗi hệ thống: {ex.Message}",
                     Data = null
                 };
             }
-
-            // Map sang DTO để tránh circular reference
-            var updateDto = new UpdateTimeslotDTO
-            {
-                StatusId = updated.StatusId,
-                StartTime = updated.StartTime,
-                EndTime = updated.EndTime,
-                Discount = updated.Discount
-            };
-
-            return new ApiResponse<UpdateTimeslotDTO>
-            {
-                Success = true,
-                Status = 200,
-                Message = "Cập nhật TimeSlot thành công",
-                Data = updateDto
-            };
         }
     }
 }

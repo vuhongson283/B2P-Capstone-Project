@@ -290,8 +290,11 @@ const TimeslotManagement = () => {
       if (response.status === 200 || response.status === 204) {
         message.success('🗑️ Xóa khung giờ thành công!');
         await loadTimeslots(selectedFacility, selectedStatus); // ✅ Pass status filter
+      } else if (response.status === 409) {
+        message.warning(response.message);
+        await loadTimeslots(selectedFacility, selectedStatus);
       } else {
-        message.warning('⚠️ Phản hồi không xác định từ server');
+        message.warning(' Phản hồi không xác định từ server');
         await loadTimeslots(selectedFacility, selectedStatus);
       }
 
@@ -305,18 +308,18 @@ const TimeslotManagement = () => {
         if (error.response.status === 404) {
           message.error('❌ Khung giờ không tồn tại hoặc đã bị xóa');
         } else if (error.response.status === 400) {
-          message.error(`❌ ${errorData.message || 'Dữ liệu không hợp lệ'}`);
+          message.error(` ${errorData.message || 'Dữ liệu không hợp lệ'}`);
         } else if (error.response.status === 409) {
-          message.error('❌ Không thể xóa khung giờ đang được sử dụng');
+          message.error(' Không thể xóa khung giờ đang được sử dụng');
         } else if (errorData.message) {
-          message.error(`❌ ${errorData.message}`);
+          message.error(` ${errorData.message}`);
         } else {
-          message.error('❌ Có lỗi xảy ra từ server khi xóa khung giờ');
+          message.error(' Có lỗi xảy ra từ server khi xóa khung giờ');
         }
       } else if (error.request) {
-        message.error('❌ Không thể kết nối đến server');
+        message.error(' Không thể kết nối đến server');
       } else {
-        message.error('❌ Có lỗi xảy ra khi xóa khung giờ');
+        message.error(' Có lỗi xảy ra khi xóa khung giờ');
       }
 
       await loadTimeslots(selectedFacility, selectedStatus);
@@ -331,7 +334,7 @@ const TimeslotManagement = () => {
       const currentTimeslot = timeslots.find(slot => slot.timeSlotId === timeSlotId);
 
       if (!currentTimeslot) {
-        message.error('❌ Không tìm thấy thông tin khung giờ');
+        message.error(' Không tìm thấy thông tin khung giờ');
         return;
       }
 
@@ -345,11 +348,11 @@ const TimeslotManagement = () => {
       console.log('📤 Update payload:', updateData);
 
       const response = await updateTimeslot(timeSlotId, updateData);
-      console.log('✅ Update response:', response);
+      console.log(' Update response:', response);
 
       if (response.status === 200) {
         const statusText = newStatusId === 1 ? 'Kích hoạt' : 'Tạm dừng';
-        message.success(`✅ ${statusText} khung giờ thành công!`);
+        message.success(`${statusText} khung giờ thành công!`);
 
         setTimeslots(prev =>
           prev.map(slot =>
@@ -359,28 +362,31 @@ const TimeslotManagement = () => {
           )
         );
 
-      } else {
-        message.warning('⚠️ Phản hồi không xác định từ server');
+      } else if (response.status === 408) {
+        message.warning(response.message);
+        await loadTimeslots(selectedFacility, selectedStatus);
+      }else{
+        message.warning(' Phản hồi không xác định từ server');
         await loadTimeslots(selectedFacility, selectedStatus);
       }
 
     } catch (error) {
-      console.error('💥 Error toggling timeslot status:', error);
+      console.error(' Error toggling timeslot status:', error);
 
       if (error.response?.data) {
         const errorData = error.response.data;
         console.log('🚨 Update error response:', errorData);
 
         if (error.response.status === 404) {
-          message.error('❌ Khung giờ không tồn tại');
+          message.error(' Khung giờ không tồn tại');
         } else if (error.response.status === 400) {
-          message.error(`❌ ${errorData.message || 'Dữ liệu không hợp lệ'}`);
+          message.error(` ${errorData.message || 'Dữ liệu không hợp lệ'}`);
         } else if (error.response.status === 409) {
-          message.error(`❌ ${errorData.message || 'Khung giờ bị trùng với TimeSlot khác'}`);
+          message.error(` ${errorData.message || 'Khung giờ bị trùng với TimeSlot khác'}`);
         } else if (errorData.message) {
-          message.error(`❌ ${errorData.message}`);
+          message.error(` ${errorData.message}`);
         } else {
-          message.error('❌ Có lỗi xảy ra từ server khi cập nhật');
+          message.error(' Có lỗi xảy ra từ server khi cập nhật');
         }
       } else if (error.request) {
         message.error('❌ Không thể kết nối đến server');
@@ -429,7 +435,7 @@ const TimeslotManagement = () => {
 
         if (response.status === 200 || response.status === 201) {
           console.log('✅ SUCCESS: Update HTTP status indicates success');
-          message.success(`✅ Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          message.success(`Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
 
           setTimeslots(prev =>
             prev.map(slot =>
@@ -450,7 +456,7 @@ const TimeslotManagement = () => {
 
           Modal.warning({
             title: 'Khung giờ bị trùng',
-            content: 'Khung giờ bị trùng với TimeSlot đã tồn tại. Vui lòng chọn thời gian khác.',
+            content: 'Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.',
             okText: 'Đã hiểu',
             zIndex: 9999,
           });
@@ -459,7 +465,7 @@ const TimeslotManagement = () => {
 
         } else if (response.data && response.data.success) {
           console.log('✅ SUCCESS: Update response.data indicates success');
-          message.success(`✅ Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          message.success(` Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
 
           setTimeslots(prev =>
             prev.map(slot =>
@@ -475,7 +481,12 @@ const TimeslotManagement = () => {
             )
           );
 
-        } else {
+        } else if (response.status == 408) 
+          {
+            message.warning(response.message );
+            await loadTimeslots(selectedFacility, selectedStatus);
+          }
+        else{
           console.log('❓ Unknown update response format:', response.data);
           console.log('❓ Response status:', response.status);
           message.warning('⚠️ Phản hồi không xác định từ server - check console');
@@ -496,15 +507,24 @@ const TimeslotManagement = () => {
 
         if (response.data && response.data.timeSlotId) {
           console.log('✅ SUCCESS: TimeSlot created with ID:', response.data.timeSlotId);
-          message.success(`✅ Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          message.success(`Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
           await loadTimeslots(selectedFacility, selectedStatus); // ✅ Pass status filter
         } else if (response.status === 200 || response.status === 201) {
           console.log('✅ SUCCESS: HTTP status indicates success');
-          message.success(`✅ Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          message.success(`Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
           await loadTimeslots(selectedFacility, selectedStatus);
+        } else if (response.status === 409) {
+          console.log('⚠️ CONFLICT: Create returned 409');
+          Modal.warning({
+            title: 'Khung giờ bị trùng',
+            content: 'Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.',
+            okText: 'Đã hiểu',
+            zIndex: 9999,
+          });
+          return;
         } else {
           console.log('❓ Unknown response format:', response.data);
-          message.warning('⚠️ Phản hồi không xác định - check console');
+          message.warning('⚠️ Phản hồi không xác định từ server - check console');
           await loadTimeslots(selectedFacility, selectedStatus);
         }
       }
