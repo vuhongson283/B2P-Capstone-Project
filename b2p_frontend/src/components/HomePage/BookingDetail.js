@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Thêm useNavigate để điều hướng
+import { useNavigate } from "react-router-dom";
 import "./BookingDetail.scss";
 
 // Helper function to format currency
@@ -16,22 +16,22 @@ export default function BookingDetail({
     onClose,
     facilityId,
     categoryId,
-    listSlotId, // Thêm prop mới cho danh sách slot ID
+    listSlotId,
     totalPrice,
     facilityData,
     selectedDate,
     selectedSlots,
     quantities,
-    createBooking, // Thêm prop function từ parent để gọi API
-    createPayment, // Thêm prop function để gọi API tạo thanh toán nội địa
-    createStripePaymentOrder, // Thêm prop function để gọi API tạo thanh toán quốc tế
+    createBooking,
+    createPayment,
+    createStripePaymentOrder,
     userId
 }) {
-    const navigate = useNavigate(); // Hook để điều hướng
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         phone: '',
         email: '',
-        paymentMethod: 'domestic' // Thêm phương thức thanh toán mặc định
+        paymentMethod: 'domestic'
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,22 +80,18 @@ export default function BookingDetail({
     const validateForm = () => {
         const newErrors = {};
 
-        // Chỉ validate phone và email nếu userId không có giá trị
         if (!userId) {
-            // Phone validation
             if (!formData.phone.trim()) {
                 newErrors.phone = 'Vui lòng nhập số điện thoại';
             } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
                 newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
             }
 
-            // Email validation - cho phép để trống nhưng nếu nhập thì phải đúng định dạng
             if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
                 newErrors.email = 'Email không hợp lệ';
             }
         }
 
-        // Payment method validation
         if (!formData.paymentMethod) {
             newErrors.paymentMethod = 'Vui lòng chọn phương thức thanh toán';
         }
@@ -111,7 +107,6 @@ export default function BookingDetail({
             [field]: value
         }));
 
-        // Clear error when user starts typing
         if (errors[field]) {
             setErrors(prev => ({
                 ...prev,
@@ -143,9 +138,9 @@ export default function BookingDetail({
 
     // Helper function to convert VND to USD cents for Stripe
     const convertVNDtoUSDCents = (vndAmount) => {
-        const exchangeRate = 24000; // 1 USD = 24,000 VND (approximate)
+        const exchangeRate = 24000;
         const usdAmount = vndAmount / exchangeRate;
-        const usdCents = Math.round(usdAmount * 100); // Convert to cents
+        const usdCents = Math.round(usdAmount * 100);
         return usdCents;
     };
 
@@ -162,20 +157,16 @@ export default function BookingDetail({
 
         setIsSubmitting(true);
         try {
-            // Format ngày theo chuẩn ISO với timezone
             const formatDateForAPI = (dateString) => {
                 if (!dateString) return new Date().toISOString();
 
-                // Nếu dateString chỉ là date (YYYY-MM-DD), thêm time
                 if (dateString.length === 10) {
                     return new Date(dateString + 'T00:00:00.000Z').toISOString();
                 }
 
-                // Nếu đã có full datetime, convert sang ISO
                 return new Date(dateString).toISOString();
             };
 
-            // Debug: Kiểm tra dữ liệu trước khi gửi
             console.log('listSlotId received:', listSlotId);
             console.log('selectedSlots:', selectedSlots);
             console.log('facilityId:', facilityId);
@@ -183,10 +174,8 @@ export default function BookingDetail({
             console.log('paymentMethod:', formData.paymentMethod);
             console.log('userId:', userId);
 
-            // Xác định paymentTypeId dựa trên phương thức thanh toán
             const paymentTypeId = formData.paymentMethod === 'international' ? 1 : 2;
 
-            // Chuẩn bị dữ liệu theo đúng thứ tự API yêu cầu
             const apiData = {
                 checkInDate: formatDateForAPI(selectedDate),
                 timeSlotIds: listSlotId && listSlotId.length > 0 ? listSlotId : [],
@@ -195,63 +184,53 @@ export default function BookingDetail({
                 paymentTypeId: paymentTypeId
             };
 
-            // Chỉ thêm các trường có giá trị
             if (userId) {
                 apiData.userId = parseInt(userId);
             }
-            
+
             if (!userId && formData.phone.trim()) {
                 apiData.phone = formData.phone.trim();
             }
-            
+
             if (!userId && formData.email.trim()) {
                 apiData.email = formData.email.trim();
             }
 
             console.log('Final API request data:', apiData);
 
-            // Kiểm tra dữ liệu trước khi gửi
             if (!apiData.timeSlotIds || apiData.timeSlotIds.length === 0) {
                 alert('Lỗi: Không có khung giờ được chọn!');
                 return;
             }
 
-            // Gọi API thông qua prop function được truyền từ parent
             const result = await createBooking(apiData);
             console.log('API response:', result);
 
-            // Kiểm tra response theo format mới
             if (result && result.success === true) {
                 const bookingInfo = result.data;
                 const bookingId = bookingInfo.bookingId;
 
-                // Xử lý thanh toán dựa trên phương thức được chọn
                 if (formData.paymentMethod === 'international') {
-                    // Thanh toán quốc tế qua Stripe
                     const stripePaymentData = {
-                        amount: convertVNDtoUSDCents(totalPrice), // Chuyển đổi VND sang USD cents
+                        amount: convertVNDtoUSDCents(totalPrice),
                         currency: 'usd',
-                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(totalPrice)), // Phí platform 5%
-                        destinationAccountId: 'acct_1RuuxcATZut0ML00', // Cố định
+                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(totalPrice)),
+                        destinationAccountId: 'acct_1RuuxcATZut0ML00',
                         bookingId: bookingId.toString()
                     };
 
                     console.log('Stripe Payment request data:', stripePaymentData);
 
                     try {
-                        // Gọi API tạo đơn thanh toán Stripe
                         const stripePaymentResult = await createStripePaymentOrder(stripePaymentData);
                         console.log('Stripe Payment API response:', stripePaymentResult);
 
-                        // Lấy ID từ response (có thể là id hoặc trong data.id)
                         const paymentId = stripePaymentResult?.data?.id || stripePaymentResult?.id;
 
-                        // Đóng modal trước khi chuyển trang
                         onClose();
 
                         if (paymentId) {
-                            // Chuyển hướng đến trang Stripe payment trong tab mới, thêm cả VND và USD
-                            const usdAmount = convertVNDtoUSDCents(totalPrice) / 100; // Chuyển về USD (không phải cents)
+                            const usdAmount = convertVNDtoUSDCents(totalPrice) / 100;
                             const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}&amount_vnd=${totalPrice}&amount_usd=${usdAmount.toFixed(2)}`;
                             window.open(stripePaymentUrl, '_blank');
                         } else {
@@ -262,18 +241,16 @@ export default function BookingDetail({
                     } catch (stripePaymentError) {
                         console.error('Stripe Payment creation error:', stripePaymentError);
                         alert('Lỗi tạo đơn thanh toán Stripe!');
-                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
                         onClose();
                     }
                 } else {
-                    // Thanh toán nội địa
                     const paymentData = {
                         amount: totalPrice,
                         description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
-                        redirectUrl: window.location.origin + "/payment-success", // URL redirect sau thanh toán thành công
-                        callbackUrl: window.location.origin + "/payment-callback", // URL callback
+                        redirectUrl: window.location.origin + "/payment-success",
+                        callbackUrl: window.location.origin + "/payment-callback",
                         appUser: userId ? userId.toString() : formData.phone,
-                        paymentGateway: formData.paymentMethod, // Thêm thông tin cổng thanh toán
+                        paymentGateway: formData.paymentMethod,
                         embedData: {
                             bookingid: bookingId.toString()
                         }
@@ -282,29 +259,24 @@ export default function BookingDetail({
                     console.log('Payment request data:', paymentData);
 
                     try {
-                        // Gọi API tạo đơn thanh toán nội địa
                         const paymentResult = await createPayment(paymentData);
                         console.log('Payment API response:', paymentResult);
 
                         const orderUrl = paymentResult?.data?.order_url;
 
-                        // Đóng modal trước khi chuyển trang
                         onClose();
 
                         if (orderUrl) {
-                            // Mở trang thanh toán trong tab mới
                             window.open(orderUrl, '_blank');
                         } else {
                             console.warn('Không có order_url trong payment response:', paymentResult);
                         }
                     } catch (paymentError) {
                         console.error('Payment creation error:', paymentError);
-                        // Đóng modal và vẫn chuyển đến booking process ngay cả khi payment thất bại
                         onClose();
                     }
                 }
 
-                // Chuyển trang hiện tại đến booking process với bookingId
                 navigate('/bookingprocess', {
                     state: {
                         bookingId,
@@ -314,18 +286,15 @@ export default function BookingDetail({
                 });
 
             } else if (result && result.success === false) {
-                // Nếu success = false, chỉ hiển thị message và không đóng modal
                 const errorMessage = result.message || 'Đặt sân thất bại';
                 alert(errorMessage);
                 console.error('Booking failed:', result);
             } else {
-                // Trường hợp response không có success field hoặc format khác
                 throw new Error(result?.message || 'Đặt sân thất bại - Response không hợp lệ');
             }
         } catch (error) {
             console.error('Final booking error:', error);
 
-            // Xử lý các loại lỗi khác nhau
             let errorMessage = 'Có lỗi xảy ra khi đặt sân!';
 
             if (error.response && error.response.data && error.response.data.message) {
@@ -349,7 +318,6 @@ export default function BookingDetail({
         return sum;
     }, 0) : 0;
 
-    // Kiểm tra xem có cần hiển thị form liên hệ không
     const shouldShowContactForm = !userId;
 
     return (
@@ -359,7 +327,6 @@ export default function BookingDetail({
                 <div className="modal-header">
                     <div className="header-content">
                         <h2 className="modal-title">
-                            <span className="title-icon">📋</span>
                             Chi tiết đặt sân
                         </h2>
                         <p className="modal-subtitle">
@@ -375,178 +342,135 @@ export default function BookingDetail({
                 <div className="modal-content">
                     {/* Booking Summary */}
                     <div className="booking-summary-section">
-                    <h3 className="section-title">
-                        <span className="section-icon">📊</span>
-                        Thông tin đặt sân
-                    </h3>
-                    <div className="summary-grid">
-                        <div className="summary-item">
-                            <span className="summary-label">
-                                <span className="label-icon">🏢</span>
-                                Cơ sở:
-                            </span>
-                            <span className="summary-value">{facilityData?.facilityName || 'N/A'}</span>
-                        </div>
-                        <div className="summary-item">
-                            <span className="summary-label">
-                                <span className="label-icon">⚽</span>
-                                Loại sân:
-                            </span>
-                            <span className="summary-value">{getSelectedCategoryName()}</span>
-                        </div>
-                        <div className="summary-item">
-                            <span className="summary-label">
-                                <span className="label-icon">📅</span>
-                                Ngày đặt:
-                            </span>
-                            <span className="summary-value">{formatDate(selectedDate)}</span>
-                        </div>
-                        <div className="summary-item">
-                            <span className="summary-label">
-                                <span className="label-icon">🕐</span>
-                                Số khung giờ:
-                            </span>
-                            <span className="summary-value">{selectedSlotsCount}</span>
-                        </div>
-                        <div className="summary-item">
-                            <span className="summary-label">
-                                <span className="label-icon">🏟️</span>
-                                Tổng số sân:
-                            </span>
-                            <span className="summary-value">{totalCourts}</span>
-                        </div>
-                        <div className="summary-item total">
-                            <span className="summary-label">
-                                <span className="label-icon">💰</span>
-                                Tổng tiền:
-                            </span>
-                            <span className="summary-value total-price">
-                                {formatCurrency(totalPrice)}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* User Status Section */}
-                {userId && (
-                    <div className="user-status-section">
                         <h3 className="section-title">
-                            <span className="section-icon">👤</span>
-                            Trạng thái đăng nhập
+                            Thông tin đặt sân
                         </h3>
-                        <div className="user-status-info">
-                            <span className="status-icon">✅</span>
-                            <div className="status-content">
-                                <strong>Bạn đã đăng nhập</strong>
-                                <p>Thông tin liên hệ sẽ được lấy từ tài khoản của bạn</p>
+                        <div className="summary-grid">
+                            <div className="summary-item">
+                                <span className="summary-label">Cơ sở:</span>
+                                <span className="summary-value">{facilityData?.facilityName || 'N/A'}</span>
+                            </div>
+                            <div className="summary-item">
+                                <span className="summary-label">Loại sân:</span>
+                                <span className="summary-value">{getSelectedCategoryName()}</span>
+                            </div>
+                            <div className="summary-item">
+                                <span className="summary-label">Ngày đặt:</span>
+                                <span className="summary-value">{formatDate(selectedDate)}</span>
+                            </div>
+                            <div className="summary-item">
+                                <span className="summary-label">Số khung giờ:</span>
+                                <span className="summary-value">{selectedSlotsCount}</span>
+                            </div>
+                            <div className="summary-item">
+                                <span className="summary-label">Tổng số sân:</span>
+                                <span className="summary-value">{totalCourts}</span>
+                            </div>
+                            <div className="summary-item total">
+                                <span className="summary-label">Tổng tiền:</span>
+                                <span className="summary-value total-price">
+                                    {formatCurrency(totalPrice)}
+                                </span>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {/* Contact Form - Chỉ hiển thị khi chưa đăng nhập */}
-                {shouldShowContactForm && (
-                    <div className="contact-form-section">
-                        <h3 className="section-title">
-                            <span className="section-icon">📞</span>
-                            Thông tin liên hệ
-                        </h3>
-                        <div className="form-grid">
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="phone">
-                                    <span className="label-icon">📱</span>
-                                    Số điện thoại *
-                                </label>
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    className={`form-input ${errors.phone ? 'error' : ''}`}
-                                    placeholder="Nhập số điện thoại"
-                                    value={formData.phone}
-                                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                                />
-                                {errors.phone && <span className="error-message">{errors.phone}</span>}
-                            </div>
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="email">
-                                    <span className="label-icon">📧</span>
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    className={`form-input ${errors.email ? 'error' : ''}`}
-                                    placeholder="Nhập email (tùy chọn)"
-                                    value={formData.email}
-                                    onChange={(e) => handleInputChange('email', e.target.value)}
-                                />
-                                {errors.email && <span className="error-message">{errors.email}</span>}
-                            </div>
-                        </div>
-
-                        <div className="form-note">
-                            <span className="note-icon">ℹ️</span>
-                            Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
-                        </div>
-                    </div>
-                )}
-
-                {/* Payment Method Section */}
-                <div className="payment-method-section">
-                    <h3 className="section-title">
-                        <span className="section-icon">💳</span>
-                        Phương thức thanh toán
-                    </h3>
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="paymentMethod">
-                            <span className="label-icon">🏦</span>
-                            Cổng thanh toán *
-                        </label>
-                        <select
-                            id="paymentMethod"
-                            className={`form-input form-select ${errors.paymentMethod ? 'error' : ''}`}
-                            value={formData.paymentMethod}
-                            onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
-                        >
-                            <option value="">-- Chọn cổng thanh toán --</option>
-                            <option value="domestic">
-                                🏧 Cổng thanh toán nội địa (ZaloPay, MoMo, VietQR)
-                            </option>
-                            <option value="international">
-                                🌍 Cổng thanh toán quốc tế (Visa, Mastercard, PayPal)
-                            </option>
-                        </select>
-                        {errors.paymentMethod && (
-                            <span className="error-message">{errors.paymentMethod}</span>
-                        )}
-                    </div>
-
-                    {/* Payment Method Info */}
-                    {formData.paymentMethod && (
-                        <div className="payment-info">
-                            {formData.paymentMethod === 'domestic' ? (
-                                <div className="payment-detail">
-                                    <span className="info-icon">🏧</span>
-                                    <div className="info-content">
-                                        <strong>Cổng thanh toán nội địa</strong>
-                                        <p>Hỗ trợ: ZaloPay, MoMo, VietQR, Internet Banking các ngân hàng Việt Nam</p>
-                                        <p>✅ Phí giao dịch thấp • ✅ Thanh toán nhanh chóng</p>
-                                    </div>
+                    {/* Contact Form */}
+                    {shouldShowContactForm && (
+                        <div className="contact-form-section">
+                            <h3 className="section-title">
+                                Thông tin liên hệ
+                            </h3>
+                            <div className="form-grid">
+                                <div className="form-group">
+                                    <label className="form-label" htmlFor="phone">
+                                        Số điện thoại *
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        className={`form-input ${errors.phone ? 'error' : ''}`}
+                                        placeholder="Nhập số điện thoại"
+                                        value={formData.phone}
+                                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                                    />
+                                    {errors.phone && <span className="error-message">{errors.phone}</span>}
                                 </div>
-                            ) : (
-                                <div className="payment-detail">
-                                    <span className="info-icon">🌍</span>
-                                    <div className="info-content">
-                                        <strong>Cổng thanh toán quốc tế</strong>
-                                        <p>Hỗ trợ: Visa, Mastercard, American Express, PayPal</p>
-                                        <p>✅ Thanh toán toàn cầu • ✅ Bảo mật cao</p>
-                                    </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" htmlFor="email">
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        className={`form-input ${errors.email ? 'error' : ''}`}
+                                        placeholder="Nhập email (tùy chọn)"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                    />
+                                    {errors.email && <span className="error-message">{errors.email}</span>}
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="form-note">
+                                Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
+                            </div>
                         </div>
                     )}
-                </div>
+
+                    {/* Payment Method Section */}
+                    <div className="payment-method-section">
+                        <h3 className="section-title">
+                            Phương thức thanh toán
+                        </h3>
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="paymentMethod">
+                                Cổng thanh toán *
+                            </label>
+                            <select
+                                id="paymentMethod"
+                                className={`form-input form-select ${errors.paymentMethod ? 'error' : ''}`}
+                                value={formData.paymentMethod}
+                                onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                            >
+                                <option value="">-- Chọn cổng thanh toán --</option>
+                                <option value="domestic">
+                                    Cổng thanh toán nội địa (ZaloPay, MoMo, VietQR)
+                                </option>
+                                <option value="international">
+                                    Cổng thanh toán quốc tế (Visa, Mastercard, PayPal)
+                                </option>
+                            </select>
+                            {errors.paymentMethod && (
+                                <span className="error-message">{errors.paymentMethod}</span>
+                            )}
+                        </div>
+
+                        {/* Payment Method Info */}
+                        {formData.paymentMethod && (
+                            <div className="payment-info">
+                                {formData.paymentMethod === 'domestic' ? (
+                                    <div className="payment-detail">
+                                        <div className="info-content">
+                                            <strong>Cổng thanh toán nội địa</strong>
+                                            <p>Hỗ trợ: ZaloPay, MoMo, VietQR, Internet Banking các ngân hàng Việt Nam</p>
+                                            <p>✅ Phí giao dịch thấp • ✅ Thanh toán nhanh chóng</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="payment-detail">
+                                        <div className="info-content">
+                                            <strong>Cổng thanh toán quốc tế</strong>
+                                            <p>Hỗ trợ: Visa, Mastercard, American Express, PayPal</p>
+                                            <p>✅ Thanh toán toàn cầu • ✅ Bảo mật cao</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Footer */}
@@ -557,7 +481,6 @@ export default function BookingDetail({
                             onClick={onClose}
                             disabled={isSubmitting}
                         >
-                            <span className="btn-icon">❌</span>
                             Hủy bỏ
                         </button>
                         <button
@@ -571,10 +494,7 @@ export default function BookingDetail({
                                     Đang xử lý...
                                 </>
                             ) : (
-                                <>
-                                    <span className="btn-icon">✅</span>
-                                    Xác nhận đặt sân
-                                </>
+                                'Xác nhận đặt sân'
                             )}
                         </button>
                     </div>
