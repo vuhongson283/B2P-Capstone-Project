@@ -1,0 +1,16 @@
+﻿# Bỏ folder build của .NET
+bin/
+obj/
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Khác
+*.md
+*.user
+*.vs
