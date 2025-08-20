@@ -4,7 +4,7 @@ import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
 import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -132,6 +132,12 @@ const CourtOwnerSideBar = ({
       icon: "fas fa-futbol",
       hasSubmenu: true,
       isDynamic: true,
+    },
+     {
+      id: "payment-management",
+      title: "Quản lý thanh toán",
+      icon: "fas fa-credit-card",
+      path: "/court-owner/payment-management",
     },
     {
       id: "blog",

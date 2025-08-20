@@ -134,7 +134,6 @@ builder.Services.AddScoped<CourtCategoryService>();
 
 builder.Services.AddScoped<IFacilityRepositoryForUser, FacilityRepository>();
 builder.Services.AddScoped<IFacilityManageRepository, FacilityManageRepository>();
-builder.Services.AddScoped<IFacilityService, FacilityService>();
 builder.Services.AddScoped<FacilityService>();
 
 builder.Services.AddScoped<IImageRepository, ImageRepository>();
@@ -169,7 +168,7 @@ builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<BookingService>();
 
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
-builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
+builder.Services.AddScoped<TimeslotManagementService>();
 
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;

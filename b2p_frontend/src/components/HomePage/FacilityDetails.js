@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext.js';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";

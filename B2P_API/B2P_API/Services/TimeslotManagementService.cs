@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace B2P_API.Services
 {
-    public class TimeslotManagementService : ITimeSlotManagementService
+    public class TimeslotManagementService 
     {
         private readonly SportBookingDbContext _context;
         private readonly ITimeSlotManagementRepository _repository;

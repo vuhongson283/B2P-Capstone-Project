@@ -52,7 +52,7 @@ import {
     markSmartSlot
 } from "../../services/apiService";
 import signalRService from "../../services/signalRService";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const { Option } = Select;
 const { Text } = Typography;

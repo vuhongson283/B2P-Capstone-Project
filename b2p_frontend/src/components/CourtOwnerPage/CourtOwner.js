@@ -7,7 +7,7 @@ import { MenuOutlined } from "@ant-design/icons";
 import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
 import NotificationBell from "../../components/NotificationBell";
 import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 
 const CourtOwner = () => {

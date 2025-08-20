@@ -26,8 +26,9 @@ import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
 import UnauthorizedPage from "./Common/UnauthorizedPage";
+import PaymentManager from "./CourtOwnerPage/PaymentManager";
 import Login from './Auth/Login';
-import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../context/AuthContext";
+import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../contexts/AuthContext.js";
 
 const Layout = (props) => {
   return (
@@ -67,6 +68,7 @@ const Layout = (props) => {
           <Route path="user-profile" element={<UserProfile />} />
           <Route path="search" element={<FacilitiesWithCondition />} />
           <Route path="booking-management" element={<BookingManagement />} />
+          <Route path="payment-management" element={<PaymentManager />} />
           <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
           <Route path="facility/general" element={<FacilityTable />} />
           <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
