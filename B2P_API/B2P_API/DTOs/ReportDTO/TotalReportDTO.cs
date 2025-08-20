@@ -6,5 +6,6 @@
         public int TotalBooking { get; set; }
         public int TotalCourt { get; set; }
         public decimal? TotalCost { get; set; }
+        public decimal? CommissionPayment { get; set; }
     }
 }

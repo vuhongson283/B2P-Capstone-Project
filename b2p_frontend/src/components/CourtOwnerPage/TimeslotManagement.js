@@ -1,6 +1,6 @@
 import React, { useState, useEffect,useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { getFacilitiesByCourtOwnerId, getTimeslotsByFacilityId, createTimeslot, deleteTimeslot, updateTimeslot } from '../../services/apiService';
 import {
   Table,

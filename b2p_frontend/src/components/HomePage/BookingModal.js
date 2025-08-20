@@ -19,14 +19,14 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
-export default function BookingModal({ 
-  open, 
-  onClose, 
-  timeSlots = [], 
-  selectedDate, 
+export default function BookingModal({
+  open,
+  onClose,
+  timeSlots = [],
+  selectedDate,
   facilityData,
   selectedCategory,
-  onProceedToDetail // New prop để chuyển sang BookingDetail
+  onProceedToDetail
 }) {
   const [selectedSlots, setSelectedSlots] = useState({});
   const [quantities, setQuantities] = useState({});
@@ -71,7 +71,7 @@ export default function BookingModal({
   const availableSlots = timeSlots.filter(slot => slot.availableCourtCount > 0);
 
   // Check if all slots are selected
-  const isAllSelected = availableSlots.length > 0 && 
+  const isAllSelected = availableSlots.length > 0 &&
     Object.values(selectedSlots).filter(Boolean).length === availableSlots.length;
 
   // Chọn tất cả
@@ -79,12 +79,12 @@ export default function BookingModal({
     const checked = e.target.checked;
     let newSelected = {};
     let newQuantities = {};
-    
+
     availableSlots.forEach(slot => {
       newSelected[slot.timeSlotId] = checked;
       newQuantities[slot.timeSlotId] = 1;
     });
-    
+
     setSelectedSlots(checked ? newSelected : {});
     setQuantities(checked ? newQuantities : {});
   };
@@ -105,7 +105,7 @@ export default function BookingModal({
   const handleQuantity = (slotId, value) => {
     const slot = timeSlots.find(s => s.timeSlotId === slotId);
     const maxQuantity = slot ? slot.availableCourtCount : 1;
-    
+
     setQuantities(prev => ({
       ...prev,
       [slotId]: Math.max(1, Math.min(value, maxQuantity))
@@ -138,7 +138,7 @@ export default function BookingModal({
   // Get selected category name
   const getSelectedCategoryName = () => {
     if (!facilityData?.categories || !selectedCategory) return '';
-    const category = facilityData.categories.find(cat => 
+    const category = facilityData.categories.find(cat =>
       cat.categoryId.toString() === selectedCategory.toString()
     );
     return category ? category.categoryName : '';
@@ -161,13 +161,13 @@ export default function BookingModal({
 
     // Đóng modal hiện tại và chuyển sang BookingDetail
     onClose();
-    
+
     // Gọi callback để mở BookingDetail với dữ liệu cần thiết
     if (onProceedToDetail) {
       onProceedToDetail({
         facilityId: facilityData?.facilityId,
         categoryId: selectedCategory,
-        listSlotId: listSlotId, // Thêm danh sách ID slot đã chọn
+        listSlotId: listSlotId,
         totalPrice,
         selectedSlots,
         quantities,
@@ -184,7 +184,6 @@ export default function BookingModal({
         <div className="modal-header">
           <div className="header-content">
             <h2 className="modal-title">
-              <span className="title-icon">🏟️</span>
               Đặt sân thể thao
             </h2>
             <p className="modal-subtitle">{formatDate(selectedDate)}</p>
@@ -193,19 +192,19 @@ export default function BookingModal({
             <span>×</span>
           </button>
         </div>
-        
+
         {/* Booking Info */}
         <div className="booking-info">
           <div className="info-grid">
             <div className="info-item">
-              <span className="info-icon">🏢</span>
+              <span className="info-icon"></span>
               <div className="info-content">
                 <span className="info-label">Cơ sở</span>
                 <span className="info-value">{facilityData?.facilityName || 'N/A'}</span>
               </div>
             </div>
             <div className="info-item">
-              <span className="info-icon">⚽</span>
+              <span className="info-icon"></span>
               <div className="info-content">
                 <span className="info-label">Loại sân</span>
                 <span className="info-value">{getSelectedCategoryName()}</span>
@@ -218,7 +217,7 @@ export default function BookingModal({
         <div className="modal-content">
           {availableSlots.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📅</div>
+              <div className="empty-icon"></div>
               <h3>Không có khung giờ khả dụng</h3>
               <p>Vui lòng chọn ngày khác hoặc loại sân khác</p>
             </div>
@@ -227,7 +226,7 @@ export default function BookingModal({
               {/* Select All */}
               <div className="select-all-section">
                 <label className="select-all-checkbox">
-                  <input 
+                  <input
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={handleCheckAll}
@@ -238,45 +237,43 @@ export default function BookingModal({
                   </span>
                 </label>
               </div>
-              
+
               {/* Time Slots */}
               <div className="slots-list">
                 {availableSlots.map(slot => (
-                  <div 
-                    className={`slot-item ${selectedSlots[slot.timeSlotId] ? "selected" : ""}`} 
+                  <div
+                    className={`slot-item ${selectedSlots[slot.timeSlotId] ? "selected" : ""}`}
                     key={slot.timeSlotId}
                   >
                     <div className="slot-main">
                       <label className="slot-checkbox">
-                        <input 
+                        <input
                           type="checkbox"
                           checked={!!selectedSlots[slot.timeSlotId]}
                           onChange={e => handleCheckSlot(slot.timeSlotId, e.target.checked)}
                         />
                         <span className="checkmark"></span>
                       </label>
-                      
+
                       <div className="slot-info">
                         <div className="slot-time">
-                          <span className="time-icon">🕐</span>
                           {formatTimeSlot(slot.startTime, slot.endTime)}
                         </div>
                         <div className="slot-availability">
-                          <span className="availability-icon">🏟️</span>
                           {slot.availableCourtCount} sân trống
                         </div>
                       </div>
-                      
+
                       <div className="slot-price">
                         {formatCurrency(PRICE_PER_COURT)}/sân
                       </div>
                     </div>
-                    
+
                     {selectedSlots[slot.timeSlotId] && (
                       <div className="quantity-section">
                         <label className="quantity-label">Số sân:</label>
                         <div className="quantity-controls">
-                          <button 
+                          <button
                             className="quantity-btn decrease"
                             onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) - 1)}
                             disabled={(quantities[slot.timeSlotId] || 1) <= 1}
@@ -287,7 +284,7 @@ export default function BookingModal({
                           <span className="quantity-value">
                             {quantities[slot.timeSlotId] || 1}
                           </span>
-                          <button 
+                          <button
                             className="quantity-btn increase"
                             onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) + 1)}
                             disabled={(quantities[slot.timeSlotId] || 1) >= slot.availableCourtCount}
@@ -313,28 +310,29 @@ export default function BookingModal({
           <div className="booking-summary">
             <div className="summary-info">
               <div className="summary-item">
-                <span className="summary-label">Khung giờ đã chọn:</span>
+                <span className="summary-label">Khung giờ đã chọn</span>
                 <span className="summary-value">{selectedSlotsCount}</span>
               </div>
               <div className="summary-item">
-                <span className="summary-label">Tổng số sân:</span>
+                <span className="summary-label">Tổng số sân</span>
                 <span className="summary-value">{totalCourts}</span>
               </div>
-              <div className="summary-total">
-                <span className="total-label">Tổng tiền:</span>
-                <span className="total-value">{formatCurrency(totalPrice)}</span>
-              </div>
+            </div>
+
+            <div className="summary-total">
+              <span className="total-label">Tổng tiền</span>
+              <span className="total-value">{formatCurrency(totalPrice)}</span>
             </div>
           </div>
-          
+
           <div className="footer-actions">
-            <button 
-              className="btn btn-secondary" 
+            <button
+              className="btn btn-secondary"
               onClick={onClose}
             >
               Hủy
             </button>
-            <button 
+            <button
               className={`btn btn-primary ${selectedSlotsCount === 0 ? 'disabled' : ''}`}
               onClick={handleProceedToDetail}
               disabled={selectedSlotsCount === 0}

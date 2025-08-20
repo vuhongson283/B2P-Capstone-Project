@@ -49,11 +49,7 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
                         CheckInDate = "2023-12-01",
                         TotalPrice = 1500000,
                         BookingTime = DateTime.Parse("2023-11-30 10:00"),
-                        BookingStatus = "Confirmed",
-                        PaymentId = 5001,
-                        PaymentAmount = 1500000,
-                        PaymentTime = DateTime.Parse("2023-11-30 10:05"),
-                        PaymentStatus = "Paid"
+                        BookingStatus = "Confirmed"
                     },
                     new ReportDTO
                     {
@@ -97,8 +93,6 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.Equal("Nguyễn Văn A", firstItem.CustomerName);
             Assert.Equal(1500000, firstItem.TotalPrice);
             Assert.Equal("Confirmed", firstItem.BookingStatus);
-            Assert.Equal(5001, firstItem.PaymentId);
-            Assert.Equal("Paid", firstItem.PaymentStatus);
 
             // Verify second item details
             var secondItem = reportData.Items.ToList()[1];
@@ -106,7 +100,6 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.Equal("Trần Thị B", secondItem.CustomerName);
             Assert.Null(secondItem.CustomerEmail); // Kiểm tra field optional
             Assert.Equal(1000000, secondItem.TotalPrice);
-            Assert.Null(secondItem.PaymentTime); // Kiểm tra field optional
         }
 
         [Fact(DisplayName = "UTCID02 - Should return no bookings message")]

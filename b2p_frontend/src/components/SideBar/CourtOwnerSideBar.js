@@ -4,7 +4,7 @@ import { message } from "antd";
 import "./CourtOwnerSideBar.scss";
 import { useNavigate } from "react-router-dom";
 import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const CourtOwnerSideBar = ({
   onClose,
@@ -133,6 +133,18 @@ const CourtOwnerSideBar = ({
       hasSubmenu: true,
       isDynamic: true,
     },
+     {
+      id: "payment-management",
+      title: "Quản lý thanh toán",
+      icon: "fas fa-credit-card",
+      path: "/court-owner/payment-management",
+    },
+    {
+      id: "blog",
+      title: "Blog",
+      icon: "fas fa-newspaper",
+      path: "/court-owner/blog",
+    },
   ];
 
   // Toggle menu expansion
@@ -238,7 +250,7 @@ const CourtOwnerSideBar = ({
           {userInfo.userId && (
             <div className="user-actions">
               <Link
-                to="/user-profile"
+                to="/court-owner/user-profile"
                 className="profile-link"
                 style={{
                   color: 'white',

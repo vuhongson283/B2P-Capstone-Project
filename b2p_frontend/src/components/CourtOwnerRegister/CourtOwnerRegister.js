@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, Building, CheckCircle, X } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Lock, Eye, EyeOff, CheckCircle, X } from 'lucide-react';
 import './CourtOwnerRegister.scss';
 import { registerCourtOwner } from "../../services/apiService";
 
@@ -25,6 +25,9 @@ const PartnerRegistration = () => {
     // State cho tỉnh/thành phố và quận/huyện
     const [provinces, setProvinces] = useState([]);
     const [districts, setDistricts] = useState([]);
+
+    // State cho API error
+    const [apiError, setApiError] = useState('');
 
     // Lấy danh sách tỉnh/thành phố
     const fetchProvinces = async () => {
@@ -141,17 +144,13 @@ const PartnerRegistration = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Thêm vào phần khai báo state (sau dòng const [isSubmitting, setIsSubmitting] = useState(false);)
-    const [apiError, setApiError] = useState('');
-
-    // Sửa lại handleSubmit đơn giản hơn
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
         setIsSubmitting(true);
-        setApiError(''); // Clear previous API errors
+        setApiError('');
 
         // Clear existing field errors
         setErrors(prev => ({
@@ -230,29 +229,6 @@ const PartnerRegistration = () => {
         }
     };
 
-    // Thêm vào JSX trước Submit Button (trong form):
-    {
-        apiError && (
-            <div className="form-group">
-                <div style={{
-                    padding: '12px',
-                    backgroundColor: '#fee',
-                    border: '1px solid #fcc',
-                    borderRadius: '4px',
-                    marginBottom: '16px'
-                }}>
-                    <p style={{
-                        color: '#c33',
-                        margin: '0',
-                        fontSize: '14px'
-                    }}>
-                        {apiError}
-                    </p>
-                </div>
-            </div>
-        )
-    }
-
     const handleModalClose = () => {
         setShowSuccessModal(false);
         // Reset form
@@ -268,6 +244,7 @@ const PartnerRegistration = () => {
             detailAddress: ''
         });
         setErrors({});
+        setApiError('');
     };
 
     const handleGoHome = () => {
@@ -279,269 +256,309 @@ const PartnerRegistration = () => {
 
     return (
         <div className="registration-container">
-            <div className="registration-wrapper">
-                {/* Header */}
-                <div className="header">
-                    <div className="logo-container">
-                        <div className="logo-icon">
-                            <Building />
-                        </div>
-                        <span className="logo-text">Book2Play</span>
-                    </div>
-                    <h1 className="title">Đăng Ký Đối Tác</h1>
-                    <p className="subtitle">Tham gia cùng chúng tôi để phát triển cộng đồng thể thao</p>
-                </div>
+            <div className="registration-grid">
+                {/* Left Side - Content */}
+                <div className="left-content">
+                    <div className="content-wrapper">
+                        <h1 className="main-title">
+                            Đăng Ký Đối Tác
+                        </h1>
+                        <p className="main-subtitle">
+                            Trở thành chủ sân thể thao cùng Book2Play và mở ra cơ hội kinh doanh mới
+                        </p>
 
-                {/* Registration Form */}
-                <div className="form-container">
-                    <div className="form-header">
-                        <h2 className="form-title">
-                            <User />
-                            Thông Tin Đăng Ký
-                        </h2>
-                    </div>
-
-                    <div className="form-content">
-                        {/* Email */}
-                        <div className="form-group">
-                            <label className="label">
-                                Email <span className="required">*</span>
-                            </label>
-                            <div className="input-wrapper">
-                                <Mail className="input-icon" />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className={`input-field ${errors.email ? 'error' : ''}`}
-                                    placeholder="example@email.com"
-                                />
-                            </div>
-                            {errors.email && <p className="error-message">{errors.email}</p>}
-                        </div>
-
-                        {/* Password */}
-                        <div className="grid-2">
-                            <div className="form-group">
-                                <label className="label">
-                                    Mật khẩu <span className="required">*</span>
-                                </label>
-                                <div className="input-wrapper">
-                                    <Lock className="input-icon" />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        className={`input-field ${errors.password ? 'error' : ''}`}
-                                        placeholder="••••••••"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="password-toggle"
-                                    >
-                                        {showPassword ? <EyeOff /> : <Eye />}
-                                    </button>
+                        <div className="features-list">
+                            <div className="feature-item">
+                                <div className="feature-icon">🏆</div>
+                                <div className="feature-content">
+                                    <h3>Tăng Doanh Thu</h3>
+                                    <p>Tăng doanh thu lên đến 300% với hệ thống quản lý thông minh</p>
                                 </div>
-                                {errors.password && <p className="error-message">{errors.password}</p>}
                             </div>
 
-                            <div className="form-group">
-                                <label className="label">
-                                    Xác nhận mật khẩu <span className="required">*</span>
-                                </label>
-                                <div className="input-wrapper">
-                                    <Lock className="input-icon" />
-                                    <input
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleInputChange}
-                                        className={`input-field ${errors.confirmPassword ? 'error' : ''}`}
-                                        placeholder="••••••••"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="password-toggle"
-                                    >
-                                        {showConfirmPassword ? <EyeOff /> : <Eye />}
-                                    </button>
+                            <div className="feature-item">
+                                <div className="feature-icon">📱</div>
+                                <div className="feature-content">
+                                    <h3>Quản Lý Dễ Dàng</h3>
+                                    <p>Hệ thống quản lý sân bóng hiện đại, dễ sử dụng trên mọi thiết bị</p>
                                 </div>
-                                {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}
                             </div>
-                        </div>
 
-                        {/* Full Name */}
-                        <div className="form-group">
-                            <label className="label">
-                                Họ và tên <span className="required">*</span>
-                            </label>
-                            <div className="input-wrapper">
-                                <User className="input-icon" />
-                                <input
-                                    type="text"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleInputChange}
-                                    className={`input-field ${errors.fullName ? 'error' : ''}`}
-                                    placeholder="Nguyễn Văn A"
-                                />
-                            </div>
-                            {errors.fullName && <p className="error-message">{errors.fullName}</p>}
-                        </div>
-
-                        {/* Phone Number and Gender */}
-                        <div className="grid-3">
-                            <div className="form-group">
-                                <label className="label">
-                                    Số điện thoại <span className="required">*</span>
-                                </label>
-                                <div className="input-wrapper">
-                                    <Phone className="input-icon" />
-                                    <input
-                                        type="tel"
-                                        name="phoneNumber"
-                                        value={formData.phoneNumber}
-                                        onChange={handleInputChange}
-                                        className={`input-field ${errors.phoneNumber ? 'error' : ''}`}
-                                        placeholder="0123456789"
-                                    />
+                            <div className="feature-item">
+                                <div className="feature-icon">💰</div>
+                                <div className="feature-content">
+                                    <h3>Thanh Toán An Toàn</h3>
+                                    <p>Thanh toán online nhanh chóng, bảo mật cao với nhiều phương thức</p>
                                 </div>
-                                {errors.phoneNumber && <p className="error-message">{errors.phoneNumber}</p>}
                             </div>
 
-                            <div className="form-group">
-                                <label className="label">Giới tính</label>
-                                <div className="gender-group">
-                                    <label className="radio-item">
-                                        <input
-                                            type="radio"
-                                            name="isMale"
-                                            value={true}
-                                            checked={formData.isMale === true}
-                                            onChange={() => setFormData(prev => ({ ...prev, isMale: true }))}
-                                        />
-                                        <span>Nam</span>
-                                    </label>
-                                    <label className="radio-item">
-                                        <input
-                                            type="radio"
-                                            name="isMale"
-                                            value={false}
-                                            checked={formData.isMale === false}
-                                            onChange={() => setFormData(prev => ({ ...prev, isMale: false }))}
-                                        />
-                                        <span>Nữ</span>
-                                    </label>
+                            <div className="feature-item">
+                                <div className="feature-icon">🎯</div>
+                                <div className="feature-content">
+                                    <h3>Marketing Tự Động</h3>
+                                    <p>Tiếp cận hàng nghìn khách hàng tiềm năng mỗi ngày</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Province and District */}
-                        <div className="grid-2">
-                            <div className="form-group">
-                                <label className="label">
-                                    Tỉnh/Thành phố <span className="required">*</span>
-                                </label>
-                                <div className="input-wrapper">
-                                    <MapPin className="input-icon" />
-                                    <select
-                                        name="province"
-                                        value={formData.province}
-                                        onChange={handleInputChange}
-                                        className={`input-field select ${errors.province ? 'error' : ''}`}
-                                    >
-                                        <option value="">Chọn tỉnh/thành phố</option>
-                                        {provinces.map((province) => (
-                                            <option key={province.code} value={province.name}>
-                                                {province.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.province && <p className="error-message">{errors.province}</p>}
-                            </div>
-
-                            <div className="form-group">
-                                <label className="label">
-                                    Quận/Huyện <span className="required">*</span>
-                                </label>
-                                <div className="input-wrapper">
-                                    <MapPin className="input-icon" />
-                                    <select
-                                        name="district"
-                                        value={formData.district}
-                                        onChange={handleInputChange}
-                                        disabled={!formData.province || districts.length === 0}
-                                        className={`input-field select ${errors.district ? 'error' : ''} ${(!formData.province || districts.length === 0) ? 'disabled' : ''}`}
-                                    >
-                                        <option value="">Chọn quận/huyện</option>
-                                        {districts.map((district) => (
-                                            <option key={district.code} value={district.name}>
-                                                {district.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.district && <p className="error-message">{errors.district}</p>}
-                            </div>
-                        </div>
-
-                        {/* Detail Address */}
-                        <div className="form-group">
-                            <label className="label">
-                                Địa chỉ chi tiết <span className="required">*</span>
-                            </label>
-                            <div className="input-wrapper">
-                                <MapPin className="input-icon" />
-                                <textarea
-                                    name="detailAddress"
-                                    value={formData.detailAddress}
-                                    onChange={handleInputChange}
-                                    className={`input-field textarea ${errors.detailAddress ? 'error' : ''}`}
-                                    placeholder="Số nhà, tên đường..."
-                                    rows={3}
-                                />
-                            </div>
-                            {errors.detailAddress && <p className="error-message">{errors.detailAddress}</p>}
-                        </div>
-
-                        {/* Submit Button */}
-                        <div className="form-group">
-                            <button
-                                onClick={handleSubmit}
-                                disabled={isSubmitting}
-                                className={`submit-button ${isSubmitting ? 'loading' : ''}`}
-                            >
-                                {isSubmitting ? 'Đang xử lý...' : 'Đăng Ký Đối Tác'}
+                        <div className="cta-section">
+                            <button className="cta-button">
+                                <span>Tìm hiểu thêm</span>
+                                <span className="arrow">→</span>
                             </button>
                         </div>
-
-                        {/* Terms */}
-                        <div className="terms">
-                            <p>
-                                Bằng việc đăng ký, bạn đồng ý với{' '}
-                                <a href="#" className="link">
-                                    Điều khoản sử dụng
-                                </a>{' '}
-                                và{' '}
-                                <a href="#" className="link">
-                                    Chính sách bảo mật
-                                </a>{' '}
-                                của Book2Play
-                            </p>
-                        </div>
                     </div>
                 </div>
 
-                {/* Back to Home */}
-                <div className="back-link">
-                    <a href="#" className="link">
-                        ← Quay về trang chủ
-                    </a>
+                {/* Right Side - Form */}
+                <div className="right-form">
+                    <div className="form-container">
+                        <div className="form-header">
+                            <User className="header-icon" />
+                            <h2 className="form-title">Thông Tin Đăng Ký</h2>
+                        </div>
+
+                        <div className="form-content">
+                            {/* Email */}
+                            <div className="form-group">
+                                <label className="label">
+                                    Email <span className="required">*</span>
+                                </label>
+                                <div className="input-wrapper">
+                                    <Mail className="input-icon" />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        className={`input-field ${errors.email ? 'error' : ''}`}
+                                        placeholder="example@email.com"
+                                    />
+                                </div>
+                                {errors.email && <p className="error-message">{errors.email}</p>}
+                            </div>
+
+                            {/* Password */}
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="label">
+                                        Mật khẩu <span className="required">*</span>
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <Lock className="input-icon" />
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            className={`input-field ${errors.password ? 'error' : ''}`}
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="password-toggle"
+                                        >
+                                            {showPassword ? <EyeOff /> : <Eye />}
+                                        </button>
+                                    </div>
+                                    {errors.password && <p className="error-message">{errors.password}</p>}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="label">
+                                        Xác nhận mật khẩu <span className="required">*</span>
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <Lock className="input-icon" />
+                                        <input
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            name="confirmPassword"
+                                            value={formData.confirmPassword}
+                                            onChange={handleInputChange}
+                                            className={`input-field ${errors.confirmPassword ? 'error' : ''}`}
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="password-toggle"
+                                        >
+                                            {showConfirmPassword ? <EyeOff /> : <Eye />}
+                                        </button>
+                                    </div>
+                                    {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}
+                                </div>
+                            </div>
+
+                            {/* Full Name */}
+                            <div className="form-group">
+                                <label className="label">
+                                    Họ và tên <span className="required">*</span>
+                                </label>
+                                <div className="input-wrapper">
+                                    <User className="input-icon" />
+                                    <input
+                                        type="text"
+                                        name="fullName"
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
+                                        className={`input-field ${errors.fullName ? 'error' : ''}`}
+                                        placeholder="Nguyễn Văn A"
+                                    />
+                                </div>
+                                {errors.fullName && <p className="error-message">{errors.fullName}</p>}
+                            </div>
+
+                            {/* Phone Number and Gender */}
+                            <div className="grid-3">
+                                <div className="form-group">
+                                    <label className="label">
+                                        Số điện thoại <span className="required">*</span>
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <Phone className="input-icon" />
+                                        <input
+                                            type="tel"
+                                            name="phoneNumber"
+                                            value={formData.phoneNumber}
+                                            onChange={handleInputChange}
+                                            className={`input-field ${errors.phoneNumber ? 'error' : ''}`}
+                                            placeholder="0123456789"
+                                        />
+                                    </div>
+                                    {errors.phoneNumber && <p className="error-message">{errors.phoneNumber}</p>}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="label">Giới tính</label>
+                                    <div className="gender-group">
+                                        <label className="radio-item">
+                                            <input
+                                                type="radio"
+                                                name="isMale"
+                                                value={true}
+                                                checked={formData.isMale === true}
+                                                onChange={() => setFormData(prev => ({ ...prev, isMale: true }))}
+                                            />
+                                            <span>Nam</span>
+                                        </label>
+                                        <label className="radio-item">
+                                            <input
+                                                type="radio"
+                                                name="isMale"
+                                                value={false}
+                                                checked={formData.isMale === false}
+                                                onChange={() => setFormData(prev => ({ ...prev, isMale: false }))}
+                                            />
+                                            <span>Nữ</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Province and District */}
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="label">
+                                        Tỉnh/Thành phố <span className="required">*</span>
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <MapPin className="input-icon" />
+                                        <select
+                                            name="province"
+                                            value={formData.province}
+                                            onChange={handleInputChange}
+                                            className={`input-field select ${errors.province ? 'error' : ''}`}
+                                        >
+                                            <option value="">Chọn tỉnh/thành phố</option>
+                                            {provinces.map((province) => (
+                                                <option key={province.code} value={province.name}>
+                                                    {province.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {errors.province && <p className="error-message">{errors.province}</p>}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="label">
+                                        Quận/Huyện <span className="required">*</span>
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <MapPin className="input-icon" />
+                                        <select
+                                            name="district"
+                                            value={formData.district}
+                                            onChange={handleInputChange}
+                                            disabled={!formData.province || districts.length === 0}
+                                            className={`input-field select ${errors.district ? 'error' : ''} ${(!formData.province || districts.length === 0) ? 'disabled' : ''}`}
+                                        >
+                                            <option value="">Chọn quận/huyện</option>
+                                            {districts.map((district) => (
+                                                <option key={district.code} value={district.name}>
+                                                    {district.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {errors.district && <p className="error-message">{errors.district}</p>}
+                                </div>
+                            </div>
+
+                            {/* Detail Address */}
+                            <div className="form-group">
+                                <label className="label">
+                                    Địa chỉ chi tiết <span className="required">*</span>
+                                </label>
+                                <div className="input-wrapper">
+                                    <MapPin className="input-icon" />
+                                    <textarea
+                                        name="detailAddress"
+                                        value={formData.detailAddress}
+                                        onChange={handleInputChange}
+                                        className={`input-field textarea ${errors.detailAddress ? 'error' : ''}`}
+                                        placeholder="Số nhà, tên đường..."
+                                        rows={3}
+                                    />
+                                </div>
+                                {errors.detailAddress && <p className="error-message">{errors.detailAddress}</p>}
+                            </div>
+
+                            {/* API Error Display */}
+                            {apiError && (
+                                <div className="api-error">
+                                    <p>{apiError}</p>
+                                </div>
+                            )}
+
+                            {/* Submit Button */}
+                            <div className="form-group">
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className={`submit-button ${isSubmitting ? 'loading' : ''}`}
+                                >
+                                    {isSubmitting ? 'Đang xử lý...' : 'Đăng Ký Ngay'}
+                                </button>
+                            </div>
+
+                            {/* Terms */}
+                            <div className="terms">
+                                <p>
+                                    Bằng việc đăng ký, bạn đồng ý với{' '}
+                                    <a href="#" className="link">
+                                        Điều khoản sử dụng
+                                    </a>{' '}
+                                    và{' '}
+                                    <a href="#" className="link">
+                                        Chính sách bảo mật
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

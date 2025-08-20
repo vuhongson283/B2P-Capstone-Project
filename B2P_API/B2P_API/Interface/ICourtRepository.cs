@@ -8,7 +8,7 @@ namespace B2P_API.Interface
     {
         Task<PagedResponse<Court>> GetAllCourts(CourtRequestDTO req);
         Task<Court> GetCourtDetail(int courtId);
-        Task<Court> CreateCourt(CreateCourt court);
+        Task<Court> CreateCourt(CreateCourtRequest court);
         Task<bool> UpdateCourt(UpdateCourtRequest court);
         Task<bool> DeleteCourt(int courtId);
         Task<bool> LockCourt(int courtId, int statusId);

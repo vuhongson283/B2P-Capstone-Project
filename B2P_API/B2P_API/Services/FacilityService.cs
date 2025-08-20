@@ -12,7 +12,7 @@ using Twilio.TwiML.Messaging;
 
 namespace B2P_API.Services
 {
-    public class FacilityService : IFacilityService
+    public class FacilityService 
     {
         private readonly IFacilityManageRepository _facilityRepository;
         private readonly IFacilityRepositoryForUser _facilityRepositoryForUser;

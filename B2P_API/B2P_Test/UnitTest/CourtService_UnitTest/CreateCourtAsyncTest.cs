@@ -1,6 +1,7 @@
 ﻿using B2P_API.DTOs.CourtManagementDTO;
 using B2P_API.Interface;
 using B2P_API.Models;
+using B2P_API.DTOs;
 using B2P_API.Response;
 using B2P_API.Services;
 using Moq;
@@ -23,7 +24,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         public async Task UTCID01_ValidData_ReturnsSuccess()
         {
             // Arrange
-            var validRequest = new CreateCourt
+            var validRequest = new CreateCourtRequest
             {
                 FacilityId = 1,
                 CourtName = "Sân bóng A",
@@ -77,7 +78,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
                 ? null
                 : decimal.Parse(pricePerHourStr);
 
-            var invalidRequest = new CreateCourt
+            var invalidRequest = new CreateCourtRequest
             {
                 FacilityId = facilityId,
                 CourtName = courtName,
@@ -93,14 +94,14 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Equal(400, result.Status);
             Assert.Equal(expectedMessage, result.Message);
             Assert.Null(result.Data);
-            _courtRepoMock.Verify(x => x.CreateCourt(It.IsAny<CreateCourt>()), Times.Never());
+            _courtRepoMock.Verify(x => x.CreateCourt(It.IsAny<CreateCourtRequest>()), Times.Never());
         }
 
         [Fact(DisplayName = "UTCID03 - Should handle database error")]
         public async Task UTCID03_DatabaseError_Returns500()
         {
             // Arrange
-            var validRequest = new CreateCourt
+            var validRequest = new CreateCourtRequest
             {
                 FacilityId = 1,
                 CourtName = "Sân bóng A",
@@ -125,7 +126,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         public async Task UTCID04_UsesRepositoryReturnedCourt()
         {
             // Arrange
-            var request = new CreateCourt
+            var request = new CreateCourtRequest
             {
                 FacilityId = 1,
                 CourtName = "Sân bóng mới",

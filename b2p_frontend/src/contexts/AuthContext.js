@@ -189,7 +189,11 @@ export const ProtectedRoute = ({
   adminOnly = false,
   playerOnly = false,
   courtOwnerOnly = false,
-  allowedRoles = [] // Alternative name for requiredRoles
+  playerAndGuestOnly = false, // 🆕 NEW PROP
+  allowedRoles = [], // Alternative name for requiredRoles
+  // 🆕 NEW REDIRECT PROPS for playerAndGuestOnly
+  adminRedirect,
+  courtOwnerRedirect
 }) => {
   const { user, isLoading, hasRole, hasRoleId, isAdmin, isPlayer, isCourtOwner } = useAuth();
   const location = useLocation();
@@ -207,7 +211,26 @@ export const ProtectedRoute = ({
     );
   }
 
-  // Redirect to login if not authenticated
+  // 🆕 HANDLE playerAndGuestOnly - Allow Guest & Player, redirect Admin & CourtOwner
+  if (playerAndGuestOnly) {
+    // If user is Admin and adminRedirect is provided, redirect
+    if (user && isAdmin() && adminRedirect) {
+      console.log('🔄 ProtectedRoute: Admin detected, redirecting to:', adminRedirect);
+      return <Navigate to={adminRedirect} replace />;
+    }
+    
+    // If user is CourtOwner and courtOwnerRedirect is provided, redirect
+    if (user && isCourtOwner() && courtOwnerRedirect) {
+      console.log('🔄 ProtectedRoute: CourtOwner detected, redirecting to:', courtOwnerRedirect);
+      return <Navigate to={courtOwnerRedirect} replace />;
+    }
+    
+    // Allow Guest (not logged in) and Player
+    console.log('✅ ProtectedRoute: playerAndGuestOnly - Access granted for Guest or Player');
+    return children;
+  }
+
+  // Redirect to login if not authenticated (for other protection types)
   if (!user) {
     console.log('🚫 ProtectedRoute: User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { message } from "antd";
 import "./AdminSideBar.scss";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminSideBar = ({
 
@@ -58,6 +58,12 @@ const AdminSideBar = ({
       title: "Quản lý thể loại sân",
       icon: "fas fa-list-ul",
       path: "/admin/manage-court-categories",
+    },
+    {
+      id: "blog-management",
+      title: "Blog",
+      icon: "fas fa-newspaper",
+      path: "/admin/blog",
     },
   ];
 
@@ -151,7 +157,7 @@ const AdminSideBar = ({
             {userInfo.userId && (
               <div className="user-actions">
                 <Link
-                  to="/user-profile"
+                  to="/admin/user-profile"
                   className="profile-link"
                   style={{
                     color: 'white',

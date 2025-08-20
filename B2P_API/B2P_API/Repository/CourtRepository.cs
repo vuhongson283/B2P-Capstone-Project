@@ -90,7 +90,7 @@ namespace B2P_API.Repository
             .FirstOrDefaultAsync();
         }
 
-        public async Task<Court> CreateCourt(CreateCourt court)
+        public async Task<Court> CreateCourt(CreateCourtRequest court)
         {
             var newCourt = new Court()
             {
