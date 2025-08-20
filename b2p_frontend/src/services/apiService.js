@@ -751,8 +751,9 @@ const createCommission = (commissionData) => {
     validateStatus: () => true // Accept all status codes
   });
 }
-  
-/*   💳 MERCHANT PAYMENT MANAGEMENT
+
+/* ===============================
+   💳 MERCHANT PAYMENT MANAGEMENT
 ================================ */
 
 // GET /api/MerchantPayment - Lấy tất cả merchant payments
@@ -909,17 +910,16 @@ export {
   completeBooking,
   markSmartSlot,
 
-  // Payment Commission ✅ THÊM MỚI
-  checkCommission,
-  createCommission,
-
   // Auth
   checkUserExistAxios,
   googleLoginAxios,
   verifyOtpAxios,
   sendOtpAxios,
   loginAxios,
-  checkUserExistAxios,
+
+  // Payment Commission ✅ THÊM MỚI
+  checkCommission,
+  createCommission,
 
   // Merchant Payment
   getAllMerchantPayments,

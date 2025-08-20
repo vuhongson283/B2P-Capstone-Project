@@ -15,10 +15,6 @@ public partial class SportBookingDbContext : DbContext
     {
     }
 
-    public virtual DbSet<BankAccount> BankAccounts { get; set; }
-
-    public virtual DbSet<BankType> BankTypes { get; set; }
-
     public virtual DbSet<Blog> Blogs { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -65,40 +61,6 @@ public partial class SportBookingDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<BankAccount>(entity =>
-        {
-            entity.HasKey(e => e.BankAccountId).HasName("PK__BankAcco__4FC8E4A1467491C0");
-
-            entity.ToTable("BankAccount");
-
-            entity.HasIndex(e => e.UserId, "UQ__BankAcco__1788CC4DD1C677D3").IsUnique();
-
-            entity.Property(e => e.AccountHolder).HasMaxLength(100);
-            entity.Property(e => e.AccountNumber).HasMaxLength(50);
-
-            entity.HasOne(d => d.BankType).WithMany(p => p.BankAccounts)
-                .HasForeignKey(d => d.BankTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BankAccou__BankT__5441852A");
-
-            entity.HasOne(d => d.User).WithOne(p => p.BankAccount)
-                .HasForeignKey<BankAccount>(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BankAccou__UserI__44FF419A");
-        });
-
-        modelBuilder.Entity<BankType>(entity =>
-        {
-            entity.HasKey(e => e.BankTypeId).HasName("PK__BankType__91F2C379C89F0DDA");
-
-            entity.ToTable("BankType");
-
-            entity.HasIndex(e => e.BankName, "UQ__BankType__DA9ADFAA69817D73").IsUnique();
-
-            entity.Property(e => e.BankName).HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(255);
-        });
-
         modelBuilder.Entity<Blog>(entity =>
         {
             entity.HasKey(e => e.BlogId).HasName("PK__Blog__54379E30DB38DBE8");
