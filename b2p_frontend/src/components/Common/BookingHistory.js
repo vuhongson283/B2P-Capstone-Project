@@ -109,24 +109,27 @@ const BookingHistory = () => {
 
     const loadCourtDetails = async (courtId) => {
         try {
-            console.log(`🏟️ [DEBUG] Loading court details for courtId: ${courtId}`);
-
             const response = await getCourtDetail(courtId);
-            console.log(`📋 [DEBUG] Full response:`, response);
+            console.log('📋 [DEBUG] Full court detail API response:', response);
 
-            const data = response.data;
+            let data = response.data;
+            if (data.data) data = data.data;
+
+            // Lấy thông tin cơ sở từ data.facility
+            const facility = data.facility || {};
+
             const result = {
-                facilityName: data.facilityName || 'N/A',
-                facilityAddress: data.location || 'N/A',
-                facilityContact: data.contact || 'N/A',
-                facilityId: data.facilityId || null
+                facilityName: facility.facilityName || 'N/A',
+                facilityAddress: facility.location || 'N/A',
+                facilityContact: facility.contact || 'N/A',
+                facilityId: facility.facilityId || null
             };
 
-            console.log(`🎯 [DEBUG] Extracted result:`, result);
+            console.log('🎯 [DEBUG] Extracted facility info:', result);
             return result;
 
         } catch (error) {
-            console.error(`❌ [DEBUG] Error:`, error);
+            console.error('❌ [DEBUG] Error loading court details:', error);
             return {
                 facilityName: 'Error',
                 facilityAddress: 'Error',

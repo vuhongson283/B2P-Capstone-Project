@@ -62,7 +62,6 @@ namespace B2P_API.Controllers
             }
         }
         [HttpGet("getFacilityById/{facilityId}")]
-        [Authorize(Roles = "3")]
         public async Task<IActionResult> GetFacilityById(int facilityId)
         {
             try

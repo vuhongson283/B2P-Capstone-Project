@@ -28,7 +28,7 @@ const formatDate = (dateString) => {
 // Helper function to format time
 const formatTime = (timeString) => {
   if (!timeString) return '';
-  return timeString.substring(0, 5); // Lấy HH:MM từ HH:MM:SS
+  return timeString.substring(0, 5);
 };
 
 export default function BookingProcess() {
@@ -38,7 +38,6 @@ export default function BookingProcess() {
 
   console.log('🚀 [BookingProcess] Component mounted with bookingId:', bookingId);
 
-  // Chỉ sử dụng 1 SignalR hook
   const { connection, isConnected } = useSignalR();
 
   const [bookingData, setBookingData] = useState(null);
@@ -58,7 +57,7 @@ export default function BookingProcess() {
 
     try {
       console.log(`🔄 [BookingProcess] Loading booking data for ID: ${bookingId}`);
-      
+
       if (showLoading) {
         setLoading(true);
       }
@@ -71,8 +70,7 @@ export default function BookingProcess() {
         console.log('✅ [BookingProcess] Booking data loaded successfully:', result.data);
         setBookingData(result.data);
         setLastUpdated(new Date());
-        
-        // Show notification nếu đây là update (không phải lần đầu load)
+
         if (!showLoading && bookingData) {
           console.log('🔔 [BookingProcess] Showing update notification');
           setShowUpdateNotification(true);
@@ -97,35 +95,28 @@ export default function BookingProcess() {
     loadBookingData(true);
   }, [bookingId]);
 
-  // SignalR listener - SIMPLIFIED
+  // SignalR listener
   useEffect(() => {
     console.log('🔄 [BookingProcess] Setting up SignalR listener');
-    console.log('🔍 Connection state:', { 
-      hasConnection: !!connection, 
+    console.log('🔍 Connection state:', {
+      hasConnection: !!connection,
       isConnected,
       connectionState: connection?.state,
       bookingId
     });
 
-    // Kiểm tra điều kiện cần thiết
     if (!connection || !isConnected || !bookingId) {
-      console.log('❌ Missing requirements for SignalR:', { 
-        connection: !!connection, 
+      console.log('❌ Missing requirements for SignalR:', {
+        connection: !!connection,
         isConnected,
-        bookingId 
+        bookingId
       });
       return;
     }
 
-    // Handler function
     const handleBookingStatusChanged = (data) => {
       console.log('📨 [SignalR] Received BookingStatusChanged RAW:', data);
-      console.log('📨 [SignalR] Data type:', typeof data);
-      console.log('📨 [SignalR] Data keys:', Object.keys(data));
-      console.log('📨 [SignalR] Data.BookingId:', data.BookingId);
-      console.log('📨 [SignalR] Current bookingId:', bookingId);
-      
-      // Thử các cách lấy bookingId
+
       let receivedId = null;
       if (data && data.BookingId) {
         receivedId = data.BookingId;
@@ -134,74 +125,31 @@ export default function BookingProcess() {
       } else if (typeof data === 'number' || typeof data === 'string') {
         receivedId = data;
       }
-      
-      console.log('📨 [SignalR] Extracted receivedId:', receivedId);
-      
-      // Convert both to string để so sánh
+
       const currentId = bookingId.toString();
       const receivedIdStr = receivedId ? receivedId.toString() : '';
-      
-      console.log('📨 [SignalR] ID comparison:', { 
-        currentId, 
-        receivedIdStr, 
-        match: currentId === receivedIdStr 
-      });
-      
-      // Nếu BookingId khớp thì reload data
+
       if (receivedIdStr === currentId) {
         console.log('✅ [SignalR] BookingId matched! Reloading data...');
-        loadBookingData(false); // false = không show loading spinner
-        
-        // Show notification
+        loadBookingData(false);
+
         setShowUpdateNotification(true);
         setTimeout(() => setShowUpdateNotification(false), 3000);
-      } else {
-        console.log('❌ [SignalR] BookingId mismatch:', {
-          expected: currentId,
-          received: receivedIdStr,
-          rawData: data
-        });
       }
     };
 
     console.log('📡 [SignalR] Registering BookingStatusChanged listener');
-    
-    // Clean up existing listeners
+
     connection.off('BookingStatusChanged', handleBookingStatusChanged);
-    
-    // Register new listener
     connection.on('BookingStatusChanged', handleBookingStatusChanged);
 
-    // Test connection ngay sau khi đăng ký
-    console.log('🧪 [SignalR] Connection test:', {
-      connectionId: connection.connectionId,
-      state: connection.state
-    });
-
-    // Cleanup
     return () => {
       console.log('🧹 [SignalR] Cleaning up listener');
       if (connection) {
         connection.off('BookingStatusChanged', handleBookingStatusChanged);
       }
     };
-  }, [connection, isConnected, bookingId]); // Chỉ depend vào những gì thật sự cần
-
-  // Test SignalR function
-  const testSignalRConnection = () => {
-    console.log('🧪 [Test] SignalR Connection Details:');
-    console.log('- Connection exists:', !!connection);
-    console.log('- Is connected:', isConnected);
-    console.log('- Connection ID:', connection?.connectionId);
-    console.log('- Connection state:', connection?.state);
-    console.log('- Current booking ID:', bookingId);
-    
-    if (connection && isConnected) {
-      alert(`SignalR Connected!\nConnection ID: ${connection.connectionId}\nBooking ID: ${bookingId}`);
-    } else {
-      alert('SignalR Not Connected. Check console for details.');
-    }
-  };
+  }, [connection, isConnected, bookingId]);
 
   // Manual refresh
   const handleManualRefresh = () => {
@@ -226,9 +174,6 @@ export default function BookingProcess() {
           <div className="loading-spinner-large"></div>
           <h2>Đang tải thông tin đặt sân...</h2>
           <p>Vui lòng đợi trong giây lát</p>
-          <div style={{ marginTop: '20px', fontSize: '12px', color: '#666' }}>
-            BookingId: {bookingId}
-          </div>
         </div>
       </div>
     );
@@ -239,25 +184,16 @@ export default function BookingProcess() {
     return (
       <div className="booking-process-container">
         <div className="error-section">
-          <div className="error-icon">⚠️</div>
+          <div className="error-icon"></div>
           <h2>Có lỗi xảy ra</h2>
           <p>{error}</p>
           <div className="error-actions">
             <button className="btn-secondary" onClick={handleManualRefresh}>
-              <span className="btn-icon">🔄</span>
               Thử lại
             </button>
             <button className="btn-primary" onClick={handleBackToHome}>
-              <span className="btn-icon">🏠</span>
               Về trang chủ
             </button>
-            <button className="btn-secondary" onClick={testSignalRConnection}>
-              <span className="btn-icon">🧪</span>
-              Test SignalR
-            </button>
-          </div>
-          <div style={{ marginTop: '20px', fontSize: '12px', color: '#666' }}>
-            BookingId: {bookingId} | SignalR: {isConnected ? 'Connected' : 'Disconnected'}
           </div>
         </div>
       </div>
@@ -269,12 +205,11 @@ export default function BookingProcess() {
     return (
       <div className="booking-process-container">
         <div className="error-section">
-          <div className="error-icon">📋</div>
+          <div className="error-icon"></div>
           <h2>Không tìm thấy thông tin đặt sân</h2>
           <p>Mã đặt sân không tồn tại hoặc đã bị xóa</p>
           <div className="error-actions">
             <button className="btn-primary" onClick={handleBackToHome}>
-              <span className="btn-icon">🏠</span>
               Về trang chủ
             </button>
           </div>
@@ -288,49 +223,42 @@ export default function BookingProcess() {
     switch (status?.toLowerCase()) {
       case 'pending':
         return {
-          icon: '⏳',
           text: 'Đang chờ xử lý',
           className: 'status-pending',
           description: 'Đặt sân đang được xử lý'
         };
       case 'confirmed':
         return {
-          icon: '✅',
           text: 'Đã xác nhận',
           className: 'status-confirmed',
           description: 'Đặt sân đã được xác nhận'
         };
       case 'paid':
         return {
-          icon: '💰',
           text: 'Đã thanh toán',
           className: 'status-paid',
           description: 'Đã thanh toán thành công'
         };
       case 'unpaid':
         return {
-          icon: '💳',
           text: 'Chưa thanh toán',
           className: 'status-unpaid',
           description: 'Chưa thanh toán'
         };
       case 'cancelled':
         return {
-          icon: '❌',
           text: 'Đã hủy',
           className: 'status-cancelled',
           description: 'Đặt sân đã bị hủy'
         };
       case 'completed':
         return {
-          icon: '🎉',
           text: 'Hoàn thành',
           className: 'status-completed',
           description: 'Đã sử dụng dịch vụ'
         };
       default:
         return {
-          icon: '❓',
           text: status || 'Không xác định',
           className: 'status-unknown',
           description: 'Trạng thái không xác định'
@@ -356,7 +284,6 @@ export default function BookingProcess() {
       {showUpdateNotification && (
         <div className="update-notification">
           <div className="notification-content">
-            <span className="notification-icon">🔄</span>
             <span>Thông tin đặt sân đã được cập nhật!</span>
           </div>
         </div>
@@ -366,39 +293,11 @@ export default function BookingProcess() {
       <div className="process-header">
         <div className="header-content">
           <h1 className="page-title">
-            <span className="title-icon">📋</span>
             Thông tin đặt sân
           </h1>
-          <p className="page-subtitle">
-            Mã đặt sân: <strong>#{bookingData.bookingId}</strong>
-          </p>
-          
-          {/* Connection Status */}
-          <div className="header-status">
-            <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-              <span className="status-dot"></span>
-              <span className="status-text">
-                {isConnected ? 'Đang theo dõi real-time' : 'Mất kết nối real-time'}
-              </span>
-            </div>
-            {lastUpdated && (
-              <div className="last-updated">
-                Cập nhật lúc: {lastUpdated.toLocaleTimeString('vi-VN')}
-              </div>
-            )}
-          </div>
         </div>
         <div className="header-actions">
-          <button className="btn-secondary" onClick={handleManualRefresh}>
-            <span className="btn-icon">🔄</span>
-            Làm mới
-          </button>
-          <button className="btn-secondary" onClick={testSignalRConnection}>
-            <span className="btn-icon">🧪</span>
-            Test SignalR
-          </button>
           <button className="btn-back" onClick={handleBackToHome}>
-            <span className="btn-icon">🏠</span>
             Về trang chủ
           </button>
         </div>
@@ -407,7 +306,6 @@ export default function BookingProcess() {
       {/* Status Section */}
       <div className="status-section">
         <div className={`status-card ${statusInfo.className}`}>
-          <div className="status-icon">{statusInfo.icon}</div>
           <div className="status-info">
             <h3 className="status-title">{statusInfo.text}</h3>
             <p className="status-description">{statusInfo.description}</p>
@@ -418,7 +316,6 @@ export default function BookingProcess() {
       {/* Booking Details */}
       <div className="details-section">
         <h2 className="section-title">
-          <span className="section-icon">📊</span>
           Chi tiết đặt sân
         </h2>
 
@@ -426,7 +323,6 @@ export default function BookingProcess() {
           {/* Facility Info */}
           <div className="detail-card">
             <h3 className="card-title">
-              <span className="card-icon">🏢</span>
               Thông tin sân
             </h3>
             <div className="card-content">
@@ -448,7 +344,6 @@ export default function BookingProcess() {
           {/* Booking Info */}
           <div className="detail-card">
             <h3 className="card-title">
-              <span className="card-icon">📅</span>
               Thông tin đặt sân
             </h3>
             <div className="card-content">
@@ -481,7 +376,6 @@ export default function BookingProcess() {
           {/* Customer Info */}
           <div className="detail-card">
             <h3 className="card-title">
-              <span className="card-icon">👤</span>
               Thông tin khách hàng
             </h3>
             <div className="card-content">
@@ -499,7 +393,6 @@ export default function BookingProcess() {
           {/* Payment Info */}
           <div className="detail-card">
             <h3 className="card-title">
-              <span className="card-icon">💰</span>
               Thông tin thanh toán
             </h3>
             <div className="card-content">
@@ -524,14 +417,12 @@ export default function BookingProcess() {
       {bookingData.slots && bookingData.slots.length > 0 && (
         <div className="details-section">
           <h2 className="section-title">
-            <span className="section-icon">🕐</span>
             Chi tiết khung giờ
           </h2>
 
           <div className="details-grid">
             <div className="detail-card full-width">
               <h3 className="card-title">
-                <span className="card-icon">📅</span>
                 Danh sách khung giờ đã đặt
               </h3>
               <div className="card-content">
@@ -563,52 +454,12 @@ export default function BookingProcess() {
           </div>
         </div>
       )}
-
-      {/* Actions */}
-      {isPendingPayment && (
-        <div className="actions-section">
-          <h3 className="section-title">
-            <span className="section-icon">🔧</span>
-            Thao tác
-          </h3>
-          <div className="actions-content">
-            <p className="actions-description">
-              Đặt sân của bạn đang chờ thanh toán. Vui lòng liên hệ với chúng tôi để được hỗ trợ.
-            </p>
-            <button
-              className="btn-payment"
-              onClick={handleRetryPayment}
-            >
-              <span className="btn-icon">📞</span>
-              Liên hệ hỗ trợ
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Debug Footer */}
+      {/* Footer Note */}
       <div className="footer-note">
         <div className="note-content">
-          <span className="note-icon">ℹ️</span>
           <p>
             Trang này sẽ tự động cập nhật khi có thay đổi trạng thái booking.
           </p>
-          {/* Debug Info */}
-          <div style={{ 
-            marginTop: '10px', 
-            padding: '10px', 
-            backgroundColor: '#f8f9fa', 
-            borderRadius: '4px',
-            fontSize: '11px',
-            color: '#666'
-          }}>
-            <strong>Debug Info:</strong><br/>
-            BookingId: {bookingId}<br/>
-            SignalR Connected: {isConnected ? '✅' : '❌'}<br/>
-            Connection ID: {connection?.connectionId || 'N/A'}<br/>
-            Connection State: {connection?.state || 'N/A'}<br/>
-            Last Updated: {lastUpdated?.toLocaleTimeString('vi-VN') || 'N/A'}
-          </div>
         </div>
       </div>
     </div>

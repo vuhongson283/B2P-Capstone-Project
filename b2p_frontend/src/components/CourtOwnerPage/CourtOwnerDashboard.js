@@ -73,9 +73,9 @@ const OwnerDashboard = () => {
       console.log(`🔍 Checking commission for userId: ${userId}, month: ${month}, year: ${year}`);
 
       const response = await checkCommission(userId, month, year);
-      
+
       console.log('📊 Commission check response:', response);
-      
+
       if (response && response.data) {
         setCommissionExists(response.data.exists);
         console.log(`✅ Commission exists: ${response.data.exists}`);
@@ -182,7 +182,7 @@ const OwnerDashboard = () => {
         null,      // facilityId (nếu cần)
         1          // pageNumber
       );
-      
+
       // Kiểm tra nếu response không phải là ArrayBuffer
       if (!response || !(response instanceof ArrayBuffer)) {
         throw new Error("Dữ liệu trả về không hợp lệ");
@@ -273,14 +273,14 @@ const OwnerDashboard = () => {
     dashboardData.recentBookings.forEach(booking => {
       // CHỈ TÍNH DOANH THU NẾU ĐÃ THANH TOÁN
       const isPaid = booking.bookingStatus === "Đã hoàn thành";
-      
+
       if (booking.courtCategories && booking.totalPrice && isPaid) {
         const courtTypes = booking.courtCategories.split(', ').filter(type => type.trim());
         const courtCount = courtTypes.length;
-        
+
         if (courtCount > 0) {
           const revenuePerCourt = booking.totalPrice / courtCount;
-          
+
           courtTypes.forEach(type => {
             const courtType = type.trim();
             if (courtType) {
@@ -332,12 +332,12 @@ const OwnerDashboard = () => {
       }
     };
   };
-  
+
 
   const BookingDetailModal = ({ booking, show, onHide }) => {
     if (!booking) return null;
 
-    
+
     return (
       <Modal show={show} onHide={onHide} size="lg">
         <Modal.Header closeButton className="detail-header">
@@ -415,7 +415,7 @@ const OwnerDashboard = () => {
                       {formatPrice(booking.totalPrice)}đ
                     </span>
                   </div>
-                  
+
                 </Col>
                 <Col md={6}>
                   <div className="detail-item">
@@ -513,7 +513,7 @@ const OwnerDashboard = () => {
                   {formatPrice(commissionAmount)}đ
                 </div>
               </div>
-              
+
               <div className="payment-note">
                 <i className="fas fa-exclamation-triangle me-2"></i>
                 <small>
@@ -545,8 +545,8 @@ const OwnerDashboard = () => {
             <i className="fas fa-times me-2"></i>
             Hủy
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             className="confirm-payment-btn"
             disabled={commissionAmount <= 0}
           >
@@ -578,9 +578,9 @@ const OwnerDashboard = () => {
         <div className="error-alert">
           <i className="fas fa-exclamation-circle"></i>
           <span className="error-text">{error}</span>
-          <Button 
-            variant="link" 
-            size="sm" 
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => window.location.reload()}
             className="ms-2"
           >
@@ -606,7 +606,7 @@ const OwnerDashboard = () => {
             value={selectedMonth ? dayjs(selectedMonth) : null}
             style={{ width: "180px" }}
           />
-          
+
           {/* ✅ BUTTON CHỈ HIỂN THỊ KHI CHƯA CÓ COMMISSION */}
           {!commissionExists && dashboardData.totalRevenue > 0 && (
             <Button
@@ -701,74 +701,74 @@ const OwnerDashboard = () => {
         </Col>
       </Row>
 
-<div className="chart-container">
-  <Row>
-    <Col md={8}>
-      <div className="chart-card">
-        <h4>Doanh thu theo loại sân</h4>
-        {dashboardData.recentBookings.length > 0 ? (
-          <Bar 
-            data={prepareChartData().revenueData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  display: false
-                },
-                tooltip: {
-                  callbacks: {
-                    label: (context) => {
-                      return ` ${formatPrice(context.raw)}đ`;
+      <div className="chart-container">
+        <Row>
+          <Col md={8}>
+            <div className="chart-card">
+              <h4>Doanh thu theo loại sân</h4>
+              {dashboardData.recentBookings.length > 0 ? (
+                <Bar
+                  data={prepareChartData().revenueData}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        display: false
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => {
+                            return ` ${formatPrice(context.raw)}đ`;
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          callback: (value) => formatPrice(value) + 'đ'
+                        }
+                      }
                     }
-                  }
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    callback: (value) => formatPrice(value) + 'đ'
-                  }
-                }
-              }
-            }}
-          />
-        ) : (
-          <p>Không có dữ liệu để hiển thị</p>
-        )}
-      </div>
-    </Col>
-    <Col md={4}>
-      <div className="chart-card">
-        <h4>Phân bổ trạng thái đơn</h4>
-        {dashboardData.recentBookings.length > 0 ? (
-          <Pie 
-            data={prepareChartData().statusData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                },
-                tooltip: {
-                  callbacks: {
-                    label: (context) => {
-                      const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                      const percentage = Math.round((context.raw / total) * 100);
-                      return `${context.label}: ${context.raw} đơn (${percentage}%)`;
+                  }}
+                />
+              ) : (
+                <p>Không có dữ liệu để hiển thị</p>
+              )}
+            </div>
+          </Col>
+          <Col md={4}>
+            <div className="chart-card">
+              <h4>Phân bổ trạng thái đơn</h4>
+              {dashboardData.recentBookings.length > 0 ? (
+                <Pie
+                  data={prepareChartData().statusData}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: 'bottom'
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((context.raw / total) * 100);
+                            return `${context.label}: ${context.raw} đơn (${percentage}%)`;
+                          }
+                        }
+                      }
                     }
-                  }
-                }
-              }
-            }}
-          />
-        ) : (
-          <p>Không có dữ liệu để hiển thị</p>
-        )}
+                  }}
+                />
+              ) : (
+                <p>Không có dữ liệu để hiển thị</p>
+              )}
+            </div>
+          </Col>
+        </Row>
       </div>
-    </Col>
-  </Row>
-</div>
 
       <Card className="recent-bookings-card">
         <Card.Body>
@@ -823,7 +823,7 @@ const OwnerDashboard = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Thêm phân trang */}
               {bookingPagination.totalItems > 0 && (
                 <div className="booking-pagination mt-3 d-flex justify-content-center">
@@ -835,7 +835,7 @@ const OwnerDashboard = () => {
                     pageSizeOptions={['3', '5', '10']}
                     onChange={handleBookingPageChange}
                     onShowSizeChange={handleBookingPageSizeChange}
-                    showTotal={(total, range) => 
+                    showTotal={(total, range) =>
                       `${range[0]}-${range[1]} / ${total} đơn đặt sân`
                     }
                     showQuickJumper

@@ -1046,26 +1046,12 @@ const FacilityDetails = () => {
                       <p className="review-text">
                         {rating.comment || 'Không có bình luận'}
                       </p>
-                      <div className="review-actions">
-                        <button className="review-action-btn helpful">
-                          <span className="action-icon">👍</span>
-                          <span className="action-text">Hữu ích</span>
-                        </button>
-                        <button className="review-action-btn reply">
-                          <span className="action-icon">💬</span>
-                          <span className="action-text">Trả lời</span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 ))}
               </div>
 
               <div className="reviews-bottom">
-                <button className="btn-write-review">
-                  <span className="btn-icon">📝</span>
-                  <span>Viết đánh giá</span>
-                </button>
                 <button
                   className="btn-view-all"
                   onClick={() => setReviewsModalOpen(true)}
