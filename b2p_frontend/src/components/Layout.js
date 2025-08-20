@@ -43,39 +43,7 @@ const Layout = (props) => {
         {/* 🚫 Unauthorized page */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-        {/* 🏃‍♂️ PLAYER ROUTES */}
-        <Route path="/" element={
-          <ProtectedRoute playerOnly fallbackPath="/unauthorized">
-            <App />
-          </ProtectedRoute>
-        }>
-          {/* Player dashboard - redirect to search as default */}
-          <Route index element={<FacilitiesWithCondition />} />
-          <Route path="search" element={<FacilitiesWithCondition />} />
-          <Route path="user-profile" element={<UserProfile />} />
-          <Route path="blog" element={<Blog />} />
-          <Route path="booking-history" element={<BookingHistory />} />
-          <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
-          <Route path="bookingprocess" element={<BookingProcess />} />
-          <Route path="stripepayment" element={<StripePayment />} />
-        </Route>
-
-        {/* 🏢 COURT OWNER ROUTES */}
-        <Route path="/court-owner" element={
-          <ProtectedRoute courtOwnerOnly fallbackPath="/unauthorized">
-            <CourtOwner />
-          </ProtectedRoute>
-        }>
-          <Route index element={<DashboardField />} />
-          <Route path="search" element={<FacilitiesWithCondition />} />
-          <Route path="booking-management" element={<BookingManagement />} />
-          <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
-          <Route path="facility/general" element={<FacilityTable />} />
-          <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
-          <Route path="facility/time-slots" element={<TimeslotManagement />} />
-        </Route>
-
-        {/* 👑 ADMIN ROUTES */}
+        {/* 👑 ADMIN ROUTES - Only for Admin */}
         <Route path="/admin" element={
           <ProtectedRoute adminOnly fallbackPath="/unauthorized">
             <Admin />
@@ -85,50 +53,92 @@ const Layout = (props) => {
           <Route path="accounts" element={<AccountTable />} />
           <Route path="sliders" element={<SliderManagement />} />
           <Route path="manage-court-categories" element={<ManageCourtCategories />} />
+          <Route path="user-profile" element={<UserProfile />} />
+          <Route path="blog" element={<Blog />} />
         </Route>
 
-        {/* 🌐 SHARED PUBLIC ROUTES (accessible when logged in) */}
-        <Route path="/public" element={
-          <ProtectedRoute>
+        {/* 🏢 COURT OWNER ROUTES - Only for Court Owner */}
+        <Route path="/court-owner" element={
+          <ProtectedRoute courtOwnerOnly fallbackPath="/unauthorized">
+            <CourtOwner />
+          </ProtectedRoute>
+        }>
+          <Route index element={<DashboardField />} />
+          <Route path="user-profile" element={<UserProfile />} />
+          <Route path="search" element={<FacilitiesWithCondition />} />
+          <Route path="booking-management" element={<BookingManagement />} />
+          <Route path="facilities/:facilityId/courts" element={<CourtManagement />} />
+          <Route path="facility/general" element={<FacilityTable />} />
+          <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
+          <Route path="facility/time-slots" element={<TimeslotManagement />} />
+          <Route path="blog" element={<Blog />} />
+        </Route>
+
+        {/* 🌐 HOME PAGE ROUTES - For Guest and Player ONLY (Admin & Court Owner restricted) */}
+        <Route path="/" element={
+          <ProtectedRoute 
+            playerAndGuestOnly={true}
+            adminRedirect="/admin" 
+            courtOwnerRedirect="/court-owner"
+          >
             <App />
           </ProtectedRoute>
         }>
-          <Route path="court-owner-register" element={<CourtOwnerRegister />} />
+          {/* 📍 PUBLIC ROUTES - Accessible by Guest and Player */}
+          <Route index element={<div />} /> {/* Empty div for homepage - content handled by App.js */}
+          <Route path="search" element={<FacilitiesWithCondition />} />
+          <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
+          <Route path="blog" element={
+            <ProtectedRoute playerOnly fallbackPath="/login">
+              <Blog />
+            </ProtectedRoute>
+          } />
           <Route path="court-owner-policy" element={<CourtOwnerPolicy />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
-        </Route>
+          <Route path="court-owner-register" element={<CourtOwnerRegister />} />
 
-        {/* 🔄 ALTERNATIVE: Routes accessible by multiple roles */}
-        <Route path="/shared" element={
-          <ProtectedRoute requiredRoles={[ROLES.ADMIN, ROLES.COURTOWNER]}>
-            <App />
-          </ProtectedRoute>
-        }>
-          <Route path="facility-details/:facilityId" element={<FacilityDetails />} />
-          <Route path="search" element={<FacilitiesWithCondition />} />
+          {/* 🔒 PLAYER ONLY ROUTES - Require login */}
+          <Route path="user-profile" element={
+            <ProtectedRoute playerOnly fallbackPath="/login">
+              <UserProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="booking-history" element={
+            <ProtectedRoute playerOnly fallbackPath="/login">
+              <BookingHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="bookingprocess" element={
+            <ProtectedRoute playerOnly fallbackPath="/login">
+              <BookingProcess />
+            </ProtectedRoute>
+          } />
+          <Route path="stripepayment" element={
+            <ProtectedRoute playerOnly fallbackPath="/login">
+              <StripePayment />
+            </ProtectedRoute>
+          } />
         </Route>
 
         {/* 🏠 ROOT REDIRECT - Redirect to appropriate dashboard based on role */}
-        <Route path="/" element={
+        <Route path="/dashboard" element={
           <ProtectedRoute>
             <RoleBasedRedirect 
               adminRedirect="/admin"
-              playerRedirect="/player"
+              playerRedirect="/"
               courtOwnerRedirect="/court-owner"
             />
           </ProtectedRoute>
         } />
 
-        {/* 🚫 Catch all - redirect to appropriate dashboard */}
+        {/* 🚫 Catch all - redirect to home or login */}
         <Route path="*" element={
-          <ProtectedRoute fallbackPath="/login">
-            <RoleBasedRedirect 
-              adminRedirect="/admin"
-              playerRedirect="/player"
-              courtOwnerRedirect="/court-owner"
-              defaultRedirect="/login"
-            />
-          </ProtectedRoute>
+          <RoleBasedRedirect 
+            adminRedirect="/admin"
+            playerRedirect="/"
+            courtOwnerRedirect="/court-owner"
+            defaultRedirect="/"
+          />
         } />
       </Routes>
 

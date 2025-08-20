@@ -228,7 +228,19 @@ namespace B2P_API.Controllers
 			}
 		}
 
-		[HttpGet("available-slots")]
+        [HttpPost("{id}/cancel")]
+        public async Task<IActionResult> MarkCancel(int id)
+        {
+           
+                var result = await _bookingService.MarkBookingCancelledAsync(id);
+
+               
+
+                return StatusCode(result.Status, result);
+            
+        }
+
+        [HttpGet("available-slots")]
 		public async Task<IActionResult> GetAvailableSlots(
 			[FromQuery] int facilityId,
 			[FromQuery] int categoryId,

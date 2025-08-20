@@ -133,6 +133,12 @@ const CourtOwnerSideBar = ({
       hasSubmenu: true,
       isDynamic: true,
     },
+    {
+      id: "blog",
+      title: "Blog",
+      icon: "fas fa-newspaper",
+      path: "/court-owner/blog",
+    },
   ];
 
   // Toggle menu expansion
@@ -238,7 +244,7 @@ const CourtOwnerSideBar = ({
           {userInfo.userId && (
             <div className="user-actions">
               <Link
-                to="/user-profile"
+                to="/court-owner/user-profile"
                 className="profile-link"
                 style={{
                   color: 'white',

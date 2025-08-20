@@ -37,7 +37,6 @@ namespace B2P_API.Repository
 		.Include(u => u.Bookings)
 			.ThenInclude(b => b.BookingDetails)
 		.Include(u => u.Comments)
-		.Include(u => u.BankAccount)
 				.FirstOrDefaultAsync(u => u.UserId == userId);
 		}
 
@@ -154,7 +153,6 @@ namespace B2P_API.Repository
 			if (payments.Any()) _context.Payments.RemoveRange(payments);
 			if (ratings.Any()) _context.Ratings.RemoveRange(ratings);
 
-			if (user.BankAccount != null) _context.BankAccounts.Remove(user.BankAccount);
 			if (user.UserTokens.Any()) _context.UserTokens.RemoveRange(user.UserTokens);
 			if (user.Comments.Any()) _context.Comments.RemoveRange(user.Comments);
 			if (user.Bookings.Any()) _context.Bookings.RemoveRange(user.Bookings);

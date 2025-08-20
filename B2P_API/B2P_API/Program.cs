@@ -171,15 +171,19 @@ builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<ITimeSlotManagementRepository, TimeSlotManagementRepository>();
 builder.Services.AddScoped<ITimeSlotManagementService, TimeslotManagementService>();
 
-builder.Services.AddScoped<BankAccountService>();
-builder.Services.AddScoped<IBankAccountRepository, BankAccountRepository>();
-
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 builder.Services.AddScoped<ReportRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<ReportService>();
+
+builder.Services.AddScoped<IMerchantPaymentRepository, MerchantPaymentRepository>();
+builder.Services.AddScoped<MerchantPaymentService>();
+
+builder.Services.AddScoped<ICommissionPaymentHistoryRepository, CommissionPaymentHistoryRepository>();
+builder.Services.AddScoped<CommissionPaymentHistoryService>();
+
 
 builder.Services.AddScoped<JWTHelper>();
 builder.Services.AddScoped<AuthRepository>();
