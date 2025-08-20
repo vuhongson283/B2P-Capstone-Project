@@ -242,7 +242,7 @@
             border-radius: 50%;
             border-top   : 4px solid #27ae60;
             animation    : spin 1s linear infinite;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         p {
@@ -700,15 +700,6 @@
     }
 }
 
-// Loading spinner
-.loading-spinner {
-    width           : 20px;
-    height          : 20px;
-    border          : 2px solid rgba(255, 255, 255, 0.3);
-    border-radius   : 50%;
-    border-top-color: #fff;
-    animation       : spin 1s linear infinite;
-}
 
 // Animations
 @keyframes gradientShift {
