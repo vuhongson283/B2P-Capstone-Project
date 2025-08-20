@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './BookingHistory.scss';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { message, Spin, Rate, Input, Button } from 'antd';
 import {
     getBookingsByUserId,

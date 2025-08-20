@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.FacilityDTOs;
 using B2P_API.Interface;
+using B2P_API.Services;
 using B2P_API.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,9 +12,9 @@ namespace B2P_API.Controllers
     [ApiController]
     public class FacilitiesManageController : ControllerBase
     {
-        private readonly IFacilityService _facilityService;
+        private readonly FacilityService _facilityService;
 
-        public FacilitiesManageController(IFacilityService facilityService)
+        public FacilitiesManageController(FacilityService facilityService)
         {
             _facilityService = facilityService;
         }

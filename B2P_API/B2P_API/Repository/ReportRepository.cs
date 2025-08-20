@@ -24,7 +24,9 @@ namespace B2P_API.Repository
                     bd.Court.Facility.UserId == userId &&
                     (!facilityId.HasValue || bd.Court.FacilityId == facilityId.Value) &&
                     (!startDate.HasValue || b.CreateAt.Date >= startDate.Value.Date) &&
-                    (!endDate.HasValue || b.CreateAt.Date <= endDate.Value.Date)))
+                    (!endDate.HasValue || b.CreateAt.Date <= endDate.Value.Date) &&
+                    (b.PaymentTypeId == 1 || b.PaymentTypeId == 2)))
+                .OrderByDescending(b => b.CreateAt)
                 .AsQueryable();
 
             var totalItems = await query.CountAsync();
@@ -42,12 +44,6 @@ namespace B2P_API.Repository
                     TotalPrice = b.TotalPrice,
                     BookingTime = b.CreateAt,
                     BookingStatus = b.Status != null ? b.Status.StatusDescription : null,
-                    PaymentId = b.Payments.FirstOrDefault() != null ? b.Payments.FirstOrDefault().PaymentId : 0,
-                    PaymentAmount = b.Payments.FirstOrDefault() != null ? b.Payments.FirstOrDefault().Amount : null,
-                    PaymentTime = b.Payments.FirstOrDefault() != null ? b.Payments.FirstOrDefault().TimeStamp : null,
-                    PaymentStatus = b.Payments.FirstOrDefault() != null &&
-                                  b.Payments.FirstOrDefault().Status != null ?
-                                  b.Payments.FirstOrDefault().Status.StatusDescription : null,
                     CourtCount = b.BookingDetails.Count,
                     CourtCategories = string.Join(", ", b.BookingDetails.Select(bd => bd.Court.Category.CategoryName)),
                     TimeSlotCount = b.BookingDetails.Count,
@@ -91,14 +87,18 @@ namespace B2P_API.Repository
             var totalCourt = await _context.Courts.CountAsync(c => c.Facility.UserId == userId);
 
             // Lấy tổng doanh thu (TotalPrice từ các booking)
-            var totalCost = await bookingsQuery.Where(b => b.StatusId == 10).SumAsync(b => b.TotalPrice);
+            var totalCost = await bookingsQuery.Where(b => (b.StatusId == 10) && (b.PaymentTypeId == 1 || b.PaymentTypeId == 2))
+                .SumAsync(b => b.TotalPrice);
 
+            var commissionPayment = await bookingsQuery.Where(b => (b.StatusId == 10) && (b.PaymentTypeId == 2))
+                .SumAsync(b => b.TotalPrice);
             return new TotalReportDTO
             {
                 TotalFacility = totalFacility,
                 TotalBooking = totalBooking,
                 TotalCourt = totalCourt,
-                TotalCost = totalCost
+                TotalCost = totalCost,
+                CommissionPayment = commissionPayment*5/100
             };
         }
 

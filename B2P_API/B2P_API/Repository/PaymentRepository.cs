@@ -34,6 +34,18 @@ namespace B2P_API.Repository
             _context.Payments.Update(payment);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<CommissionPaymentHistory> CreateCommissionAsync(CommissionPaymentHistory commission)
+        {
+            _context.CommissionPaymentHistories.Add(commission);
+            await _context.SaveChangesAsync();
+            return commission;
+        }
+
+        public bool isExistCommission(int userId, int month, int year)
+        {
+            return _context.CommissionPaymentHistories.Any(c => c.UserId == userId && c.Month == month && c.Year == year);
+        }
     }
 
 }

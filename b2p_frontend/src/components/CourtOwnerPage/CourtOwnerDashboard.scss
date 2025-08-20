@@ -222,6 +222,27 @@
       }
     }
   }
+
+  .booking-pagination {
+    .custom-pagination {
+      .ant-pagination-options-size-changer {
+        margin-right: 8px;
+      }
+
+      .ant-pagination-total-text {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .ant-select-selector {
+        border-radius: 6px;
+      }
+    }
+  }
+
+  .booking-list {
+    min-height: 200px; // Đảm bảo không bị nhảy layout khi đổi trang
+  }
 } // End of .owner-dashboard
 
 .modal {
@@ -237,81 +258,207 @@
       gap: 8px;
     }
 
-    .close {
-      color: white;
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
     }
   }
 
   .booking-detail-body {
-    padding: 24px;
+    padding: 1.5rem;
 
     .booking-detail-content {
       .detail-section {
         background: #f8f9fa;
-        padding: 20px;
+        padding: 1.25rem;
         border-radius: 12px;
-        margin-bottom: 24px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e9ecef;
 
         h5 {
           color: #2c3e50;
-          margin-bottom: 16px;
+          margin-bottom: 1rem;
           font-weight: 600;
+          font-size: 1.1rem;
           display: flex;
           align-items: center;
+          border-bottom: 2px solid #dee2e6;
+          padding-bottom: 0.5rem;
 
           i {
             color: #28a745;
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
           }
         }
 
         .detail-item {
-          margin-bottom: 12px;
+          margin-bottom: 0.75rem;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
+          min-height: 24px;
 
           label {
             min-width: 160px;
-            font-weight: 500;
-            color: #6c757d;
+            max-width: 160px;
+            font-weight: 600;
+            color: #495057;
             margin-bottom: 0;
+            font-size: 0.9rem;
+            padding-right: 1rem;
+            flex-shrink: 0;
+            text-align: left; // ✅ QUAN TRỌNG: căn trái thay vì center
           }
 
           span {
             flex: 1;
+            color: #212529;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
+            text-align: left; // ✅ QUAN TRỌNG: căn trái thay vì center
 
             &.price {
               color: #28a745;
-              font-weight: 600;
-              font-size: 16px;
+              font-weight: 700;
+              font-size: 1.1rem;
             }
           }
 
           .status-badge {
             padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            text-align: center; // Chỉ badge mới center
 
             &.completed {
               background: #d4edda;
               color: #155724;
+              border: 1px solid #c3e6cb;
             }
 
             &.paid {
               background: #cce5ff;
               color: #004085;
+              border: 1px solid #b8daff;
             }
 
             &.pending {
               background: #fff3cd;
               color: #856404;
+              border: 1px solid #ffeaa7;
             }
 
             &.cancelled {
               background: #f8d7da;
               color: #721c24;
+              border: 1px solid #f5c6cb;
             }
           }
+        }
+
+        // Responsive cho mobile
+        @media (max-width: 576px) {
+          .detail-item {
+            flex-direction: column;
+            align-items: flex-start;
+
+            label {
+              min-width: auto;
+              max-width: none;
+              margin-bottom: 0.25rem;
+              padding-right: 0;
+              text-align: left; // Đảm bảo vẫn căn trái trên mobile
+            }
+
+            span {
+              margin-left: 0;
+              text-align: left; // Đảm bảo vẫn căn trái trên mobile
+            }
+          }
+        }
+
+        // Styling riêng cho từng section
+        &:nth-child(1) {
+          border-left: 4px solid #007bff;
+        }
+
+        &:nth-child(2) {
+          border-left: 4px solid #28a745;
+        }
+
+        &:nth-child(3) {
+          border-left: 4px solid #ffc107;
+        }
+      }
+    }
+  }
+
+  .modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+
+  }
+
+  // Responsive cho modal
+  @media (max-width: 768px) {
+    .booking-detail-body {
+      padding: 1rem;
+
+      .detail-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+
+        h5 {
+          font-size: 1rem;
+        }
+
+        .detail-item {
+          label {
+            min-width: 140px;
+            max-width: 140px;
+            font-size: 0.85rem;
+          }
+
+          span {
+            font-size: 0.85rem;
+
+            &.price {
+              font-size: 1rem;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .modal-dialog {
+      margin: 0.5rem;
+    }
+
+    .booking-detail-body {
+      padding: 0.75rem;
+
+      .detail-section {
+        padding: 0.75rem;
+
+        .detail-item {
+          margin-bottom: 0.5rem;
         }
       }
     }
@@ -351,7 +498,23 @@
     font-weight: 500;
   }
 }
+.chart-container {
+  margin-top: 20px;
+  margin-bottom: 20px;
 
+  .chart-card {
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+
+    h4 {
+      margin-bottom: 15px;
+      font-size: 18px;
+      color: #333;
+    }
+  }
+}
 @keyframes slideDown {
   from {
     transform: translate(-50%, -100%);
@@ -360,5 +523,166 @@
   to {
     transform: translate(-50%, 0);
     opacity: 1;
+  }
+}
+
+/* Commission Modal Styles */
+.commission-modal-header {
+  background: linear-gradient(45deg, #f39c12, #e67e22);
+  color: white;
+  border-bottom: none;
+
+  .modal-title {
+    font-weight: 600;
+  }
+
+  .btn-close {
+    filter: brightness(0) invert(1);
+  }
+}
+
+.commission-modal-body {
+  padding: 2rem;
+
+  .commission-info {
+    .info-section,
+    .payment-section {
+      margin-bottom: 1.5rem;
+
+      h5 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-weight: 600;
+      }
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+
+        label {
+          font-size: 0.9rem;
+          color: #7f8c8d;
+          margin-bottom: 0.25rem;
+        }
+
+        .value {
+          font-weight: 600;
+
+          &.revenue {
+            color: #27ae60;
+            font-size: 1.1rem;
+          }
+
+          &.percentage {
+            color: #e74c3c;
+            font-size: 1.1rem;
+          }
+        }
+      }
+    }
+
+    .payment-amount {
+      text-align: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+      }
+
+      .amount-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #e74c3c;
+      }
+    }
+
+    .payment-note {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 4px;
+      padding: 0.75rem;
+      color: #856404;
+
+      small {
+        margin: 0;
+      }
+    }
+
+    .calculation-breakdown {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+
+      h6 {
+        margin-bottom: 0.75rem;
+        color: #495057;
+      }
+
+      .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+
+        span:last-child {
+          font-weight: 600;
+        }
+      }
+
+      .breakdown-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1rem;
+
+        .total-amount {
+          color: #e74c3c;
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+}
+
+.commission-modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 2rem;
+
+  .confirm-payment-btn {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    border: none;
+    font-weight: 600;
+
+    &:hover {
+      background: linear-gradient(45deg, #219a52, #27ae60);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .commission-modal-body {
+    padding: 1rem;
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-amount .amount-display {
+      font-size: 1.5rem;
+    }
   }
 }

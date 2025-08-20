@@ -1,5 +1,6 @@
 ﻿using B2P_API.DTOs.TimeslotDTO;
 using B2P_API.Interface;
+using B2P_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,9 @@ namespace B2P_API.Controllers
     [ApiController]
     public class TimeslotManagementController : ControllerBase
     {
-        private readonly ITimeSlotManagementService _service;
+        private readonly TimeslotManagementService _service;
 
-        public TimeslotManagementController(ITimeSlotManagementService service)
+        public TimeslotManagementController(TimeslotManagementService service)
         {
             _service = service;
         }

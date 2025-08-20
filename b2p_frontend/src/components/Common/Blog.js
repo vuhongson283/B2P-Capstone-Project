@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Card,
   Button,
@@ -175,7 +175,7 @@ const Blog = () => {
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
-    const now = new Date("2025-07-26T17:51:24Z"); // Current UTC time
+    const now = new Date(); // Lấy thời gian hiện tại thực tế
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
@@ -1272,17 +1272,7 @@ const Blog = () => {
           },
         ]
         : []),
-      {
-        key: "report",
-        label: (
-          <span>
-            <ExclamationCircleOutlined style={{ marginRight: 8 }} />
-            Báo cáo
-          </span>
-        ),
-        onClick: () =>
-          message.info("🚧 Tính năng báo cáo đang được phát triển"),
-      },
+      // Đã xóa mục báo cáo ở đây
     ];
 
     return items.length > 0 ? (
@@ -2368,6 +2358,7 @@ const Blog = () => {
         title={
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {renderUserAvatar(currentUser.userId, 40)}
+
             <div>
               <div style={{ fontWeight: 600 }}>
                 {editingBlog ? "✏️ Chỉnh sửa bài viết" : "📝 Tạo bài viết mới"}
