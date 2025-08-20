@@ -74,8 +74,16 @@ const Layout = (props) => {
           <Route path="blog" element={<Blog />} />
         </Route>
 
-        {/* 🌐 HOME PAGE ROUTES - For Guest and Player (some routes require login) */}
-        <Route path="/" element={<App />}>
+        {/* 🌐 HOME PAGE ROUTES - For Guest and Player ONLY (Admin & Court Owner restricted) */}
+        <Route path="/" element={
+          <ProtectedRoute 
+            playerAndGuestOnly={true}
+            adminRedirect="/admin" 
+            courtOwnerRedirect="/court-owner"
+          >
+            <App />
+          </ProtectedRoute>
+        }>
           {/* 📍 PUBLIC ROUTES - Accessible by Guest and Player */}
           <Route index element={<div />} /> {/* Empty div for homepage - content handled by App.js */}
           <Route path="search" element={<FacilitiesWithCondition />} />

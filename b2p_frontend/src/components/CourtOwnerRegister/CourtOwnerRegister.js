@@ -539,7 +539,7 @@ const PartnerRegistration = () => {
 
                 {/* Back to Home */}
                 <div className="back-link">
-                    <a href="#" className="link">
+                    <a href="/" className="link">
                         ← Quay về trang chủ
                     </a>
                 </div>
