@@ -90,12 +90,15 @@ namespace B2P_API.Repository
             var totalCost = await bookingsQuery.Where(b => (b.StatusId == 10) && (b.PaymentTypeId == 1 || b.PaymentTypeId == 2))
                 .SumAsync(b => b.TotalPrice);
 
+            var commissionPayment = await bookingsQuery.Where(b => (b.StatusId == 10) && (b.PaymentTypeId == 2))
+                .SumAsync(b => b.TotalPrice);
             return new TotalReportDTO
             {
                 TotalFacility = totalFacility,
                 TotalBooking = totalBooking,
                 TotalCourt = totalCourt,
-                TotalCost = totalCost
+                TotalCost = totalCost,
+                CommissionPayment = commissionPayment*5/100
             };
         }
 

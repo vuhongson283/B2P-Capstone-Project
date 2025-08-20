@@ -113,6 +113,7 @@ const OwnerDashboard = () => {
             totalCourts: totalReportResponse.data?.totalCourt || 0,
             totalBookings: totalReportResponse.data?.totalBooking || 0,
             totalRevenue: totalReportResponse.data?.totalCost || 0,
+            commissionPayment: totalReportResponse.data?.commissionPayment || 0
           }));
         } else {
           setError(totalReportResponse?.message || "Không thể tải dữ liệu tổng quan");
@@ -462,7 +463,7 @@ const OwnerDashboard = () => {
 
   // ✅ COMPONENT MODAL THANH TOÁN COMMISSION
   const CommissionModal = ({ show, onHide }) => {
-    const commissionAmount = dashboardData.totalRevenue * 0.05; // 5% tổng doanh thu
+    const commissionAmount = dashboardData.commissionPayment;
     const month = selectedMonth.getMonth() + 1;
     const year = selectedMonth.getFullYear();
 
