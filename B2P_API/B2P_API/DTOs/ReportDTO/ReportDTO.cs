@@ -13,9 +13,5 @@
         public decimal? TotalPrice { get; set; }
         public DateTime BookingTime { get; set; }
         public string? BookingStatus { get; set; }
-        public int PaymentId { get; set; }
-        public decimal? PaymentAmount { get; set; }
-        public DateTime? PaymentTime { get; set; }
-        public string? PaymentStatus { get; set; }
     }
 }

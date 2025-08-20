@@ -346,12 +346,6 @@ namespace B2P_API.Services
                 ["BookingTime"] = "Thời gian đặt sân",
                 ["BookingStatus"] = "Trạng thái đặt sân",
 
-                // Payment
-                ["PaymentId"] = "Mã thanh toán",
-                ["PaymentAmount"] = "Số tiền thanh toán",
-                ["PaymentTime"] = "Thời gian thanh toán",
-                ["PaymentStatus"] = "Trạng thái thanh toán",
-
                 // Common
                 ["Id"] = "Mã",
                 ["Name"] = "Tên",

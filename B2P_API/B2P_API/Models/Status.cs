@@ -25,8 +25,6 @@ public partial class Status
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    public virtual ICollection<Slider> Sliders { get; set; } = new List<Slider>();
-
     public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
 
     public virtual ICollection<User> Users { get; set; } = new List<User>();

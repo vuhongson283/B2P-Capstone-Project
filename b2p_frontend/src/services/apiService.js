@@ -731,6 +731,28 @@ const loginAxios = async (data) => {
 };
 
 /* ===============================
+   💰 PAYMENT SERVICES
+================================ */
+
+// ✅ Check if commission exists for user in specific month/year
+const checkCommission = (userId, month, year) => {
+  return axios.get(`Payments/CheckCommission`, {
+    params: {
+      userId,
+      month,
+      year
+    }
+  });
+};
+
+// ✅ Create commission for user
+const createCommission = (commissionData) => {
+  return axios.post(`Payments/CreateCommission`, commissionData, {
+    validateStatus: () => true // Accept all status codes
+  });
+}
+
+/* ===============================
    💳 MERCHANT PAYMENT MANAGEMENT
 ================================ */
 
@@ -894,6 +916,10 @@ export {
   verifyOtpAxios,
   sendOtpAxios,
   loginAxios,
+
+  // Payment Commission ✅ THÊM MỚI
+  checkCommission,
+  createCommission,
 
   // Merchant Payment
   getAllMerchantPayments,

@@ -2,7 +2,7 @@
 
 namespace B2P_API.DTOs.CourtManagementDTO
 {
-    public class CreateCourt
+    public class CreateCourtRequest
     {
         public int? FacilityId { get; set; }
 

@@ -108,9 +108,7 @@ const CourtManagement = () => {
         
         setCurrentFacility({
           id: facilityId,
-          name: `Cơ sở ${facilityId}`,
-          location: "Địa chỉ cơ sở",
-          contact: "0123456789"
+          name: `Cơ sở ${facilityId}`
         });
       } else {
         setCourts([]);
@@ -499,10 +497,6 @@ const CourtManagement = () => {
     <div className="court-management-container">
       <div className="facility-header">
         <h1>Quản Lý Sân - {currentFacility?.name || 'Đang tải...'}</h1>
-        <div className="facility-info">
-          <span><i className="fas fa-map-marker-alt"></i> {currentFacility?.location}</span>
-          <span><i className="fas fa-phone"></i> {currentFacility?.contact}</span>
-        </div>
       </div>
 
       <div className="management-controls">

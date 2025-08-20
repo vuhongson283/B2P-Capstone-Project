@@ -189,6 +189,10 @@ builder.Services.AddScoped<AuthRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<AuthService>();
 
+builder.Services.AddScoped<PaymentRepository>();
+builder.Services.AddScoped<PaymentService>();
+
+
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<VNPayService>();
 

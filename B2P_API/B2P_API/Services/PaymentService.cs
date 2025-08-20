@@ -1,8 +1,11 @@
 ﻿namespace B2P_API.Services
 {
+    using B2P_API.DTOs.CourtManagementDTO;
+    using B2P_API.DTOs.PaymentDTOs;
     using B2P_API.Models;
     using B2P_API.Repositories;
     using B2P_API.Repository;
+    using B2P_API.Response;
     using Newtonsoft.Json;
     using System.Security.Cryptography;
     using System.Text;
@@ -100,6 +103,33 @@
             dynamic resObj = JsonConvert.DeserializeObject(responseBody)!;
             return resObj.payUrl;
 
+        }
+
+        public async Task<ApiResponse<CommissionPaymentHistory>> CreateCommissionAsync(CreateCommissionRequest request)
+        {
+            var commission = new CommissionPaymentHistory
+            {
+                UserId = request.UserId,
+                Month = request.Month,
+                Year = request.Year,
+                Amount = request.Amount,
+                PaidAt = DateTime.UtcNow,
+                StatusId = 7
+            };
+            var createdCommission = await _paymentRepo.CreateCommissionAsync(commission);
+
+            return new ApiResponse<CommissionPaymentHistory>
+            {
+                Success = true,
+                Message = "Phí hoa hồng tháng đã được thanh toán thành công!",
+                Status = 201,
+                Data = createdCommission
+            };
+        }
+
+        public bool IsCommissionExist(int userId, int month, int year)
+        {
+            return _paymentRepo.isExistCommission(userId, month, year);
         }
     }
 

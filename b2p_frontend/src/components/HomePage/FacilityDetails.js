@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext.js';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
-import BookingDetail from "./BookingDetail.js"; // Import BookingDetail modal mới
+import BookingDetail from "./BookingDetail.js";
 import { getFacilityDetailsById, getAvailableSlots, createBookingForPlayer, createPaymentOrder, createStripePaymentOrder } from "../../services/apiService";
 import { parseInt } from 'lodash';
 
@@ -49,7 +49,6 @@ const isValidImageUrl = (url) => {
   if (!url) return false;
   return true;
 };
-
 
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
@@ -163,8 +162,7 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
           borderBottom: '1px solid #e5e7eb',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
+          justifyContent: 'space-between',
           backgroundColor: '#f8fafc'
         }}>
           <h2 className="modal-title" style={{
@@ -172,7 +170,8 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
             fontSize: '20px',
             fontWeight: '600',
             color: '#1f2937',
-            textAlign: 'center'
+            textAlign: 'center',
+            flex: 1
           }}>
             <span className="title-icon">⭐</span>
             Tất cả đánh giá - {facilityName}
@@ -201,23 +200,30 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
             ×
           </button>
         </div>
+
         {/* Content */}
-        <div className="modal-content">
+        <div className="modal-content" style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: '24px'
+        }}>
           {/* Rating Summary */}
-          <div className="reviews-modal-summary">
+          <div className="reviews-modal-summary" style={{
+            marginBottom: '32px',
+            textAlign: 'center'
+          }}>
             <div className="summary-main">
               <div className="rating-display" style={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '12px',
-                marginBottom: '16px',
-                textAlign: 'center'
+                marginBottom: '16px'
               }}>
                 <span className="rating-value" style={{
                   fontSize: '32px',
                   fontWeight: '700',
-                  color: '#1f2937',
-                  textAlign: 'center'
+                  color: '#1f2937'
                 }}>{ratingStats.averageRating}</span>
                 <div className="rating-stars" style={{
                   color: '#fbbf24',
@@ -245,7 +251,8 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
                 <div className="filter-buttons" style={{
                   display: 'flex',
                   gap: '8px',
-                  flexWrap: 'wrap'
+                  flexWrap: 'wrap',
+                  justifyContent: 'center'
                 }}>
                   <button
                     className={`filter-btn ${selectedStars === 'all' ? 'active' : ''}`}
@@ -319,8 +326,12 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
           {/* Reviews List */}
           <div className="reviews-modal-list">
             {filteredRatings.length === 0 ? (
-              <div className="empty-reviews">
-                <div className="empty-icon">⭐</div>
+              <div className="empty-reviews" style={{
+                textAlign: 'center',
+                padding: '40px',
+                color: '#6b7280'
+              }}>
+                <div className="empty-icon" style={{ fontSize: '48px', marginBottom: '16px' }}>⭐</div>
                 <p>
                   {selectedStars === 'all'
                     ? 'Chưa có đánh giá nào'
@@ -435,33 +446,11 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
             }}>
             Đóng
           </button>
-
         </div>
       </div>
     </div>
   );
 };
-
-// Constants
-const TODAY = new Date().toISOString().slice(0, 10);
-
-// Header Component
-const FacilityHeader = ({ facilityData }) => (
-  <header className="facility-header">
-    <button className="btn-icon btn-back" aria-label="Go back" onClick={() => window.history.back()}>
-      <span className="icon">←</span>
-    </button>
-    <div className="facility-header__content">
-      <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
-      <div className="owner-name">
-        {facilityData?.ownerName || 'Chủ sân thể thao'}
-      </div>
-    </div>
-    <button className="btn-icon btn-favorite" aria-label="Add to favorites">
-      <span className="icon">♡</span>
-    </button>
-  </header>
-);
 
 // Image Carousel Component
 const ImageCarousel = ({ images }) => {
@@ -555,9 +544,6 @@ const ImageCarousel = ({ images }) => {
             onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
           />
           <div className="carousel__overlay">
-            <div className="carousel__image-counter">
-              {currentIndex + 1} / {displayImages.length}
-            </div>
           </div>
         </div>
       </div>
@@ -654,347 +640,13 @@ const FacilityInfo = ({ facilityData }) => {
   );
 };
 
-// Booking Table Component
-const BookingTable = ({
-  onOpenModal,
-  courtCategories,
-  selectedCategory,
-  onCategoryChange,
-  selectedDate,
-  onDateChange,
-  timeSlots,
-  loading,
-  loadingSlots
-}) => (
-  <section className="booking-section">
-    <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
-    <div className="booking-toolbar">
-      <div className="booking-controls">
-        <div className="control-group">
-          <label htmlFor="category-select" className="control-label">
-            <span className="label-icon">🏟️</span>
-            Chọn loại sân
-          </label>
-          <select
-            id="category-select"
-            className="form-select"
-            aria-label="Select facility type"
-            value={selectedCategory}
-            onChange={(e) => onCategoryChange(e.target.value)}
-            disabled={loading}
-          >
-            {courtCategories.length === 0 && (
-              <option value="">
-                {loading ? 'Đang tải...' : 'Không có loại sân'}
-              </option>
-            )}
-            {courtCategories.map((category) => (
-              <option key={category.categoryId} value={category.categoryId}>
-                {category.categoryName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="control-group">
-          <label htmlFor="date-select" className="control-label">
-            <span className="label-icon">📅</span>
-            Chọn ngày
-          </label>
-          <input
-            id="date-select"
-            type="date"
-            className="form-date"
-            value={selectedDate}
-            onChange={(e) => onDateChange(e.target.value)}
-            aria-label="Select date"
-            min={TODAY_DATE}
-          />
-        </div>
-      </div>
-    </div>
-
-    {loadingSlots && (
-      <div className="loading-state">
-        Đang tải lịch trống...
-      </div>
-    )}
-
-    {!loadingSlots && timeSlots.length > 0 && (
-      <div className="table-container">
-        <div className="table-responsive">
-          <table className="booking-table">
-            <thead>
-              <tr>
-                <th className="time-header">
-                  <span className="header-icon">⏰</span>
-                  Khung giờ
-                </th>
-                {timeSlots.map((slot) => (
-                  <th key={slot.timeSlotId} className="slot-header">
-                    <div className="slot-time">
-                      {formatTimeSlot(slot.startTime, slot.endTime)}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="row-label">
-                  <span className="label-icon">🏟️</span>
-                  Số sân trống
-                </td>
-                {timeSlots.map((slot) => (
-                  <td
-                    key={slot.timeSlotId}
-                    className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'}`}
-                  >
-                    <div className="availability-info">
-                      <span className="count">{slot.availableCourtCount}</span>
-                      <span className="status-text">
-                        {slot.availableCourtCount > 0 ? 'Còn trống' : 'Hết chỗ'}
-                      </span>
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div className="table-legend">
-          <div className="legend-item">
-            <div className="legend-color available"></div>
-            <span>Còn sân trống</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color unavailable"></div>
-            <span>Hết sân</span>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
-      <div className="empty-state">
-        <div className="empty-icon">📅</div>
-        <p>Không có khung giờ nào khả dụng cho loại sân này</p>
-      </div>
-    )}
-
-    {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
-      <div className="empty-state">
-        <div className="empty-icon">🏟️</div>
-        <p>Vui lòng chọn loại sân để xem lịch trống</p>
-      </div>
-    )}
-
-    <div className="booking-action">
-      <button
-        className="btn-primary btn-booking"
-        onClick={onOpenModal}
-        disabled={!selectedCategory || timeSlots.length === 0}
-      >
-        <span className="btn-icon">⚽</span>
-        Đặt sân ngay
-      </button>
-    </div>
-  </section>
-);
-
-// Reviews Component - Cải tiến với dữ liệu thực từ API
-const Reviews = ({ ratings = [], onOpenReviewsModal }) => {
-  // Loại bỏ các rating trùng lặp dựa trên ratingId và bookingId
-  const uniqueRatings = React.useMemo(() => {
-    if (!ratings || ratings.length === 0) return [];
-
-    const seen = new Set();
-    return ratings.filter(rating => {
-      const key = `${rating.ratingId}-${rating.bookingId}`;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
-  }, [ratings]);
-
-  // Tính toán thống kê đánh giá
-  const ratingStats = React.useMemo(() => {
-    if (uniqueRatings.length === 0) {
-      return {
-        averageRating: 0,
-        totalReviews: 0,
-        breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
-      };
-    }
-
-    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    let totalStars = 0;
-
-    uniqueRatings.forEach(rating => {
-      const stars = rating.stars;
-      if (stars >= 1 && stars <= 5) {
-        breakdown[stars]++;
-        totalStars += stars;
-      }
-    });
-
-    const averageRating = totalStars / uniqueRatings.length;
-
-    return {
-      averageRating: Math.round(averageRating * 10) / 10,
-      totalReviews: uniqueRatings.length,
-      breakdown
-    };
-  }, [uniqueRatings]);
-
-  // Render stars dựa trên số sao - FIX: Logic đúng
-  const renderStars = (starCount) => {
-    console.log('Rendering stars for:', starCount); // Debug log
-    return [...Array(5)].map((_, index) => {
-      const isFilled = index < starCount;
-      console.log(`Star ${index + 1}: ${isFilled ? 'filled' : 'empty'}`); // Debug log
-      return (
-        <span
-          key={index}
-          className={`star ${isFilled ? 'filled' : ''}`}
-        >
-          ★
-        </span>
-      );
-    });
-  };
-
-  // Nếu không có đánh giá
-  if (uniqueRatings.length === 0) {
-    return (
-      <section className="reviews-section">
-        <h2 className="reviews-section__title">
-          <span className="title-icon">⭐</span>
-          Đánh giá từ khách hàng
-        </h2>
-
-        <div className="empty-state">
-          <div className="empty-icon">⭐</div>
-          <p>Chưa có đánh giá nào cho cơ sở này</p>
-          <button className="btn-write-review">
-            <span className="btn-icon">📝</span>
-            <span>Viết đánh giá đầu tiên</span>
-          </button>
-        </div>
-      </section>
-    );
-  }
-
-  // Hiển thị tối đa 3 đánh giá gần nhất
-  const displayedReviews = uniqueRatings.slice(0, 3);
-
-  return (
-    <section className="reviews-section">
-      <h2 className="reviews-section__title">
-        <span className="title-icon">⭐</span>
-        Đánh giá từ khách hàng
-      </h2>
-
-      <div className="rating-summary">
-        <div className="rating-main">
-          <span className="rating-value">{ratingStats.averageRating}</span>
-          <div className="rating-stars">
-            {renderStars(Math.round(ratingStats.averageRating))}
-          </div>
-        </div>
-
-        <div className="rating-breakdown">
-          <div className="breakdown-header">
-            <span className="total-reviews">{ratingStats.totalReviews} đánh giá</span>
-          </div>
-          <div className="breakdown-list">
-            {[5, 4, 3, 2, 1].map(stars => {
-              const count = ratingStats.breakdown[stars];
-              const percentage = ratingStats.totalReviews > 0
-                ? Math.round((count / ratingStats.totalReviews) * 100)
-                : 0;
-
-              return (
-                <div key={stars} className="breakdown-item">
-                  <span className="star-label">{stars}★</span>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                  <span className="count-label">{count}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="reviews-list">
-        {displayedReviews.map((rating, index) => {
-          console.log(`Review ${index}: ${rating.stars} stars`); // Debug log
-          return (
-            <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-card">
-              <div className="review-card__avatar">
-                <span className="avatar-text">U{rating.bookingId}</span>
-              </div>
-              <div className="review-card__content">
-                <div className="review-card__header">
-                  <div className="reviewer-info">
-                    <span className="reviewer-name">Người dùng #{rating.bookingId}</span>
-                    <span className="review-time">• Booking #{rating.bookingId}</span>
-                  </div>
-                  <div className="review-stars">
-                    {renderStars(rating.stars)}
-                  </div>
-                </div>
-                <p className="review-text">
-                  {rating.comment || 'Không có bình luận'}
-                </p>
-                <div className="review-actions">
-                  <button className="review-action-btn helpful">
-                    <span className="action-icon">👍</span>
-                    <span className="action-text">Hữu ích</span>
-                  </button>
-                  <button className="review-action-btn reply">
-                    <span className="action-icon">💬</span>
-                    <span className="action-text">Trả lời</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="reviews-bottom">
-        <button className="btn-write-review">
-          <span className="btn-icon">📝</span>
-          <span>Viết đánh giá</span>
-        </button>
-        <button
-          className="btn-view-all"
-          onClick={onOpenReviewsModal}
-        >
-          <span>Xem tất cả đánh giá ({ratingStats.totalReviews})</span>
-          <span className="btn-arrow">→</span>
-        </button>
-      </div>
-    </section>
-  );
-};
-
 // Main Component
 const FacilityDetails = () => {
-  const { userId } = useAuth(); //lay userid
+  const { userId } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
-  const [bookingDetailOpen, setBookingDetailOpen] = useState(false); // State cho BookingDetail modal
-  const [bookingDetailData, setBookingDetailData] = useState(null); // Data cho BookingDetail
+  const [bookingDetailOpen, setBookingDetailOpen] = useState(false);
+  const [bookingDetailData, setBookingDetailData] = useState(null);
   const [facilityData, setFacilityData] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState(TODAY_DATE);
@@ -1091,11 +743,14 @@ const FacilityDetails = () => {
     setBookingDetailData(null);
   };
 
+  // Use courtCategories from facilityData
+  const courtCategories = facilityData?.categories || [];
+
   if (loading) {
     return (
       <div className="facility-page">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
+          <div className="loading-spinner">⏳</div>
           Đang tải thông tin cơ sở...
         </div>
       </div>
@@ -1119,28 +774,324 @@ const FacilityDetails = () => {
 
   return (
     <div className="facility-page">
-      <FacilityHeader facilityData={facilityData} />
-      <main className="facility-main">
-        <ImageCarousel images={facilityData?.images} />
-        <FacilityInfo facilityData={facilityData} />
-      </main>
+      {/* Simplified Header - No Title */}
+      {/* Full Width Main Layout */}
+      <div className="facility-main" style={{ marginTop: '2%' }}>
+        {/* Left: Full width image with title below */}
+        <div className="facility-image-section" style={{ marginTop: '-2.5%' }}>
+          <div className="facility-title-section" style={{ marginBottom: '2%' }}>
+            <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
+          </div>
+          <ImageCarousel images={facilityData?.images} />
 
-      <BookingTable
-        onOpenModal={() => setModalOpen(true)}
-        courtCategories={facilityData?.categories || []}
-        selectedCategory={selectedCategory}
-        onCategoryChange={handleCategoryChange}
-        selectedDate={selectedDate}
-        onDateChange={handleDateChange}
-        timeSlots={timeSlots}
-        loading={loading}
-        loadingSlots={loadingSlots}
-      />
+          {/* NEW: Title Section Below Image */}
 
-      <Reviews
-        ratings={facilityData?.ratings}
-        onOpenReviewsModal={() => setReviewsModalOpen(true)}
-      />
+        </div>
+
+        {/* Right: Info sidebar */}
+        <div className="facility-info-sidebar">
+          <FacilityInfo facilityData={facilityData} />
+        </div>
+      </div>
+
+      {/* Full Width Booking Section with inner container */}
+      <section className="booking-section">
+        <div className="booking-inner">
+          <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
+
+          <div className="booking-toolbar">
+            <div className="booking-controls">
+              <div className="control-group">
+                <label htmlFor="category-select" className="control-label">
+                  <span className="label-icon">🏟️</span>
+                  Chọn loại sân
+                </label>
+                <select
+                  id="category-select"
+                  className="form-select"
+                  aria-label="Select facility type"
+                  value={selectedCategory}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
+                  disabled={loading}
+                >
+                  {courtCategories.length === 0 && (
+                    <option value="">
+                      {loading ? 'Đang tải...' : 'Không có loại sân'}
+                    </option>
+                  )}
+                  {courtCategories.map((category) => (
+                    <option key={category.categoryId} value={category.categoryId}>
+                      {category.categoryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="control-group">
+                <label htmlFor="date-select" className="control-label">
+                  <span className="label-icon">📅</span>
+                  Chọn ngày
+                </label>
+                <input
+                  id="date-select"
+                  type="date"
+                  className="form-date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  aria-label="Select date"
+                  min={TODAY_DATE}
+                />
+              </div>
+            </div>
+          </div>
+
+          {loadingSlots && (
+            <div className="loading-state">
+              <div className="loading-spinner">⏳</div>
+              Đang tải lịch trống...
+            </div>
+          )}
+
+          {!loadingSlots && timeSlots.length > 0 && (
+            <div className="table-container">
+              <div className="table-responsive">
+                <table className="booking-table">
+                  <thead>
+                    <tr>
+                      <th className="time-header">
+                        Khung giờ
+                      </th>
+                      {timeSlots.map((slot) => (
+                        <th key={slot.timeSlotId} className="slot-header">
+                          <div className="slot-time">
+                            {formatTimeSlot(slot.startTime, slot.endTime)}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="row-label">
+                        <span style={{ fontSize: '24px' }}>Số sân trống</span>
+                      </td>
+                      {timeSlots.map((slot) => (
+                        <td
+                          key={slot.timeSlotId}
+                          className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'}`}
+                        >
+                          <div className="availability-info">
+                            <span className="count">{slot.availableCourtCount}</span>
+                            <span className="status-text">
+                              {slot.availableCourtCount > 0 ? 'Còn trống' : 'Hết chỗ'}
+                            </span>
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="table-legend">
+                <div className="legend-item">
+                  <div className="legend-color available"></div>
+                  <span>Còn sân trống</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color unavailable"></div>
+                  <span>Hết sân</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!loadingSlots && timeSlots.length === 0 && selectedCategory && (
+            <div className="empty-state">
+              <div className="empty-icon">📅</div>
+              <p>Không có khung giờ nào khả dụng cho loại sân này</p>
+            </div>
+          )}
+
+          {!loadingSlots && timeSlots.length === 0 && !selectedCategory && (
+            <div className="empty-state">
+              <div className="empty-icon">🏟️</div>
+              <p>Vui lòng chọn loại sân để xem lịch trống</p>
+            </div>
+          )}
+
+          <div className="booking-action">
+            <button
+              className="btn-primary btn-booking"
+              onClick={() => setModalOpen(true)}
+              disabled={!selectedCategory || timeSlots.length === 0}
+            >
+              <span className="btn-icon">⚽</span>
+              Đặt sân ngay
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Full Width Reviews Section with inner container */}
+      <section className="reviews-section">
+        <div className="reviews-inner">
+          <h2 className="reviews-section__title">
+            <span className="title-icon">⭐</span>
+            Đánh giá từ khách hàng
+          </h2>
+
+          {/* Reviews Content */}
+          {facilityData?.ratings && facilityData.ratings.length > 0 ? (
+            <>
+              <div className="rating-summary">
+                <div className="rating-main">
+                  <span className="rating-value">
+                    {(() => {
+                      const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
+                        index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                      );
+                      if (uniqueRatings.length === 0) return 0;
+                      const totalStars = uniqueRatings.reduce((sum, rating) => sum + rating.stars, 0);
+                      return Math.round((totalStars / uniqueRatings.length) * 10) / 10;
+                    })()}
+                  </span>
+                  <div className="rating-stars">
+                    {[...Array(5)].map((_, index) => {
+                      const uniqueRatings = facilityData.ratings.filter((rating, idx, self) =>
+                        idx === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                      );
+                      const averageRating = uniqueRatings.length > 0
+                        ? uniqueRatings.reduce((sum, rating) => sum + rating.stars, 0) / uniqueRatings.length
+                        : 0;
+                      const isFilled = index < Math.round(averageRating);
+                      return (
+                        <span
+                          key={index}
+                          className={`star ${isFilled ? 'filled' : ''}`}
+                        >
+                          ★
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rating-breakdown">
+                  <div className="breakdown-header">
+                    <span className="total-reviews">
+                      {(() => {
+                        const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
+                          index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                        );
+                        return uniqueRatings.length;
+                      })()} đánh giá
+                    </span>
+                  </div>
+                  <div className="breakdown-list">
+                    {[5, 4, 3, 2, 1].map(stars => {
+                      const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
+                        index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                      );
+                      const count = uniqueRatings.filter(rating => rating.stars === stars).length;
+                      const percentage = uniqueRatings.length > 0
+                        ? Math.round((count / uniqueRatings.length) * 100)
+                        : 0;
+
+                      return (
+                        <div key={stars} className="breakdown-item">
+                          <span className="star-label">{stars}★</span>
+                          <div className="progress-bar">
+                            <div
+                              className="progress-fill"
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                          <span className="count-label">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="reviews-list">
+                {(() => {
+                  const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
+                    index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                  );
+                  return uniqueRatings.slice(0, 3);
+                })().map((rating, index) => (
+                  <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-card">
+                    <div className="review-card__avatar">
+                      <span className="avatar-text">U{rating.bookingId}</span>
+                    </div>
+                    <div className="review-card__content">
+                      <div className="review-card__header">
+                        <div className="reviewer-info">
+                          <span className="reviewer-name">Người dùng #{rating.bookingId}</span>
+                          <span className="review-time">• Booking #{rating.bookingId}</span>
+                        </div>
+                        <div className="review-stars">
+                          {[...Array(5)].map((_, starIndex) => (
+                            <span
+                              key={starIndex}
+                              className={`star ${starIndex < rating.stars ? 'filled' : ''}`}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="review-text">
+                        {rating.comment || 'Không có bình luận'}
+                      </p>
+                      <div className="review-actions">
+                        <button className="review-action-btn helpful">
+                          <span className="action-icon">👍</span>
+                          <span className="action-text">Hữu ích</span>
+                        </button>
+                        <button className="review-action-btn reply">
+                          <span className="action-icon">💬</span>
+                          <span className="action-text">Trả lời</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="reviews-bottom">
+                <button className="btn-write-review">
+                  <span className="btn-icon">📝</span>
+                  <span>Viết đánh giá</span>
+                </button>
+                <button
+                  className="btn-view-all"
+                  onClick={() => setReviewsModalOpen(true)}
+                >
+                  <span>Xem tất cả đánh giá ({(() => {
+                    const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
+                      index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                    );
+                    return uniqueRatings.length;
+                  })()})</span>
+                  <span className="btn-arrow">→</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">⭐</div>
+              <p>Chưa có đánh giá nào cho cơ sở này</p>
+              <button className="btn-write-review">
+                <span className="btn-icon">📝</span>
+                <span>Viết đánh giá đầu tiên</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* BookingModal với callback để chuyển sang BookingDetail */}
       {modalOpen && (
@@ -1181,7 +1132,7 @@ const FacilityDetails = () => {
           createBooking={createBookingForPlayer}
           createPayment={createPaymentOrder}
           createStripePaymentOrder={createStripePaymentOrder}
-          userId = {userId}
+          userId={userId}
         />
       )}
     </div>
