@@ -321,34 +321,35 @@ const BookingHistory = () => {
                 } else if (booking.totalPrice && booking.totalPrice !== 0) {
                     totalPrice = Number(booking.totalPrice);
                 } else {
-                    // Cộng dồn giá từ tất cả slots
                     totalPrice = booking.slots.reduce((sum, slot) => {
                         const slotPrice = slot.price || slot.amount || slot.cost || 0;
                         return sum + Number(slotPrice);
                     }, 0);
                 }
 
-                // ✅ Tạo chuỗi thời gian gộp tất cả slots
-                const timeSlots = booking.slots.map(slot =>
-                    `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`
-                ).join(', ');
+                // ✅ TÌM GIỜ BÉ NHẤT VÀ LỚN NHẤT
+                const startTimes = booking.slots.map(slot => slot.startTime).filter(Boolean);
+                const endTimes = booking.slots.map(slot => slot.endTime).filter(Boolean);
 
-                // ✅ Tạo danh sách tên sân
-                const courtNames = booking.slots.map(slot =>
-                    slot.courtName || `Sân ${slot.courtId}`
-                ).join(', ');
+                const earliestStart = startTimes.sort()[0]; // Giờ bé nhất
+                const latestEnd = endTimes.sort().reverse()[0]; // Giờ lớn nhất
+
+                const timeSlot = `${earliestStart?.substring(0, 5)} - ${latestEnd?.substring(0, 5)}`;
+
+                // ✅ CHỈ LẤY TÊN SÂN ĐẦU TIÊN (KHÔNG DUPLICATE)
+                const courtName = firstSlot.courtName || `Sân ${firstSlot.courtId}`;
 
                 const processedBooking = {
                     id: booking.bookingId || booking.id,
-                    courtId: firstSlot.courtId, // Lấy courtId của slot đầu tiên
-                    courtName: courtNames, // ✅ Gộp tên tất cả sân
+                    courtId: firstSlot.courtId,
+                    courtName: courtName, // ✅ Chỉ 1 tên sân
                     courtType: firstSlot.categoryName || 'Sân thể thao',
                     date: booking.checkInDate,
-                    timeSlot: timeSlots, // ✅ Gộp tất cả khung giờ
-                    startTime: firstSlot.startTime,
-                    endTime: booking.slots[booking.slots.length - 1].endTime, // End time của slot cuối
-                    duration: calculateTotalDuration(booking.slots), // ✅ Tính tổng duration
-                    price: totalPrice, // ✅ Tổng giá tiền
+                    timeSlot: timeSlot, // ✅ Từ giờ bé nhất → lớn nhất
+                    startTime: earliestStart,
+                    endTime: latestEnd,
+                    duration: calculateDuration(earliestStart, latestEnd), // ✅ Duration tổng
+                    price: totalPrice,
                     status: mappedStatus,
                     originalStatus: booking.status,
 
@@ -369,36 +370,34 @@ const BookingHistory = () => {
                     customerName: 'Đang tải...',
                     customerPhone: 'Đang tải...',
                     customerEmail: 'Đang tải...',
-                    uniqueKey: `${booking.bookingId}`, // ✅ Unique key chỉ dựa vào bookingId
+                    uniqueKey: `${booking.bookingId}`,
                     rawBookingData: booking,
-                    rawSlotData: booking.slots, // ✅ Lưu tất cả slots
+                    rawSlotData: booking.slots,
                     hasRated: booking.hasRated || booking.isRated || false,
                     ratingInfo: booking.rating || booking.ratingData || null,
                     existingRating: booking.existingRating || null,
 
-                    // ✅ Thêm thông tin về multiple slots
+                    // ✅ Thông tin debug
                     totalSlots: booking.slots.length,
-                    allSlots: booking.slots.map(slot => ({
-                        courtId: slot.courtId,
-                        courtName: slot.courtName,
-                        timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
-                        price: slot.price || slot.amount || slot.cost || 0
-                    }))
+                    allSlotTimes: booking.slots.map(slot =>
+                        `${slot.startTime?.substring(0, 5)}-${slot.endTime?.substring(0, 5)}`
+                    ).join(', ')
                 };
 
-                console.log(`✅ [DEBUG] Processed booking (combined ${booking.slots.length} slots):`, {
+                console.log(`✅ [DEBUG] Processed booking (${booking.slots.length} slots combined):`, {
                     bookingId: processedBooking.id,
-                    courtNames: processedBooking.courtName,
-                    timeSlots: processedBooking.timeSlot,
+                    courtName: processedBooking.courtName, // ✅ 1 tên duy nhất
+                    timeSlot: processedBooking.timeSlot, // ✅ Giờ bé nhất → lớn nhất
                     totalPrice: processedBooking.price,
-                    totalSlots: processedBooking.totalSlots
+                    totalSlots: processedBooking.totalSlots,
+                    allSlotTimes: processedBooking.allSlotTimes
                 });
 
                 processedBookings.push(processedBooking);
             }
         }
 
-        console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after processing and filtering`);
+        console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after processing`);
         return processedBookings;
     };
 
