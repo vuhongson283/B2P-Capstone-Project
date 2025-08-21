@@ -6,7 +6,8 @@ import {
     getBookingsByUserId,
     getAccountById,
     getCourtDetail,
-    createRating
+    createRating,
+    cancelPayment
 } from '../../services/apiService';
 import dayjs from 'dayjs';
 
@@ -45,28 +46,90 @@ const BookingHistory = () => {
 
     // ✅ NEW: Function to check if cancel button should be shown
     const canCancelBooking = (booking) => {
-        // Check PaymentTypeId = 1, StatusId = 7, and check-in date within 3 days
         const hasCorrectPaymentType = booking.paymentTypeId === 1;
-        const hasCorrectStatus = booking.statusId === 7;
 
-        // Check if check-in date is within 3 days from now
+        // ✅ FIX: Dựa vào processed status thay vì statusId
+        const hasCorrectStatus = booking.status === 'deposit-paid'; // Chỉ cho hủy "deposit-paid"
+
+        // Check if check-in date is more than 3 days from now
         const checkInDate = dayjs(booking.checkInDate);
         const now = dayjs();
         const daysDifference = checkInDate.diff(now, 'day');
-        const isWithin3Days = daysDifference >= 0 && daysDifference <= 3;
+        const isMoreThan3Days = daysDifference > 3;
+
+        // ✅ Check có transactionCode không
+        const hasTransactionCode = !!(booking.transactionCode || booking.rawBookingData?.transactionCode);
 
         console.log('🎯 [canCancelBooking] Booking:', booking.id, {
             paymentTypeId: booking.paymentTypeId,
-            statusId: booking.statusId,
+            processedStatus: booking.status, // ✅ Check processed status
+            originalStatus: booking.originalStatus,
             checkInDate: booking.checkInDate,
             daysDifference,
+            transactionCode: booking.transactionCode || booking.rawBookingData?.transactionCode || 'MISSING',
             hasCorrectPaymentType,
             hasCorrectStatus,
-            isWithin3Days,
-            canCancel: hasCorrectPaymentType && hasCorrectStatus && isWithin3Days
+            isMoreThan3Days,
+            hasTransactionCode,
+            canCancel: hasCorrectPaymentType && hasCorrectStatus && isMoreThan3Days && hasTransactionCode
         });
 
-        return hasCorrectPaymentType && hasCorrectStatus && isWithin3Days;
+        return hasCorrectPaymentType && hasCorrectStatus && isMoreThan3Days && hasTransactionCode;
+    };
+
+    // ✅ NEW: Handle cancel booking
+    const handleCancelBooking = async (booking) => {
+        try {
+            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
+            if (!confirmed) return;
+
+            // Lấy transactionCode từ booking (đây chính là paymentIntentId)
+            const transactionCode = booking.transactionCode ||
+                booking.rawBookingData?.transactionCode ||
+                booking.rawBookingData?.TransactionCode;
+
+            if (!transactionCode) {
+                message.error('Không tìm thấy mã giao dịch để hủy');
+                console.error('❌ Missing TransactionCode for booking:', booking);
+                return;
+            }
+
+            console.log('🚫 [DEBUG] Canceling payment for booking:', {
+                bookingId: booking.id,
+                transactionCode: transactionCode,
+                userId: booking.userId
+            });
+
+            // ✅ Dùng API cancelPayment có sẵn, truyền transactionCode làm paymentIntentId
+            const response = await cancelPayment(transactionCode);
+
+            console.log('✅ [DEBUG] Cancel payment response:', response.data);
+
+            if (response.status === 200) {
+                message.success('Đã hủy đặt sân thành công');
+
+                // Reload booking history để cập nhật trạng thái
+                loadBookingHistory();
+
+                // Đóng modal nếu đang mở
+                if (isModalOpen) {
+                    closeModal();
+                }
+            } else {
+                throw new Error('Cancel payment failed');
+            }
+
+        } catch (error) {
+            console.error('❌ Error canceling booking:', error);
+
+            // Hiển thị lỗi chi tiết hơn
+            if (error.response) {
+                const errorMsg = error.response.data?.message || 'Không thể hủy đặt sân';
+                message.error(`${errorMsg}. Vui lòng thử lại!`);
+            } else {
+                message.error('Không thể hủy đặt sân. Vui lòng thử lại!');
+            }
+        }
     };
 
     const calculateDuration = (startTime, endTime) => {
@@ -102,8 +165,6 @@ const BookingHistory = () => {
             'Confirmed': 'confirmed',
             'Cancelled': 'cancelled',
             'Completed': 'completed',
-            // ✅ REMOVE: Không map 'Pending' nữa vì statusId = 8 sẽ bị filter
-            // 'Pending': 'pending',  // <-- Xóa dòng này
         };
 
         const result = statusMap[apiStatus] || 'unknown';
@@ -127,8 +188,6 @@ const BookingHistory = () => {
             'Paid': 'Đã thanh toán cọc',
             'Active': 'Chuyển khoản',
             'Confirmed': 'Tiền mặt',
-            // ✅ REMOVE: Không cần 'Pending' nữa
-            // 'Pending': 'Chưa thanh toán'
         };
         return paymentMap[status] || 'N/A';
     };
@@ -173,7 +232,9 @@ const BookingHistory = () => {
             console.log(`📝 [DEBUG] Processing booking ${booking.bookingId}:`, {
                 statusId: booking.statusId,
                 status: booking.status,
-                paymentTypeId: booking.paymentTypeId // ✅ NEW: Log paymentTypeId
+                paymentTypeId: booking.paymentTypeId,
+                transactionCode: booking.transactionCode,
+                fullBookingData: booking // ✅ DEBUG: Log full booking data
             });
 
             // ✅ EARLY CHECK: Skip booking với statusId = 8 (UnPaid)
@@ -195,7 +256,7 @@ const BookingHistory = () => {
                         continue;
                     }
 
-                    // ... existing price calculation code ...
+                    // Calculate final price
                     let finalPrice = 0;
                     if (booking.totalAmount && booking.totalAmount !== 0) {
                         finalPrice = Number(booking.totalAmount);
@@ -226,10 +287,18 @@ const BookingHistory = () => {
                         endTime: slot.endTime,
                         duration: calculateDuration(slot.startTime, slot.endTime),
                         price: finalPrice,
-                        status: mappedStatus, // ✅ Sử dụng mapped status đã check
+                        status: mappedStatus,
                         originalStatus: booking.status,
-                        statusId: booking.statusId,
-                        paymentTypeId: booking.paymentTypeId, // ✅ NEW: Add paymentTypeId
+
+                        // ✅ FIX: Đảm bảo statusId được map đúng với nhiều fallback options
+                        statusId: booking.statusId || booking.StatusId || booking.status_id,
+
+                        // ✅ FIX: PaymentTypeId với nhiều fallback options  
+                        paymentTypeId: booking.paymentTypeId || booking.PaymentTypeId || booking.payment_type_id,
+
+                        // ✅ FIX: TransactionCode với nhiều fallback options
+                        transactionCode: booking.transactionCode || booking.TransactionCode || booking.transaction_code,
+
                         bookingDate: booking.checkInDate,
                         checkInDate: booking.checkInDate,
                         userId: booking.userId,
@@ -252,12 +321,19 @@ const BookingHistory = () => {
                         existingRating: booking.existingRating || null
                     };
 
+                    // ✅ DEBUG: Log processed booking để verify statusId
                     console.log(`✅ [DEBUG] Processed booking:`, {
                         bookingId: processedBooking.id,
                         statusId: processedBooking.statusId,
                         status: processedBooking.status,
                         originalStatus: processedBooking.originalStatus,
-                        paymentTypeId: processedBooking.paymentTypeId // ✅ NEW: Log paymentTypeId
+                        paymentTypeId: processedBooking.paymentTypeId,
+                        transactionCode: processedBooking.transactionCode,
+
+                        // ✅ DEBUG: Log original data để so sánh
+                        originalStatusId: booking.statusId,
+                        originalPaymentTypeId: booking.paymentTypeId,
+                        originalTransactionCode: booking.transactionCode
                     });
 
                     processedBookings.push(processedBooking);
@@ -325,28 +401,6 @@ const BookingHistory = () => {
             setBookings([]);
         } finally {
             setLoading(false);
-        }
-    };
-
-    // ✅ NEW: Handle cancel booking
-    const handleCancelBooking = async (booking) => {
-        try {
-            // Confirm before canceling
-            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
-            if (!confirmed) return;
-
-            // TODO: Implement cancel booking API call
-            // const response = await cancelBooking(booking.id);
-
-            console.log('🚫 [DEBUG] Canceling booking:', booking.id);
-            message.success('Đã hủy đặt sân thành công');
-
-            // Reload booking history
-            loadBookingHistory();
-
-        } catch (error) {
-            console.error('❌ Error canceling booking:', error);
-            message.error('Không thể hủy đặt sân. Vui lòng thử lại!');
         }
     };
 
