@@ -374,19 +374,6 @@ const CommonHeader = (props) => {
 
             <span className="separator mx-2">|</span>
 
-            <NavLink
-              to="/search"
-              className={({ isActive }) => {
-                const isKhuVucActive = isActive && !activeSportCategory;
-                return `nav-link px-3 ${isKhuVucActive ? "active" : ""}`;
-              }}
-            >
-              <i className="fas fa-map-marker-alt me-1"></i>
-              <span className="nav-text">Khu vực</span>
-            </NavLink>
-
-            <span className="separator mx-2">|</span>
-
             {/* Show booking history only for logged in users */}
             {user && (
               <NavLink
