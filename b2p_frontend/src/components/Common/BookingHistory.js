@@ -78,60 +78,128 @@ const BookingHistory = () => {
     };
 
     // ✅ NEW: Handle cancel booking
+    // ✅ UPDATE: Handle cancel booking - THÊM LOGS CHI TIẾT
     const handleCancelBooking = async (booking) => {
         try {
-            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
-            if (!confirmed) return;
+            console.log('🚫 [handleCancelBooking] Starting cancel process...');
+            console.log('📋 [handleCancelBooking] Booking to cancel:', {
+                bookingId: booking.id,
+                courtName: booking.courtName,
+                date: booking.date,
+                timeSlot: booking.timeSlot,
+                price: booking.price,
+                status: booking.status,
+                paymentTypeId: booking.paymentTypeId
+            });
 
-            // Lấy transactionCode từ booking (đây chính là paymentIntentId)
+            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
+            if (!confirmed) {
+                console.log('❌ [handleCancelBooking] User cancelled the confirmation');
+                return;
+            }
+
+            console.log('✅ [handleCancelBooking] User confirmed cancellation');
+
+            // Lấy transactionCode từ booking
             const transactionCode = booking.transactionCode ||
                 booking.rawBookingData?.transactionCode ||
                 booking.rawBookingData?.TransactionCode;
 
+            console.log('🔍 [handleCancelBooking] Transaction code search:', {
+                fromBooking: booking.transactionCode,
+                fromRawData: booking.rawBookingData?.transactionCode,
+                fromRawDataUpper: booking.rawBookingData?.TransactionCode,
+                finalTransactionCode: transactionCode
+            });
+
             if (!transactionCode) {
+                console.error('❌ [handleCancelBooking] Missing TransactionCode for booking:', booking);
                 message.error('Không tìm thấy mã giao dịch để hủy');
-                console.error('❌ Missing TransactionCode for booking:', booking);
                 return;
             }
 
-            console.log('🚫 [DEBUG] Canceling payment for booking:', {
-                bookingId: booking.id,
+            console.log('📤 [API CALL] cancelPayment with params:', {
                 transactionCode: transactionCode,
-                userId: booking.userId
+                apiEndpoint: `Payment/cancel/${transactionCode}`,
+                method: 'POST',
+                timestamp: new Date().toISOString(),
+                userLogin: 'bachnhhe173308'
             });
 
-            // ✅ Dùng API cancelPayment có sẵn, truyền transactionCode làm paymentIntentId
             const response = await cancelPayment(transactionCode);
 
-            console.log('✅ [DEBUG] Cancel payment response:', response.data);
+            console.log('📥 [API RESPONSE] cancelPayment full response:', {
+                httpStatus: response.status,
+                httpStatusText: response.statusText,
+                responseData: response.data,
+                timestamp: new Date().toISOString()
+            });
 
-            if (response.status === 200) {
+            // ✅ FIX: Check Stripe webhook format
+            const isHttpSuccess = response.status === 200 || response.status === 201;
+            const isStripeSuccess = response.data?.type === "payment_intent.canceled" &&
+                response.data?.data?.object?.status === "canceled";
+
+            console.log('🔍 [handleCancelBooking] Success checks:', {
+                isHttpSuccess,
+                isStripeSuccess,
+                responseType: response.data?.type,
+                stripeStatus: response.data?.data?.object?.status,
+                bookingIdInMetadata: response.data?.data?.object?.metadata?.BookingId
+            });
+
+            if (isHttpSuccess && (isStripeSuccess || !response.data?.type)) {
+                console.log('✅ [handleCancelBooking] Cancel payment successful');
                 message.success('Đã hủy đặt sân thành công');
 
                 // Reload booking history để cập nhật trạng thái
+                console.log('🔄 [handleCancelBooking] Reloading booking history...');
                 loadBookingHistory();
 
                 // Đóng modal nếu đang mở
                 if (isModalOpen) {
                     closeModal();
+                    console.log('🔄 [handleCancelBooking] Detail modal closed');
                 }
             } else {
-                throw new Error('Cancel payment failed');
+                console.error('❌ [handleCancelBooking] Cancel failed:', {
+                    httpStatus: response.status,
+                    expectedStripeType: "payment_intent.canceled",
+                    actualType: response.data?.type,
+                    expectedStatus: "canceled",
+                    actualStatus: response.data?.data?.object?.status
+                });
+                throw new Error('Cancel payment failed - payment not canceled');
             }
 
         } catch (error) {
-            console.error('❌ Error canceling booking:', error);
+            console.error('❌ [handleCancelBooking] Error occurred:', {
+                error: error,
+                message: error.message,
+                response: error.response,
+                timestamp: new Date().toISOString(),
+                userLogin: 'bachnhhe173308'
+            });
 
-            // Hiển thị lỗi chi tiết hơn
             if (error.response) {
+                console.error('📥 [API ERROR RESPONSE]:', {
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    data: error.response.data,
+                    url: error.response.config?.url
+                });
+
                 const errorMsg = error.response.data?.message || 'Không thể hủy đặt sân';
                 message.error(`${errorMsg}. Vui lòng thử lại!`);
+            } else if (error.request) {
+                console.error('📡 [NETWORK ERROR]:', error.request);
+                message.error('Lỗi kết nối mạng. Vui lòng thử lại!');
             } else {
+                console.error('⚠️ [UNKNOWN ERROR]:', error.message);
                 message.error('Không thể hủy đặt sân. Vui lòng thử lại!');
             }
         }
     };
-
     const calculateDuration = (startTime, endTime) => {
         if (!startTime || !endTime) return 'N/A';
         try {
@@ -229,120 +297,132 @@ const BookingHistory = () => {
         const processedBookings = [];
 
         for (const booking of bookingsData) {
-            console.log(`📝 [DEBUG] Processing booking ${booking.bookingId}:`, {
-                statusId: booking.statusId,
-                status: booking.status,
-                paymentTypeId: booking.paymentTypeId,
-                transactionCode: booking.transactionCode,
-                fullBookingData: booking // ✅ DEBUG: Log full booking data
-            });
-
-            // ✅ EARLY CHECK: Skip booking với statusId = 8 (UnPaid)
+            // ✅ Skip booking với statusId = 8 (UnPaid)
             if (booking.statusId === 8) {
                 console.log(`🚫 [DEBUG] Skipping booking ${booking.bookingId} with statusId = 8 (UnPaid)`);
                 continue;
             }
 
-            if (booking.slots && Array.isArray(booking.slots)) {
-                for (const slot of booking.slots) {
-                    const courtDetails = await loadCourtDetails(slot.courtId);
+            if (booking.slots && Array.isArray(booking.slots) && booking.slots.length > 0) {
+                // ✅ GỘP TẤT CẢ SLOTS THÀNH 1 BOOKING
+                const firstSlot = booking.slots[0];
+                const courtDetails = await loadCourtDetails(firstSlot.courtId);
+                const mappedStatus = mapBookingStatus(booking.status, booking.statusId);
 
-                    // ✅ Map status và check null
-                    const mappedStatus = mapBookingStatus(booking.status, booking.statusId);
-
-                    // ✅ Skip nếu status mapping trả về null (statusId = 8)
-                    if (!mappedStatus || mappedStatus === 'unknown') {
-                        console.log(`🚫 [DEBUG] Skipping booking ${booking.bookingId} - Status mapping returned null or unknown`);
-                        continue;
-                    }
-
-                    // Calculate final price
-                    let finalPrice = 0;
-                    if (booking.totalAmount && booking.totalAmount !== 0) {
-                        finalPrice = Number(booking.totalAmount);
-                    } else if (booking.totalPrice && booking.totalPrice !== 0) {
-                        finalPrice = Number(booking.totalPrice);
-                    } else if (booking.amount && booking.amount !== 0) {
-                        finalPrice = Number(booking.amount);
-                    } else if (booking.price && booking.price !== 0) {
-                        finalPrice = Number(booking.price);
-                    } else if (booking.cost && booking.cost !== 0) {
-                        finalPrice = Number(booking.cost);
-                    } else if (slot.price && slot.price !== 0) {
-                        finalPrice = Number(slot.price);
-                    } else if (slot.amount && slot.amount !== 0) {
-                        finalPrice = Number(slot.amount);
-                    } else if (slot.cost && slot.cost !== 0) {
-                        finalPrice = Number(slot.cost);
-                    }
-
-                    const processedBooking = {
-                        id: booking.bookingId || booking.id,
-                        courtId: slot.courtId,
-                        courtName: slot.courtName || `Sân ${slot.courtId}`,
-                        courtType: slot.categoryName || 'Sân thể thao',
-                        date: booking.checkInDate,
-                        timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
-                        startTime: slot.startTime,
-                        endTime: slot.endTime,
-                        duration: calculateDuration(slot.startTime, slot.endTime),
-                        price: finalPrice,
-                        status: mappedStatus,
-                        originalStatus: booking.status,
-
-                        // ✅ FIX: Đảm bảo statusId được map đúng với nhiều fallback options
-                        statusId: booking.statusId || booking.StatusId || booking.status_id,
-
-                        // ✅ FIX: PaymentTypeId với nhiều fallback options  
-                        paymentTypeId: booking.paymentTypeId || booking.PaymentTypeId || booking.payment_type_id,
-
-                        // ✅ FIX: TransactionCode với nhiều fallback options
-                        transactionCode: booking.transactionCode || booking.TransactionCode || booking.transaction_code,
-
-                        bookingDate: booking.checkInDate,
-                        checkInDate: booking.checkInDate,
-                        userId: booking.userId,
-                        timeSlotId: slot.timeSlotId,
-                        contactPhone: 'N/A',
-                        paymentMethod: getPaymentMethod(booking.status, booking.statusId),
-                        notes: booking.notes || '',
-                        facilityName: courtDetails.facilityName,
-                        facilityAddress: courtDetails.facilityAddress,
-                        facilityContact: courtDetails.facilityContact,
-                        facilityId: courtDetails.facilityId,
-                        customerName: 'Đang tải...',
-                        customerPhone: 'Đang tải...',
-                        customerEmail: 'Đang tải...',
-                        uniqueKey: `${booking.bookingId}-${slot.courtId}-${slot.timeSlotId}`,
-                        rawBookingData: booking,
-                        rawSlotData: slot,
-                        hasRated: booking.hasRated || booking.isRated || false,
-                        ratingInfo: booking.rating || booking.ratingData || null,
-                        existingRating: booking.existingRating || null
-                    };
-
-                    // ✅ DEBUG: Log processed booking để verify statusId
-                    console.log(`✅ [DEBUG] Processed booking:`, {
-                        bookingId: processedBooking.id,
-                        statusId: processedBooking.statusId,
-                        status: processedBooking.status,
-                        originalStatus: processedBooking.originalStatus,
-                        paymentTypeId: processedBooking.paymentTypeId,
-                        transactionCode: processedBooking.transactionCode,
-
-                        // ✅ DEBUG: Log original data để so sánh
-                        originalStatusId: booking.statusId,
-                        originalPaymentTypeId: booking.paymentTypeId,
-                        originalTransactionCode: booking.transactionCode
-                    });
-
-                    processedBookings.push(processedBooking);
+                if (!mappedStatus || mappedStatus === 'unknown') {
+                    console.log(`🚫 [DEBUG] Skipping booking ${booking.bookingId} - Status mapping returned null or unknown`);
+                    continue;
                 }
+
+                // ✅ Tính tổng giá tiền từ tất cả slots
+                let totalPrice = 0;
+                if (booking.totalAmount && booking.totalAmount !== 0) {
+                    totalPrice = Number(booking.totalAmount);
+                } else if (booking.totalPrice && booking.totalPrice !== 0) {
+                    totalPrice = Number(booking.totalPrice);
+                } else {
+                    // Cộng dồn giá từ tất cả slots
+                    totalPrice = booking.slots.reduce((sum, slot) => {
+                        const slotPrice = slot.price || slot.amount || slot.cost || 0;
+                        return sum + Number(slotPrice);
+                    }, 0);
+                }
+
+                // ✅ Tạo chuỗi thời gian gộp tất cả slots
+                const timeSlots = booking.slots.map(slot =>
+                    `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`
+                ).join(', ');
+
+                // ✅ Tạo danh sách tên sân
+                const courtNames = booking.slots.map(slot =>
+                    slot.courtName || `Sân ${slot.courtId}`
+                ).join(', ');
+
+                const processedBooking = {
+                    id: booking.bookingId || booking.id,
+                    courtId: firstSlot.courtId, // Lấy courtId của slot đầu tiên
+                    courtName: courtNames, // ✅ Gộp tên tất cả sân
+                    courtType: firstSlot.categoryName || 'Sân thể thao',
+                    date: booking.checkInDate,
+                    timeSlot: timeSlots, // ✅ Gộp tất cả khung giờ
+                    startTime: firstSlot.startTime,
+                    endTime: booking.slots[booking.slots.length - 1].endTime, // End time của slot cuối
+                    duration: calculateTotalDuration(booking.slots), // ✅ Tính tổng duration
+                    price: totalPrice, // ✅ Tổng giá tiền
+                    status: mappedStatus,
+                    originalStatus: booking.status,
+
+                    statusId: booking.statusId || booking.StatusId || booking.status_id,
+                    paymentTypeId: booking.paymentTypeId || booking.PaymentTypeId || booking.payment_type_id,
+                    transactionCode: booking.transactionCode || booking.TransactionCode || booking.transaction_code,
+
+                    bookingDate: booking.checkInDate,
+                    checkInDate: booking.checkInDate,
+                    userId: booking.userId,
+                    contactPhone: 'N/A',
+                    paymentMethod: getPaymentMethod(booking.status, booking.statusId),
+                    notes: booking.notes || '',
+                    facilityName: courtDetails.facilityName,
+                    facilityAddress: courtDetails.facilityAddress,
+                    facilityContact: courtDetails.facilityContact,
+                    facilityId: courtDetails.facilityId,
+                    customerName: 'Đang tải...',
+                    customerPhone: 'Đang tải...',
+                    customerEmail: 'Đang tải...',
+                    uniqueKey: `${booking.bookingId}`, // ✅ Unique key chỉ dựa vào bookingId
+                    rawBookingData: booking,
+                    rawSlotData: booking.slots, // ✅ Lưu tất cả slots
+                    hasRated: booking.hasRated || booking.isRated || false,
+                    ratingInfo: booking.rating || booking.ratingData || null,
+                    existingRating: booking.existingRating || null,
+
+                    // ✅ Thêm thông tin về multiple slots
+                    totalSlots: booking.slots.length,
+                    allSlots: booking.slots.map(slot => ({
+                        courtId: slot.courtId,
+                        courtName: slot.courtName,
+                        timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
+                        price: slot.price || slot.amount || slot.cost || 0
+                    }))
+                };
+
+                console.log(`✅ [DEBUG] Processed booking (combined ${booking.slots.length} slots):`, {
+                    bookingId: processedBooking.id,
+                    courtNames: processedBooking.courtName,
+                    timeSlots: processedBooking.timeSlot,
+                    totalPrice: processedBooking.price,
+                    totalSlots: processedBooking.totalSlots
+                });
+
+                processedBookings.push(processedBooking);
             }
         }
 
-        console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after filtering out statusId = 8`);
+        console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after processing and filtering`);
         return processedBookings;
+    };
+
+    // ✅ Helper function tính tổng duration
+    const calculateTotalDuration = (slots) => {
+        if (!slots || slots.length === 0) return '0 phút';
+
+        let totalMinutes = 0;
+        slots.forEach(slot => {
+            const duration = calculateDuration(slot.startTime, slot.endTime);
+            const minutes = parseInt(duration.replace(/\D/g, '')) || 0;
+            totalMinutes += minutes;
+        });
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        if (hours > 0 && minutes > 0) {
+            return `${hours} giờ ${minutes} phút`;
+        } else if (hours > 0) {
+            return `${hours} giờ`;
+        } else {
+            return `${minutes} phút`;
+        }
     };
 
     const loadBookingHistory = async () => {
