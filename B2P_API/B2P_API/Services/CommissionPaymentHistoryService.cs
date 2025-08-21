@@ -162,7 +162,7 @@ namespace B2P_API.Services
             };
         }
 
-        public async Task<ApiResponse<object>> UpdateAsync(int id, CommissionPaymentHistoryUpdateDto dto)
+        public virtual async Task<ApiResponse<object>> UpdateAsync(int id, CommissionPaymentHistoryUpdateDto dto)
         {
             var entity = await _repo.GetByIdAsync(id);
             if (entity == null)
