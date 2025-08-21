@@ -58,9 +58,11 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         {
             // Arrange
             int bookingId = 1;
+            var userId = 10;
             var booking = new Booking
             {
                 BookingId = bookingId,
+                UserId = userId, // Thêm UserId
                 TotalPrice = 300000,
                 Status = new Status { StatusName = "Đã xác nhận" },
                 BookingDetails = new List<BookingDetail>
@@ -107,6 +109,9 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             _bookingRepoMock.Setup(x => x.GetBookingWithDetailsByIdAsync(bookingId))
                 .ReturnsAsync(booking);
 
+            _accRepoMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(new User { Phone = "0123456789", Email = "user@email.com" });
+
             // Act
             var result = await _service.GetByIdAsync(bookingId);
 
@@ -145,34 +150,39 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
         {
             // Arrange
             int bookingId = 1;
+            int userId = 20;
             var booking = new Booking
             {
                 BookingId = bookingId,
+                UserId = userId, // Thêm UserId
                 TotalPrice = 300000,
                 Status = null,
                 BookingDetails = new List<BookingDetail>
-        {
-            new BookingDetail
-            {
-                CourtId = 1,
-                TimeSlotId = 2,
-                CheckInDate = new DateTime(2025, 8, 1),
-                Court = new Court {
-                    CourtId = 1,
-                    CourtName = "Sân A",
-                    Category = new CourtCategory { CategoryName = "VIP" }
-                },
-                TimeSlot = new TimeSlot {
-                    TimeSlotId = 2,
-                    StartTime = new TimeOnly(8, 0),
-                    EndTime = new TimeOnly(9, 0)
+                {
+                    new BookingDetail
+                    {
+                        CourtId = 1,
+                        TimeSlotId = 2,
+                        CheckInDate = new DateTime(2025, 8, 1),
+                        Court = new Court {
+                            CourtId = 1,
+                            CourtName = "Sân A",
+                            Category = new CourtCategory { CategoryName = "VIP" }
+                        },
+                        TimeSlot = new TimeSlot {
+                            TimeSlotId = 2,
+                            StartTime = new TimeOnly(8, 0),
+                            EndTime = new TimeOnly(9, 0)
+                        }
+                    }
                 }
-            }
-        }
             };
 
             _bookingRepoMock.Setup(x => x.GetBookingWithDetailsByIdAsync(bookingId))
                 .ReturnsAsync(booking);
+
+            _accRepoMock.Setup(x => x.GetByIdAsync(userId))
+                .ReturnsAsync(new User { Phone = "0234567890", Email = "other@email.com" });
 
             // Act
             var result = await _service.GetByIdAsync(bookingId);
@@ -182,7 +192,6 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             Assert.Equal(200, result.Status);
             Assert.Equal("Lấy chi tiết booking thành công", result.Message);
 
-            // Kiểm tra các field không liên quan đến Status
             var dto = result.Data;
             Assert.Equal(bookingId, dto.BookingId);
             Assert.Equal(300000, dto.TotalPrice);
@@ -207,6 +216,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             var booking = new Booking
             {
                 BookingId = bookingId,
+                UserId = 30,
                 TotalPrice = 300000,
                 Status = new Status { StatusName = "Đã xác nhận" },
                 BookingDetails = new List<BookingDetail>() // Không có details
@@ -214,6 +224,9 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
 
             _bookingRepoMock.Setup(x => x.GetBookingWithDetailsByIdAsync(bookingId))
                 .ReturnsAsync(booking);
+
+            _accRepoMock.Setup(x => x.GetByIdAsync(30))
+                .ReturnsAsync(new User { Phone = "0999999999", Email = "nobody@email.com" });
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => _service.GetByIdAsync(bookingId));

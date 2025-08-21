@@ -112,12 +112,6 @@ namespace B2P_Test.UnitTest.UserService_UnitTest
             Assert.Null(result.Data.Dob);             // ✅ Correctly null
             Assert.Null(result.Data.Address);         // ✅ Correctly null
             Assert.Null(result.Data.CreateAt);        // ✅ Correctly null
-
-            // ✅ FIXED: Verify null handling for related entities (match your actual code)
-            Assert.Null(result.Data.AccountHolder);                    // null ?? null = null
-            Assert.Equal(string.Empty, result.Data.AccountNumber);     // null ?? string.Empty
-            Assert.Equal(0, result.Data.BankTypeId);                   // null ?? 0
-            Assert.Equal("Unknown", result.Data.BankName);             // null ?? "Unknown"
             Assert.Equal(string.Empty, result.Data.StatusDescription); // ✅ FIXED: null ?? string.Empty
             Assert.Equal(0, result.Data.ImageId);                      // FirstOrDefault() ?? 0
             Assert.Equal(string.Empty, result.Data.ImageUrl);          // FirstOrDefault() ?? string.Empty

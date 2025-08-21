@@ -511,7 +511,7 @@ namespace B2P_API.Services
 		/// Gán sân tối ưu cho các TimeSlot được yêu cầu
 		/// </summary>
 		/// <returns>Dictionary TimeSlotId -> CourtId nếu thành công, null nếu không thể xếp</returns>
-		public async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
+		public virtual async Task<Dictionary<int, int>?> AssignCourtsAsync(BookingRequestDto request)
         {
             // Lấy thông tin sân và các slot không khả dụng
             var availability = await _bookingRepo.GetCourtAvailabilityAsync(
@@ -652,7 +652,7 @@ namespace B2P_API.Services
             return result;
         }
 
-        public async Task<bool> IsRealEmailAsync(string email)
+        public virtual async Task<bool> IsRealEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
@@ -1023,7 +1023,7 @@ namespace B2P_API.Services
                 Message = "Đã đánh dấu cancel booking thành công."
             };
         }
-        public async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId, string? TransactionCode)
+        public virtual async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId, string? TransactionCode)
         {
             var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 

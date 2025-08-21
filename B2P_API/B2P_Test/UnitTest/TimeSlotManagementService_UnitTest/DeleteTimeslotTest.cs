@@ -84,8 +84,8 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
             Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID04 - Should propagate database exception")]
-        public async Task UTCID04_DatabaseError_ThrowsException()
+        [Fact(DisplayName = "UTCID04 - Should return error response when database exception occurs")]
+        public async Task UTCID04_DatabaseError_ReturnsErrorResponse()
         {
             // Arrange
             int timeslotId = 1;
@@ -94,11 +94,20 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
             _timeslotRepoMock.Setup(x => x.GetByIdAsync(timeslotId))
                 .ReturnsAsync(mockTimeslot);
 
+            _timeslotRepoMock.Setup(x => x.HasAnyActiveOrFutureBookingsAsync(timeslotId))
+                .ReturnsAsync(false);
+
             _timeslotRepoMock.Setup(x => x.DeleteAsync(timeslotId))
                 .ThrowsAsync(new Exception("Database error"));
 
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _service.DeleteTimeSlot(timeslotId));
+            // Act
+            var result = await _service.DeleteTimeSlot(timeslotId);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(500, result.Status);
+            Assert.Contains("Database error", result.Message);
+            Assert.Null(result.Data);
         }
     }
 }
