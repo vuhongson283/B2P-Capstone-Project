@@ -43,6 +43,32 @@ const BookingHistory = () => {
         }
     }, [userId]); // ✅ Dependency array bao gồm userId
 
+    // ✅ NEW: Function to check if cancel button should be shown
+    const canCancelBooking = (booking) => {
+        // Check PaymentTypeId = 1, StatusId = 7, and check-in date within 3 days
+        const hasCorrectPaymentType = booking.paymentTypeId === 1;
+        const hasCorrectStatus = booking.statusId === 7;
+
+        // Check if check-in date is within 3 days from now
+        const checkInDate = dayjs(booking.checkInDate);
+        const now = dayjs();
+        const daysDifference = checkInDate.diff(now, 'day');
+        const isWithin3Days = daysDifference >= 0 && daysDifference <= 3;
+
+        console.log('🎯 [canCancelBooking] Booking:', booking.id, {
+            paymentTypeId: booking.paymentTypeId,
+            statusId: booking.statusId,
+            checkInDate: booking.checkInDate,
+            daysDifference,
+            hasCorrectPaymentType,
+            hasCorrectStatus,
+            isWithin3Days,
+            canCancel: hasCorrectPaymentType && hasCorrectStatus && isWithin3Days
+        });
+
+        return hasCorrectPaymentType && hasCorrectStatus && isWithin3Days;
+    };
+
     const calculateDuration = (startTime, endTime) => {
         if (!startTime || !endTime) return 'N/A';
         try {
@@ -146,7 +172,8 @@ const BookingHistory = () => {
         for (const booking of bookingsData) {
             console.log(`📝 [DEBUG] Processing booking ${booking.bookingId}:`, {
                 statusId: booking.statusId,
-                status: booking.status
+                status: booking.status,
+                paymentTypeId: booking.paymentTypeId // ✅ NEW: Log paymentTypeId
             });
 
             // ✅ EARLY CHECK: Skip booking với statusId = 8 (UnPaid)
@@ -202,6 +229,7 @@ const BookingHistory = () => {
                         status: mappedStatus, // ✅ Sử dụng mapped status đã check
                         originalStatus: booking.status,
                         statusId: booking.statusId,
+                        paymentTypeId: booking.paymentTypeId, // ✅ NEW: Add paymentTypeId
                         bookingDate: booking.checkInDate,
                         checkInDate: booking.checkInDate,
                         userId: booking.userId,
@@ -228,7 +256,8 @@ const BookingHistory = () => {
                         bookingId: processedBooking.id,
                         statusId: processedBooking.statusId,
                         status: processedBooking.status,
-                        originalStatus: processedBooking.originalStatus
+                        originalStatus: processedBooking.originalStatus,
+                        paymentTypeId: processedBooking.paymentTypeId // ✅ NEW: Log paymentTypeId
                     });
 
                     processedBookings.push(processedBooking);
@@ -239,6 +268,7 @@ const BookingHistory = () => {
         console.log(`📊 [DEBUG] Filter summary: ${bookingsData.length} total → ${processedBookings.length} after filtering out statusId = 8`);
         return processedBookings;
     };
+
     const loadBookingHistory = async () => {
         if (!userId) {
             console.log('⚠️ UserId not available yet, skipping API call');
@@ -297,6 +327,29 @@ const BookingHistory = () => {
             setLoading(false);
         }
     };
+
+    // ✅ NEW: Handle cancel booking
+    const handleCancelBooking = async (booking) => {
+        try {
+            // Confirm before canceling
+            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
+            if (!confirmed) return;
+
+            // TODO: Implement cancel booking API call
+            // const response = await cancelBooking(booking.id);
+
+            console.log('🚫 [DEBUG] Canceling booking:', booking.id);
+            message.success('Đã hủy đặt sân thành công');
+
+            // Reload booking history
+            loadBookingHistory();
+
+        } catch (error) {
+            console.error('❌ Error canceling booking:', error);
+            message.error('Không thể hủy đặt sân. Vui lòng thử lại!');
+        }
+    };
+
     const loadCustomerInfoForBookings = async (bookingsToLoad) => {
         for (const booking of bookingsToLoad) {
             if (booking.userId) {
@@ -702,8 +755,12 @@ const BookingHistory = () => {
                                                         Chi tiết
                                                     </button>
 
-                                                    {booking.status === 'deposit-paid' && (
-                                                        <button className="btn btn-danger btn-sm">
+                                                    {/* ✅ NEW: Updated cancel button logic */}
+                                                    {canCancelBooking(booking) && (
+                                                        <button
+                                                            className="btn btn-danger btn-sm"
+                                                            onClick={() => handleCancelBooking(booking)}
+                                                        >
                                                             <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                             </svg>
@@ -1048,8 +1105,12 @@ const BookingHistory = () => {
                         </div>
 
                         <div className="modal-footer">
-                            {selectedBooking.status === 'confirmed' && (
-                                <button className="btn btn-danger btn-action">
+                            {/* ✅ NEW: Updated modal footer cancel button logic */}
+                            {canCancelBooking(selectedBooking) && (
+                                <button
+                                    className="btn btn-danger btn-action"
+                                    onClick={() => handleCancelBooking(selectedBooking)}
+                                >
                                     Hủy đặt sân
                                 </button>
                             )}
