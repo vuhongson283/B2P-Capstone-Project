@@ -101,7 +101,7 @@ namespace B2P_API.Services
                         Email = request.Email,
                         Phone = request.Phone,
                         StatusId = 1,
-                        RoleId = 3,
+                        RoleId = 2,
                         IsMale = true,
                         CreateAt = DateTime.UtcNow
                     };
