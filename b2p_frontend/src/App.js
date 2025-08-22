@@ -15,7 +15,7 @@ import { GlobalCommentNotificationProvider } from "./contexts/GlobalCommentNotif
 
 const App = () => {
   const location = useLocation();
-  
+
   // ✅ FIXED: Only show slider/search on exact homepage, not on child routes
   const showSliderAndSearch = location.pathname === "/";
 
