@@ -1044,7 +1044,10 @@ const BookingManagement = () => {
 
         if (!selectedCategory) return [];
 
-        return courts.filter(court => court.categoryName === selectedCategory.categoryName);
+        // So sánh categoryId thay vì categoryName để chắc chắn đúng
+        return courts.filter(court =>
+            String(court.categoryId) === String(selectedCategory.categoryId)
+        );
     }, [courts, selectedCategoryFilter, modalCategories]);
 
     const bookingStatusCounts = useMemo(() => {
