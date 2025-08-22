@@ -17,7 +17,7 @@ export const SignalRProvider = ({ children }) => {
                 console.log('🔌 Creating SignalR connection to: https://localhost:7227/bookinghub');
                 
                 const newConnection = new HubConnectionBuilder()
-                    .withUrl('https://localhost:7227/bookinghub')
+                    .withUrl('https://ccce5ebbfdd9.ngrok-free.app/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect({
                         nextRetryDelayInMilliseconds: retryContext => {

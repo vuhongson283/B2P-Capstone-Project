@@ -1,5 +1,4 @@
-﻿
-using B2P_API.Interface;
+﻿using B2P_API.Interface;
 using B2P_API.DTOs.AuthDTOs;
 using B2P_API.Response;
 using B2P_API.Models;
@@ -23,16 +22,16 @@ namespace B2P_API.Services
             IAuthRepository authRepository,
             JWTHelper jwtHelper,
             IMemoryCache cache,
-            IEmailService emailService,   
-            ISMSService smsService         
+            IEmailService emailService,
+            ISMSService smsService
         )
         {
             _imageRepository = imageRepository;
             _authRepository = authRepository;
             _jwtHelper = jwtHelper;
             _cache = cache;
-            _emailService = emailService;   
-            _smsService = smsService;       
+            _emailService = emailService;
+            _smsService = smsService;
         }
 
         public async Task<ApiResponse<OtpResponseDto>> SendOtpAsync(SendOtpRequestDto request)
@@ -100,7 +99,7 @@ namespace B2P_API.Services
                 _cache.Set($"otp_{contact}_{sessionToken}", otpData, TimeSpan.FromMinutes(5));
                 _cache.Set(rateLimitKey, true, TimeSpan.FromMinutes(1));
 
-                
+
                 if (isEmail)
                 {
                     await _emailService.SendOtpEmailForLoginAsync(contact, otp);
@@ -176,7 +175,7 @@ namespace B2P_API.Services
                 {
                     // List all properties của otpData để debug
                     var properties = otpData.GetType().GetProperties();
-                    
+
                 }
                 catch (Exception propEx)
                 {

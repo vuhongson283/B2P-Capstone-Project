@@ -99,6 +99,10 @@ const Layout = (props) => {
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="court-owner-register" element={<CourtOwnerRegister />} />
 
+          {/* 🛒 BOOKING ROUTES - Accessible by both Guest and Player */}
+          <Route path="bookingprocess" element={<BookingProcess />} />
+          <Route path="stripepayment" element={<StripePayment />} />
+
           {/* 🔒 PLAYER ONLY ROUTES - Require login */}
           <Route path="user-profile" element={
             <ProtectedRoute playerOnly fallbackPath="/login">
@@ -108,16 +112,6 @@ const Layout = (props) => {
           <Route path="booking-history" element={
             <ProtectedRoute playerOnly fallbackPath="/login">
               <BookingHistory />
-            </ProtectedRoute>
-          } />
-          <Route path="bookingprocess" element={
-            <ProtectedRoute playerOnly fallbackPath="/login">
-              <BookingProcess />
-            </ProtectedRoute>
-          } />
-          <Route path="stripepayment" element={
-            <ProtectedRoute playerOnly fallbackPath="/login">
-              <StripePayment />
             </ProtectedRoute>
           } />
         </Route>

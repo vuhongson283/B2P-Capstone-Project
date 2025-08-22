@@ -84,24 +84,23 @@ namespace B2P_API.Controllers
 
         [HttpPost("upload-blog")]
         public async Task<IActionResult> UploadImageBlog(
-    List<IFormFile> files,
+    IFormFile file,
     [FromForm] int entityId,
     [FromForm] string? caption = null)
         {
-            if (files == null || files.Count == 0)
+            if (file == null )
                 return BadRequest(new { message = "No files uploaded" });
 
-            foreach (var file in files)
-            {
+           
+            
                 if (!IsValidImageFile(file))
                     return BadRequest(new { message = $"Invalid image format: {file.FileName}" });
-            }
+            
 
             var uploadResults = new List<ImageUploadResponse>();
 
             try
-            {
-                foreach (var file in files)
+            {       
                 {
                     var result = await _imageService.UploadImageAsync(file, "blog", entityId, caption);
                     uploadResults.Add(result);

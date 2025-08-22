@@ -164,7 +164,7 @@ namespace B2P_API.Services
 
 
 
-        public async Task<PaymentResult> VerifyCallback(string data, string receivedMac)
+       /* public async Task<PaymentResult> VerifyCallback(string data, string receivedMac)
         {
             try
             {
@@ -173,7 +173,7 @@ namespace B2P_API.Services
                 // ===========================
                 // 🔒 PHẦN KIỂM TRA MAC
                 // ===========================
-               /* try
+               *//* try
                 {
                     _logger.LogInformation($"Received MAC: {receivedMac}");
                     _logger.LogInformation($"Using Key1: {_config.Key1}");
@@ -202,7 +202,7 @@ namespace B2P_API.Services
                         Message = "Error validating MAC",
                         ErrorCode = -1
                     };
-                }*/
+                }*//*
 
                 // ===========================
                 // 📦 PARSE DỮ LIỆU CALLBACK
@@ -309,7 +309,7 @@ namespace B2P_API.Services
                     ErrorCode = -1
                 };
             }
-        }
+        }*/
 
 
 
