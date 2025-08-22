@@ -173,16 +173,7 @@ namespace B2P_API.Services
                     filteredFacilities = filteredFacilities.Where(f =>
                         f.Courts.Any(court => request.Type.Contains((int)court.CategoryId)));
                 }
-                else
-                {
-                    return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
-                    {
-                        Success = false,
-                        Message = MessagesCodes.MSG_72,
-                        Status = 404,
-                        Data = null
-                    };
-                }
+
 
                 if (!string.IsNullOrEmpty(request.City))
                 {
@@ -249,8 +240,8 @@ namespace B2P_API.Services
                         FirstImage = f.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl,
                         AverageRating = CalculateAverageRating(f),
                         PricePerHour = pricePerHour,
-                        MinPrice = pricePerHour * minDiscount,
-                        MaxPrice = pricePerHour * maxDiscount
+                        MinPrice = pricePerHour * (1-maxDiscount/100),
+                        MaxPrice = pricePerHour * (1-minDiscount/100)
                     };
                 }).ToList();
 
