@@ -147,8 +147,9 @@ namespace B2P_API.Services
                 }
 
                 var facilities = await _facilityRepositoryForUser.GetAllFacilitiesByPlayer();
-                var activeFacilities = facilities?.Where(f => f.StatusId == 1).ToList();
-
+                var activeFacilities = facilities?
+                    .Where(f => f.StatusId == 1 && f.Courts != null && f.Courts.Any(c => c.StatusId == 1))
+                    .ToList();
                 if (activeFacilities == null || activeFacilities.Count == 0)
                 {
                     return new ApiResponse<PagedResponse<SearchFacilityResponse>>()
@@ -171,7 +172,7 @@ namespace B2P_API.Services
                 if (request.Type != null && request.Type.Any())
                 {
                     filteredFacilities = filteredFacilities.Where(f =>
-                        f.Courts.Any(court => request.Type.Contains((int)court.CategoryId)));
+                        f.Courts.Any(court => court.StatusId == 1 && request.Type.Contains((int)court.CategoryId)));
                 }
 
 
@@ -204,10 +205,11 @@ namespace B2P_API.Services
 
                 var results = filteredList.Select(f =>
                 {
-                    var pricePerHour = GetMinPriceForSearchedCategories(f, request.Type);
+                    var pricePerHourMin = GetMinPriceForSearchedCategories(f, request.Type);
+                    var pricePerHourMax = GetMaxPriceForSearchedCategories(f, request.Type);
 
                     var facilityTimeSlots = f.TimeSlots?
-                        .Where(ts => ts.StartTime.HasValue && ts.EndTime.HasValue)
+                        .Where(ts => ts.StatusId == 1 && ts.StartTime.HasValue && ts.EndTime.HasValue)
                         .ToList() ?? new List<TimeSlot>();
 
                     TimeOnly? minStartTime = null;
@@ -219,12 +221,14 @@ namespace B2P_API.Services
                         maxEndTime = RoundTimeToMinute(facilityTimeSlots.Max(ts => ts.EndTime.Value));
                     }
 
-                    var minDiscount = f.TimeSlots?.Where(ts => ts.Discount.HasValue).Any() == true
-                        ? f.TimeSlots.Where(ts => ts.Discount.HasValue).Min(ts => ts.Discount.Value)
+                    var activeTimeSlots = f.TimeSlots?.Where(ts => ts.StatusId == 1 && ts.Discount.HasValue).ToList();
+
+                    var minDiscount = (activeTimeSlots != null && activeTimeSlots.Any())
+                        ? activeTimeSlots.Min(ts => ts.Discount.Value)
                         : 0;
 
-                    var maxDiscount = f.TimeSlots?.Where(ts => ts.Discount.HasValue).Any() == true
-                        ? f.TimeSlots.Where(ts => ts.Discount.HasValue).Max(ts => ts.Discount.Value)
+                    var maxDiscount = (activeTimeSlots != null && activeTimeSlots.Any())
+                        ? activeTimeSlots.Max(ts => ts.Discount.Value)
                         : 0;
 
                     return new SearchFacilityResponse
@@ -239,9 +243,9 @@ namespace B2P_API.Services
                             : "Chưa có lịch",
                         FirstImage = f.Images?.OrderBy(img => img.Order).FirstOrDefault()?.ImageUrl,
                         AverageRating = CalculateAverageRating(f),
-                        PricePerHour = pricePerHour,
-                        MinPrice = pricePerHour * (1-maxDiscount/100),
-                        MaxPrice = pricePerHour * (1-minDiscount/100)
+                        PricePerHour = pricePerHourMin,
+                        MinPrice = pricePerHourMin * (1-maxDiscount/100),
+                        MaxPrice = pricePerHourMax * (1-minDiscount/100)
                     };
                 }).ToList();
 
@@ -320,7 +324,7 @@ namespace B2P_API.Services
 
         private decimal GetMinPriceForSearchedCategories(Facility facility, List<int>? searchedTypes)
         {
-            var courts = facility.Courts?.Where(c => c.PricePerHour.HasValue);
+            var courts = facility.Courts?.Where(c => c.PricePerHour.HasValue && c.StatusId == 1);
 
             if (courts == null || !courts.Any())
                 return 0;
@@ -331,6 +335,21 @@ namespace B2P_API.Services
             }
 
             return courts.Any() ? courts.Min(c => c.PricePerHour.Value) : 0;
+        }
+
+        private decimal GetMaxPriceForSearchedCategories(Facility facility, List<int>? searchedTypes)
+        {
+            var courts = facility.Courts?.Where(c => c.PricePerHour.HasValue && c.StatusId == 1);
+
+            if (courts == null || !courts.Any())
+                return 0;
+
+            if (searchedTypes != null && searchedTypes.Any())
+            {
+                courts = courts.Where(c => searchedTypes.Contains((int)c.CategoryId));
+            }
+
+            return courts.Any() ? courts.Max(c => c.PricePerHour.Value) : 0;
         }
 
         private TimeOnly RoundTimeToMinute(TimeOnly time)
