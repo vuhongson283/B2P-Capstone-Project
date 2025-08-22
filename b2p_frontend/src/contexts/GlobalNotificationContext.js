@@ -171,7 +171,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                     color: color
                 }}>
                     {icon}
-                    <span style={{ marginLeft: '8px' }}>{title} (Global)</span>
+                    <span style={{ marginLeft: '8px' }}>{title} </span>
                 </div>
                 <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
                     <div><strong>Mã booking:</strong> #{notification.bookingId}</div>

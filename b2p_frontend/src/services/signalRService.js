@@ -1,5 +1,11 @@
 import * as signalR from "@microsoft/signalr";
 
+// DEBUG ENVIRONMENT VARIABLES
+console.log('🔧 DEBUG SignalR Environment:');
+console.log('REACT_APP_SIGNALR_HUB_URL:', process.env.REACT_APP_SIGNALR_HUB_URL);
+console.log('REACT_APP_API_BASE_URL:', process.env.REACT_APP_API_BASE_URL);
+console.log('All REACT_APP env vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
+
 class SignalRService {
     constructor() {
         this.connection = null;
@@ -16,7 +22,11 @@ class SignalRService {
     }
 
     initializeConnection() {
-        const hubUrl = process.env.REACT_APP_SIGNALR_HUB_URL;
+        // ✅ FORCE URL để debug - HARDCODE THAY VÌ ĐỌC TỪ ENV
+        const hubUrl = 'https://localhost:5000/bookinghub';
+
+        console.log('🔧 FORCED SignalR URL (ignoring env):', hubUrl);
+        console.log('🔧 Original env URL was:', process.env.REACT_APP_SIGNALR_HUB_URL);
 
         if (!hubUrl || hubUrl === '') {
             console.log('SignalR is disabled - no URL configured');
@@ -468,7 +478,7 @@ class SignalRService {
             isConnected: this.isConnected,
             connectionState: this.connectionState,
             reconnectAttempts: this.reconnectAttempts,
-            hubUrl: process.env.REACT_APP_SIGNALR_HUB_URL,
+            hubUrl: 'https://localhost:5000/bookinghub', // HARDCODED for debug
             joinedGroups: this.joinedGroupsInfo,
             currentUserId: this.currentUserId
         };
