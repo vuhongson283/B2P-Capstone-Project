@@ -210,11 +210,11 @@ builder.Services.AddScoped<IBookingNotificationService, BookingNotificationServi
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseCors("SignalRPolicy"); // Áp dụng policy cụ thể
