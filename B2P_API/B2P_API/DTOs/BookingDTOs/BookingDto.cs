@@ -45,11 +45,14 @@
         public string? Phone { get; set; } = string.Empty;
         public string? Email { get; set; } = string.Empty;
         public int BookingId { get; set; }
-        public int? PaymentTypeId { get; set; }
+        public int FacilityId { get; set; }
+		public string? FacilityName { get; set; } = string.Empty;
+		public int? PaymentTypeId { get; set; }
         public string? TransactionCode { get; set; } = string.Empty;
         public DateTime CheckInDate { get; set; }
 		public DateTime CreateDate { get; set; }
 		public decimal TotalPrice { get; set; }
+
         public string Status { get; set; } = string.Empty;
         public List<BookingSlotDto> Slots { get; set; } = new();
         public List<DTOs.RatingDTO.RatingDto> Ratings { get; set; } = new();

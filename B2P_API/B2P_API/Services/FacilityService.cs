@@ -704,10 +704,38 @@ namespace B2P_API.Services
                 Data = data
             };
         }
+		public async Task<bool> UpdateFacilitiesStatusByUserIdAsync(int userId, int statusId)
+		{
+			try
+			{
+				// Lấy tất cả facilities của user
+				var userFacilities = await _facilityRepository.GetByUserIdAsync(userId);
+
+				if (userFacilities == null || !userFacilities.Any())
+				{
+					return true; // Không có facility nào, coi như thành công
+				}
+
+				// Cập nhật status cho tất cả facilities
+				foreach (var facility in userFacilities)
+				{
+					facility.StatusId = statusId;
+					await _facilityRepository.UpdateAsync(facility);
+				}
+
+				return true;
+			}
+			catch (Exception ex)
+			{
+				// Log error nếu cần
+				Console.WriteLine($"Error updating facilities status: {ex.Message}");
+				return false;
+			}
+		}
 
 
 
 
-    }
+	}
 }
 

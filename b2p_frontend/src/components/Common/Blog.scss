@@ -1108,3 +1108,13 @@
         }
     }
 }
+
+.main-content-area {
+    width: calc(100vw - 360px);
+    max-width: none;
+    padding: 20px 40px;
+
+    &.sidebar-collapsed {
+        width: calc(100vw - 120px);
+    }
+}
