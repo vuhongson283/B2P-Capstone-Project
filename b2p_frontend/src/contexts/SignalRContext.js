@@ -14,10 +14,10 @@ export const SignalRProvider = ({ children }) => {
         
         const connectToSignalR = async () => {
             try {
-                console.log('🔌 Creating SignalR connection to: https://localhost:7227/bookinghub');
+                console.log('🔌 Creating SignalR connection to: https://api.book2play.site/bookinghub');
                 
                 const newConnection = new HubConnectionBuilder()
-                    .withUrl('https://localhost:7227/bookinghub')
+                    .withUrl('https://api.book2play.site/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect({
                         nextRetryDelayInMilliseconds: retryContext => {
@@ -89,10 +89,10 @@ export const SignalRProvider = ({ children }) => {
 
         const tryHttpConnection = async () => {
             try {
-                console.log('🔌 Trying HTTP connection to: http://localhost:7227/bookinghub');
+                console.log('🔌 Trying HTTP connection to: http://api.book2play.site/bookinghub');
                 
                 const httpConnection = new HubConnectionBuilder()
-                    .withUrl('http://localhost:7227/bookinghub')
+                    .withUrl('http://api.book2play.site/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect()
                     .build();
