@@ -79,7 +79,7 @@ const FacilitiesWithCondition = () => {
   const districtDropdownRef = useRef(null);
   const categoryDropdownRef = useRef(null);
 
-  const pageSize = 6;
+  const pageSize = 8;
 
   // Ref to track initial search
   const initialSearchDone = useRef(false);

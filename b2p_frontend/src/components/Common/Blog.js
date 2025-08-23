@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Card,
   Button,
@@ -68,35 +68,19 @@ const { Dragger } = Upload;
 const { Option } = Select;
 const { Search } = Input;
 
-// 🎯 Add Google Drive URL converter function
 const convertGoogleDriveUrl = (url) => {
   if (!url) return "";
 
-  console.log(`🎯 Converting URL:`, url);
-
-  if (url.includes("drive.google.com")) {
-    // Handle format: https://drive.google.com/uc?id=1bVHKl33xTRj6cLy3HIzq5BpjtN74VG53
-    if (url.includes("uc?id=")) {
-      const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-      if (fileIdMatch) {
-        const fileId = fileIdMatch[1];
-        const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
-        console.log(`🎯 Converted to:`, convertedUrl);
-        return convertedUrl;
-      }
-    }
-
-    // Handle format: https://drive.google.com/file/d/1bVHKl33xTRj6cLy3HIzq5BpjtN74VG53/view
-    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (fileIdMatch) {
-      const fileId = fileIdMatch[1];
-      const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
-      console.log(`🎯 Converted to:`, convertedUrl);
-      return convertedUrl;
-    }
+  // Chỉ xử lý link drive.google.com/uc?id=<id>
+  const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (fileIdMatch) {
+    const fileId = fileIdMatch[1];
+    // Trả về link thumbnail (hoặc có thể đổi thành link gốc nếu muốn)
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+    // hoặc: return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
 
-  console.log(`🎯 No conversion needed:`, url);
+  // Nếu không đúng format thì trả lại url gốc
   return url;
 };
 
@@ -116,7 +100,8 @@ const Blog = () => {
     fullName: user?.fullName || "",
     userName: user?.userName || "DuyQuan226",
     avatar:
-      user?.avatar || "https://ui-avatars.com/api/?name=DuyQuan226&background=27ae60&color=fff&size=200",
+      user?.avatar ||
+      "https://ui-avatars.com/api/?name=DuyQuan226&background=27ae60&color=fff&size=200",
     roleId: user?.roleId || 2,
   });
 
@@ -298,19 +283,30 @@ const Blog = () => {
     // ✅ FIX: Store callbacks in ref để có thể cleanup
     const callbacksRef = new Map();
 
-    blogs.forEach(blog => {
+    blogs.forEach((blog) => {
       const updateCommentCount = (increment) => {
-        console.log(`📊 Updating comment count for blog ${blog.blogId} by ${increment}`);
+        console.log(
+          `📊 Updating comment count for blog ${blog.blogId} by ${increment}`
+        );
 
-        setBlogCommentCounts(prev => ({
+        setBlogCommentCounts((prev) => ({
           ...prev,
-          [blog.blogId]: Math.max((prev[blog.blogId] || blog.totalComments || 0) + increment, 0)
+          [blog.blogId]: Math.max(
+            (prev[blog.blogId] || blog.totalComments || 0) + increment,
+            0
+          ),
         }));
 
-        setBlogs(prevBlogs =>
-          prevBlogs.map(b =>
+        setBlogs((prevBlogs) =>
+          prevBlogs.map((b) =>
             b.blogId === blog.blogId
-              ? { ...b, totalComments: Math.max((b.totalComments || 0) + increment, 0) }
+              ? {
+                  ...b,
+                  totalComments: Math.max(
+                    (b.totalComments || 0) + increment,
+                    0
+                  ),
+                }
               : b
           )
         );
@@ -326,7 +322,7 @@ const Blog = () => {
 
     // Initialize comment counts
     const initialCounts = {};
-    blogs.forEach(blog => {
+    blogs.forEach((blog) => {
       initialCounts[blog.blogId] = blog.totalComments || 0;
     });
     setBlogCommentCounts(initialCounts);
@@ -443,7 +439,7 @@ const Blog = () => {
     // ✅ THÊM: Update với comment count mới nhất
     const updatedBlog = {
       ...blog,
-      totalComments: blogCommentCounts[blog.blogId] ?? blog.totalComments ?? 0
+      totalComments: blogCommentCounts[blog.blogId] ?? blog.totalComments ?? 0,
     };
 
     setCurrentBlogForComments(updatedBlog);
@@ -479,16 +475,21 @@ const Blog = () => {
     window.currentOpenBlogId = null;
     window.refreshCommentsCallback = null;
 
-    console.log('🗑️ Cleared modal tracking - real-time updates disabled');
+    console.log("🗑️ Cleared modal tracking - real-time updates disabled");
   };
   useEffect(() => {
     if (currentBlogForComments && currentBlogForComments.blogId) {
       const newCount = blogCommentCounts[currentBlogForComments.blogId];
-      if (newCount !== undefined && newCount !== currentBlogForComments.totalComments) {
-        console.log(`📊 Updating modal comment count from ${currentBlogForComments.totalComments} to ${newCount}`);
-        setCurrentBlogForComments(prev => ({
+      if (
+        newCount !== undefined &&
+        newCount !== currentBlogForComments.totalComments
+      ) {
+        console.log(
+          `📊 Updating modal comment count from ${currentBlogForComments.totalComments} to ${newCount}`
+        );
+        setCurrentBlogForComments((prev) => ({
           ...prev,
-          totalComments: newCount
+          totalComments: newCount,
         }));
       }
     }
@@ -588,9 +589,9 @@ const Blog = () => {
         // ✅ THAY THẾ ĐOẠN TRÊN BẰNG ĐOẠN NÀY
         const newCount = (currentBlogForComments.totalComments || 0) + 1;
 
-        setBlogCommentCounts(prev => ({
+        setBlogCommentCounts((prev) => ({
           ...prev,
-          [currentBlogForComments.blogId]: newCount
+          [currentBlogForComments.blogId]: newCount,
         }));
 
         setBlogs((prevBlogs) =>
@@ -619,14 +620,14 @@ const Blog = () => {
             content: commentInput.trim(),
             isReply: false,
             timestamp: new Date().toISOString(),
-            action: 'comment_created'
+            action: "comment_created",
           };
 
           try {
             await signalRService.sendCommentNotification(notification);
-            console.log('📤 Comment notification sent:', notification);
+            console.log("📤 Comment notification sent:", notification);
           } catch (error) {
-            console.error('❌ Error sending comment notification:', error);
+            console.error("❌ Error sending comment notification:", error);
           }
         }
 
@@ -679,7 +680,9 @@ const Blog = () => {
 
         // ✅ NEW: Send reply notification via SignalR
         if (signalRService.connected) {
-          const parentComment = comments.find(c => c.commentId === parentCommentId);
+          const parentComment = comments.find(
+            (c) => c.commentId === parentCommentId
+          );
 
           const notification = {
             commentId: response.data?.commentId || Date.now(),
@@ -692,16 +695,16 @@ const Blog = () => {
             content: content.trim(),
             isReply: true,
             parentCommentId: parentCommentId,
-            parentComment: parentComment?.content?.substring(0, 50) + '...',
+            parentComment: parentComment?.content?.substring(0, 50) + "...",
             timestamp: new Date().toISOString(),
-            action: 'comment_reply'
+            action: "comment_reply",
           };
 
           try {
             await signalRService.sendCommentNotification(notification);
-            console.log('📤 Reply notification sent:', notification);
+            console.log("📤 Reply notification sent:", notification);
           } catch (error) {
-            console.error('❌ Error sending reply notification:', error);
+            console.error("❌ Error sending reply notification:", error);
           }
         }
 
@@ -757,7 +760,9 @@ const Blog = () => {
 
         // ✅ NEW: Send nested reply notification via SignalR
         if (signalRService.connected) {
-          const parentReply = comments.find(c => c.commentId === parentReplyId);
+          const parentReply = comments.find(
+            (c) => c.commentId === parentReplyId
+          );
 
           const notification = {
             commentId: response.data?.commentId || Date.now(),
@@ -770,16 +775,16 @@ const Blog = () => {
             content: content.trim(),
             isReply: true,
             parentCommentId: parentReplyId,
-            parentComment: parentReply?.content?.substring(0, 50) + '...',
+            parentComment: parentReply?.content?.substring(0, 50) + "...",
             timestamp: new Date().toISOString(),
-            action: 'nested_reply'
+            action: "nested_reply",
           };
 
           try {
             await signalRService.sendCommentNotification(notification);
-            console.log('📤 Nested reply notification sent:', notification);
+            console.log("📤 Nested reply notification sent:", notification);
           } catch (error) {
-            console.error('❌ Error sending nested reply notification:', error);
+            console.error("❌ Error sending nested reply notification:", error);
           }
         }
 
@@ -858,9 +863,9 @@ const Blog = () => {
               prevBlogs.map((blog) =>
                 blog.blogId === currentBlogForComments.blogId
                   ? {
-                    ...blog,
-                    totalComments: Math.max((blog.totalComments || 0) - 1, 0),
-                  }
+                      ...blog,
+                      totalComments: Math.max((blog.totalComments || 0) - 1, 0),
+                    }
                   : blog
               )
             );
@@ -1249,28 +1254,28 @@ const Blog = () => {
     const items = [
       ...(canEdit
         ? [
-          {
-            key: "edit",
-            label: (
-              <span>
-                <EditOutlined style={{ marginRight: 8 }} />
-                Chỉnh sửa
-              </span>
-            ),
-            onClick: () => openBlogModal(blog),
-          },
-          {
-            key: "delete",
-            label: (
-              <span>
-                <DeleteOutlined style={{ marginRight: 8 }} />
-                Xóa bài viết
-              </span>
-            ),
-            danger: true,
-            onClick: () => handleDeleteBlog(blog),
-          },
-        ]
+            {
+              key: "edit",
+              label: (
+                <span>
+                  <EditOutlined style={{ marginRight: 8 }} />
+                  Chỉnh sửa
+                </span>
+              ),
+              onClick: () => openBlogModal(blog),
+            },
+            {
+              key: "delete",
+              label: (
+                <span>
+                  <DeleteOutlined style={{ marginRight: 8 }} />
+                  Xóa bài viết
+                </span>
+              ),
+              danger: true,
+              onClick: () => handleDeleteBlog(blog),
+            },
+          ]
         : []),
       // Đã xóa mục báo cáo ở đây
     ];
@@ -1327,19 +1332,6 @@ const Blog = () => {
                   }}
                   fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
                 />
-                {image.caption && image.caption !== "string" && (
-                  <div
-                    className="image-caption"
-                    style={{
-                      fontSize: "14px",
-                      color: "#666",
-                      marginBottom: "8px",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    {image.caption}
-                  </div>
-                )}
               </div>
             );
           })}
@@ -1373,8 +1365,9 @@ const Blog = () => {
             return (
               <div
                 key={image.imageId || index}
-                className={`blog-image-item ${hasMoreImages ? "has-overlay" : ""
-                  }`}
+                className={`blog-image-item ${
+                  hasMoreImages ? "has-overlay" : ""
+                }`}
                 style={{ position: "relative" }}
               >
                 <Image
@@ -1544,8 +1537,9 @@ const Blog = () => {
               {selectedImages.map((image, index) => (
                 <div
                   key={image.imageId || index}
-                  className={`thumbnail ${index === currentImageIndex ? "active" : ""
-                    }`}
+                  className={`thumbnail ${
+                    index === currentImageIndex ? "active" : ""
+                  }`}
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <Image
@@ -1650,58 +1644,58 @@ const Blog = () => {
             {(searchTerm ||
               sortBy !== "postAt" ||
               sortDirection !== "desc") && (
-                <div className="sidebar-section">
-                  <h4>
-                    <FilterOutlined /> Bộ lọc đang áp dụng
-                  </h4>
+              <div className="sidebar-section">
+                <h4>
+                  <FilterOutlined /> Bộ lọc đang áp dụng
+                </h4>
 
-                  <div className="filter-tags">
-                    {searchTerm && (
-                      <Tag
-                        closable
-                        onClose={() => setSearchTerm("")}
-                        color="blue"
-                      >
-                        🔍 "{searchTerm}"
-                      </Tag>
-                    )}
+                <div className="filter-tags">
+                  {searchTerm && (
+                    <Tag
+                      closable
+                      onClose={() => setSearchTerm("")}
+                      color="blue"
+                    >
+                      🔍 "{searchTerm}"
+                    </Tag>
+                  )}
 
-                    {sortBy !== "postAt" && (
-                      <Tag
-                        closable
-                        onClose={() => setSortBy("postAt")}
-                        color="green"
-                      >
-                        📊{" "}
-                        {sortBy === "commentTime"
-                          ? "Hoạt động gần nhất"
-                          : "Ngày đăng"}
-                      </Tag>
-                    )}
+                  {sortBy !== "postAt" && (
+                    <Tag
+                      closable
+                      onClose={() => setSortBy("postAt")}
+                      color="green"
+                    >
+                      📊{" "}
+                      {sortBy === "commentTime"
+                        ? "Hoạt động gần nhất"
+                        : "Ngày đăng"}
+                    </Tag>
+                  )}
 
-                    {sortDirection !== "desc" && (
-                      <Tag
-                        closable
-                        onClose={() => setSortDirection("desc")}
-                        color="orange"
-                      >
-                        ⬆️ Cũ nhất trước
-                      </Tag>
-                    )}
-                  </div>
-
-                  <Button
-                    block
-                    icon={<ClearOutlined />}
-                    onClick={handleClearFilters}
-                    type="dashed"
-                    danger
-                    style={{ marginTop: "12px" }}
-                  >
-                    Xóa tất cả bộ lọc
-                  </Button>
+                  {sortDirection !== "desc" && (
+                    <Tag
+                      closable
+                      onClose={() => setSortDirection("desc")}
+                      color="orange"
+                    >
+                      ⬆️ Cũ nhất trước
+                    </Tag>
+                  )}
                 </div>
-              )}
+
+                <Button
+                  block
+                  icon={<ClearOutlined />}
+                  onClick={handleClearFilters}
+                  type="dashed"
+                  danger
+                  style={{ marginTop: "12px" }}
+                >
+                  Xóa tất cả bộ lọc
+                </Button>
+              </div>
+            )}
 
             {/* Search Results */}
             {isSearching && (
@@ -1709,8 +1703,9 @@ const Blog = () => {
                 <Divider />
                 <div className="sidebar-section">
                   <div
-                    className={`search-result-info ${totalBlogs > 0 ? "success" : "error"
-                      }`}
+                    className={`search-result-info ${
+                      totalBlogs > 0 ? "success" : "error"
+                    }`}
                   >
                     {totalBlogs > 0
                       ? `🔍 Tìm thấy ${totalBlogs} bài viết`
@@ -1774,7 +1769,7 @@ const Blog = () => {
                 {blogUser?.fullName || `User ${currentBlogForComments.userId}`}
               </h3>
               <div className={styles.subtitle}>
-                📅 26/07/2025 • 🕐 17:17 UTC 
+                📅 26/07/2025 • 🕐 17:17 UTC
               </div>
             </div>
             <button onClick={closeCommentModal} className={styles.closeButton}>
@@ -1803,7 +1798,7 @@ const Blog = () => {
                   </span>
                   {currentBlogForComments.updatedAt &&
                     currentBlogForComments.updatedAt !==
-                    currentBlogForComments.postAt && (
+                      currentBlogForComments.postAt && (
                       <span className={styles.updated}>
                         <EditOutlined /> Đã chỉnh sửa{" "}
                         {formatDateTime(currentBlogForComments.updatedAt)}
@@ -1826,7 +1821,10 @@ const Blog = () => {
 
             <div className={styles.postStats}>
               <Tag icon={<MessageOutlined />}>
-                {blogCommentCounts[currentBlogForComments?.blogId] ?? currentBlogForComments?.totalComments ?? 0} bình luận
+                {blogCommentCounts[currentBlogForComments?.blogId] ??
+                  currentBlogForComments?.totalComments ??
+                  0}{" "}
+                bình luận
               </Tag>
             </div>
           </div>
@@ -1834,7 +1832,13 @@ const Blog = () => {
           {/* Comments Section */}
           <div className={styles.commentsSection}>
             <div className={styles.commentsHeader}>
-              <h4>💬 Bình luận ({blogCommentCounts[currentBlogForComments?.blogId] ?? currentBlogForComments?.totalComments ?? 0})</h4>
+              <h4>
+                💬 Bình luận (
+                {blogCommentCounts[currentBlogForComments?.blogId] ??
+                  currentBlogForComments?.totalComments ??
+                  0}
+                )
+              </h4>
             </div>
 
             {loadingComments ? (
@@ -1851,8 +1855,8 @@ const Blog = () => {
                     </div>
                     <p>Chưa có bình luận nào.</p>
                     <p className={styles.subtitle}>
-                      Hãy là người đầu tiên bình luận! {user?.fullName || "Bạn"} có thể viết
-                      ngay ⬇️
+                      Hãy là người đầu tiên bình luận! {user?.fullName || "Bạn"}{" "}
+                      có thể viết ngay ⬇️
                     </p>
                   </div>
                 ) : (
@@ -1973,13 +1977,15 @@ const Blog = () => {
 
                         {/* Reply Input */}
                         <div
-                          className={`${styles.replyInput} ${showReply ? styles.show : ""
-                            }`}
+                          className={`${styles.replyInput} ${
+                            showReply ? styles.show : ""
+                          }`}
                         >
                           {renderUserAvatar(currentUser.userId, 24)}
                           <Input
-                            placeholder={`Trả lời ${commentUser?.fullName || "bình luận này"
-                              }...`}
+                            placeholder={`Trả lời ${
+                              commentUser?.fullName || "bình luận này"
+                            }...`}
                             value={replyInputs[comment.commentId] || ""}
                             onChange={(e) =>
                               setReplyInputs((prev) => ({
@@ -2162,13 +2168,15 @@ const Blog = () => {
 
           {/* Nested Reply Input */}
           <div
-            className={`${styles.nestedReplyInput} ${showNestedReply ? styles.show : ""
-              }`}
+            className={`${styles.nestedReplyInput} ${
+              showNestedReply ? styles.show : ""
+            }`}
           >
             {renderUserAvatar(currentUser.userId, 20)}
             <Input
-              placeholder={`Trả lời ${replyUser?.fullName || "bình luận này"
-                }...`}
+              placeholder={`Trả lời ${
+                replyUser?.fullName || "bình luận này"
+              }...`}
               value={nestedReplyInputs[reply.commentId] || ""}
               onChange={(e) =>
                 setNestedReplyInputs((prev) => ({
@@ -2206,8 +2214,9 @@ const Blog = () => {
 
       {/* Main Content Area */}
       <div
-        className={`main-content-area ${sidebarCollapsed ? "sidebar-collapsed" : ""
-          }`}
+        className={`main-content-area ${
+          sidebarCollapsed ? "sidebar-collapsed" : ""
+        }`}
       >
         {/* Ultra Compact Header */}
         <div className="blog-header-ultra-compact">
@@ -2320,7 +2329,11 @@ const Blog = () => {
                         onClick={() => openCommentModal(blog)}
                         className="comment-btn"
                       >
-                        💬 {blogCommentCounts[blog.blogId] ?? blog.totalComments ?? 0} bình luận
+                        💬{" "}
+                        {blogCommentCounts[blog.blogId] ??
+                          blog.totalComments ??
+                          0}{" "}
+                        bình luận
                       </Button>
                     </div>
                   </Card>
@@ -2456,17 +2469,17 @@ const Blog = () => {
                         📷 Ảnh hiện tại ({blogImages.length}):
                         {(pendingImageUploads.length > 0 ||
                           pendingImageDeletes.length > 0) && (
-                            <span
-                              style={{
-                                fontSize: "12px",
-                                color: "#ff7a00",
-                                marginLeft: "8px",
-                              }}
-                            >
-                              ({pendingImageUploads.length} mới,{" "}
-                              {pendingImageDeletes.length} sẽ xóa)
-                            </span>
-                          )}
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              color: "#ff7a00",
+                              marginLeft: "8px",
+                            }}
+                          >
+                            ({pendingImageUploads.length} mới,{" "}
+                            {pendingImageDeletes.length} sẽ xóa)
+                          </span>
+                        )}
                       </h4>
                       <div
                         style={{
@@ -2558,10 +2571,10 @@ const Blog = () => {
                               {image.isPreview
                                 ? "🆕 Mới"
                                 : pendingImageDeletes.includes(image.imageId)
-                                  ? "🗑️ Sẽ xóa"
-                                  : image.caption && image.caption !== "string"
-                                    ? image.caption
-                                    : ""}
+                                ? "🗑️ Sẽ xóa"
+                                : image.caption && image.caption !== "string"
+                                ? image.caption
+                                : ""}
                             </div>
                           </div>
                         ))}
@@ -2604,16 +2617,16 @@ const Blog = () => {
                   💡 Hỗ trợ JPG, PNG, GIF. Tối đa 10MB mỗi ảnh.
                   {(pendingImageUploads.length > 0 ||
                     pendingImageDeletes.length > 0) && (
-                      <div
-                        style={{
-                          color: "#ff7a00",
-                          marginTop: "4px",
-                          fontWeight: "500",
-                        }}
-                      >
-                        ⚠️ Thay đổi chỉ được lưu khi bấm "Cập nhật"
-                      </div>
-                    )}
+                    <div
+                      style={{
+                        color: "#ff7a00",
+                        marginTop: "4px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      ⚠️ Thay đổi chỉ được lưu khi bấm "Cập nhật"
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

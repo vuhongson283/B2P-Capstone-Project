@@ -112,8 +112,16 @@ export default function BookingModal({
     }));
   };
 
-  // Tính tổng (giả sử giá 100k/sân)
-  const PRICE_PER_COURT = 100000;
+  // Get price per hour from selected category
+  const getPricePerHour = () => {
+    if (!facilityData?.categories || !selectedCategory) return 100000; // fallback price
+    const category = facilityData.categories.find(cat =>
+      cat.categoryId.toString() === selectedCategory.toString()
+    );
+    return category ? category.pricePerHour : 100000;
+  };
+
+  const PRICE_PER_COURT = getPricePerHour();
   const selectedSlotsCount = Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId]).length;
   const totalCourts = Object.keys(selectedSlots).reduce((sum, slotId) => {
     if (selectedSlots[slotId]) {

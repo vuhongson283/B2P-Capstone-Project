@@ -789,68 +789,79 @@ namespace B2P_API.Services
         }
 
 
-        public async Task<ApiResponse<BookingResponseDto>> GetByIdAsync(int bookingId)
-        {
-            var booking = await _bookingRepo.GetBookingWithDetailsByIdAsync(bookingId);
+		public async Task<ApiResponse<BookingResponseDto>> GetByIdAsync(int bookingId)
+		{
+			var booking = await _bookingRepo.GetBookingWithDetailsByIdAsync(bookingId);
 
-            if (booking == null)
-            {
-                return new ApiResponse<BookingResponseDto>
-                {
-                    Success = false,
-                    Status = 404,
-                    Message = $"Không tìm thấy booking với ID = {bookingId}"
-                };
-            }
+			if (booking == null)
+			{
+				return new ApiResponse<BookingResponseDto>
+				{
+					Success = false,
+					Status = 404,
+					Message = $"Không tìm thấy booking với ID = {bookingId}"
+				};
+			}
 
-            // Tạo Dict cache như bên danh sách
-            var courtDict = booking.BookingDetails
-                .Select(d => d.Court)
-                .DistinctBy(c => c.CourtId)
-                .ToDictionary(c => c.CourtId);
+			// Tạo Dict cache như bên danh sách
+			var courtDict = booking.BookingDetails
+				.Select(d => d.Court)
+				.DistinctBy(c => c.CourtId)
+				.ToDictionary(c => c.CourtId);
 
-            var slotDict = booking.BookingDetails
-                .Select(d => d.TimeSlot)
-                .DistinctBy(s => s.TimeSlotId)
-                .ToDictionary(s => s.TimeSlotId);
-            var user = await _accRepo.GetByIdAsync(booking.UserId.Value);
-            var dto = new BookingResponseDto
-            {
-                UserId = booking.UserId,
-                Phone = user.Phone,
-                Email = user.Email,
-                BookingId = booking.BookingId,
-                TotalPrice = booking.TotalPrice ?? 0,
-                CreateDate =booking.CreateAt,
-                CheckInDate = booking.BookingDetails.Min(d => d.CheckInDate),
-                Status = booking.Status?.StatusName ?? "",
-                Slots = booking.BookingDetails.Select(d =>
-                {
-                    var court = courtDict.GetValueOrDefault(d.CourtId);
-                    var slot = slotDict.GetValueOrDefault(d.TimeSlotId);
+			var slotDict = booking.BookingDetails
+				.Select(d => d.TimeSlot)
+				.DistinctBy(s => s.TimeSlotId)
+				.ToDictionary(s => s.TimeSlotId);
 
-                    return new BookingSlotDto
-                    {
-                        CourtId = d.CourtId,
-                        TimeSlotId = d.TimeSlotId,
-                        StartTime = slot?.StartTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
-                        EndTime = slot?.EndTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
-                        CourtName = court?.CourtName ?? "",
-                        CategoryName = court?.Category?.CategoryName ?? ""
-                    };
-                }).ToList()
-            };
+			var user = await _accRepo.GetByIdAsync(booking.UserId.Value);
 
-            return new ApiResponse<BookingResponseDto>
-            {
-                Success = true,
-                Status = 200,
-                Message = "Lấy chi tiết booking thành công",
-                Data = dto
-            };
-        }
+			// ✅ LẤY FACILITY ID TỪ COURT ĐẦUtiên
+			var firstCourt = booking.BookingDetails.FirstOrDefault()?.Court;
+			int facilityId = firstCourt?.FacilityId ?? 0;
+			string facilityName = firstCourt?.Facility?.FacilityName ?? "";
 
-        public async Task<ApiResponse<string>> MarkBookingCompleteAsync(int bookingId)
+			Console.WriteLine($"🏢 Found facilityId: {facilityId} for booking {bookingId}");
+
+			var dto = new BookingResponseDto
+			{
+				UserId = booking.UserId,
+				Phone = user.Phone,
+				Email = user.Email,
+				BookingId = booking.BookingId,
+				TotalPrice = booking.TotalPrice ?? 0,
+				CreateDate = booking.CreateAt,
+				CheckInDate = booking.BookingDetails.Min(d => d.CheckInDate),
+				Status = booking.Status?.StatusName ?? "",
+				FacilityId = facilityId, // ✅ THÊM facilityId
+				FacilityName = facilityName, // ✅ THÊM facilityName
+				Slots = booking.BookingDetails.Select(d =>
+				{
+					var court = courtDict.GetValueOrDefault(d.CourtId);
+					var slot = slotDict.GetValueOrDefault(d.TimeSlotId);
+
+					return new BookingSlotDto
+					{
+						CourtId = d.CourtId,
+						TimeSlotId = d.TimeSlotId,
+						StartTime = slot?.StartTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+						EndTime = slot?.EndTime.GetValueOrDefault().ToTimeSpan() ?? TimeSpan.Zero,
+						CourtName = court?.CourtName ?? "",
+						CategoryName = court?.Category?.CategoryName ?? ""
+					};
+				}).ToList()
+			};
+
+			return new ApiResponse<BookingResponseDto>
+			{
+				Success = true,
+				Status = 200,
+				Message = "Lấy chi tiết booking thành công",
+				Data = dto
+			};
+		}
+
+		public async Task<ApiResponse<string>> MarkBookingCompleteAsync(int bookingId)
         {
             var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 

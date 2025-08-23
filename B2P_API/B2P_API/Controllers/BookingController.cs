@@ -228,19 +228,99 @@ namespace B2P_API.Controllers
 			}
 		}
 
-        [HttpPost("{id}/cancel")]
-        public async Task<IActionResult> MarkCancel(int id)
-        {
-           
-                var result = await _bookingService.MarkBookingCancelledAsync(id);
+		[HttpPost("{id}/cancel")]
+		public async Task<IActionResult> MarkCancel(int id)
+		{
+			try
+			{
+				Console.WriteLine($"🔄 [2025-08-22 18:51:52] User bachnhhe173308 - Cancelling booking {id}...");
 
-               
+				var result = await _bookingService.MarkBookingCancelledAsync(id);
 
-                return StatusCode(result.Status, result);
-            
-        }
+				if (result.Success)
+				{
+					Console.WriteLine($"✅ Booking {id} cancelled successfully, fetching details...");
 
-        [HttpGet("available-slots")]
+					// ✅ SỬ DỤNG METHOD CŨ NHƯNG ĐÃ CÓ FACILITY ID
+					var bookingDetailsResponse = await _bookingService.GetByIdAsync(id);
+
+					if (bookingDetailsResponse.Success && bookingDetailsResponse.Data != null)
+					{
+						var bookingData = bookingDetailsResponse.Data;
+
+						Console.WriteLine($"📄 Booking data:");
+						Console.WriteLine($"   FacilityId: {bookingData.FacilityId}");
+						Console.WriteLine($"   FacilityName: {bookingData.FacilityName}");
+
+						// ✅ LẤY FACILITY ID TỪ RESPONSE
+						int facilityId = bookingData.FacilityId;
+
+						if (facilityId == 0)
+						{
+							Console.WriteLine($"⚠️ WARNING: Could not get facilityId, skipping notification");
+							return StatusCode(result.Status, result);
+						}
+
+						// ✅ LẤY THÔNG TIN TỪ SLOTS
+						string courtName = "Sân thể thao";
+						string timeSlot = "N/A";
+						int courtId = 0;
+
+						if (bookingData.Slots != null && bookingData.Slots.Count > 0)
+						{
+							var firstSlot = bookingData.Slots[0];
+							courtName = firstSlot.CourtName ?? "Sân thể thao";
+							courtId = firstSlot.CourtId;
+
+							var startTime = firstSlot.StartTime.ToString(@"hh\:mm");
+							var endTime = firstSlot.EndTime.ToString(@"hh\:mm");
+							timeSlot = $"{startTime} - {endTime}";
+						}
+
+						// ✅ FORMAT DATE
+						string dateStr = bookingData.CheckInDate.ToString("dd/MM/yyyy");
+
+						var cancelNotificationData = new
+						{
+							bookingId = id,
+							facilityId = facilityId,
+							courtId = courtId,
+							courtName = courtName,
+							customerName = bookingData.Email?.Split('@')[0] ?? "Khách",
+							customerEmail = bookingData.Email,
+							customerPhone = bookingData.Phone,
+							date = dateStr,
+							timeSlot = timeSlot,
+							totalAmount = bookingData.TotalPrice,
+							status = "Cancelled",
+							statusId = 9,
+							statusDescription = "Đã hủy",
+							action = "cancelled",
+							reason = "Booking cancelled by court owner",
+							message = "Đơn đặt sân đã bị hủy",
+							timestamp = DateTime.UtcNow.ToString("o")
+						};
+
+						Console.WriteLine($"📤 Sending cancellation to facility_{facilityId}:");
+						Console.WriteLine(JsonConvert.SerializeObject(cancelNotificationData, Formatting.Indented));
+
+						// ✅ GỬI THÔNG BÁO
+						await _notificationService.NotifyBookingCancelled(facilityId, cancelNotificationData);
+
+						Console.WriteLine($"✅ Cancellation notification sent to facility_{facilityId}");
+					}
+				}
+
+				return StatusCode(result.Status, result);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error in MarkCancel: {ex.Message}");
+				return StatusCode(500, new { message = ex.Message });
+			}
+		}
+
+		[HttpGet("available-slots")]
 		public async Task<IActionResult> GetAvailableSlots(
 			[FromQuery] int facilityId,
 			[FromQuery] int categoryId,

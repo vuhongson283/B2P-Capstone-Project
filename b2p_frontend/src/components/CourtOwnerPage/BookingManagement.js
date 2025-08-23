@@ -1071,15 +1071,9 @@ const BookingManagement = () => {
             return [];
         }
 
-        const selectedCategory = modalCategories.find(
-            cat => String(cat.categoryId) === String(selectedCategoryId)
-        );
-
-        if (!selectedCategory) return [];
-
-        const categoryName = selectedCategory.categoryName;
-        const courtsOfSelectedCategory = courts.filter(court =>
-            court.categoryName === categoryName
+        // Lấy đúng categoryId (dạng string hoặc number)
+        const courtsOfSelectedCategory = courts.filter(
+            court => String(court.categoryId) === String(selectedCategoryId)
         );
 
         if (courtsOfSelectedCategory.length === 0) return [];
@@ -1087,14 +1081,14 @@ const BookingManagement = () => {
         const availableTimeSlots = timeSlots.filter(timeSlot => {
             const hasAvailableSlot = courtsOfSelectedCategory.some(court => {
                 const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, timeSlot);
-                return !bookingData[bookingKey];
+                return !bookingData[bookingKey] || bookingData[bookingKey]?.status === 'cancelled';
             });
 
             return hasAvailableSlot;
         });
 
         return availableTimeSlots;
-    }, [modalCategories, courts, timeSlots, selectedDate, getBookingKey, bookingData, createBookingForm]);
+    }, [courts, timeSlots, selectedDate, getBookingKey, bookingData, createBookingForm]);
 
     const renderTimeSlotGrid = useCallback(() => {
         if (loading.timeSlots) {
@@ -1126,17 +1120,14 @@ const BookingManagement = () => {
 
         return availableSlots.map(slot => {
             const selectedCategoryId = createBookingForm.getFieldValue('categoryId');
-            const selectedCategory = modalCategories.find(
-                cat => String(cat.categoryId) === String(selectedCategoryId)
-            );
-
-            const courtsOfCategory = courts.filter(court =>
-                court.categoryName === selectedCategory?.categoryName
+            // Sửa đoạn này: so sánh categoryId thay vì categoryName
+            const courtsOfCategory = courts.filter(
+                court => String(court.categoryId) === String(selectedCategoryId)
             );
 
             const availableCourtsCount = courtsOfCategory.filter(court => {
                 const bookingKey = getBookingKey(court.courtId || court.id, selectedDate, slot);
-                return !bookingData[bookingKey];
+                return !bookingData[bookingKey] || bookingData[bookingKey]?.status === 'cancelled';
             }).length;
 
             return (
@@ -1832,7 +1823,6 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
-                        {/* Customer Info Section */}
                         <div className="customer-info">
                             <h3>Thông tin khách hàng</h3>
                             <div className="customer-details">
@@ -1868,7 +1858,6 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
-                        {/* Payment status display */}
                         <div className="payment-status">
                             <div className="payment-info">
                                 {selectedBooking.paymentStatus === 'deposit' ? (
@@ -1898,10 +1887,9 @@ const BookingManagement = () => {
                             </div>
                         </div>
 
-                        {/* Modal Actions */}
                         <div className="modal-actions">
                             <Button onClick={closeModal}>Đóng</Button>
-                            {selectedBooking.status === 'paid' ? (
+                            {selectedBooking.status === 'paid' && !dayjs(selectedBooking.checkInDate).isAfter(dayjs(), 'day') ? (
                                 <Button
                                     type="primary"
                                     className="action-button"
