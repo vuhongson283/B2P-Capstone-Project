@@ -33,20 +33,21 @@ namespace B2P_API.Repository
 
             var openTime = facility.TimeSlots.Any() ? facility.TimeSlots.Min(t => t.StartTime) : null;
             var closeTime = facility.TimeSlots.Any() ? facility.TimeSlots.Max(t => t.EndTime) : null;
-
             var categories = await _context.Courts
-                .Where(c => c.FacilityId == facilityId)
-                .Select(c => c.CategoryId)
-                .Distinct()
-                .Join(_context.CourtCategories,
-                      cid => cid,
-                      cat => cat.CategoryId,
-                      (cid, cat) => new CategoryDto
-                      {
-                          CategoryId = cat.CategoryId,
-                          CategoryName = cat.CategoryName
-                      })
-                .ToListAsync();
+    .Where(c => c.FacilityId == facilityId)
+    .GroupBy(c => c.CategoryId)
+    .Select(g => new CategoryDto
+    {
+        CategoryId = g.Key.Value,
+        CategoryName = _context.CourtCategories
+            .Where(cat => cat.CategoryId == g.Key)
+            .Select(cat => cat.CategoryName)
+            .FirstOrDefault(),
+        PricePerHour = g.Select(c => c.PricePerHour).FirstOrDefault()
+    })
+    .ToListAsync();
+
+
 
             // Lấy danh sách rating
             var ratings = await (from r in _context.Ratings
