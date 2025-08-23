@@ -509,25 +509,50 @@ const FacilityTable = () => {
   };
 
   // ✅ HANDLE PREVIEW IMAGE
+
   const handlePreviewImage = (imageUrl, caption) => {
-    // Extract file ID từ URL gốc
-    let fileId = imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
-      imageUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
-
-    // Tạo preview URL với size lớn hơn
-    let previewUrl = imageUrl;
-
-    if (fileId) {
-      // Dùng googleusercontent.com với size lớn cho preview
-      previewUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1200-h800-c`;
-    }
+  // Convert URL trước khi đưa vào modal
+  const convertedUrl = convertGoogleDriveUrl(imageUrl);
+  
+  Modal.info({
+    title: caption || 'Xem ảnh',
+    content: (
+      <div style={{ textAlign: 'center' }}>
+        <img
+          src={convertedUrl}
+          alt="Preview"
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
+          style={{
+            maxWidth: '100%',
+            maxHeight: '500px',
+            objectFit: 'contain',
+            borderRadius: '8px'
+          }}
+          onError={(e) => {
+            // Nếu converted URL fail, thử URL gốc
+            if (e.target.src !== imageUrl) {
+              e.target.src = imageUrl;
+            } else {
+              e.target.src = "/src/assets/images/default.jpg";
+            }
+          }}
+        />
+      </div>
+    ),
+    width: 700,
+    okText: 'Đóng',
+  });
+};
+  const handlePreviewImageFromElement = (imgElement, caption) => {
+    const currentSrc = imgElement.src; // Lấy src hiện tại của img đã load thành công
 
     Modal.info({
       title: caption || 'Xem ảnh',
       content: (
         <div style={{ textAlign: 'center' }}>
           <img
-            src={previewUrl}
+            src={currentSrc} // Dùng src đã work từ img tag
             alt="Preview"
             style={{
               maxWidth: '100%',
@@ -536,12 +561,7 @@ const FacilityTable = () => {
               borderRadius: '8px'
             }}
             onError={(e) => {
-              // CHỈ fallback 1 lần duy nhất về URL gốc
-              if (e.target.src !== imageUrl) {
-                e.target.src = imageUrl;
-              } else {
-                e.target.src = "/src/assets/images/default.jpg";
-              }
+              e.target.src = "/src/assets/images/default.jpg";
             }}
           />
         </div>
