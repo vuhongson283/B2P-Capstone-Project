@@ -143,6 +143,8 @@
     .action-buttons {
       display: flex;
       justify-content: center;
+      flex-direction: row;
+      margin-top: 0 !important;
       align-items: center;
       gap: 16px;
 
