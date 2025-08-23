@@ -165,26 +165,22 @@ namespace B2P_API.Services
                 var cacheKey = $"otp_{contact}_{request.SessionToken}";
                 if (!_cache.TryGetValue(cacheKey, out dynamic? otpData))
                 {
-                    Console.WriteLine($"❌ OTP cache miss for key: {cacheKey}");
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
                         Message = "OTP hết hạn hoặc session không hợp lệ",
-                        Status = 400,
-                        Data = null
+                        Status = 400
                     };
                 }
 
                 // Kiểm tra OTP
                 if (otpData.Code != request.Otp)
                 {
-                    Console.WriteLine($"❌ OTP mismatch. Expected: {otpData.Code}, Received: {request.Otp}");
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
                         Message = "Mã OTP không đúng",
-                        Status = 400,
-                        Data = null
+                        Status = 400
                     };
                 }
 
@@ -192,252 +188,108 @@ namespace B2P_API.Services
                 _cache.Remove(cacheKey);
                 _cache.Remove($"otp_rate_limit_{contact}");
 
-                // ✅ SAFE ACCESS ĐẾN CÁC THUỘC TÍNH TỪNG BƯỚC
+                // Thông tin user
                 bool isEmail = (bool)(GetSafeProperty(otpData, "IsEmail") ?? false);
                 bool isNewUser = (bool)(GetSafeProperty(otpData, "IsNewUser") ?? false);
-                bool isGoogleLogin = (bool)(GetSafeProperty(otpData, "IsGoogleLogin") ?? false);
-
-                int? existingUserId = null;
-                var userIdValue = GetSafeProperty(otpData, "UserId");
-                if (userIdValue != null)
-                {
-                    if (int.TryParse(userIdValue.ToString(), out int parsedUserId))
-                    {
-                        existingUserId = parsedUserId;
-                    }
-                }
-
-                Console.WriteLine($"🔍 Verifying OTP: {contact} (Email: {isEmail}, Google: {isGoogleLogin}, New: {isNewUser}, ExistingUserId: {existingUserId})");
 
                 User user = null;
 
-                // CASE 1: User mới (chưa tồn tại trong DB)
                 if (isNewUser)
                 {
-                    Console.WriteLine($"🆕 Creating new user for: {contact}");
-
-                    try
+                    // Tạo user mới
+                    user = new User
                     {
-                        if (isGoogleLogin)
-                        {
-                            // TẠO GOOGLE USER MỚI
-                            string googleName = GetSafeProperty(otpData, "GoogleName")?.ToString() ?? $"User {contact.Split('@')[0]}";
+                        Phone = isEmail ? null : contact,
+                        Email = isEmail ? contact : $"{contact}@b2p.temp",
+                        FullName = isEmail
+                            ? $"User {contact.Split('@')[0]}"
+                            : $"User {contact.Substring(contact.Length - 4)}",
+                        StatusId = 1,
+                        RoleId = 2,
+                        CreateAt = DateTime.UtcNow,
+                        Address = "",
+                        Password = null
+                    };
 
-                            user = new User
-                            {
-                                Email = contact,
-                                FullName = googleName,
-                                Phone = null,
-                                IsMale = null,
-                                RoleId = 2,
-                                StatusId = 1,
-                                CreateAt = DateTime.UtcNow,
-                                Password = null,
-                                Address = "",
-                                Dob = null
-                            };
-
-                            Console.WriteLine($"🔨 Creating Google user: Email={user.Email}, FullName={user.FullName}");
-                        }
-                        else
-                        {
-                            // TẠO REGULAR USER MỚI
-                            user = new User
-                            {
-                                Phone = isEmail ? null : contact,
-                                Email = isEmail ? contact : $"{contact}@b2p.temp",
-                                FullName = isEmail
-                                    ? $"User {contact.Split('@')[0]}"
-                                    : $"User {contact.Substring(contact.Length - 4)}",
-                                StatusId = 1,
-                                RoleId = 2,
-                                CreateAt = DateTime.UtcNow,
-                                Address = "",
-                                Password = null
-                            };
-
-                            Console.WriteLine($"🔨 Creating regular user: Email={user.Email}, Phone={user.Phone}");
-                        }
-
-                        user = await _authRepository.CreateUserAsync(user);
-                        Console.WriteLine($"✅ New user created successfully: ID={user.UserId}");
-
-                        // TẠO ẢNH MẶC ĐỊNH CHO GOOGLE USER
-                        if (isGoogleLogin)
-                        {
-                            try
-                            {
-                                var defaultImage = await _imageRepository.CreateUserDefaultImageAsync(user.UserId);
-                                if (defaultImage != null)
-                                {
-                                    Console.WriteLine($"✅ Default image created - ImageId: {defaultImage.ImageId}");
-                                }
-                            }
-                            catch (Exception imageEx)
-                            {
-                                Console.WriteLine($"⚠️ Could not create default image: {imageEx.Message}");
-                            }
-                        }
-                    }
-                    catch (Exception createEx)
-                    {
-                        Console.WriteLine($"❌ Failed to create user: {createEx.Message}");
-                        throw new Exception($"Không thể tạo tài khoản: {createEx.Message}");
-                    }
+                    user = await _authRepository.CreateUserAsync(user);
                 }
-                // CASE 2: User đã tồn tại nhưng không có password (Google user existing)
-                else if (existingUserId.HasValue)
-                {
-                    Console.WriteLine($"🔍 Loading existing user by ID: {existingUserId.Value}");
-
-                    try
-                    {
-                        user = await _authRepository.GetUserByIdAsync(existingUserId.Value);
-
-                        if (user == null)
-                        {
-                            Console.WriteLine($"❌ User with ID {existingUserId.Value} not found in database");
-                            // ✅ FIX: Fallback sử dụng GetUserByEmailOrPhoneAsync để match với CheckUserExistAsync
-                            user = await _authRepository.GetUserByEmailOrPhoneAsync(contact);
-                        }
-
-                        Console.WriteLine($"✅ Found existing user: ID={user?.UserId}, HasPassword={!string.IsNullOrEmpty(user?.Password)}");
-                    }
-                    catch (Exception getUserEx)
-                    {
-                        Console.WriteLine($"❌ Error getting existing user: {getUserEx.Message}");
-                        throw;
-                    }
-                }
-                // CASE 3: Fallback - tìm user theo email/phone (không nên xảy ra với logic mới)
                 else
                 {
-                    Console.WriteLine($"⚠️ Fallback: Searching user by contact: {contact}");
-
-                    try
-                    {
-                        // ✅ FIX: Sử dụng GetUserByEmailOrPhoneAsync thay vì tách riêng
-                        user = await _authRepository.GetUserByEmailOrPhoneAsync(contact);
-
-                        Console.WriteLine($"🔍 Fallback search result: Found={user != null}");
-                    }
-                    catch (Exception searchEx)
-                    {
-                        Console.WriteLine($"❌ Error in fallback search: {searchEx.Message}");
-                        throw;
-                    }
+                    // Lấy user cũ
+                    user = await _authRepository.GetUserByEmailOrPhoneAsync(contact);
                 }
 
-                // KIỂM TRA USER CÓ TỒN TẠI
                 if (user == null)
                 {
-                    Console.WriteLine($"❌ User is null after all operations");
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
                         Message = "Không thể tìm thấy hoặc tạo user",
-                        Status = 500,
-                        Data = null
+                        Status = 500
                     };
                 }
 
-                // KIỂM TRA STATUSID
                 if (user.StatusId != 1)
                 {
-                    Console.WriteLine($"❌ User {contact} has inactive status: {user.StatusId}");
                     return new ApiResponse<TokenResponseDto>
                     {
                         Success = false,
                         Message = "Tài khoản đã bị khóa hoặc vô hiệu hóa",
-                        Status = 403,
-                        Data = null
+                        Status = 403
                     };
                 }
 
-                Console.WriteLine($"✅ User validation passed: ID={user.UserId}, Status={user.StatusId}");
+                // Generate JWT
+                var tokens = _jwtHelper.GenerateTokens(user);
 
-                // GENERATE JWT TOKENS
-                try
+                await _authRepository.SaveUserTokenAsync(new UserToken
                 {
-                    var tokens = _jwtHelper.GenerateTokens(user);
-                    Console.WriteLine($"✅ JWT tokens generated successfully");
+                    UserId = user.UserId,
+                    AccessToken = tokens.AccessToken,
+                    RefreshToken = tokens.RefreshToken
+                });
 
-                    // Save tokens
-                    var userToken = new UserToken
+                var response = new TokenResponseDto
+                {
+                    AccessToken = tokens.AccessToken,
+                    RefreshToken = tokens.RefreshToken,
+                    ExpiresAt = tokens.ExpiresAt,
+                    TokenType = tokens.TokenType,
+                    IsNewUser = isNewUser,
+                    User = new UserInfoDto
                     {
                         UserId = user.UserId,
-                        AccessToken = tokens.AccessToken,
-                        RefreshToken = tokens.RefreshToken
-                    };
-
-                    await _authRepository.SaveUserTokenAsync(userToken);
-                    Console.WriteLine($"✅ User tokens saved to database");
-
-                    // ✅ SAFE ACCESS ĐẾN GoogleSubject
-                    string googleSubject = null;
-                    if (isGoogleLogin)
-                    {
-                        googleSubject = GetSafeGoogleSubject(otpData);
+                        Phone = user.Phone,
+                        FullName = user.FullName ?? "",
+                        Email = user.Email ?? "",
+                        IsMale = user.IsMale,
+                        Dob = user.Dob,
+                        RoleId = user.RoleId,
+                        RoleName = user.Role?.RoleName ?? "User",
+                        CreateAt = user.CreateAt,
+                        IsGoogleUser = false
                     }
+                };
 
-                    // Tạo response
-                    var response = new TokenResponseDto
-                    {
-                        AccessToken = tokens.AccessToken,
-                        RefreshToken = tokens.RefreshToken,
-                        ExpiresAt = tokens.ExpiresAt,
-                        TokenType = tokens.TokenType,
-                        IsNewUser = isNewUser,
-                        User = new UserInfoDto
-                        {
-                            UserId = user.UserId,
-                            Phone = user.Phone ?? null,
-                            FullName = user.FullName ?? "",
-                            Email = user.Email ?? "",
-                            IsMale = user.IsMale,
-                            Dob = user.Dob,
-                            RoleId = user.RoleId,
-                            RoleName = user.Role?.RoleName ?? "User",
-                            CreateAt = user.CreateAt,
-                            IsGoogleUser = isGoogleLogin,
-                            GoogleId = googleSubject
-                        }
-                    };
-
-                    string successMessage = isGoogleLogin
-                        ? (isNewUser ? "Tài khoản Google đã được tạo và đăng nhập thành công" : "Đăng nhập Google thành công")
-                        : (isNewUser ? "Tài khoản đã được tạo và đăng nhập thành công" : "Đăng nhập thành công");
-
-                    Console.WriteLine($"✅ Login successful: {successMessage}");
-
-                    return new ApiResponse<TokenResponseDto>
-                    {
-                        Success = true,
-                        Message = successMessage,
-                        Status = 200,
-                        Data = response
-                    };
-                }
-                catch (Exception tokenEx)
+                return new ApiResponse<TokenResponseDto>
                 {
-                    Console.WriteLine($"❌ Error generating/saving tokens: {tokenEx.Message}");
-                    throw new Exception($"Lỗi tạo token: {tokenEx.Message}");
-                }
+                    Success = true,
+                    Message = isNewUser ? "Tài khoản đã được tạo và đăng nhập thành công" : "Đăng nhập thành công",
+                    Status = 200,
+                    Data = response
+                };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ General error in VerifyOtpAndLoginAsync: {ex.Message}");
-                Console.WriteLine($"❌ Full stack trace: {ex.StackTrace}");
-
                 return new ApiResponse<TokenResponseDto>
                 {
                     Success = false,
                     Message = $"Đăng nhập thất bại: {ex.Message}",
-                    Status = 500,
-                    Data = null
+                    Status = 500
                 };
             }
         }
+
         public async Task<ApiResponse<TokenResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto request)
         {
             try
