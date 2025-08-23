@@ -510,9 +510,16 @@ const FacilityTable = () => {
 
   // ✅ HANDLE PREVIEW IMAGE
   const handlePreviewImage = (imageUrl, caption) => {
+    // Extract file ID từ URL gốc
+    let fileId = imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+      imageUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+
+    // Tạo preview URL với size lớn hơn
     let previewUrl = imageUrl;
-    if (imageUrl.includes('thumbnail')) {
-      previewUrl = imageUrl.replace('thumbnail', 'uc');
+
+    if (fileId) {
+      // Dùng googleusercontent.com với size lớn cho preview
+      previewUrl = `https://lh3.googleusercontent.com/d/${fileId}=w1200-h800-c`;
     }
 
     Modal.info({
@@ -529,7 +536,12 @@ const FacilityTable = () => {
               borderRadius: '8px'
             }}
             onError={(e) => {
-              e.target.src = imageUrl;
+              // CHỈ fallback 1 lần duy nhất về URL gốc
+              if (e.target.src !== imageUrl) {
+                e.target.src = imageUrl;
+              } else {
+                e.target.src = "/src/assets/images/default.jpg";
+              }
             }}
           />
         </div>
@@ -1526,18 +1538,19 @@ const FacilityTable = () => {
                           cover={
                             <div style={{ height: 120, overflow: 'hidden' }}>
                               <img
-                                src={image.imageUrl}
+                                src={convertGoogleDriveUrl(image.imageUrl)}
                                 alt={image.caption || 'Facility image'}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
                                 style={{
                                   width: '100%',
                                   height: '100%',
                                   objectFit: 'cover',
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  display: 'block'
                                 }}
                                 onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
-                                onError={(e) => {
-                                  e.target.src = "https://placehold.co/300x200?text=Error+Loading";
-                                }}
+                                onError={(e) => handleImageError(e, image.imageUrl)}
                               />
                             </div>
                           }
