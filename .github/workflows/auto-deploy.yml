@@ -53,3 +53,6 @@ jobs:
             docker compose build --no-cache b2p-api
             docker compose up --no-deps --force-recreate -d b2p-api
             docker image prune -a -f
+            docker compose build --no-cache b2p-fe
+            docker compose up --no-deps --force-recreate -d b2p-fe
+            docker image prune -a -f
