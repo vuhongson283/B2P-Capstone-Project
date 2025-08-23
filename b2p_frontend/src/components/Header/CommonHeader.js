@@ -545,13 +545,6 @@ const CommonHeader = (props) => {
                   >
                     Đăng Nhập
                   </button>
-
-                  <button
-                    className="btn-signup btn"
-                    onClick={() => navigate("/register")}
-                  >
-                    Đăng ký
-                  </button>
                 </>
               )}
             </div>
