@@ -8,6 +8,7 @@ import {
   getTotalReport,
   exportReportToExcel,
   checkCommission,
+  createPaymentOrder, // ✅ THÊM IMPORT
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
 import { Chart as ChartJS, registerables } from 'chart.js';
@@ -656,31 +657,97 @@ const OwnerDashboard = () => {
     // ✅ HÀM XỬ LÝ THANH TOÁN
     const handlePayment = async () => {
       try {
+        const commissionAmount = dashboardData.commissionPayment;
+        const month = selectedMonth.getMonth() + 1;
+        const year = selectedMonth.getFullYear();
+        
         console.log(`💳 Processing payment for ${month}/${year}: ${commissionAmount}đ`);
         
-        // TODO: Gọi API thanh toán commission ở đây
-        // const paymentResponse = await payCommission(userId, month, year, commissionAmount);
+        // ✅ KIỂM TRA DỮ LIỆU TRƯỚC KHI GỬI
+        if (!userId) {
+          throw new Error("Không tìm thấy userId");
+        }
         
-        alert(`Thanh toán commission cho tháng ${month}/${year} thành công!`);
+        if (!commissionAmount || commissionAmount <= 0) {
+          throw new Error("Số tiền commission không hợp lệ");
+        }
         
-        // ✅ CẬP NHẬT LẠI TRẠNG THÁI COMMISSION
-        setMonthlyCommissions(prev => ({
-          ...prev,
-          [`${month}-${year}`]: {
-            ...prev[`${month}-${year}`],
-            exists: true
+        // ✅ SỬA LẠI CẤU TRÚC DỮ LIỆU THEO YÊU CẦU API
+        const paymentData = {
+          amount: commissionAmount,
+          description: `Thanh toán tiền hoa hồng tháng ${month}/${year}`,
+          appUser: userId?.toString() || user?.userId?.toString(),
+          embedData: {
+            forMonth: month.toString(),
+            forYear: year.toString()
           }
-        }));
+        };
+
+        console.log("📤 Payment request data:", JSON.stringify(paymentData, null, 2));
+
+        // ✅ GỌI API TẠO ĐƠN THANH TOÁN
+        console.log("🚀 Calling createPaymentOrder API...");
+        const paymentResponse = await createPaymentOrder(paymentData);
         
-        // ✅ ĐÓNG MODAL COMMISSION VÀ MỞ LẠI MODAL DANH SÁCH
-        setShowCommissionModal(false);
-        setTimeout(() => {
-          setShowCommissionListModal(true);
-        }, 300);
+        console.log("📥 Full payment response:", paymentResponse);
+
+        // ✅ SỬA LẠI: KIỂM TRA RESPONSE TRỰC TIẾP (KHÔNG CẦN .status VÀ .data)
+        // Vì axios interceptor có thể đã xử lý và trả về response.data trực tiếp
+        if (paymentResponse && paymentResponse.success) {
+          console.log("✅ Payment API returned success=true");
+          
+          // ✅ KIỂM TRA order_url TRỰC TIẾP TRONG paymentResponse
+          if (paymentResponse.data && paymentResponse.data.order_url) {
+            console.log("✅ Payment order created successfully");
+            console.log("🔗 Opening payment page:", paymentResponse.data.order_url);
+            
+            // ✅ MỞ TAB MỚI
+            const paymentWindow = window.open(
+              paymentResponse.data.order_url, 
+              '_blank', 
+              'noopener,noreferrer'
+            );
+            // ✅ ĐÓNG MODAL SAU KHI MỞ THANH TOÁN
+            setShowCommissionModal(false);
+            
+            
+          } else {
+            console.error("❌ Missing order_url in response:", paymentResponse);
+            alert("Không thể tạo đơn thanh toán: Thiếu đường link thanh toán");
+          }
+        } else {
+          console.error("❌ Payment creation failed:", paymentResponse);
+          const errorMsg = paymentResponse?.message || "Lỗi không xác định từ API";
+          alert("Không thể tạo đơn thanh toán: " + errorMsg);
+        }
         
       } catch (error) {
-        console.error("Error processing payment:", error);
-        alert("Có lỗi xảy ra khi thanh toán: " + error.message);
+        console.error("❌ Error processing payment:", error);
+        
+        let errorMessage = "Có lỗi xảy ra khi thanh toán: ";
+        
+        if (error.response) {
+          // ✅ API trả về lỗi HTTP
+          console.error("❌ HTTP Error response:", error.response);
+          const responseData = error.response.data;
+          
+          if (responseData && responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData && typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else {
+            errorMessage += `HTTP ${error.response.status}`;
+          }
+          
+        } else if (error.request) {
+          console.error("❌ Network Error:", error.request);
+          errorMessage += "Không thể kết nối đến server";
+        } else {
+          console.error("❌ Other Error:", error);
+          errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
       }
     };
 
@@ -981,7 +1048,7 @@ const OwnerDashboard = () => {
                 <p>Không có dữ liệu để hiển thị</p>
               )}
             </div>
-          </Col>
+          </Col >
         </Row>
       </div>
 
