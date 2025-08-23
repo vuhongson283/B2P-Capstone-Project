@@ -8,7 +8,7 @@ import { MenuOutlined } from "@ant-design/icons";
 // ✅ ADD: Import comment notification components
 import { SignalRProvider } from "../../contexts/SignalRContext";
 import { GlobalCommentNotificationProvider } from "../../contexts/GlobalCommentNotificationContext";
-import NotificationDropdown from "../NotificationDropdown.js";
+import NotificationDropdown from "../NotificationDropdown";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Admin = (props) => {

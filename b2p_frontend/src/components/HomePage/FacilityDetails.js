@@ -778,7 +778,7 @@ const FacilityDetails = () => {
       {/* Full Width Main Layout */}
       <div className="facility-main" style={{ marginTop: '2%' }}>
         {/* Left: Full width image with title below */}
-        <div className="facility-image-section" style={{ marginTop: '-2.5%' }}>
+        <div className="facility-image-section" style={{ marginTop: '-5.5%' }}>
           <div className="facility-title-section" style={{ marginBottom: '2%' }}>
             <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
           </div>
