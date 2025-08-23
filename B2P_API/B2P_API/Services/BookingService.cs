@@ -1034,67 +1034,63 @@ namespace B2P_API.Services
                 Message = "Đã đánh dấu cancel booking thành công."
             };
         }
-        public virtual async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId, string? TransactionCode)
-        {
-            var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
+		public virtual async Task<ApiResponse<string>> MarkBookingPaidAsync(int bookingId, string? TransactionCode)
+		{
+			var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 
-            if (booking == null)
-            {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Status = 404,
-                    Message = "Không tìm thấy booking."
-                };
-            }
+			if (booking == null)
+			{
+				return new ApiResponse<string>
+				{
+					Success = false,
+					Status = 404,
+					Message = "Không tìm thấy booking."
+				};
+			}
 
-            if (booking.StatusId == 10)
-            {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Status = 400,
-                    Message = "Booking đã hoàn thành trước đó."
-                };
-            }
+			if (booking.StatusId == 10)
+			{
+				return new ApiResponse<string>
+				{
+					Success = false,
+					Status = 400,
+					Message = "Booking đã hoàn thành trước đó."
+				};
+			}
 
-            var today = DateTime.Today;
-            var earliestCheckIn = booking.BookingDetails.Min(d => d.CheckInDate.Date);
+			var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-            
+			if (!allowedStatusToComplete.Contains(booking.StatusId))
+			{
+				return new ApiResponse<string>
+				{
+					Success = false,
+					Status = 400,
+					Message = "Trạng thái hiện tại không cho phép hoàn thành thanh toán."
+				};
+			}
 
-            var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+			if (!string.IsNullOrEmpty(TransactionCode))
+			{
+				booking.TransactionCode = TransactionCode;
+			}
+			booking.StatusId = 7;
 
-            if (!allowedStatusToComplete.Contains(booking.StatusId))
-            {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Status = 400,
-                    Message = "Trạng thái hiện tại không cho phép hoàn thành thanh toan."
-                };
-            }
+			foreach (var detail in booking.BookingDetails)
+			{
+				detail.StatusId = 7;
+			}
 
-            if (TransactionCode != null) {
-                booking.TransactionCode = TransactionCode;
-            }
-            booking.StatusId = 7;
-
-            foreach (var detail in booking.BookingDetails)
-            {
-                detail.StatusId = 7;
-            }
-
-            var success = await _bookingRepo.SaveAsync();
+			var success = await _bookingRepo.SaveAsync();
 
 			if (success)
 			{
-				// Lấy lại booking chi tiết để lấy thông tin slot, court, date, v.v.
 				var bookingDetails = await _bookingRepo.GetBookingWithDetailsByIdAsync(bookingId);
 				var user = await _accRepo.GetByIdAsync(bookingDetails.UserId.Value);
 
 				foreach (var detail in bookingDetails.BookingDetails)
 				{
+					Console.WriteLine($"[SignalR] Sending BookingUpdated: bookingId={bookingId}, facilityId={detail.Court.FacilityId}, courtId={detail.CourtId}, status=paid");
 					await _hubContext.Clients.Group(detail.Court.FacilityId.ToString()).SendAsync("BookingUpdated", new
 					{
 						bookingId = bookingId,
@@ -1115,29 +1111,30 @@ namespace B2P_API.Services
 				}
 			}
 
-			// Gửi SignalR message
+			// Gửi SignalR message cho các handler khác nếu cần
 			try
-            {
-                await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
-                {
-                    BookingId = bookingId
-                });
+			{
+				await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
+				{
+					BookingId = bookingId
+				});
 
-                Console.WriteLine($"[SignalR] Message sent successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SignalR] Error sending message: {ex.Message}");
-            }
-            return new ApiResponse<string>
-            {
-                Success = true,
-                Status = 200,
-                Message = "Đã đánh dấu booking là paid thành công."
-            };
-        }
+				Console.WriteLine($"[SignalR] Message sent successfully");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[SignalR] Error sending message: {ex.Message}");
+			}
 
-        public async Task<ApiResponse<List<TimeSlotAvailability>>> GetTimeSlotAvailabilityAsync(
+			return new ApiResponse<string>
+			{
+				Success = true,
+				Status = 200,
+				Message = "Đã đánh dấu booking là paid thành công."
+			};
+		}
+
+		public async Task<ApiResponse<List<TimeSlotAvailability>>> GetTimeSlotAvailabilityAsync(
         int facilityId, int categoryId, DateTime checkInDate)
         {
             var result = await _bookingRepo.GetAvailableCourtCountPerSlotAsync(

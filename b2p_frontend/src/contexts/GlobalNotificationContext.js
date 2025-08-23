@@ -345,7 +345,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
         // ✅ Set handlers directly on signalRService
         signalRService.on('onBookingCreated', handleGlobalBookingCreated);
-        signalRService.on('onBookingUpdated', handleGlobalBookingUpdated);
+        signalRService.on('BookingUpdated', handleGlobalBookingUpdated);
         signalRService.on('onBookingCompleted', handleGlobalBookingUpdated);
         signalRService.on('onBookingCancelled', handleGlobalBookingUpdated);
         signalRService.on('onConnectionChanged', handleConnectionChanged);

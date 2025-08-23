@@ -96,8 +96,14 @@ class SignalRService {
         });
 
         this.connection.on('BookingUpdated', (notification) => {
+            console.log('📝 [DEBUG] BookingUpdated received:', notification);
+            console.log('📝 [DEBUG] Status:', notification.status);
+            console.log('📝 [DEBUG] StatusId:', notification.statusId);
+            console.log('📝 [DEBUG] Timestamp:', new Date().toISOString());
+            console.log('📝 [DEBUG] Full notification object:', JSON.stringify(notification, null, 2));
+
             console.log('📝 Booking updated:', notification);
-            this.eventHandlers.onBookingUpdated?.(notification);
+            this.eventHandlers.BookingUpdated?.(notification);
         });
 
         this.connection.on('BookingCompleted', (notification) => {
@@ -111,8 +117,14 @@ class SignalRService {
         });
 
         this.connection.on('ReceiveBookingUpdate', (notification) => {
-            console.log('🔄 Received booking update:', notification);
-            this.eventHandlers.onBookingUpdated?.(notification);
+            console.log('📝 [DEBUG] BookingUpdated received:', notification);
+            console.log('📝 [DEBUG] Status:', notification.status);
+            console.log('📝 [DEBUG] StatusId:', notification.statusId);
+            console.log('📝 [DEBUG] Timestamp:', new Date().toISOString());
+            console.log('📝 [DEBUG] Full notification object:', JSON.stringify(notification, null, 2));
+
+            console.log('📝 Booking updated:', notification);
+            this.eventHandlers.BookingUpdated?.(notification);
         });
 
         // ✅ NEW: Comment notification events

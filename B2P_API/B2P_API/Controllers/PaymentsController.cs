@@ -250,78 +250,104 @@ namespace B2P_API.Controllers
         }
 
 
-        [HttpPost("callback")]
-        public async Task<IActionResult> StripeCallback([FromBody] JsonElement payload)
-        {
-            Console.WriteLine(payload); // Log để debug
+		[HttpPost("callback")]
+		public async Task<IActionResult> StripeCallback([FromBody] JsonElement payload)
+		{
+			Console.WriteLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] Stripe webhook received:");
+			Console.WriteLine(payload);
 
-            if (!payload.TryGetProperty("type", out var typeProp))
-            {
-                Console.WriteLine("Webhook không có type");
-                return Ok();
-            }
+			if (!payload.TryGetProperty("type", out var typeProp))
+			{
+				Console.WriteLine("Webhook không có type");
+				return Ok();
+			}
 
-            var eventType = typeProp.GetString();
-            int bookingId = 0;
-            string stripePaymentIntentId = string.Empty;
+			var eventType = typeProp.GetString();
+			int bookingId = 0;
+			string stripePaymentIntentId = string.Empty;
 
-            if (payload.TryGetProperty("data", out var dataProp) &&
-                dataProp.TryGetProperty("object", out var objectProp))
-            {
-                if (objectProp.TryGetProperty("id", out var stripeIdProp))
-                {
-                    stripePaymentIntentId = stripeIdProp.GetString();
-                    Console.WriteLine($"Stripe PaymentIntentId: {stripePaymentIntentId}");
-                }
+			if (payload.TryGetProperty("data", out var dataProp) &&
+				dataProp.TryGetProperty("object", out var objectProp))
+			{
+				if (objectProp.TryGetProperty("id", out var stripeIdProp))
+				{
+					stripePaymentIntentId = stripeIdProp.GetString();
+					Console.WriteLine($"Stripe PaymentIntentId: {stripePaymentIntentId}");
+				}
 
-                if (objectProp.TryGetProperty("metadata", out var metadataProp) &&
-                    metadataProp.TryGetProperty("BookingId", out var bookingIdProp))
-                {
-                    var bookingIdStr = bookingIdProp.GetString();
-                    if (!int.TryParse(bookingIdStr, out bookingId))
-                        Console.WriteLine($"BookingId không hợp lệ: {bookingIdStr}");
-                    else
-                        Console.WriteLine($"BookingId: {bookingId}");
-                }
-            }
+				if (objectProp.TryGetProperty("metadata", out var metadataProp) &&
+					metadataProp.TryGetProperty("BookingId", out var bookingIdProp))
+				{
+					var bookingIdStr = bookingIdProp.GetString();
+					if (!int.TryParse(bookingIdStr, out bookingId))
+						Console.WriteLine($"BookingId không hợp lệ: {bookingIdStr}");
+					else
+						Console.WriteLine($"BookingId: {bookingId}");
+				}
+			}
 
-            if (bookingId == 0)
-            {
-                Console.WriteLine("Webhook không có BookingId, bỏ qua xử lý.");
-                return Ok();
-            }
+			if (bookingId == 0)
+			{
+				Console.WriteLine("Webhook không có BookingId, bỏ qua xử lý.");
+				return Ok();
+			}
 
-            switch (eventType)
-            {
-                case "payment_intent.succeeded":
-                    await _bookingService.MarkBookingCompleteAsync(bookingId);
-                    Console.WriteLine("Merchant đã nhận tiền");
-                    break;
+			try
+			{
+				switch (eventType)
+				{
+					case "payment_intent.succeeded":
+						Console.WriteLine($"Processing payment_intent.succeeded for booking {bookingId}");
+						await _bookingService.MarkBookingCompleteAsync(bookingId);
+						Console.WriteLine("✅ Booking marked as completed - Merchant đã nhận tiền");
+						break;
 
-                case "payment_intent.canceled":
-                    await _bookingService.MarkBookingCancelledAsync(bookingId);
-                    Console.WriteLine("Hủy đơn");
-                    break;
+					case "payment_intent.canceled":
+						Console.WriteLine($"Processing payment_intent.canceled for booking {bookingId}");
+						await _bookingService.MarkBookingCancelledAsync(bookingId);
+						Console.WriteLine("✅ Booking marked as cancelled");
+						break;
 
-                case "payment_intent.amount_capturable_updated":
-                    await _bookingService.MarkBookingPaidAsync(bookingId, stripePaymentIntentId);
-                    Console.WriteLine("Player đã trả tiền (chờ capture)");
-                    break;
+					case "payment_intent.amount_capturable_updated":
+						Console.WriteLine($"Processing payment_intent.amount_capturable_updated for booking {bookingId}");
+						await _bookingService.MarkBookingPaidAsync(bookingId, stripePaymentIntentId);
+						Console.WriteLine("✅ Booking marked as paid - Player đã trả tiền (chờ capture)");
+						break;
 
-                case "payment_intent.created":
-                    Console.WriteLine("Tạo PaymentIntent thành công (không xử lý DB)");
-                    break;
+					// ✅ THÊM CASE MỚI CHO KHI PAYMENT CONFIRM THÀNH CÔNG
+					case "payment_intent.payment_failed":
+						Console.WriteLine($"Processing payment_intent.payment_failed for booking {bookingId}");
+						// Có thể mark booking failed hoặc revert về unpaid
+						break;
 
-                default:
-                    Console.WriteLine($"Sự kiện chưa xử lý: {eventType}");
-                    break;
-            }
+					// ✅ THÊM CASE CHO KHI USER CONFIRM PAYMENT
+					case "payment_intent.requires_capture":
+						Console.WriteLine($"Processing payment_intent.requires_capture for booking {bookingId}");
+						await _bookingService.MarkBookingPaidAsync(bookingId, stripePaymentIntentId);
+						Console.WriteLine("✅ Payment confirmed and ready for capture - marked as paid");
+						break;
 
-            return Ok();
-        }
+					case "payment_intent.created":
+						Console.WriteLine("Tạo PaymentIntent thành công (không xử lý DB)");
+						break;
+
+					default:
+						Console.WriteLine($"⚠️ Sự kiện chưa xử lý: {eventType}");
+						break;
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"❌ Error processing webhook: {ex.Message}");
+				Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+				return StatusCode(500, "Internal server error");
+			}
+
+			return Ok();
+		}
 
 
-        [HttpGet("CheckCommission")]
+		[HttpGet("CheckCommission")]
         public IActionResult CheckCommission(int userId, int month, int year)
         {
             return _paymentService.IsCommissionExist(userId, month, year)
