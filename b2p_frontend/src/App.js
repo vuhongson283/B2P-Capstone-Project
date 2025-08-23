@@ -11,6 +11,7 @@ import { getCurrentLocation } from "./services/locationService";
 
 // ✅ Import providers
 import { SignalRProvider } from "./contexts/SignalRContext";
+import { CustomerSignalRProvider } from "./contexts/CustomerSignalRContext"; // ✅ NEW: Add this
 import { GlobalCommentNotificationProvider } from "./contexts/GlobalCommentNotificationContext";
 
 // ✅ Import useAuth hook
@@ -98,41 +99,45 @@ const App = () => {
 
   return (
     <SignalRProvider>
-      <GlobalCommentNotificationProvider currentUser={currentUser}>
-        <div className="app-container">
-          <div className="header-container">
-            <CommonHeader />
-          </div>
-          <div className="main-container">
-            <div className="app-content">
-              {showSliderAndSearch && (
-                <>
-                  <div className="slider-container">
-                    <SliderField />
-                  </div>
-
-                  <div className="facilities-container">
-                    <FacilitiesRecommend />
-                  </div>
-
-                  {userLocation && (
-                    <div
-                      className="nearby-facilities-container"
-                      style={{ marginTop: "40px" }}
-                    >
-                      <NearbyCourts userLocation={userLocation} />
+      {/* ✅ NEW: Add CustomerSignalRProvider wrapper */}
+      <CustomerSignalRProvider>
+        <GlobalCommentNotificationProvider currentUser={currentUser}>
+          <div className="app-container">
+            <div className="header-container">
+              <CommonHeader />
+            </div>
+            <div className="main-container">
+              <div className="app-content">
+                {showSliderAndSearch && (
+                  <>
+                    <div className="slider-container">
+                      <SliderField />
                     </div>
-                  )}
-                </>
-              )}
-              <Outlet />
+
+                    <div className="facilities-container">
+                      <FacilitiesRecommend />
+                    </div>
+
+                    {userLocation && (
+                      <div
+                        className="nearby-facilities-container"
+                        style={{ marginTop: "40px" }}
+                      >
+                        <NearbyCourts userLocation={userLocation} />
+                      </div>
+                    )}
+                  </>
+                )}
+                <Outlet />
+              </div>
+            </div>
+            <div className="footer-container">
+              <CommonFooter />
             </div>
           </div>
-          <div className="footer-container">
-            <CommonFooter />
-          </div>
-        </div>
-      </GlobalCommentNotificationProvider>
+        </GlobalCommentNotificationProvider>
+      </CustomerSignalRProvider>
+      {/* ✅ END: CustomerSignalRProvider wrapper */}
     </SignalRProvider>
   );
 };

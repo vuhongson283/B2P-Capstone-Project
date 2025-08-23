@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.js';
+import { useCustomerSignalR } from '../../contexts/CustomerSignalRContext.js';
 import './FacilityDetails.scss';
 import { useParams } from 'react-router-dom';
 import BookingModal from "./BookingModal.js";
@@ -15,6 +16,22 @@ const FACILITY_IMAGES = [
   'https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=800&h=600&fit=crop',
   'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
 ];
+
+// ✅ Safe hook wrapper to handle missing provider
+const useSafeCustomerSignalR = () => {
+  try {
+    return useCustomerSignalR();
+  } catch (error) {
+    console.warn('CustomerSignalRProvider not found, using fallback:', error.message);
+    return {
+      isConnected: false,
+      connectionState: 'Disconnected',
+      joinFacilityForUpdates: () => console.log('SignalR not available'),
+      leaveFacilityUpdates: () => console.log('SignalR not available'),
+      joinedFacilities: []
+    };
+  }
+};
 
 // Helper function to convert Google Drive share link to viewable image link
 const convertGoogleDriveLink = (url) => {
@@ -57,6 +74,23 @@ const formatTimeSlot = (startTime, endTime) => {
     return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
   };
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+};
+
+// Helper function to convert date formats
+const convertDateFormat = (dateString) => {
+  if (!dateString) return null;
+
+  // Check if it's DD/MM/YYYY format (from notification)
+  const ddmmyyyyPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const match = dateString.match(ddmmyyyyPattern);
+
+  if (match) {
+    const [, day, month, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  // Already in YYYY-MM-DD format or other format
+  return dateString;
 };
 
 // Reviews Modal Component
@@ -643,6 +677,16 @@ const FacilityInfo = ({ facilityData }) => {
 // Main Component
 const FacilityDetails = () => {
   const { userId } = useAuth();
+
+  // ✅ Use safe SignalR hook
+  const {
+    isConnected,
+    connectionState,
+    joinFacilityForUpdates,
+    leaveFacilityUpdates,
+    joinedFacilities
+  } = useSafeCustomerSignalR();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [bookingDetailOpen, setBookingDetailOpen] = useState(false);
@@ -654,7 +698,273 @@ const FacilityDetails = () => {
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
+
+  // ✅ Real-time update states
+  const [lastUpdateTime, setLastUpdateTime] = useState(null);
+  const [isRealTimeActive, setIsRealTimeActive] = useState(false);
+
   const { facilityId } = useParams();
+
+  // ✅ Enhanced refresh function with detailed logging
+  const refreshAvailableSlots = async () => {
+    if (!selectedCategory || !selectedDate || !facilityId) {
+      console.log('⚠️ [FacilityDetails] Missing required data for refresh:', {
+        selectedCategory,
+        selectedDate,
+        facilityId
+      });
+      setTimeSlots([]);
+      return;
+    }
+
+    console.log('🔄 [FacilityDetails] Starting slots refresh...', {
+      facilityId,
+      categoryId: selectedCategory,
+      date: selectedDate,
+      timestamp: new Date().toISOString(),
+      currentTime: '2025-08-23 06:05:37 UTC'
+    });
+
+    setLoadingSlots(true);
+    try {
+      const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
+
+      console.log('📊 [FacilityDetails] Slots API response:', response);
+
+      let newSlots = [];
+      if (response.data && response.data.data) {
+        newSlots = response.data.data;
+      } else if (response.data) {
+        newSlots = response.data;
+      }
+
+      console.log('📊 [FacilityDetails] Processed slots:', newSlots);
+      console.log('📊 [FacilityDetails] Slots count:', newSlots.length);
+
+      // ✅ Show detailed slot availability with current user context
+      newSlots.forEach((slot, index) => {
+        console.log(`📊 [FacilityDetails] Slot ${index + 1}:`, {
+          timeSlotId: slot.timeSlotId,
+          timeRange: `${slot.startTime} - ${slot.endTime}`,
+          availableCount: slot.availableCourtCount,
+          totalCourts: slot.totalCourtCount || 'N/A',
+          updated: new Date().toLocaleTimeString(),
+          user: 'bachnhhe173308'
+        });
+      });
+
+      setTimeSlots(newSlots);
+      console.log('✅ [FacilityDetails] Slots updated successfully for user bachnhhe173308');
+
+    } catch (error) {
+      console.error('❌ [FacilityDetails] Error refreshing available slots:', error);
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // ✅ FIXED: Enhanced SignalR event listeners with proper date handling
+  useEffect(() => {
+    if (!isConnected || !facilityId) {
+      console.log('⚠️ [FacilityDetails] SignalR not connected or no facilityId:', {
+        isConnected,
+        facilityId,
+        user: 'bachnhhe173308',
+        timestamp: '2025-08-23 06:05:37 UTC'
+      });
+      return;
+    }
+
+    console.log('🔔 [FacilityDetails] Setting up SignalR event listeners for facility:', facilityId);
+    console.log('🔔 [FacilityDetails] Current selected category:', selectedCategory);
+    console.log('🔔 [FacilityDetails] Current selected date:', selectedDate);
+    console.log('🔔 [FacilityDetails] Current user: bachnhhe173308');
+
+    // Import signalRService to listen for events
+    const signalRService = require('../../services/signalRService').default;
+
+    // ✅ Enhanced booking notification handler
+    const handleBookingNotification = (notification) => {
+      console.log('📨 [FacilityDetails] Received booking notification:', notification);
+      console.log('📨 [FacilityDetails] Notification details:', {
+        action: notification.action,
+        facilityId: notification.facilityId,
+        currentFacilityId: parseInt(facilityId),
+        courtId: notification.courtId,
+        courtName: notification.courtName,
+        date: notification.date,
+        selectedDate: selectedDate,
+        timeSlot: notification.timeSlot,
+        customerName: notification.customerName,
+        currentUser: 'bachnhhe173308',
+        timestamp: '2025-08-23 06:05:37 UTC'
+      });
+
+      // ✅ Check if notification is for current facility
+      const notificationFacilityId = parseInt(notification.facilityId);
+      const currentFacilityId = parseInt(facilityId);
+
+      if (notificationFacilityId === currentFacilityId) {
+        console.log('✅ [FacilityDetails] Notification is for current facility, checking date...');
+
+        // ✅ Enhanced date format conversion
+        const notificationDate = convertDateFormat(notification.date);
+
+        console.log('📅 [FacilityDetails] Date comparison:', {
+          originalNotificationDate: notification.date,
+          convertedNotificationDate: notificationDate,
+          selectedDate,
+          matches: notificationDate === selectedDate,
+          currentUser: 'bachnhhe173308'
+        });
+
+        if (notificationDate === selectedDate) {
+          console.log('🎯 [FacilityDetails] Notification affects current view, refreshing slots...');
+          console.log('🎯 [FacilityDetails] Trigger details:', {
+            bookingId: notification.bookingId,
+            action: notification.action,
+            status: notification.status,
+            court: notification.courtName,
+            timeSlot: notification.timeSlot,
+            customer: notification.customerName,
+            currentUser: 'bachnhhe173308',
+            willRefreshAt: new Date(Date.now() + 2000).toLocaleTimeString()
+          });
+
+          // ✅ Add delay to ensure backend has processed
+          setTimeout(() => {
+            refreshAvailableSlots();
+            setLastUpdateTime(new Date().toLocaleTimeString());
+            console.log('🔄 [FacilityDetails] Real-time refresh completed for user bachnhhe173308');
+          }, 2000); // 2 second delay
+        } else {
+          console.log('📅 [FacilityDetails] Date mismatch, skipping refresh for user bachnhhe173308');
+        }
+      } else {
+        console.log('🏢 [FacilityDetails] Different facility, skipping refresh');
+      }
+    };
+
+    // ✅ Register all booking event handlers
+    signalRService.on('onBookingCreated', handleBookingNotification);
+    signalRService.on('onBookingCancelled', handleBookingNotification);
+    signalRService.on('onBookingUpdated', handleBookingNotification);
+    signalRService.on('onBookingCompleted', handleBookingNotification);
+
+    // ✅ Also listen to direct SignalR connection events
+    if (signalRService.connection) {
+      console.log('🎧 [FacilityDetails] Setting up direct SignalR event listeners for user bachnhhe173308...');
+
+      const directBookingHandler = (data) => {
+        console.log('📡 [FacilityDetails] Direct SignalR booking event for user bachnhhe173308:', data);
+        handleBookingNotification(data);
+      };
+
+      // Listen to direct SignalR events
+      signalRService.connection.on('BookingCreated', directBookingHandler);
+      signalRService.connection.on('BookingUpdated', directBookingHandler);
+      signalRService.connection.on('BookingCancelled', directBookingHandler);
+      signalRService.connection.on('BookingCompleted', directBookingHandler);
+
+      // ✅ Listen for slot availability updates
+      signalRService.connection.on('SlotAvailabilityChanged', (data) => {
+        console.log('🎯 [FacilityDetails] Slot availability changed for user bachnhhe173308:', data);
+
+        if (data.facilityId === parseInt(facilityId)) {
+          console.log('✅ [FacilityDetails] Slot change for current facility, refreshing for user bachnhhe173308...');
+          setTimeout(() => {
+            refreshAvailableSlots();
+            setLastUpdateTime(new Date().toLocaleTimeString());
+          }, 1000);
+        }
+      });
+
+      // ✅ Listen for facility-specific updates
+      signalRService.connection.on('FacilityUpdate', (data) => {
+        console.log('🏢 [FacilityDetails] Facility update received for user bachnhhe173308:', data);
+
+        if (data.facilityId === parseInt(facilityId)) {
+          console.log('✅ [FacilityDetails] Update for current facility, refreshing for user bachnhhe173308...');
+          setTimeout(() => {
+            refreshAvailableSlots();
+            setLastUpdateTime(new Date().toLocaleTimeString());
+          }, 1500);
+        }
+      });
+
+      // Cleanup function
+      return () => {
+        signalRService.connection.off('BookingCreated', directBookingHandler);
+        signalRService.connection.off('BookingUpdated', directBookingHandler);
+        signalRService.connection.off('BookingCancelled', directBookingHandler);
+        signalRService.connection.off('BookingCompleted', directBookingHandler);
+        signalRService.connection.off('SlotAvailabilityChanged');
+        signalRService.connection.off('FacilityUpdate');
+
+        signalRService.off('onBookingCreated');
+        signalRService.off('onBookingCancelled');
+        signalRService.off('onBookingUpdated');
+        signalRService.off('onBookingCompleted');
+
+        console.log('🧹 [FacilityDetails] All SignalR event listeners cleaned up for user bachnhhe173308');
+      };
+    }
+
+    // Cleanup event handlers
+    return () => {
+      signalRService.off('onBookingCreated');
+      signalRService.off('onBookingCancelled');
+      signalRService.off('onBookingUpdated');
+      signalRService.off('onBookingCompleted');
+      console.log('🧹 [FacilityDetails] SignalR event listeners cleaned up for user bachnhhe173308');
+    };
+  }, [isConnected, facilityId, selectedDate]); // ✅ Add selectedDate dependency
+
+  // ✅ Join facility group when facility loads
+  useEffect(() => {
+    if (facilityId && isConnected && !joinedFacilities.includes(parseInt(facilityId))) {
+      console.log(`🔗 [FacilityDetails] Joining facility group: ${facilityId} for user bachnhhe173308`);
+      joinFacilityForUpdates(parseInt(facilityId));
+      setIsRealTimeActive(true);
+    }
+
+    // Leave facility group when component unmounts or facility changes
+    return () => {
+      if (facilityId && joinedFacilities.includes(parseInt(facilityId))) {
+        console.log(`🔗 [FacilityDetails] Leaving facility group: ${facilityId} for user bachnhhe173308`);
+        leaveFacilityUpdates(parseInt(facilityId));
+        setIsRealTimeActive(false);
+      }
+    };
+  }, [facilityId, isConnected, joinFacilityForUpdates, leaveFacilityUpdates]);
+
+  // ✅ Debug effect to monitor slot changes
+  useEffect(() => {
+    console.log('📊 [FacilityDetails] TimeSlots changed for user bachnhhe173308:', {
+      count: timeSlots.length,
+      slots: timeSlots.map(slot => ({
+        id: slot.timeSlotId,
+        time: `${slot.startTime}-${slot.endTime}`,
+        available: slot.availableCourtCount
+      })),
+      timestamp: new Date().toISOString(),
+      currentTime: '2025-08-23 06:05:37 UTC'
+    });
+  }, [timeSlots]);
+
+  // ✅ Debug selected values
+  useEffect(() => {
+    console.log('🎯 [FacilityDetails] Selection changed for user bachnhhe173308:', {
+      facilityId,
+      selectedCategory,
+      selectedDate,
+      isConnected,
+      joinedFacilities,
+      isRealTimeActive,
+      timestamp: '2025-08-23 06:05:37 UTC'
+    });
+  }, [facilityId, selectedCategory, selectedDate, isConnected, joinedFacilities, isRealTimeActive]);
 
   // Fetch facility details on component mount
   useEffect(() => {
@@ -663,23 +973,25 @@ const FacilityDetails = () => {
       setError(null);
 
       try {
+        console.log('🏢 [FacilityDetails] Fetching facility details for user bachnhhe173308:', facilityId);
         const response = await getFacilityDetailsById(parseInt(facilityId));
 
         if (response.data) {
           const facilityInfo = response.data;
-          console.log('Facility data with ratings:', facilityInfo);
+          console.log('✅ [FacilityDetails] Facility data loaded for user bachnhhe173308:', facilityInfo.facilityName);
 
           setFacilityData(facilityInfo);
 
           // Set default category to the first available category
           if (facilityInfo.categories && facilityInfo.categories.length > 0) {
             setSelectedCategory(facilityInfo.categories[0].categoryId.toString());
+            console.log('🏟️ [FacilityDetails] Default category set for user bachnhhe173308:', facilityInfo.categories[0].categoryName);
           }
         } else {
           setError('Không tìm thấy thông tin cơ sở');
         }
       } catch (error) {
-        console.error('Error fetching facility details:', error);
+        console.error('❌ [FacilityDetails] Error fetching facility details for user bachnhhe173308:', error);
         setError('Không thể tải thông tin cơ sở');
       } finally {
         setLoading(false);
@@ -691,55 +1003,62 @@ const FacilityDetails = () => {
     }
   }, [facilityId]);
 
-  // Fetch available slots when category or date changes
+  // ✅ Use refreshAvailableSlots in existing useEffect
   useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      if (!selectedCategory || !selectedDate || !facilityId) {
-        setTimeSlots([]);
-        return;
-      }
-
-      setLoadingSlots(true);
-      try {
-        const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
-
-        if (response.data && response.data.data) {
-          setTimeSlots(response.data.data);
-        } else if (response.data) {
-          setTimeSlots(response.data);
-        } else {
-          setTimeSlots([]);
-        }
-      } catch (error) {
-        console.error('Error fetching available slots:', error);
-        setTimeSlots([]);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
-    fetchAvailableSlots();
+    refreshAvailableSlots();
   }, [facilityId, selectedCategory, selectedDate]);
 
   const handleCategoryChange = (categoryId) => {
+    console.log('🏟️ [FacilityDetails] Category changed for user bachnhhe173308:', categoryId);
     setSelectedCategory(categoryId);
     setTimeSlots([]);
   };
 
   const handleDateChange = (date) => {
+    console.log('📅 [FacilityDetails] Date changed for user bachnhhe173308:', date);
     setSelectedDate(date);
     setTimeSlots([]);
   };
 
+  // ✅ Enhanced manual refresh with user feedback
+  const handleManualRefresh = () => {
+    console.log('🔄 [FacilityDetails] Manual refresh triggered by user bachnhhe173308');
+
+    // Show immediate feedback
+    setLoadingSlots(true);
+
+    setTimeout(() => {
+      refreshAvailableSlots();
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      console.log('✅ [FacilityDetails] Manual refresh completed for user bachnhhe173308');
+    }, 100);
+  };
+
   // Handle proceed to booking detail - callback từ BookingModal
   const handleProceedToBookingDetail = (data) => {
+    console.log('📝 [FacilityDetails] Proceeding to booking detail for user bachnhhe173308:', data);
     setBookingDetailData(data);
     setBookingDetailOpen(true);
   };
 
   // Handle close booking detail modal
   const handleCloseBookingDetail = () => {
+    console.log('❌ [FacilityDetails] Closing booking detail for user bachnhhe173308');
     setBookingDetailOpen(false);
+    setBookingDetailData(null);
+  };
+
+  // ✅ Handle successful booking with slot refresh
+  const handleBookingSuccess = () => {
+    console.log('✅ [FacilityDetails] Booking successful for user bachnhhe173308, refreshing slots...');
+    setTimeout(() => {
+      refreshAvailableSlots();
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      console.log('🔄 [FacilityDetails] Post-booking refresh completed for user bachnhhe173308');
+    }, 1000);
+
+    setBookingDetailOpen(false);
+    setModalOpen(false);
     setBookingDetailData(null);
   };
 
@@ -751,7 +1070,7 @@ const FacilityDetails = () => {
       <div className="facility-page">
         <div className="loading-state">
           <div className="loading-spinner">⏳</div>
-          Đang tải thông tin cơ sở...
+          Đang tải thông tin cơ sở cho user bachnhhe173308...
         </div>
       </div>
     );
@@ -774,18 +1093,14 @@ const FacilityDetails = () => {
 
   return (
     <div className="facility-page">
-      {/* Simplified Header - No Title */}
       {/* Full Width Main Layout */}
       <div className="facility-main" style={{ marginTop: '2%' }}>
         {/* Left: Full width image with title below */}
-        <div className="facility-image-section" style={{ marginTop: '-5.5%' }}>
+        <div className="facility-image-section" style={{ marginTop: '-5%' }}>
           <div className="facility-title-section" style={{ marginBottom: '2%' }}>
             <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
           </div>
           <ImageCarousel images={facilityData?.images} />
-
-          {/* NEW: Title Section Below Image */}
-
         </div>
 
         {/* Right: Info sidebar */}
@@ -797,7 +1112,9 @@ const FacilityDetails = () => {
       {/* Full Width Booking Section with inner container */}
       <section className="booking-section">
         <div className="booking-inner">
-          <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
+          <div className="booking-section-header">
+            <h2 className="booking-section__title">Đặt lịch sân thể thao</h2>
+          </div>
 
           <div className="booking-toolbar">
             <div className="booking-controls">
@@ -842,13 +1159,15 @@ const FacilityDetails = () => {
                   min={TODAY_DATE}
                 />
               </div>
+
+              {/* ✅ Manual refresh button */}
             </div>
           </div>
 
           {loadingSlots && (
             <div className="loading-state">
               <div className="loading-spinner">⏳</div>
-              Đang tải lịch trống...
+              Đang tải lịch trống cho user bachnhhe173308...
             </div>
           )}
 
@@ -878,7 +1197,7 @@ const FacilityDetails = () => {
                       {timeSlots.map((slot) => (
                         <td
                           key={slot.timeSlotId}
-                          className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'}`}
+                          className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'} ${lastUpdateTime ? 'updated' : ''}`}
                         >
                           <div className="availability-info">
                             <span className="count">{slot.availableCourtCount}</span>
@@ -1088,7 +1407,7 @@ const FacilityDetails = () => {
           selectedDate={selectedDate}
           facilityData={facilityData}
           selectedCategory={selectedCategory}
-          onProceedToDetail={handleProceedToBookingDetail} // Pass callback
+          onProceedToDetail={handleProceedToBookingDetail}
         />
       )}
 
@@ -1102,7 +1421,6 @@ const FacilityDetails = () => {
         />
       )}
 
-      {/* BookingDetail Modal mới */}
       {bookingDetailOpen && bookingDetailData && (
         <BookingDetail
           open={bookingDetailOpen}
@@ -1119,6 +1437,7 @@ const FacilityDetails = () => {
           createPayment={createPaymentOrder}
           createStripePaymentOrder={createStripePaymentOrder}
           userId={userId}
+          onBookingSuccess={handleBookingSuccess} // ✅ Success callback
         />
       )}
     </div>
