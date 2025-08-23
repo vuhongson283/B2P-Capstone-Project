@@ -1087,18 +1087,36 @@ namespace B2P_API.Services
 
             var success = await _bookingRepo.SaveAsync();
 
-            if (!success)
-            {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Status = 500,
-                    Message = "Đã xảy ra lỗi khi lưu thay đổi."
-                };
-            }
-            
-            // Gửi SignalR message
-            try
+			if (success)
+			{
+				// Lấy lại booking chi tiết để lấy thông tin slot, court, date, v.v.
+				var bookingDetails = await _bookingRepo.GetBookingWithDetailsByIdAsync(bookingId);
+				var user = await _accRepo.GetByIdAsync(bookingDetails.UserId.Value);
+
+				foreach (var detail in bookingDetails.BookingDetails)
+				{
+					await _hubContext.Clients.Group(detail.Court.FacilityId.ToString()).SendAsync("BookingUpdated", new
+					{
+						bookingId = bookingId,
+						facilityId = detail.Court.FacilityId,
+						courtId = detail.CourtId,
+						courtName = detail.Court.CourtName,
+						date = detail.CheckInDate.ToString("dd/MM/yyyy"),
+						timeSlot = $"{detail.TimeSlot.StartTime:hh\\:mm} - {detail.TimeSlot.EndTime:hh\\:mm}",
+						status = "paid",
+						statusId = 7,
+						statusDescription = "Đã Cọc",
+						customerName = user?.Email?.Split('@')[0] ?? "Khách",
+						customerEmail = user?.Email,
+						customerPhone = user?.Phone,
+						totalAmount = bookingDetails.TotalPrice,
+						timestamp = DateTime.UtcNow.ToString("o")
+					});
+				}
+			}
+
+			// Gửi SignalR message
+			try
             {
                 await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
                 {
