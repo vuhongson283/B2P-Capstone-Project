@@ -787,6 +787,12 @@ const deleteMerchantPayment = (id) => {
 const getMerchantPaymentsByUserId = (userId) => {
   return axios.get(`MerchantPayment/user/${userId}`);
 };
+// POST /api/Payment/cancel/{paymentIntentId} - Hủy thanh toán
+const cancelPayment = (paymentIntentId) => {
+  return axios.post(`Payments/cancel/${paymentIntentId}`);
+};
+
+
 
 /* ===============================
    ✅ EXPORT ALL
@@ -928,4 +934,5 @@ export {
   updateMerchantPayment,
   deleteMerchantPayment,
   getMerchantPaymentsByUserId,
+  cancelPayment
 };

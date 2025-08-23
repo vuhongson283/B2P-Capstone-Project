@@ -1,4 +1,5 @@
-﻿using B2P_API.Models;
+﻿using B2P_API.DTOs.CommissionPaymentHistoryDTOs;
+using B2P_API.Models;
 using B2P_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -13,11 +14,18 @@ namespace B2P_API.Controllers
     {
         private readonly ZaloPayService _zaloPayService;
         private readonly ILogger<PaymentController> _logger;
+        private readonly BookingService _bookingService;
+        private readonly CommissionPaymentHistoryService _commissionService;
 
-        public PaymentController(ZaloPayService zaloPayService, ILogger<PaymentController> logger)
+        public PaymentController(ZaloPayService zaloPayService, 
+            ILogger<PaymentController> logger, 
+            CommissionPaymentHistoryService commissionService, 
+            BookingService bookingService)
         {
             _zaloPayService = zaloPayService;
             _logger = logger;
+            _bookingService = bookingService;
+            _commissionService = commissionService;
         }
 
         /// <summary>
@@ -49,7 +57,7 @@ namespace B2P_API.Controllers
             try
             {
                 // Set default URLs nếu không có
-                request.CallbackUrl = "https://webhook.site/5a2001a7-9956-49b8-a0d7-17a059f82d76";
+                request.CallbackUrl = "https://ccce5ebbfdd9.ngrok-free.app/api/Payment/callback";
                 request.RedirectUrl = "https://localhost:7202/swagger/index.html";
 
                 _logger.LogInformation($"Creating order for amount: {request.Amount}");
@@ -75,32 +83,102 @@ namespace B2P_API.Controllers
         /// Callback từ ZaloPay sau khi thanh toán
         /// </summary>
         [HttpPost("callback")]
-        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Callback([FromForm] CallbackRequest request)
+        public async Task<IActionResult> Callback([FromBody] CallbackRequest request)
         {
             try
             {
-                _logger.LogInformation($"ZaloPay callback received. Data: {request.Data}");
+                _logger.LogInformation($"ZaloPay callback received. Data raw: {request.Data}");
 
-                var verifyResult = await _zaloPayService.VerifyCallback(request.Data, request.Mac);
-
-                /*if (!verifyResult.Success)
+                // ===========================
+                // 🔒 PHẦN KIỂM TRA MAC (tùy chọn)
+                // ===========================
+                // Uncomment nếu cần verify MAC signature
+                /*
+                try
                 {
-                    _logger.LogWarning("Invalid callback MAC");
-                    return Ok(new { return_code = -1, return_message = "mac not equal" });
-                }*/
+                    _logger.LogInformation($"Received MAC: {request.Mac}");
+                    _logger.LogInformation($"Using Key1: {_config.Key1}");
 
-                if (verifyResult.Data is CallbackData callbackData)
+                    var computedMac = CreateHmacSha256(request.Data, _config.Key1);
+                    _logger.LogInformation($"Computed MAC: {computedMac}");
+
+                    var isValid = computedMac.Equals(request.Mac, StringComparison.OrdinalIgnoreCase);
+                    if (!isValid)
+                    {
+                        _logger.LogWarning($"Invalid MAC. Received: {request.Mac}, Computed: {computedMac}");
+                        return Ok(new { return_code = 0, return_message = "Invalid MAC signature" });
+                    }
+                }
+                catch (Exception ex)
                 {
-                   
+                    _logger.LogError(ex, "Error validating MAC.");
+                    return Ok(new { return_code = 0, return_message = "Error validating MAC" });
+                }
+                */
 
-                    // Nếu cần xử lý business logic phụ, có thể gọi thêm tại đây
-                    // await ProcessPaymentSuccess(callbackData);
+                // ===========================
+                // 📦 PARSE DỮ LIỆU CALLBACK
+                // ===========================
+                var callbackData = JsonSerializer.Deserialize<CallbackData>(request.Data);
+                var transId = callbackData.zp_trans_id;
+                var appTransId = callbackData.app_trans_id;
+                var amount = callbackData.amount;
 
-                    return Ok(new { return_code = 1, return_message = "success" });
+                _logger.LogInformation("Parsed callbackData: {@CallbackData}", callbackData);
+                _logger.LogInformation($"✅ Payment success. TransId: {transId}, AppTransId: {appTransId}, Amount: {amount}");
+
+                // ===========================
+                // 🛠️ XỬ LÝ EMBED_DATA
+                // ===========================
+                if (!string.IsNullOrEmpty(callbackData.embed_data))
+                {
+                    try
+                    {
+                        var embedData = JsonSerializer.Deserialize<Dictionary<string, object>>(callbackData.embed_data);
+
+                        // ✅ Trường hợp Booking
+                        if (embedData.TryGetValue("bookingid", out var bookingIdObj))
+                        {
+                            if (bookingIdObj != null && int.TryParse(bookingIdObj.ToString(), out var bookingId))
+                            {
+                                _logger.LogInformation($"Booking ID extracted: {bookingId}");
+
+                                await _bookingService.MarkBookingPaidAsync(bookingId, transId.ToString());
+                                _logger.LogInformation("MarkBookingPaidAsync executed successfully.");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Booking ID is not a valid integer.");
+                            }
+                        }
+                        // ✅ Trường hợp có forMonth và forYear
+                        else if (embedData.TryGetValue("forMonth", out var forMonthObj) &&
+                                 embedData.TryGetValue("forYear", out var forYearObj))
+                        {
+                            var forMonth = forMonthObj?.ToString();
+                            var forYear = forYearObj?.ToString();
+                            CommissionPaymentHistoryCreateDto cms = new CommissionPaymentHistoryCreateDto();
+                            cms.Amount = callbackData.amount;
+                            cms.UserId = int.Parse(callbackData.app_user);
+                            cms.Month = int.Parse(forMonth);
+                            cms.Year = int.Parse(forYear);
+                            cms.StatusId = 10;
+                            await _commissionService.CreateAsync(cms);
+
+                            _logger.LogInformation($"ForMonth: {forMonth}, ForYear: {forYear} extracted from embed_data");
+                        }
+                        else
+                        {
+                            _logger.LogWarning("No valid data found in embed_data. Expected: bookingid OR (forMonth + forYear)");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to parse embed_data or process booking/commission ID");
+                    }
                 }
 
-                return Ok(new { return_code = 0, return_message = "error processing data" });
+                return Ok(new { return_code = 1, return_message = "success" });
             }
             catch (Exception ex)
             {
@@ -108,6 +186,8 @@ namespace B2P_API.Controllers
                 return Ok(new { return_code = 0, return_message = "error" });
             }
         }
+
+
 
 
         /// <summary>
