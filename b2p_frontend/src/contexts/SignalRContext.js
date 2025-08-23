@@ -11,11 +11,11 @@ export const SignalRProvider = ({ children }) => {
 
     useEffect(() => {
         console.log('🚀 SignalRProvider: Initializing connection...');
-        
+
         const connectToSignalR = async () => {
             try {
-                console.log('🔌 Creating SignalR connection to: https://localhost:7227/bookinghub');
-                
+                console.log('🔌 Creating SignalR connection to: https://localhost:5000/bookinghub');
+
                 const newConnection = new HubConnectionBuilder()
                     .withUrl('https://ccce5ebbfdd9.ngrok-free.app/bookinghub')
                     .configureLogging(LogLevel.Information)
@@ -55,11 +55,11 @@ export const SignalRProvider = ({ children }) => {
                 console.log('🔌 Starting SignalR connection...');
                 setConnectionStatus('Connecting');
                 await newConnection.start();
-                
+
                 console.log('✅ SignalR Connected successfully!');
                 console.log('✅ Connection ID:', newConnection.connectionId);
                 console.log('✅ Connection State:', newConnection.state);
-                
+
                 setConnection(newConnection);
                 setIsConnected(true);
                 setConnectionStatus('Connected');
@@ -74,9 +74,9 @@ export const SignalRProvider = ({ children }) => {
                 console.error('❌ Error details:', error.message);
                 console.error('❌ Error stack:', error.stack);
                 setConnectionStatus('Failed');
-                
+
                 // Fallback to HTTP if HTTPS fails
-                if (error.message.includes('SSL') || error.message.includes('certificate') || 
+                if (error.message.includes('SSL') || error.message.includes('certificate') ||
                     error.message.includes('HTTPS') || error.message.includes('ERR_CERT')) {
                     console.log('💡 HTTPS failed, trying HTTP fallback...');
                     tryHttpConnection();
@@ -89,10 +89,10 @@ export const SignalRProvider = ({ children }) => {
 
         const tryHttpConnection = async () => {
             try {
-                console.log('🔌 Trying HTTP connection to: http://localhost:7227/bookinghub');
-                
+                console.log('🔌 Trying HTTP connection to: https://localhost:5000/bookinghub');
+
                 const httpConnection = new HubConnectionBuilder()
-                    .withUrl('http://localhost:7227/bookinghub')
+                    .withUrl('https://localhost:5000/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect()
                     .build();
@@ -100,7 +100,7 @@ export const SignalRProvider = ({ children }) => {
                 await httpConnection.start();
                 console.log('✅ SignalR Connected via HTTP');
                 console.log('✅ HTTP Connection ID:', httpConnection.connectionId);
-                
+
                 setConnection(httpConnection);
                 setIsConnected(true);
                 setConnectionStatus('Connected');
@@ -139,7 +139,7 @@ export const SignalRProvider = ({ children }) => {
             console.log(`📡 [useSignalREvent] Subscribing to event: ${eventName}`);
             console.log(`📡 [useSignalREvent] Connection state: ${connection.state}`);
             console.log(`📡 [useSignalREvent] Is connected: ${isConnected}`);
-            
+
             connection.on(eventName, handler);
 
             return () => {
@@ -179,20 +179,20 @@ export const useSignalR = () => {
     if (!context) {
         throw new Error('useSignalR must be used within SignalRProvider');
     }
-    
+
     console.log('🎯 [useSignalR] Hook called with context:', {
         hasConnection: !!context.connection,
         isConnected: context.isConnected,
         connectionStatus: context.connectionStatus
     });
-    
+
     return context;
 };
 
 // Custom hook for booking-specific events
 export const useBookingSignalR = (bookingId) => {
     console.log('🎯 [useBookingSignalR] Hook called with bookingId:', bookingId);
-    
+
     const { connection, isConnected, useSignalREvent, connectionStatus } = useSignalR();
     const [bookingUpdates, setBookingUpdates] = useState(null);
 
@@ -211,7 +211,7 @@ export const useBookingSignalR = (bookingId) => {
             console.log('📨 [useBookingSignalR] Current bookingId:', bookingId);
             console.log('📨 [useBookingSignalR] Received BookingId:', data.BookingId);
             console.log('📨 [useBookingSignalR] BookingId type check:', typeof data.BookingId, typeof bookingId);
-            
+
             // Only update if it's for the current booking
             if (data.BookingId && bookingId && data.BookingId.toString() === bookingId.toString()) {
                 console.log(`✅ [useBookingSignalR] Booking ${bookingId} status updated:`, data);
