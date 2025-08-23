@@ -11,14 +11,18 @@ namespace B2P_API.Services
 	{
 		private readonly IAccountManagementRepository _repo;
 		private readonly IMapper _mapper;
+		private readonly FacilityService _facilityService;
 
 		public AccountManagementService(
 			IAccountManagementRepository repo,
+			FacilityService facilityService,
 			IMapper mapper)
 		{
 			_repo = repo;
 			_mapper = mapper;
+			_facilityService = facilityService;
 		}
+
 
 		public async Task<ApiResponse<PagedResponse<GetListAccountResponse>>> GetAllAccountsAsync(GetListAccountRequest request)
 		{
@@ -215,7 +219,17 @@ namespace B2P_API.Services
 					};
 				}
 
+				// Cập nhật status user
 				await _repo.UpdateStatusAsync(user, 4);
+
+				// Cập nhật status facilities của user thành 2
+				var facilityUpdateResult = await _facilityService.UpdateFacilitiesStatusByUserIdAsync(userId, 2);
+
+				if (!facilityUpdateResult)
+				{
+					// Log warning nhưng vẫn trả về thành công vì user đã bị ban
+					Console.WriteLine($"Warning: Failed to update facilities status for user {userId}");
+				}
 
 				return new ApiResponse<string>
 				{
@@ -231,8 +245,7 @@ namespace B2P_API.Services
 				return new ApiResponse<string>
 				{
 					Success = false,
-					Message = $"{MessagesCodes.MSG_37}: {ex.Message}" +
-							  (inner != null ? $"\nInner: {inner}" : ""),
+					Message = $"{MessagesCodes.MSG_37}: {ex.Message}" + (inner != null ? $"\nInner: {inner}" : ""),
 					Status = 500,
 					Data = null
 				};
@@ -266,7 +279,15 @@ namespace B2P_API.Services
 					};
 				}
 
+				// Cập nhật status user
 				await _repo.UpdateStatusAsync(user, 1);
+
+				var facilityUpdateResult = await _facilityService.UpdateFacilitiesStatusByUserIdAsync(userId, 1);
+
+				if (!facilityUpdateResult)
+				{
+					Console.WriteLine($"Warning: Failed to update facilities status for user {userId}");
+				}
 
 				return new ApiResponse<string>
 				{
@@ -282,8 +303,7 @@ namespace B2P_API.Services
 				return new ApiResponse<string>
 				{
 					Success = false,
-					Message = $"{MessagesCodes.MSG_37}: {ex.Message}" +
-							  (inner != null ? $"\nInner: {inner}" : ""),
+					Message = $"{MessagesCodes.MSG_37}: {ex.Message}" + (inner != null ? $"\nInner: {inner}" : ""),
 					Status = 500,
 					Data = null
 				};

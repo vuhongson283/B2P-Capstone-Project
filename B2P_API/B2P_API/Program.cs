@@ -40,6 +40,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "https://localhost:3000",
                 "http://localhost:3001",
+                "https://ccce5ebbfdd9.ngrok-free.app", // Ngrok URL
                 "https://yourdomain.com")
               .AllowAnyMethod()
               .AllowAnyHeader()

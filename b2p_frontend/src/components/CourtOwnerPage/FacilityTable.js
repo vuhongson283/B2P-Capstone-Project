@@ -35,22 +35,65 @@ import "./FacilityTable.scss";
 
 const { Text } = Typography;
 
+// THAY ĐỔI 1: Sửa convertGoogleDriveUrl - thêm extract file ID từ /d/ format
 const convertGoogleDriveUrl = (originalUrl) => {
-  if (!originalUrl) return "https://placehold.co/300x200?text=No+Image";
+  if (!originalUrl) return "/src/assets/images/default.jpg";
   if (originalUrl.includes('thumbnail')) return originalUrl;
-  const match = originalUrl.match(/id=([^&]+)/);
-  if (match) {
-    const id = match[1];
-    return `https://drive.google.com/thumbnail?id=${id}`;
+  if (originalUrl.includes('/assets/')) return originalUrl;
+
+  // THÊM: Extract từ format /d/FILE_ID/
+  let fileId = originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+
+  // Nếu không có thì thử format ?id=
+  if (!fileId) {
+    fileId = originalUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
   }
-  return originalUrl;
+
+  if (fileId) {
+    // THAY ĐỔI: Dùng googleusercontent.com thay vì drive.google.com
+    return `https://lh3.googleusercontent.com/d/${fileId}=w300-h200-c`;
+  }
+
+  return "/src/assets/images/default.jpg";
 };
 
 const cleanAddressForDisplay = (address) => {
   if (!address) return "";
   return address.replace(/\$\$/g, '');
 };
+const handleImageError = (e, originalSrc, retryCount = 0) => {
+  const img = e.target;
 
+  if (retryCount >= 4) { // Tăng lên 4 để có thêm 1 lần thử
+    img.src = "/src/assets/images/default.jpg";
+    return;
+  }
+
+  const fileId = originalSrc.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+    originalSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+
+  if (!fileId) {
+    img.src = "/src/assets/images/default.jpg";
+    return;
+  }
+
+  // THAY ĐỔI: Thêm googleusercontent.com vào đầu list
+  const formats = [
+    `https://lh3.googleusercontent.com/d/${fileId}=w300-h200-c`, // THÊM format này
+    `https://drive.google.com/uc?export=view&id=${fileId}`,
+    `https://drive.google.com/thumbnail?id=${fileId}&sz=w300-h200`,
+    `https://docs.google.com/uc?export=download&id=${fileId}`
+  ];
+
+  if (formats[retryCount]) {
+    setTimeout(() => {
+      img.src = formats[retryCount];
+      img.onerror = (e2) => handleImageError(e2, originalSrc, retryCount + 1);
+    }, 500);
+  } else {
+    img.src = "/src/assets/images/default.jpg";
+  }
+};
 const FacilityTable = () => {
   const navigate = useNavigate();
   const { Option } = Select;
@@ -898,16 +941,20 @@ const FacilityTable = () => {
     {
       title: "Ảnh cơ sở",
       key: "image",
-      width: 200,
+      width: 120,
       align: "center",
       render: (_, record) => (
         <div className="facility-image">
           <img
-            src={record.image}
-            alt={record.name}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "/assets/images/default.jpg";
+            src={convertGoogleDriveUrl(record.image)}
+            alt=""
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            onError={(e) => handleImageError(e, record.image)}
+            style={{
+              maxWidth: '100%',
+              height: 'auto',
+              display: 'block' // THÊM để tránh broken image icon
             }}
           />
         </div>

@@ -39,16 +39,6 @@ const Login = () => {
     isEmail: false
   });
 
-  // 🎯 Google OTP state  
-  const [googleOtpData, setGoogleOtpData] = useState({
-    email: '',
-    userName: '',
-    sessionToken: '',
-    otpCode: '',
-    isNewUser: false,
-    isVerifying: false
-  });
-
   // ⏰ Countdown timer
   useEffect(() => {
     let timer;
@@ -70,44 +60,52 @@ const Login = () => {
       const backendResponse = response;
       console.log('📥 Backend response:', backendResponse);
 
-      // ✅ CASE 1: SUCCESS - User exists và có password
+      // ✅ CASE 1: SUCCESS - User exists và có password → Yêu cầu nhập password
       if (backendResponse.success && backendResponse.data?.isExist && backendResponse.data?.hasPassword) {
-        console.log('🎉 Success! User can login with password');
+        console.log('🎉 User can login with password');
         setUserCheckResult(backendResponse.data);
         setCurrentStep('password-input');
         message.success('Vui lòng nhập mật khẩu để đăng nhập');
         return;
       }
 
-      // ✅ CASE 2: SUCCESS nhưng user không có password
-      if (backendResponse.success && backendResponse.data?.isExist && !backendResponse.data?.hasPassword) {
-        console.log('❌ User exists but no password');
-        message.error('Tài khoản này chỉ hỗ trợ đăng nhập bằng Google hoặc OTP');
+      // ✅ CASE 2: SUCCESS - OTP đã được gửi (user không tồn tại hoặc không có password)
+      if (backendResponse.success && backendResponse.data?.sessionToken) {
+        console.log('📱 OTP sent successfully');
+
+        // ✅ FIX: Set đúng state cho OTP step
+        setOtpData({
+          phoneOrEmail: emailInput.trim(),
+          password: '', // Empty vì đây là login flow
+          otpCode: '',
+          sessionToken: backendResponse.data.sessionToken,
+          maskedContact: backendResponse.data.maskedContact,
+          expiresAt: backendResponse.data.expiresAt,
+          isOtpSent: true,
+          isVerifying: false,
+          isEmail: backendResponse.data.maskedContact?.includes('@') || false
+        });
+
+        // ✅ FIX: Đổi step thành 'otp' để match với render condition
+        setCurrentStep('otp');
+        setCountdown(60); // 5 phút countdown
+        message.success(backendResponse.message || 'OTP đã được gửi');
         return;
       }
 
-      // ✅ CASE 3: SUCCESS nhưng user không tồn tại
-      if (backendResponse.success === false && backendResponse.status === 404) {
-        console.log('❌ User does not exist');
-        message.error('Email/số điện thoại không tồn tại trong hệ thống');
-        return;
-      }
-
-      // ✅ CASE 4: ERROR responses
+      // ✅ CASE 3: ERROR responses
       if (backendResponse.success === false) {
         console.log('❌ Backend returned error:', backendResponse);
 
-        // Xử lý các status code cụ thể
         switch (backendResponse.status) {
           case 403:
-            // 🚨 TÀI KHOẢN BỊ KHÓA
             message.error(`🔒 ${backendResponse.message || 'Tài khoản đã bị khóa hoặc vô hiệu hóa'}`);
             break;
-          case 404:
-            message.error('📭 Email/số điện thoại không tồn tại trong hệ thống');
-            break;
           case 400:
-            message.error(`⚠️ ${backendResponse.message || 'Thông tin không hợp lệ'}`);
+            message.error(`⚠️ ${backendResponse.message || 'Định dạng email/số điện thoại không hợp lệ'}`);
+            break;
+          case 429:
+            message.error(`⏰ ${backendResponse.message || 'Vui lòng đợi trước khi yêu cầu OTP khác'}`);
             break;
           case 500:
             message.error('🔧 Lỗi hệ thống, vui lòng thử lại sau');
@@ -118,27 +116,25 @@ const Login = () => {
         return;
       }
 
-      // ✅ CASE 5: Fallback cho các trường hợp khác
+      // ✅ CASE 4: Fallback
       console.log('❌ Unexpected response structure:', backendResponse);
       message.error('Phản hồi từ server không đúng định dạng');
 
     } catch (error) {
       console.error('❌ Check user error:', error);
 
-      // ✅ Xử lý error response từ axios
       if (error.response?.data) {
         const errorData = error.response.data;
 
         switch (error.response.status) {
           case 403:
-            // 🚨 TÀI KHOẢN BỊ KHÓA
             message.error(`🔒 ${errorData.message || 'Tài khoản đã bị khóa hoặc vô hiệu hóa'}`);
-            break;
-          case 404:
-            message.error('📭 Email/số điện thoại không tồn tại');
             break;
           case 400:
             message.error(`⚠️ ${errorData.message || 'Thông tin không hợp lệ'}`);
+            break;
+          case 429:
+            message.error(`⏰ ${errorData.message || 'Vui lòng đợi trước khi thử lại'}`);
             break;
           case 500:
             message.error('🔧 Lỗi server, vui lòng thử lại');
@@ -303,143 +299,120 @@ const Login = () => {
 
   // ✅ UNIFIED OTP Verification - Cho cả Regular và Google
   const handleVerifyOtp = async () => {
-    const isGoogleFlow = currentStep === 'google-otp';
-    const currentData = isGoogleFlow ? googleOtpData : otpData;
-    const setCurrentData = isGoogleFlow ? setGoogleOtpData : setOtpData;
-
-    if (!currentData.otpCode.trim()) {
+    if (!otpData.otpCode.trim()) {
       message.error('Vui lòng nhập mã OTP');
       return;
     }
 
     try {
-      setCurrentData(prev => ({ ...prev, isVerifying: true }));
+      setOtpData(prev => ({ ...prev, isVerifying: true }));
 
       const requestData = {
-        phoneOrEmail: isGoogleFlow ? currentData.email : currentData.phoneOrEmail,
-        otp: currentData.otpCode,
-        sessionToken: currentData.sessionToken
+        phoneOrEmail: otpData.phoneOrEmail,
+        otp: otpData.otpCode,
+        sessionToken: otpData.sessionToken
       };
 
-      console.log(`📡 Verifying OTP (${isGoogleFlow ? 'Google' : 'Regular'}):`, requestData);
+      console.log("📡 Verifying OTP:", requestData);
 
       const response = await verifyOtpAxios(requestData);
-      console.log('📥 OTP verification response:', response);
+      console.log("📥 OTP verification response:", response);
 
-      // ✅ CASE 1: SUCCESS - Extract response data
-      let accessToken = null;
-      let refreshToken = null;
-      let user = null;
-      let isNewUser = false;
-
-      // Handle multiple response formats
+      // ✅ BE định nghĩa rõ: Success, Status, Message, Data
       if (response.success && response.data?.accessToken) {
-        accessToken = response.data.accessToken;
-        refreshToken = response.data.refreshToken;
-        user = response.data.user;
-        isNewUser = response.data.isNewUser || false;
-      } else if (response.accessToken) {
-        accessToken = response.accessToken;
-        refreshToken = response.refreshToken;
-        user = response.user;
-        isNewUser = response.isNewUser || false;
-      }
+        const { accessToken, refreshToken, user, isNewUser } = response.data;
 
-      // ✅ CASE 2: SUCCESS - Process login
-      if (accessToken && user) {
         login(user, accessToken, refreshToken);
-        const flowText = isGoogleFlow ? 'Google ' : '';
+
         const welcomeMsg = isNewUser
-          ? `🎉 Tài khoản ${flowText}mới tạo thành công! Chào mừng ${user.fullName || user.email}!`
+          ? `🎉 Tài khoản mới tạo thành công! Chào mừng ${user.fullName || user.email}!`
           : `🎉 Chào mừng ${user.fullName || user.email} quay lại!`;
 
         message.success(welcomeMsg);
 
-        console.log(`✅ ${isGoogleFlow ? 'Google' : 'Regular'} login successful:`, {
+        console.log("✅ Login successful:", {
           userId: user.userId,
           email: user.email,
           roleId: user.roleId,
           roleName: user.roleName
         });
 
-        // Reset all states
+        // Reset state
         setOtpData({
-          phoneOrEmail: '', password: '', otpCode: '', sessionToken: '', maskedContact: '',
-          isOtpSent: false, isVerifying: false, isEmail: false
-        });
-        setGoogleOtpData({
-          email: '', userName: '', sessionToken: '', otpCode: '',
-          isNewUser: false, isVerifying: false
+          phoneOrEmail: "",
+          password: "",
+          otpCode: "",
+          sessionToken: "",
+          maskedContact: "",
+          isOtpSent: false,
+          isVerifying: false,
+          isEmail: false
         });
 
         handleNavigateAfterLogin(user);
         return;
       }
 
-      // ✅ CASE 3: ERROR response
+      // ❌ Trường hợp thất bại (BE trả về success=false)
       if (response.success === false) {
-        console.log('❌ OTP verification failed:', response);
+        console.log("❌ OTP verification failed:", response);
 
         switch (response.status) {
           case 403:
-            // 🚨 TÀI KHOẢN BỊ KHÓA
-            message.error(`🔒 ${response.message || 'Tài khoản đã bị khóa hoặc vô hiệu hóa'}`);
+            message.error(`🔒 ${response.message || "Tài khoản đã bị khóa hoặc vô hiệu hóa"}`);
             break;
           case 400:
-            if (response.message?.includes('OTP')) {
+            if (response.message?.includes("OTP")) {
               message.error(`🔢 ${response.message}`);
             } else {
-              message.error(`⚠️ ${response.message || 'Thông tin không hợp lệ'}`);
+              message.error(`⚠️ ${response.message || "Thông tin không hợp lệ"}`);
             }
             break;
           case 500:
-            message.error('🔧 Lỗi hệ thống trong quá trình xác thực');
+            message.error("🔧 Lỗi hệ thống trong quá trình xác thực");
             break;
           default:
-            message.error(`❌ ${response.message || 'Xác thực OTP thất bại'}`);
+            message.error(`❌ ${response.message || "Xác thực OTP thất bại"}`);
         }
         return;
       }
 
-      // ✅ CASE 4: Fallback
-      const errorMsg = response.message || 'Missing accessToken or user data in response';
-      throw new Error(errorMsg);
+      // Fallback
+      throw new Error(response.message || "Missing accessToken or user data in response");
 
     } catch (error) {
-      console.error(`❌ ${isGoogleFlow ? 'Google' : 'Regular'} OTP verification error:`, error);
+      console.error("❌ OTP verification error:", error);
 
-      // ✅ XỬ LÝ ERROR RESPONSE
       if (error.response?.data) {
         const errorData = error.response.data;
-
         switch (error.response.status) {
           case 403:
-            // 🚨 TÀI KHOẢN BỊ KHÓA - QUAN TRỌNG!
-            message.error(`🔒 ${errorData.message || 'Tài khoản đã bị khóa hoặc vô hiệu hóa'}`);
+            message.error(`🔒 ${errorData.message || "Tài khoản đã bị khóa hoặc vô hiệu hóa"}`);
             break;
           case 400:
-            if (errorData.message?.includes('OTP')) {
+            if (errorData.message?.includes("OTP")) {
               message.error(`🔢 ${errorData.message}`);
             } else {
-              message.error(`⚠️ ${errorData.message || 'Thông tin không hợp lệ'}`);
+              message.error(`⚠️ ${errorData.message || "Thông tin không hợp lệ"}`);
             }
             break;
           case 401:
-            message.error(`🔐 ${errorData.message || 'Phiên đăng nhập đã hết hạn'}`);
+            message.error(`🔐 ${errorData.message || "Phiên đăng nhập đã hết hạn"}`);
             break;
           case 500:
-            message.error('🔧 Lỗi hệ thống, vui lòng thử lại');
+            message.error("🔧 Lỗi hệ thống, vui lòng thử lại");
             break;
           default:
-            message.error(`❌ ${errorData.message || 'Xác thực thất bại'}`);
+            message.error(`❌ ${errorData.message || "Xác thực thất bại"}`);
         }
       } else {
-        message.error(`🌐 ${error.message || 'Lỗi kết nối server'}`);
+        message.error(`🌐 ${error.message || "Lỗi kết nối server"}`);
       }
     } finally {
-      setCurrentData(prev => ({ ...prev, isVerifying: false }));
+      setOtpData(prev => ({ ...prev, isVerifying: false }));
     }
   };
+
 
   const handleGoogleSuccess = async (credentialResponse) => {
     if (!credentialResponse?.credential) {
@@ -460,11 +433,14 @@ const Login = () => {
       const response = await googleLoginAxios(credentialResponse.credential);
       console.log('🎯 Google login full response:', response);
 
-      // ✅ CASE 1: SUCCESS - DIRECT FORMAT WITH ACCESS TOKEN (EXISTING USER)
+      // ✅ CASE 1: SUCCESS - Login thành công với access token
       if (response.success && response.data?.accessToken && response.data?.user) {
-        console.log('✅ Case 1: Existing user - Direct login with access token');
+        console.log('✅ Google login successful');
 
+        // Login user
         login(response.data.user, response.data.accessToken, response.data.refreshToken);
+
+        // Show welcome message
         const welcomeMsg = response.data.isNewUser
           ? `🎉 Tài khoản Google mới tạo thành công! Chào mừng ${response.data.user.fullName || response.data.user.email}!`
           : `🎉 Chào mừng ${response.data.user.fullName || response.data.user.email} quay lại!`;
@@ -474,61 +450,7 @@ const Login = () => {
         return;
       }
 
-      // ✅ CASE 2: SUCCESS - WRAPPED FORMAT (success/data structure) 
-      if (response.success === true && response.data) {
-        const responseData = response.data;
-
-        // Case 2a: Existing user in wrapped format
-        if (responseData.accessToken && responseData.user) {
-          console.log('✅ Case 2a: Existing user - Wrapped format login');
-          login(responseData.user, responseData.accessToken, responseData.refreshToken);
-          message.success(`🎉 Chào mừng ${responseData.user.fullName || responseData.user.email} quay lại!`);
-          handleNavigateAfterLogin(responseData.user);
-          return;
-        }
-
-        // Case 2b: New user needs OTP
-        if (responseData.sessionToken) {
-          console.log('🆕 Case 2b: New user - Need OTP verification');
-          const otpMessage = responseData.message || response.message || `Mã OTP đã được gửi đến ${userInfo.email}!`;
-          message.info(`📧 ${otpMessage}`);
-
-          setGoogleOtpData({
-            email: userInfo.email,
-            userName: userInfo.name || userInfo.email,
-            sessionToken: responseData.sessionToken,
-            otpCode: '',
-            isNewUser: true,
-            isVerifying: false
-          });
-
-          setCurrentStep('google-otp');
-          setCountdown(60);
-          return;
-        }
-      }
-
-      // ✅ CASE 3: SUCCESS - DIRECT FORMAT WITH SESSION TOKEN (NEW USER)
-      if (response.success && response.sessionToken) {
-        console.log('🆕 Case 3: New user - Direct format need OTP');
-        const otpMessage = response.message || `Mã OTP đã được gửi đến ${userInfo.email}!`;
-        message.info(`📧 ${otpMessage}`);
-
-        setGoogleOtpData({
-          email: userInfo.email,
-          userName: userInfo.name || userInfo.email,
-          sessionToken: response.sessionToken,
-          otpCode: '',
-          isNewUser: true,
-          isVerifying: false
-        });
-
-        setCurrentStep('google-otp');
-        setCountdown(60);
-        return;
-      }
-
-      // ✅ CASE 4: ERROR response
+      // ✅ CASE 2: ERROR response
       if (response.success === false) {
         console.error('❌ Backend returned error:', response);
 
@@ -540,9 +462,6 @@ const Login = () => {
           case 401:
             message.error('🔐 Token Google không hợp lệ hoặc đã hết hạn');
             break;
-          case 429:
-            message.error('⏰ Vui lòng đợi trước khi thử lại Google login');
-            break;
           case 500:
             message.error('🔧 Lỗi hệ thống Google login');
             break;
@@ -552,9 +471,9 @@ const Login = () => {
         return;
       }
 
-      // ✅ CASE 5: NO VALID CASE MATCHED
-      console.error('❌ No valid response format matched:', response);
-      throw new Error('Response không chứa accessToken hoặc sessionToken hợp lệ');
+      // ✅ CASE 3: UNEXPECTED RESPONSE FORMAT
+      console.error('❌ Unexpected response format:', response);
+      message.error('Phản hồi từ server không đúng định dạng');
 
     } catch (error) {
       console.error('❌ Google login error:', error);
@@ -565,14 +484,11 @@ const Login = () => {
 
         switch (error.response.status) {
           case 403:
-            // 🚨 TÀI KHOẢN BỊ KHÓA - QUAN TRỌNG!
+            // 🚨 TÀI KHOẢN BỊ KHÓA
             message.error(`🔒 ${errorData.message || 'Tài khoản Google đã bị khóa hoặc vô hiệu hóa'}`);
             break;
           case 401:
             message.error('🔐 Token Google không hợp lệ hoặc đã hết hạn');
-            break;
-          case 429:
-            message.error('⏰ Vui lòng đợi trước khi thử lại Google login');
             break;
           case 500:
             message.error('🔧 Lỗi server Google login');
@@ -642,33 +558,24 @@ const Login = () => {
     setCountdown(0);
   };
 
-  const handleResendGoogleOtp = async () => {
-    try {
-      setIsLoading(true);
-      message.info('Vui lòng thử đăng nhập Google lại để nhận OTP mới');
-      setCurrentStep('email-input');
-      setGoogleOtpData({
-        email: '', userName: '', sessionToken: '', otpCode: '', isNewUser: false, isVerifying: false
-      });
-    } catch (error) {
-      message.error('Không thể gửi lại OTP');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ 
 
   const handleBackToLogin = () => {
-    setCurrentStep('email-input');
-    setUserCheckResult(null);
-    setOtpData({
-      phoneOrEmail: '', password: '', otpCode: '', sessionToken: '', maskedContact: '',
-      isOtpSent: false, isVerifying: false, isEmail: false
-    });
-    setGoogleOtpData({
-      email: '', userName: '', sessionToken: '', otpCode: '', isNewUser: false, isVerifying: false
-    });
-    setCountdown(0);
-  };
+  setCurrentStep('email-input');
+  setUserCheckResult(null);
+  setOtpData({
+    phoneOrEmail: '',
+    password: '',
+    otpCode: '',
+    sessionToken: '',
+    maskedContact: '',
+    isOtpSent: false,
+    isVerifying: false,
+    isEmail: false
+  });
+  setCountdown(0);
+};
+
 
   // ✅ RENDER EMAIL INPUT STEP (Bước 1)
   const renderEmailInputStep = () => (
@@ -724,9 +631,9 @@ const Login = () => {
           <div className="divider-line"></div>
           <span className="divider-text">HOẶC</span>
           <div className="divider-line"></div>
-         
+
         </div>
-         <div className="forgot-password-container">
+        <div className="forgot-password-container">
           <a href="/forgot-password" className="forgot-link">Quên mật khẩu?</a>
         </div>
 
@@ -854,7 +761,7 @@ const Login = () => {
             {otpData.isVerifying ? (
               <><span className="spinner"></span> Đang xác thực...</>
             ) : (
-              <>✅ Xác thực</>
+              <>Xác thực</>
             )}
           </button>
         </div>
@@ -874,62 +781,6 @@ const Login = () => {
       </div>
     </div>
   );
-
-  const renderGoogleOtpStep = () => (
-    <div className="google-otp-step">
-      <div className="google-otp-header">
-        <div className="google-otp-icon">🔐</div>
-        <h2>Xác thực Google Login</h2>
-        <p>Mã OTP đã được gửi đến email Google</p>
-        <div className="email-display">{googleOtpData.email}</div>
-      </div>
-
-      <div className="otp-input-section">
-        <div className="otp-input-wrapper">
-          <input
-            type="text"
-            placeholder="000000"
-            value={googleOtpData.otpCode}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-              setGoogleOtpData(prev => ({ ...prev, otpCode: value }));
-            }}
-            className="otp-input"
-            maxLength={6}
-            disabled={googleOtpData.isVerifying}
-          />
-        </div>
-
-        <div className="otp-actions">
-          <button
-            className="sport-btn success"
-            onClick={handleVerifyOtp}
-            disabled={googleOtpData.isVerifying || googleOtpData.otpCode.length !== 6}
-          >
-            {googleOtpData.isVerifying ? (
-              <><span className="spinner"></span> Đang xác thực...</>
-            ) : (
-              <>🔓 Xác thực Google</>
-            )}
-          </button>
-        </div>
-
-        <div className="otp-footer">
-          {countdown > 0 ? (
-            <p className="countdown">Gửi lại sau {countdown}s</p>
-          ) : (
-            <button className="resend-btn" onClick={handleResendGoogleOtp}>
-              🔄 Thử lại Google Login
-            </button>
-          )}
-          <button className="back-btn" onClick={handleBackToLogin}>
-            ← Quay lại
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   // ✅ MAIN RENDER
   return (
     <div className="sports-login-container">
@@ -944,7 +795,6 @@ const Login = () => {
         {currentStep === 'email-input' && renderEmailInputStep()}
         {currentStep === 'password-input' && renderPasswordInputStep()}
         {currentStep === 'otp' && renderOtpStep()}
-        {currentStep === 'google-otp' && renderGoogleOtpStep()}
       </div>
 
       {/* Sports Footer */}

@@ -249,6 +249,78 @@ namespace B2P_API.Controllers
             return Ok();
         }
 
+
+        [HttpPost("callback")]
+        public async Task<IActionResult> StripeCallback([FromBody] JsonElement payload)
+        {
+            Console.WriteLine(payload); // Log để debug
+
+            if (!payload.TryGetProperty("type", out var typeProp))
+            {
+                Console.WriteLine("Webhook không có type");
+                return Ok();
+            }
+
+            var eventType = typeProp.GetString();
+            int bookingId = 0;
+            string stripePaymentIntentId = string.Empty;
+
+            if (payload.TryGetProperty("data", out var dataProp) &&
+                dataProp.TryGetProperty("object", out var objectProp))
+            {
+                if (objectProp.TryGetProperty("id", out var stripeIdProp))
+                {
+                    stripePaymentIntentId = stripeIdProp.GetString();
+                    Console.WriteLine($"Stripe PaymentIntentId: {stripePaymentIntentId}");
+                }
+
+                if (objectProp.TryGetProperty("metadata", out var metadataProp) &&
+                    metadataProp.TryGetProperty("BookingId", out var bookingIdProp))
+                {
+                    var bookingIdStr = bookingIdProp.GetString();
+                    if (!int.TryParse(bookingIdStr, out bookingId))
+                        Console.WriteLine($"BookingId không hợp lệ: {bookingIdStr}");
+                    else
+                        Console.WriteLine($"BookingId: {bookingId}");
+                }
+            }
+
+            if (bookingId == 0)
+            {
+                Console.WriteLine("Webhook không có BookingId, bỏ qua xử lý.");
+                return Ok();
+            }
+
+            switch (eventType)
+            {
+                case "payment_intent.succeeded":
+                    await _bookingService.MarkBookingCompleteAsync(bookingId);
+                    Console.WriteLine("Merchant đã nhận tiền");
+                    break;
+
+                case "payment_intent.canceled":
+                    await _bookingService.MarkBookingCancelledAsync(bookingId);
+                    Console.WriteLine("Hủy đơn");
+                    break;
+
+                case "payment_intent.amount_capturable_updated":
+                    await _bookingService.MarkBookingPaidAsync(bookingId, stripePaymentIntentId);
+                    Console.WriteLine("Player đã trả tiền (chờ capture)");
+                    break;
+
+                case "payment_intent.created":
+                    Console.WriteLine("Tạo PaymentIntent thành công (không xử lý DB)");
+                    break;
+
+                default:
+                    Console.WriteLine($"Sự kiện chưa xử lý: {eventType}");
+                    break;
+            }
+
+            return Ok();
+        }
+
+
         [HttpGet("CheckCommission")]
         public IActionResult CheckCommission(int userId, int month, int year)
         {

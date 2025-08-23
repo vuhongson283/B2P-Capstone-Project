@@ -26,7 +26,76 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
     const shownNotifications = useRef(new Set());
     const lastProcessedTime = useRef(0);
     const isInitialized = useRef(false);
-    const globalHandlersSet = useRef(false); // ✅ NEW: Track if global handlers are set
+    const globalHandlersSet = useRef(false);
+
+    // ✅ STORAGE KEYS
+    const getStorageKey = (suffix) => `notifications_${userId}_${suffix}`;
+    const NOTIFICATIONS_KEY = getStorageKey('data');
+    const UNREAD_COUNT_KEY = getStorageKey('unread');
+
+    // ✅ LOAD NOTIFICATIONS FROM LOCALSTORAGE ON MOUNT
+    useEffect(() => {
+        if (!userId) return;
+
+        try {
+            console.log(`📱 Loading notifications for user ${userId}...`);
+
+            const savedNotifications = localStorage.getItem(NOTIFICATIONS_KEY);
+            const savedUnreadCount = localStorage.getItem(UNREAD_COUNT_KEY);
+
+            if (savedNotifications) {
+                const parsed = JSON.parse(savedNotifications);
+
+                // Filter notifications less than 7 days old
+                const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                const validNotifications = parsed.filter(notif => {
+                    const notifTime = new Date(notif.timestamp).getTime();
+                    return notifTime > sevenDaysAgo;
+                });
+
+                setNotifications(validNotifications);
+                console.log(`📱 Loaded ${validNotifications.length} notifications from localStorage`);
+
+                // Clean up old notifications from localStorage if needed
+                if (validNotifications.length !== parsed.length) {
+                    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(validNotifications));
+                    console.log(`🧹 Cleaned up ${parsed.length - validNotifications.length} old notifications`);
+                }
+            }
+
+            if (savedUnreadCount) {
+                const unreadCount = parseInt(savedUnreadCount, 10) || 0;
+                setUnreadCount(unreadCount);
+                console.log(`📱 Loaded unread count: ${unreadCount}`);
+            }
+        } catch (error) {
+            console.error('❌ Error loading notifications from localStorage:', error);
+        }
+    }, [userId, NOTIFICATIONS_KEY, UNREAD_COUNT_KEY]);
+
+    // ✅ SAVE NOTIFICATIONS TO LOCALSTORAGE WHEN UPDATED
+    useEffect(() => {
+        if (!userId || notifications.length === 0) return;
+
+        try {
+            localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+            console.log(`💾 Saved ${notifications.length} notifications to localStorage`);
+        } catch (error) {
+            console.error('❌ Error saving notifications to localStorage:', error);
+        }
+    }, [notifications, userId, NOTIFICATIONS_KEY]);
+
+    // ✅ SAVE UNREAD COUNT TO LOCALSTORAGE WHEN UPDATED
+    useEffect(() => {
+        if (!userId) return;
+
+        try {
+            localStorage.setItem(UNREAD_COUNT_KEY, unreadCount.toString());
+            console.log(`💾 Saved unread count: ${unreadCount}`);
+        } catch (error) {
+            console.error('❌ Error saving unread count to localStorage:', error);
+        }
+    }, [unreadCount, userId, UNREAD_COUNT_KEY]);
 
     // Cleanup old notification IDs
     const cleanupOldNotifications = useCallback(() => {
@@ -63,6 +132,23 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                 ? `${notification.checkInTime} - ${notification.checkOutTime}`
                 : notification.checkInTime || '');
 
+        // ✅ CREATE PERSISTENT NOTIFICATION FIRST
+        const newNotification = {
+            id: notificationId,
+            type: 'booking_created',
+            title: 'Đơn đặt sân mới',
+            message: `${notification.courtName || 'Sân thể thao'} - ${dateText} ${timeText}`,
+            data: notification,
+            timestamp: new Date().toISOString(),
+            read: false
+        };
+
+        // ✅ ADD TO PERSISTENT STORAGE FIRST
+        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
+        setUnreadCount(prev => prev + 1);
+        console.log('💾 GLOBAL notification added to persistent storage');
+
+        // ✅ THEN SHOW POPUP NOTIFICATION
         const notificationContent = (
             <div style={{ cursor: 'pointer' }}>
                 <div style={{
@@ -100,7 +186,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                 marginTop: '10px'
             },
             onClick: () => {
-                // ✅ FIXED: Mở modal chi tiết
                 console.log('🔔 Global notification clicked, opening detail modal');
 
                 // Store notification data globally
@@ -115,21 +200,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                 antdNotification.destroy(notificationId);
             }
         });
-
-        const newNotification = {
-            id: notificationId,
-            type: 'booking_created',
-            title: 'Đơn đặt sân mới',
-            message: `${notification.courtName || 'Sân thể thao'} - ${dateText} ${timeText}`,
-            data: notification,
-            timestamp: new Date(),
-            read: false
-        };
-
-        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
-        setUnreadCount(prev => prev + 1);
-
-        console.log('✅ GLOBAL notification added to list');
 
     }, []);
 
@@ -161,6 +231,23 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
             title = 'Đơn đặt sân đã hủy';
         }
 
+        // ✅ CREATE PERSISTENT NOTIFICATION FIRST
+        const newNotification = {
+            id: notificationId,
+            type: 'booking_updated',
+            title: title,
+            message: `${notification.courtName || 'Sân thể thao'} - ${notification.date} ${notification.timeSlot}`,
+            data: notification,
+            timestamp: new Date().toISOString(),
+            read: false
+        };
+
+        // ✅ ADD TO PERSISTENT STORAGE FIRST
+        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
+        setUnreadCount(prev => prev + 1);
+        console.log('💾 GLOBAL update notification added to persistent storage');
+
+        // ✅ THEN SHOW POPUP NOTIFICATION
         const notificationContent = (
             <div style={{ cursor: 'pointer' }}>
                 <div style={{
@@ -171,10 +258,10 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                     color: color
                 }}>
                     {icon}
-                    <span style={{ marginLeft: '8px' }}>{title} (Global)</span>
+                    <span style={{ marginLeft: '8px' }}>{title} </span>
                 </div>
                 <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-                    <div><strong>Mã booking:</strong> #{notification.bookingId}</div>
+                    <div><strong>Khách hàng :</strong> #{notification.customerName}</div>
                     <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
                     <div><strong>Thời gian:</strong> {notification.date} • {notification.timeSlot}</div>
                 </div>
@@ -195,21 +282,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                 handleNotificationClick(notification);
             }
         });
-
-        const newNotification = {
-            id: notificationId,
-            type: 'booking_updated',
-            title: title,
-            message: `${notification.courtName || 'Sân thể thao'} - ${notification.date} ${notification.timeSlot}`,
-            data: notification,
-            timestamp: new Date(),
-            read: false
-        };
-
-        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
-        setUnreadCount(prev => prev + 1);
-
-        console.log('✅ GLOBAL update notification added to list');
 
     }, []);
 
@@ -235,6 +307,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
             )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
+        console.log(`✅ Marked notification ${notificationId} as read`);
     }, []);
 
     const markAllAsRead = useCallback(() => {
@@ -242,12 +315,24 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
             prev.map(notif => ({ ...notif, read: true }))
         );
         setUnreadCount(0);
+        console.log(`✅ Marked all notifications as read`);
     }, []);
 
     const clearAllNotifications = useCallback(() => {
         setNotifications([]);
         setUnreadCount(0);
-    }, []);
+
+        // ✅ CLEAR FROM LOCALSTORAGE TOO
+        if (userId) {
+            try {
+                localStorage.removeItem(NOTIFICATIONS_KEY);
+                localStorage.removeItem(UNREAD_COUNT_KEY);
+                console.log(`🗑️ Cleared all notifications from localStorage`);
+            } catch (error) {
+                console.error('❌ Error clearing notifications from localStorage:', error);
+            }
+        }
+    }, [userId, NOTIFICATIONS_KEY, UNREAD_COUNT_KEY]);
 
     // ✅ FIXED: Set global handlers ONCE and never cleanup
     useEffect(() => {

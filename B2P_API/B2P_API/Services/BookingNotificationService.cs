@@ -10,8 +10,9 @@ namespace B2P_API.Services
 		Task NotifyBookingCreated(int facilityId, object bookingData);
 		Task NotifyBookingUpdated(int facilityId, object bookingData);
 		Task NotifyBookingCompleted(int facilityId, object bookingData);
+		Task NotifyBookingCancelled(int facilityId, object bookingData); // ✅ ADD: Cancelled method
 
-		// ✅ NEW: Comment notification methods
+		// ✅ EXISTING: Comment notification methods
 		Task NotifyCommentCreated(int blogAuthorId, object commentData);
 		Task NotifyCommentReply(int blogAuthorId, object replyData);
 		Task SendCommentNotification(object notificationData);
@@ -48,7 +49,19 @@ namespace B2P_API.Services
 				.SendAsync("BookingCompleted", bookingData);
 		}
 
-		// ✅ NEW: Comment notification methods
+		// ✅ ADD: Booking cancelled method
+		public async Task NotifyBookingCancelled(int facilityId, object bookingData)
+		{
+			Console.WriteLine($"🔔 Sending BookingCancelled notification to facility {facilityId}");
+			Console.WriteLine($"📄 Cancelled booking data: {JsonSerializer.Serialize(bookingData)}");
+
+			await _hubContext.Clients.Group($"facility_{facilityId}")
+				.SendAsync("BookingCancelled", bookingData);
+
+			Console.WriteLine($"✅ BookingCancelled notification sent to facility_{facilityId}");
+		}
+
+		// ✅ EXISTING: Comment notification methods
 		public async Task NotifyCommentCreated(int blogAuthorId, object commentData)
 		{
 			try
