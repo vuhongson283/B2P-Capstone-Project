@@ -57,8 +57,8 @@ namespace B2P_API.Controllers
             try
             {
                 // Set default URLs nếu không có
-                request.CallbackUrl = "https://ccce5ebbfdd9.ngrok-free.app/api/Payment/callback";
-                request.RedirectUrl = "https://localhost:7202/swagger/index.html";
+                request.CallbackUrl = "https://api.book2play.site/api/Payment/callback";
+                request.RedirectUrl = "https://book2play.site/";
 
                 _logger.LogInformation($"Creating order for amount: {request.Amount}");
 

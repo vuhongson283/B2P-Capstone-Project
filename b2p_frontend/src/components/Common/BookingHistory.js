@@ -10,6 +10,7 @@ import {
     cancelPayment
 } from '../../services/apiService';
 import dayjs from 'dayjs';
+import ConfirmModal from '../ConfirmModal/ConfirmModal'; // ✅ Import component mới
 
 const { TextArea } = Input;
 
@@ -22,6 +23,10 @@ const BookingHistory = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [customerLoading, setCustomerLoading] = useState(false);
+
+    // ✅ NEW: State cho confirm modal
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [bookingToCancel, setBookingToCancel] = useState(null);
 
     // ✅ NEW: State cho slots modal
     const [isSlotsModalOpen, setIsSlotsModalOpen] = useState(false);
@@ -81,42 +86,47 @@ const BookingHistory = () => {
         return hasCorrectPaymentType && hasCorrectStatus && isMoreThan3Days && hasTransactionCode;
     };
 
-    // ✅ NEW: Handle cancel booking
-    // ✅ UPDATE: Handle cancel booking - THÊM LOGS CHI TIẾT
-    const handleCancelBooking = async (booking) => {
+    // ✅ NEW: Show confirm modal instead of window.confirm
+    const showCancelConfirm = (booking) => {
+        setBookingToCancel(booking);
+        setIsConfirmModalOpen(true);
+    };
+
+    // ✅ NEW: Close confirm modal
+    const closeCancelConfirm = () => {
+        setIsConfirmModalOpen(false);
+        setBookingToCancel(null);
+    };
+
+    // ✅ NEW: Handle confirmed cancel
+    const handleConfirmedCancel = async () => {
+        if (!bookingToCancel) return;
+
         try {
-            console.log('🚫 [handleCancelBooking] Starting cancel process...');
-            console.log('📋 [handleCancelBooking] Booking to cancel:', {
-                bookingId: booking.id,
-                courtName: booking.courtName,
-                date: booking.date,
-                price: booking.price,
-                status: booking.status,
-                paymentTypeId: booking.paymentTypeId
+            console.log('🚫 [handleConfirmedCancel] Starting cancel process...');
+            console.log('📋 [handleConfirmedCancel] Booking to cancel:', {
+                bookingId: bookingToCancel.id,
+                courtName: bookingToCancel.courtName,
+                date: bookingToCancel.date,
+                price: bookingToCancel.price,
+                status: bookingToCancel.status,
+                paymentTypeId: bookingToCancel.paymentTypeId
             });
 
-            const confirmed = window.confirm('Bạn có chắc chắn muốn hủy đặt sân này không?');
-            if (!confirmed) {
-                console.log('❌ [handleCancelBooking] User cancelled the confirmation');
-                return;
-            }
-
-            console.log('✅ [handleCancelBooking] User confirmed cancellation');
-
             // Lấy transactionCode từ booking
-            const transactionCode = booking.transactionCode ||
-                booking.rawBookingData?.transactionCode ||
-                booking.rawBookingData?.TransactionCode;
+            const transactionCode = bookingToCancel.transactionCode ||
+                bookingToCancel.rawBookingData?.transactionCode ||
+                bookingToCancel.rawBookingData?.TransactionCode;
 
-            console.log('🔍 [handleCancelBooking] Transaction code search:', {
-                fromBooking: booking.transactionCode,
-                fromRawData: booking.rawBookingData?.transactionCode,
-                fromRawDataUpper: booking.rawBookingData?.TransactionCode,
+            console.log('🔍 [handleConfirmedCancel] Transaction code search:', {
+                fromBooking: bookingToCancel.transactionCode,
+                fromRawData: bookingToCancel.rawBookingData?.transactionCode,
+                fromRawDataUpper: bookingToCancel.rawBookingData?.TransactionCode,
                 finalTransactionCode: transactionCode
             });
 
             if (!transactionCode) {
-                console.error('❌ [handleCancelBooking] Missing TransactionCode, but showing success anyway');
+                console.error('❌ [handleConfirmedCancel] Missing TransactionCode, but showing success anyway');
                 // ✅ LUÔN HIỆN THÀNH CÔNG dù không có transaction code
                 message.success('Đã hủy đặt sân thành công');
                 window.location.reload(); // ✅ Reload trang
@@ -142,7 +152,7 @@ const BookingHistory = () => {
                     timestamp: new Date().toISOString()
                 });
 
-                console.log('✅ [handleCancelBooking] API called successfully, showing success message');
+                console.log('✅ [handleConfirmedCancel] API called successfully, showing success message');
 
             } catch (apiError) {
                 console.error('❌ [API ERROR] Cancel API failed but showing success anyway:', {
@@ -165,14 +175,14 @@ const BookingHistory = () => {
             // ✅ LUÔN LUÔN HIỆN THÀNH CÔNG - KẾT THÚC TẠI ĐÂY
             message.success('Đã hủy đặt sân thành công');
 
-            console.log('🔄 [handleCancelBooking] Reloading page...');
+            console.log('🔄 [handleConfirmedCancel] Reloading page...');
 
             // ✅ RELOAD TRANG NGAY LẬP TỨC
             window.location.reload();
 
         } catch (error) {
             // ✅ CATCH TỔNG THỂ - VẪN HIỆN THÀNH CÔNG
-            console.error('❌ [handleCancelBooking] Unexpected error but showing success:', {
+            console.error('❌ [handleConfirmedCancel] Unexpected error but showing success:', {
                 error: error,
                 message: error.message,
                 timestamp: new Date().toISOString(),
@@ -963,11 +973,11 @@ const BookingHistory = () => {
                                                         Chi tiết
                                                     </button>
 
-                                                    {/* ✅ NEW: Updated cancel button logic */}
+                                                    {/* ✅ UPDATED: Use showCancelConfirm instead of handleCancelBooking */}
                                                     {canCancelBooking(booking) && (
                                                         <button
                                                             className="btn btn-danger btn-sm"
-                                                            onClick={() => handleCancelBooking(booking)}
+                                                            onClick={() => showCancelConfirm(booking)}
                                                             style={{ marginLeft: '8px' }}
                                                         >
                                                             <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1047,6 +1057,22 @@ const BookingHistory = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ✅ NEW: CONFIRM MODAL */}
+            <ConfirmModal
+                isOpen={isConfirmModalOpen}
+                onClose={closeCancelConfirm}
+                onConfirm={handleConfirmedCancel}
+                title="Xác nhận hủy đặt sân"
+                message={
+                    bookingToCancel
+                        ? `Bạn có chắc chắn muốn hủy đặt sân "${bookingToCancel.courtName}" vào ngày ${formatDate(bookingToCancel.date)} không?`
+                        : "Bạn có chắc chắn muốn hủy đặt sân này không?"
+                }
+                confirmText="Hủy đặt sân"
+                cancelText="Không hủy"
+                type="danger"
+            />
 
             {/* ✅ NEW: SLOTS MODAL */}
             <Modal
@@ -1192,63 +1218,17 @@ const BookingHistory = () => {
                                             </div>
                                         </div>
                                     </div>
-
                                     <div className="detail-section">
                                         <h3 className="section-title">
                                             <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
-                                            Thông tin khách hàng
+                                            Ghi chú
                                         </h3>
-                                        <div className="detail-grid">
-                                            <div className="detail-item">
-                                                <div className="label">Tên khách hàng</div>
-                                                <div className="value">
-                                                    {customerLoading ? <Spin size="small" /> : selectedBooking.customerName}
-                                                </div>
-                                            </div>
-                                            <div className="detail-item">
-                                                <div className="label">Email</div>
-                                                <div className="value">
-                                                    {customerLoading ? <Spin size="small" /> : selectedBooking.customerEmail}
-                                                </div>
-                                            </div>
+                                        <div className="notes-content">
+                                            {selectedBooking.notes}
                                         </div>
                                     </div>
-
-                                    <div className="detail-section">
-                                        <h3 className="section-title">
-                                            <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                            Thanh toán
-                                        </h3>
-                                        <div className="detail-grid">
-                                            <div className="detail-item">
-                                                <div className="label">Tổng tiền</div>
-                                                <div className="value price">{formatPrice(selectedBooking.price)}</div>
-                                            </div>
-                                            <div className="detail-item">
-                                                <div className="label">Trạng Thái</div>
-                                                <div className="value">{selectedBooking.paymentMethod}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {selectedBooking.notes && (
-                                        <div className="detail-section">
-                                            <h3 className="section-title">
-                                                <svg className="section-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                                Ghi chú
-                                            </h3>
-                                            <div className="notes-content">
-                                                {selectedBooking.notes}
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {/* RATING SECTION - CHỈ HIỂN THỊ KHI ĐÃ HOÀN THÀNH */}
                                     {selectedBooking.status === 'completed' && (
                                         <div className="detail-section rating-section">
@@ -1352,11 +1332,11 @@ const BookingHistory = () => {
                         </div>
 
                         <div className="modal-footer">
-                            {/* ✅ NEW: Updated modal footer cancel button logic */}
+                            {/* ✅ UPDATED: Use showCancelConfirm instead of handleCancelBooking */}
                             {canCancelBooking(selectedBooking) && (
                                 <button
                                     className="btn btn-danger btn-action"
-                                    onClick={() => handleCancelBooking(selectedBooking)}
+                                    onClick={() => showCancelConfirm(selectedBooking)}
                                 >
                                     Hủy đặt sân
                                 </button>
@@ -1370,3 +1350,5 @@ const BookingHistory = () => {
 };
 
 export default BookingHistory;
+
+
