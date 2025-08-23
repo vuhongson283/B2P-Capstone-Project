@@ -36,10 +36,17 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("SignalRPolicy", policy =>
     {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:3001",
+                "https://ccce5ebbfdd9.ngrok-free.app", // Ngrok URL
+                "https://yourdomain.com",
+                "https://book2play.site")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .SetIsOriginAllowed(origin => true); // Cho phép mọi origin (chỉ khi DEV)
     });
 });
 

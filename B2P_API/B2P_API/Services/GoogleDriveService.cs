@@ -16,7 +16,7 @@
 
         private DriveService GetDriveService()
         {
-            var path = @"D:\credentials.json";
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "credentials.json");
             GoogleCredential credential;
 
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
