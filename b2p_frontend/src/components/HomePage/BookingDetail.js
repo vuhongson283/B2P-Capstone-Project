@@ -36,6 +36,10 @@ export default function BookingDetail({
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Calculate deposit amount (30% of total price)
+    const depositAmount = Math.round(totalPrice * 0.3);
+    const remainingAmount = totalPrice - depositAmount;
+
     // Reset form when modal opens
     useEffect(() => {
         if (open) {
@@ -212,9 +216,9 @@ export default function BookingDetail({
 
                 if (formData.paymentMethod === 'international') {
                     const stripePaymentData = {
-                        amount: convertVNDtoUSDCents(totalPrice),
+                        amount: convertVNDtoUSDCents(depositAmount), // Use deposit amount for payment
                         currency: 'usd',
-                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(totalPrice)),
+                        platformFee: calculatePlatformFee(convertVNDtoUSDCents(depositAmount)),
                         destinationAccountId: 'acct_1RuuxcATZut0ML00',
                         bookingId: bookingId.toString()
                     };
@@ -230,8 +234,8 @@ export default function BookingDetail({
                         onClose();
 
                         if (paymentId) {
-                            const usdAmount = convertVNDtoUSDCents(totalPrice) / 100;
-                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}&amount_vnd=${totalPrice}&amount_usd=${usdAmount.toFixed(2)}`;
+                            const usdAmount = convertVNDtoUSDCents(depositAmount) / 100;
+                            const stripePaymentUrl = `/stripepayment?payment_id=${paymentId}&booking_id=${bookingId}&amount_vnd=${depositAmount}&amount_usd=${usdAmount.toFixed(2)}`;
                             window.open(stripePaymentUrl, '_blank');
                         } else {
                             console.warn('Không có payment ID trong Stripe response:', stripePaymentResult);
@@ -245,8 +249,8 @@ export default function BookingDetail({
                     }
                 } else {
                     const paymentData = {
-                        amount: totalPrice,
-                        description: `Thanh toán đặt sân - Mã booking: ${bookingId}`,
+                        amount: depositAmount, // Use deposit amount for payment
+                        description: `Thanh toán đặt cọc sân - Mã booking: ${bookingId}`,
                         redirectUrl: window.location.origin + "/payment-success",
                         callbackUrl: window.location.origin + "/payment-callback",
                         appUser: userId ? userId.toString() : formData.phone,
@@ -366,12 +370,28 @@ export default function BookingDetail({
                                 <span className="summary-label">Tổng số sân:</span>
                                 <span className="summary-value">{totalCourts}</span>
                             </div>
-                            <div className="summary-item total">
-                                <span className="summary-label">Tổng tiền:</span>
-                                <span className="summary-value total-price">
-                                    {formatCurrency(totalPrice)}
-                                </span>
+                        </div>
+                        
+                        {/* Price Breakdown */}
+                        <div className="price-breakdown">
+                            <div className="price-item">
+                                <span className="price-label">Tổng tiền:</span>
+                                <span className="price-value">{formatCurrency(totalPrice)}</span>
                             </div>
+                            <div className="price-item deposit">
+                                <span className="price-label">Tiền đặt cọc (30%):</span>
+                                <span className="price-value deposit-amount">{formatCurrency(depositAmount)}</span>
+                            </div>
+                            <div className="price-item remaining">
+                                <span className="price-label">Số tiền còn lại:</span>
+                                <span className="price-value">{formatCurrency(remainingAmount)}</span>
+                            </div>
+                        </div>
+
+                        {/* Payment Note */}
+                        <div className="payment-note">
+                            <p>💡 <strong>Lưu ý:</strong> Bạn chỉ cần thanh toán <strong>{formatCurrency(depositAmount)}</strong> để đặt cọc sân. 
+                            Số tiền còn lại <strong>{formatCurrency(remainingAmount)}</strong> sẽ được thanh toán khi đến sân.</p>
                         </div>
                     </div>
 
@@ -494,7 +514,7 @@ export default function BookingDetail({
                                     Đang xử lý...
                                 </>
                             ) : (
-                                'Xác nhận đặt sân'
+                                `Đặt cọc ${formatCurrency(depositAmount)}`
                             )}
                         </button>
                     </div>
