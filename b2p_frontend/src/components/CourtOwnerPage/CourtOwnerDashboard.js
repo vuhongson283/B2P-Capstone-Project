@@ -8,6 +8,7 @@ import {
   getTotalReport,
   exportReportToExcel,
   checkCommission,
+  createPaymentOrder, // ✅ THÊM IMPORT
 } from "../../services/apiService";
 import "./CourtOwnerDashboard.scss";
 import { Chart as ChartJS, registerables } from 'chart.js';
@@ -57,6 +58,9 @@ const OwnerDashboard = () => {
   const [monthlyCommissions, setMonthlyCommissions] = useState({});
   const [loadingCommissions, setLoadingCommissions] = useState(false);
 
+  // ✅ THÊM STATE ĐỂ THEO DÕI SỐ THÁNG CẦN TẠO COMMISSION
+  const [pendingCommissionCount, setPendingCommissionCount] = useState(0);
+
   // Hàm lấy ngày đầu và cuối tháng từ selectedMonth
   const getMonthRange = (dateObj) => {
     const year = dateObj.getFullYear();
@@ -77,71 +81,132 @@ const OwnerDashboard = () => {
       const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11
       const currentYear = currentDate.getFullYear();
       const commissionStatus = {};
+      let pendingCount = 0; // ✅ BIẾN ĐẾM SỐ THÁNG CẦN TẠO
 
       // ✅ CHỈ KIỂM TRA CÁC THÁNG ĐÃ QUA (KHÔNG BAO GỒM THÁNG HIỆN TẠI)
       for (let month = 1; month < currentMonth; month++) {
         try {
           console.log(`🔍 Checking commission for month ${month}/${currentYear}`);
           
-          const response = await checkCommission(userId, month, currentYear);
+          // ✅ KIỂM TRA COMMISSION STATUS
+          const commissionResponse = await checkCommission(userId, month, currentYear);
           
-          console.log(`📊 Month ${month} response:`, response);
+          // ✅ KIỂM TRA DOANH THU
+          const selectedDate = new Date(currentYear, month - 1, 1);
+          const [start, end] = getMonthRange(selectedDate);
+          const revenueResponse = await getTotalReport(userId, start, end);
+          
+          const hasRevenue = revenueResponse?.success && (revenueResponse.data?.totalCost || 0) > 0;
+          const hasCommission = revenueResponse?.success && (revenueResponse.data?.commissionPayment || 0) > 0;
+          const commissionExists = commissionResponse?.exists || false;
 
-          // ✅ SỬA LOGIC: API trả về trực tiếp {exists: true/false}
-          if (response && typeof response.exists !== 'undefined') {
-            commissionStatus[`${month}-${currentYear}`] = {
-              month,
-              year: currentYear,
-              exists: response.exists // ✅ Lấy trực tiếp từ response.exists
-            };
-            console.log(`✅ Month ${month}: Commission exists = ${response.exists}`);
-          } else if (response && response.data && typeof response.data.exists !== 'undefined') {
-            // ✅ Backup: Nếu có nested data
-            commissionStatus[`${month}-${currentYear}`] = {
-              month,
-              year: currentYear,
-              exists: response.data.exists
-            };
-            console.log(`✅ Month ${month}: Commission exists = ${response.data.exists} (from data)`);
-          } else {
-            commissionStatus[`${month}-${currentYear}`] = {
-              month,
-              year: currentYear,
-              exists: false // ✅ Không có exists → false
-            };
-            console.log(`❌ Month ${month}: No exists property, setting to false`);
+          // ✅ XÁC ĐỊNH TRẠNG THÁI
+          let status = 'no-revenue';
+          if (hasRevenue && hasCommission) {
+            if (commissionExists) {
+              status = 'paid';
+            } else {
+              status = 'pending'; // ✅ CẦN TẠO COMMISSION
+              pendingCount++; // ✅ TĂNG COUNTER
+            }
+          } else if (hasRevenue && !hasCommission) {
+            status = 'no-commission';
           }
-          
-        } catch (error) {
-          console.error(`❌ Month ${month} error:`, error);
-          
-          // ✅ XỬ LÝ LỖI - 404 = chưa thanh toán
+
           commissionStatus[`${month}-${currentYear}`] = {
             month,
             year: currentYear,
-            exists: false // ✅ Có lỗi → false (hiển thị button "Tạo Commission")
+            exists: commissionExists,
+            hasRevenue,
+            hasCommission,
+            status, // ✅ THÊM STATUS
+            revenue: revenueResponse?.data?.totalCost || 0,
+            commission: revenueResponse?.data?.commissionPayment || 0
           };
-          console.log(`❌ Month ${month}: Error occurred, setting to false`);
+
+          console.log(`✅ Month ${month}: Status = ${status}`);
+          
+        } catch (error) {
+          console.error(`❌ Month ${month} error:`, error);
+          commissionStatus[`${month}-${currentYear}`] = {
+            month,
+            year: currentYear,
+            exists: false,
+            hasRevenue: false,
+            hasCommission: false,
+            status: 'no-revenue',
+            revenue: 0,
+            commission: 0
+          };
         }
       }
 
-      // ✅ THÊM CÁC THÁNG HIỆN TẠI VÀ TƯƠNG LAI VỚI TRẠNG THÁI MẶC ĐỊNH
+      // ✅ THÊM CÁC THÁNG TƯƠI LAI VÀ TRẠNG THÁI MẶC ĐỊNH
       for (let month = currentMonth; month <= 12; month++) {
         commissionStatus[`${month}-${currentYear}`] = {
           month,
           year: currentYear,
-          exists: false, // Không quan trọng vì sẽ hiển thị "Chưa đến thời gian"
-          isFuture: true
+          exists: false,
+          status: 'future',
+          isFuture: true,
+          revenue: 0,
+          commission: 0
         };
       }
 
-      console.log('📋 Final commission status:', commissionStatus);
-      setMonthlyCommissions(commissionStatus);
+      console.log(`📋 Final commission status:`, commissionStatus);
+      console.log(`🔥 Pending commission count: ${pendingCount}`);
       
+      setMonthlyCommissions(commissionStatus);
+      setPendingCommissionCount(pendingCount); // ✅ CẬP NHẬT COUNTER
+    
     } catch (error) {
       console.error("Error checking multiple months commission:", error);
     } finally {
       setLoadingCommissions(false);
+    }
+  };
+
+  // ✅ TẠO HÀM RIÊNG CHỈ ĐỂ ĐẾM PENDING COMMISSION (KHÔNG LOAD CHI TIẾT)
+  const checkPendingCommissionCount = async () => {
+    if (!userId) return;
+
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+      let pendingCount = 0;
+
+      // ✅ CHỈ KIỂM TRA CÁC THÁNG ĐÃ QUA VÀ ĐẾM PENDING
+      for (let month = 1; month < currentMonth; month++) {
+        try {
+          // ✅ KIỂM TRA COMMISSION STATUS
+          const commissionResponse = await checkCommission(userId, month, currentYear);
+          
+          // ✅ KIỂM TRA DOANH THU
+          const selectedDate = new Date(currentYear, month - 1, 1);
+          const [start, end] = getMonthRange(selectedDate);
+          const revenueResponse = await getTotalReport(userId, start, end);
+          
+          const hasRevenue = revenueResponse?.success && (revenueResponse.data?.totalCost || 0) > 0;
+          const hasCommission = revenueResponse?.success && (revenueResponse.data?.commissionPayment || 0) > 0;
+          const commissionExists = commissionResponse?.exists || false;
+
+          // ✅ CHỈ ĐẾM NHỮNG THÁNG CÓ COMMISSION NHƯNG CHƯA THANH TOÁN
+          if (hasRevenue && hasCommission && !commissionExists) {
+            pendingCount++;
+          }
+          
+        } catch (error) {
+          console.error(`❌ Month ${month} error:`, error);
+        }
+      }
+
+      console.log(`🔥 Quick check - Pending commission count: ${pendingCount}`);
+      setPendingCommissionCount(pendingCount);
+      
+    } catch (error) {
+      console.error("Error checking pending commission count:", error);
     }
   };
 
@@ -151,10 +216,9 @@ const OwnerDashboard = () => {
       setLoading(true);
 
       try {
-        // Lấy ngày đầu và cuối tháng
+        // ✅ FETCH DASHBOARD DATA TRƯỚC
         const [start, end] = getMonthRange(selectedMonth);
 
-        // Fetch total report
         const totalReportResponse = await getTotalReport(userId, start, end);
 
         if (totalReportResponse && totalReportResponse.success) {
@@ -197,6 +261,10 @@ const OwnerDashboard = () => {
         } catch (reportError) {
           console.error("Error fetching recent bookings:", reportError);
         }
+
+        // ✅ KIỂM TRA PENDING COMMISSION SAU KHI LOAD XONG DASHBOARD
+        await checkPendingCommissionCount();
+        
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError(error.message || "Không thể tải dữ liệu dashboard");
@@ -509,7 +577,11 @@ const OwnerDashboard = () => {
   // ✅ HÀM MỞ MODAL DANH SÁCH COMMISSION
   const handleShowCommissionList = async () => {
     setShowCommissionListModal(true);
-    await checkMultipleMonthsCommission();
+    
+    // ✅ CHỈ LOAD CHI TIẾT KHI MỞ MODAL (NẾU CHƯA CÓ DỮ LIỆU)
+    if (Object.keys(monthlyCommissions).length === 0) {
+      await checkMultipleMonthsCommission();
+    }
   };
 
   // ✅ HÀM ĐÓNG MODAL DANH SÁCH COMMISSION
@@ -535,11 +607,34 @@ const OwnerDashboard = () => {
       const totalReportResponse = await getTotalReport(userId, start, end);
       
       if (totalReportResponse && totalReportResponse.success) {
-        // ✅ CẬP NHẬT DỮ LIỆU CHO THÁNG ĐÃ CHỌN
+        const revenue = totalReportResponse.data?.totalCost || 0;
+        const commission = totalReportResponse.data?.commissionPayment || 0;
+        
+        console.log(`📊 Revenue data for ${month}/${year}:`, {
+          revenue,
+          commission
+        });
+
+        // ✅ KIỂM TRA DOANH THU VÀ COMMISSION
+        if (revenue <= 0 || commission <= 0) {
+          // ✅ HIỂN THỊ LẠI MODAL DANH SÁCH
+          setShowCommissionListModal(true);
+          
+          // ✅ HIỂN THỊ THÔNG BÁO TÙY THEO TRƯỜNG HỢP
+          if (revenue <= 0) {
+            alert(`📊 Tháng ${month}/${year} không có doanh thu!\n\nKhông cần tạo commission cho tháng này.`);
+          } else if (commission <= 0) {
+            alert(`📊 Tháng ${month}/${year} không có commission cần thanh toán!\n\nDoanh thu: ${formatPrice(revenue)}đ\nCommission: 0đ`);
+          }
+          
+          return; // ✅ DỪNG XỬ LÝ
+        }
+        
+        // ✅ CẬP NHẬT DỮ LIỆU CHO THÁNG ĐÃ CHỌN (CHỈ KHI CÓ DOANH THU)
         setDashboardData((prev) => ({
           ...prev,
-          totalRevenue: totalReportResponse.data?.totalCost || 0,
-          commissionPayment: totalReportResponse.data?.commissionPayment || 0
+          totalRevenue: revenue,
+          commissionPayment: commission
         }));
         
         // ✅ MỞ MODAL COMMISSION SAU KHI ẨN MODAL LIST
@@ -547,7 +642,8 @@ const OwnerDashboard = () => {
           setShowCommissionModal(true);
         }, 300); // Delay nhỏ để smooth transition
         
-        console.log(`✅ Opened commission modal for ${month}/${year}`);
+        console.log(`✅ Opened commission modal for ${month}/${year} with commission: ${formatPrice(commission)}đ`);
+        
       } else {
         // ✅ NẾU LỖI, HIỂN THỊ LẠI MODAL DANH SÁCH
         setShowCommissionListModal(true);
@@ -569,9 +665,8 @@ const OwnerDashboard = () => {
       'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
     ];
 
-    // ✅ LẤY THÁNG VÀ NĂM HIỆN TẠI
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // getMonth() trả về 0-11, nên +1
+    const currentMonth = currentDate.getMonth() + 1;
     const currentYear = currentDate.getFullYear();
 
     return (
@@ -580,6 +675,11 @@ const OwnerDashboard = () => {
           <Modal.Title>
             <i className="fas fa-list me-2"></i>
             Quản lý Commission theo tháng
+            {pendingCommissionCount > 0 && (
+              <span className="pending-count-badge ms-2">
+                {pendingCommissionCount} tháng cần thanh toán
+              </span>
+            )}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="commission-list-body">
@@ -592,44 +692,74 @@ const OwnerDashboard = () => {
             <div className="commission-grid">
               {monthNames.map((monthName, index) => {
                 const month = index + 1;
-                const year = currentYear; // Sử dụng năm hiện tại
+                const year = currentYear;
                 const key = `${month}-${year}`;
                 const commissionData = monthlyCommissions[key];
-                const exists = commissionData?.exists || false;
-
-                // ✅ KIỂM TRA THÁNG TƯƠNG LAI (BAO GỒM THÁNG HIỆN TẠI)
                 const isFutureMonth = month >= currentMonth;
 
+                if (!commissionData) return null;
+
+                const { status, revenue, commission, exists } = commissionData;
+
                 return (
-                  <div key={key} className={`commission-month-card ${isFutureMonth ? 'future-month' : ''}`}>
+                  <div 
+                    key={key} 
+                    className={`commission-month-card ${status}`}
+                  >
                     <div className="month-header">
                       <h6>{monthName} {year}</h6>
+                      {/* ✅ HIỂN THỊ ICON TRẠNG THÁI */}
+                      <div className="status-icon">
+                        {status === 'pending' && <i className="fas fa-exclamation-circle text-danger"></i>}
+                        {status === 'paid' && <i className="fas fa-check-circle text-success"></i>}
+                        {status === 'no-revenue' && <i className="fas fa-minus-circle text-muted"></i>}
+                        {status === 'no-commission' && <i className="fas fa-info-circle text-info"></i>}
+                        {status === 'future' && <i className="fas fa-clock text-secondary"></i>}
+                      </div>
+                      
+                      {/* ✅ HIỂN THỊ THÔNG TIN DOANH THU */}
+                      {!isFutureMonth && revenue > 0 && (
+                        <div className="revenue-info">
+                          <small>DT: {formatPrice(revenue)}đ</small>
+                          {commission > 0 && (
+                            <small>Commission: {formatPrice(commission)}đ</small>
+                          )}
+                        </div>
+                      )}
                     </div>
+                    
                     <div className="month-status">
-                      {isFutureMonth ? (
-                        // ✅ HIỂN THỊ CHO THÁNG HIỆN TẠI VÀ TƯƠNG LAI
-                        <div className="status-future">
+                      {status === 'future' ? (
+                        <div className="status-badge status-future">
                           <i className="fas fa-clock me-2"></i>
                           Chưa đến thời gian
                         </div>
-                      ) : exists ? (
-                        // ✅ HIỂN THỊ CHO THÁNG ĐÃ THANH TOÁN
-                        <div className="status-paid">
+                      ) : status === 'no-revenue' ? (
+                        <div className="status-badge status-no-revenue">
+                          <i className="fas fa-minus-circle me-2"></i>
+                          Không có doanh thu
+                        </div>
+                      ) : status === 'no-commission' ? (
+                        <div className="status-badge status-no-commission">
+                          <i className="fas fa-info-circle me-2"></i>
+                          Không có commission
+                        </div>
+                      ) : status === 'paid' ? (
+                        <div className="status-badge status-paid">
                           <i className="fas fa-check-circle me-2"></i>
                           Đã thanh toán
                         </div>
-                      ) : (
-                        // ✅ HIỂN THỊ BUTTON CHO THÁNG CHƯA THANH TOÁN
+                      ) : status === 'pending' ? (
                         <Button
-                          variant="warning"
+                          variant="danger"
                           size="sm"
                           onClick={() => handleCreateCommissionForMonth(month, year)}
-                          className="create-commission-btn"
+                          className="create-commission-btn pending-btn"
                         >
-                          <i className="fas fa-plus me-2"></i>
-                          Tạo Commission
+                          <i className="fas fa-exclamation-triangle me-2"></i>
+                          Cần thanh toán ngay!
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -642,6 +772,12 @@ const OwnerDashboard = () => {
             <i className="fas fa-times me-2"></i>
             Đóng
           </Button>
+          {pendingCommissionCount > 0 && (
+            <div className="footer-warning">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              Bạn có {pendingCommissionCount} tháng cần thanh toán commission
+            </div>
+          )}
         </Modal.Footer>
       </Modal>
     );
@@ -656,31 +792,97 @@ const OwnerDashboard = () => {
     // ✅ HÀM XỬ LÝ THANH TOÁN
     const handlePayment = async () => {
       try {
+        const commissionAmount = dashboardData.commissionPayment;
+        const month = selectedMonth.getMonth() + 1;
+        const year = selectedMonth.getFullYear();
+        
         console.log(`💳 Processing payment for ${month}/${year}: ${commissionAmount}đ`);
         
-        // TODO: Gọi API thanh toán commission ở đây
-        // const paymentResponse = await payCommission(userId, month, year, commissionAmount);
+        // ✅ KIỂM TRA DỮ LIỆU TRƯỚC KHI GỬI
+        if (!userId) {
+          throw new Error("Không tìm thấy userId");
+        }
         
-        alert(`Thanh toán commission cho tháng ${month}/${year} thành công!`);
+        if (!commissionAmount || commissionAmount <= 0) {
+          throw new Error("Số tiền commission không hợp lệ");
+        }
         
-        // ✅ CẬP NHẬT LẠI TRẠNG THÁI COMMISSION
-        setMonthlyCommissions(prev => ({
-          ...prev,
-          [`${month}-${year}`]: {
-            ...prev[`${month}-${year}`],
-            exists: true
+        // ✅ SỬA LẠI CẤU TRÚC DỮ LIỆU THEO YÊU CẦU API
+        const paymentData = {
+          amount: commissionAmount,
+          description: `Thanh toán tiền hoa hồng tháng ${month}/${year}`,
+          appUser: userId?.toString() || user?.userId?.toString(),
+          embedData: {
+            forMonth: month.toString(),
+            forYear: year.toString()
           }
-        }));
+        };
+
+        console.log("📤 Payment request data:", JSON.stringify(paymentData, null, 2));
+
+        // ✅ GỌI API TẠO ĐƠN THANH TOÁN
+        console.log("🚀 Calling createPaymentOrder API...");
+        const paymentResponse = await createPaymentOrder(paymentData);
         
-        // ✅ ĐÓNG MODAL COMMISSION VÀ MỞ LẠI MODAL DANH SÁCH
-        setShowCommissionModal(false);
-        setTimeout(() => {
-          setShowCommissionListModal(true);
-        }, 300);
+        console.log("📥 Full payment response:", paymentResponse);
+
+        // ✅ SỬA LẠI: KIỂM TRA RESPONSE TRỰC TIẾP (KHÔNG CẦN .status VÀ .data)
+        // Vì axios interceptor có thể đã xử lý và trả về response.data trực tiếp
+        if (paymentResponse && paymentResponse.success) {
+          console.log("✅ Payment API returned success=true");
+          
+          // ✅ KIỂM TRA order_url TRỰC TIẾP TRONG paymentResponse
+          if (paymentResponse.data && paymentResponse.data.order_url) {
+            console.log("✅ Payment order created successfully");
+            console.log("🔗 Opening payment page:", paymentResponse.data.order_url);
+            
+            // ✅ MỞ TAB MỚI
+            const paymentWindow = window.open(
+              paymentResponse.data.order_url, 
+              '_blank', 
+              'noopener,noreferrer'
+            );
+            // ✅ ĐÓNG MODAL SAU KHI MỞ THANH TOÁN
+            setShowCommissionModal(false);
+            
+            
+          } else {
+            console.error("❌ Missing order_url in response:", paymentResponse);
+            alert("Không thể tạo đơn thanh toán: Thiếu đường link thanh toán");
+          }
+        } else {
+          console.error("❌ Payment creation failed:", paymentResponse);
+          const errorMsg = paymentResponse?.message || "Lỗi không xác định từ API";
+          alert("Không thể tạo đơn thanh toán: " + errorMsg);
+        }
         
       } catch (error) {
-        console.error("Error processing payment:", error);
-        alert("Có lỗi xảy ra khi thanh toán: " + error.message);
+        console.error("❌ Error processing payment:", error);
+        
+        let errorMessage = "Có lỗi xảy ra khi thanh toán: ";
+        
+        if (error.response) {
+          // ✅ API trả về lỗi HTTP
+          console.error("❌ HTTP Error response:", error.response);
+          const responseData = error.response.data;
+          
+          if (responseData && responseData.message) {
+            errorMessage += responseData.message;
+          } else if (responseData && typeof responseData === 'string') {
+            errorMessage += responseData;
+          } else {
+            errorMessage += `HTTP ${error.response.status}`;
+          }
+          
+        } else if (error.request) {
+          console.error("❌ Network Error:", error.request);
+          errorMessage += "Không thể kết nối đến server";
+        } else {
+          console.error("❌ Other Error:", error);
+          errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
       }
     };
 
@@ -833,16 +1035,31 @@ const OwnerDashboard = () => {
             style={{ width: "180px" }}
           />
 
-          {/* ✅ BUTTON HIỂN THỊ DANH SÁCH COMMISSION */}
-          <Button
-            variant="warning"
-            className="manage-commission-btn"
-            onClick={handleShowCommissionList}
-            disabled={checkingCommission}
-          >
-            <i className="fas fa-list me-2"></i>
-            Quản lý Commission
-          </Button>
+          {/* ✅ COMMISSION BUTTON VỚI NOTIFICATION BADGE */}
+          <div className="commission-button-container">
+            <Button
+              variant={pendingCommissionCount > 0 ? "danger" : "warning"}
+              className={`manage-commission-btn ${pendingCommissionCount > 0 ? 'has-pending' : ''}`}
+              onClick={handleShowCommissionList}
+              disabled={checkingCommission}
+            >
+              <i className="fas fa-percentage me-2"></i>
+              Commission
+              {pendingCommissionCount > 0 && (
+                <span className="commission-badge">
+                  {pendingCommissionCount}
+                </span>
+              )}
+            </Button>
+            
+            {/* ✅ THÔNG BÁO NẾU CÓ COMMISSION CẦN THANH TOÁN */}
+            {pendingCommissionCount > 0 && (
+              <div className="commission-alert">
+                <i className="fas fa-exclamation-triangle"></i>
+                <span>Có {pendingCommissionCount} tháng chưa thanh toán commission!</span>
+              </div>
+            )}
+          </div>
 
           <Button
             variant="success"
@@ -981,7 +1198,7 @@ const OwnerDashboard = () => {
                 <p>Không có dữ liệu để hiển thị</p>
               )}
             </div>
-          </Col>
+          </Col >
         </Row>
       </div>
 
@@ -1085,6 +1302,34 @@ const OwnerDashboard = () => {
         onHide={() => setShowDetailModal(false)}
         booking={selectedBooking}
       />
+
+      {/* ✅ THÊM THÔNG BÁO TRÊN DASHBOARD KHI CÓ COMMISSION CẦN THANH TOÁN */}
+      {pendingCommissionCount > 0 && (
+        <div className="commission-warning-banner mb-4">
+          <div className="warning-content">
+            <div className="warning-icon">
+              <i className="fas fa-exclamation-triangle"></i>
+            </div>
+            <div className="warning-text">
+              <h5>Cần thanh toán Commission</h5>
+              <p>
+                Bạn có <strong>{pendingCommissionCount} tháng</strong> chưa thanh toán commission. 
+                Vui lòng thanh toán để tránh bị tạm khóa tài khoản.
+              </p>
+            </div>
+            <div className="warning-action">
+              <Button
+                variant="danger"
+                onClick={handleShowCommissionList}
+                className="commission-cta-btn"
+              >
+                <i className="fas fa-credit-card me-2"></i>
+                Thanh toán ngay
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
