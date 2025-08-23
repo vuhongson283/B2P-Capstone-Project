@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "react-toastify/dist/ReactToastify.css";
 import { ConfigProvider, App as AntdApp } from 'antd';
-import 'antd/dist/reset.css'; 
+import 'antd/dist/reset.css';
 import App from "../App";
 import { ToastContainer } from "react-toastify";
 import FacilitiesWithCondition from "./HomePage/FacilitiesWithCondition";
@@ -26,7 +26,7 @@ import CourtOwnerPolicy from "./Common/CourtOwnerPolicy";
 import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
 import UnauthorizedPage from "./Common/UnauthorizedPage";
-import PaymentManager from "./CourtOwnerPage/PaymentManager";
+import PaymentManager from "./CourtOwnerPage/PaymentManager.js";
 import Login from './Auth/Login';
 import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../contexts/AuthContext.js";
 
@@ -40,7 +40,7 @@ const Layout = (props) => {
             <Login />
           </PublicRoute>
         } />
-        
+
         {/* 🚫 Unauthorized page */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
@@ -78,9 +78,9 @@ const Layout = (props) => {
 
         {/* 🌐 HOME PAGE ROUTES - For Guest and Player ONLY (Admin & Court Owner restricted) */}
         <Route path="/" element={
-          <ProtectedRoute 
+          <ProtectedRoute
             playerAndGuestOnly={true}
-            adminRedirect="/admin" 
+            adminRedirect="/admin"
             courtOwnerRedirect="/court-owner"
           >
             <App />
@@ -119,7 +119,7 @@ const Layout = (props) => {
         {/* 🏠 ROOT REDIRECT - Redirect to appropriate dashboard based on role */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <RoleBasedRedirect 
+            <RoleBasedRedirect
               adminRedirect="/admin"
               playerRedirect="/"
               courtOwnerRedirect="/court-owner"
@@ -129,7 +129,7 @@ const Layout = (props) => {
 
         {/* 🚫 Catch all - redirect to home or login */}
         <Route path="*" element={
-          <RoleBasedRedirect 
+          <RoleBasedRedirect
             adminRedirect="/admin"
             playerRedirect="/"
             courtOwnerRedirect="/court-owner"
