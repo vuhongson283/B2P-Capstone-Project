@@ -41,7 +41,8 @@ builder.Services.AddCors(options =>
                 "https://localhost:3000",
                 "http://localhost:3001",
                 "https://ccce5ebbfdd9.ngrok-free.app", // Ngrok URL
-                "https://yourdomain.com")
+                "https://yourdomain.com",
+                "https://book2play.site")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials()
