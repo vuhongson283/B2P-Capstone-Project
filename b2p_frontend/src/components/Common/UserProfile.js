@@ -19,7 +19,7 @@ const UserProfile = (props) => {
   const [imageLoadError, setImageLoadError] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState(null);
 
-  const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
+  const { userId, isLoggedIn, isLoading: authLoading, updateUser } = useAuth(); // Thêm updateUser
 
   // State cho thông tin cơ bản
   const [profileData, setProfileData] = useState({
@@ -604,6 +604,14 @@ const UserProfile = (props) => {
           }
         } catch (refreshError) {
           console.error("❌ Error refreshing user data:", refreshError);
+        }
+
+        // Sau khi cập nhật thành công, cập nhật context:
+        if (updateUser) {
+          updateUser({
+            ...profileData,
+            fullName: updateData.fullName, // hoặc lấy từ response nếu backend trả về
+          });
         }
       } else {
         // Error case - map to specific fields
