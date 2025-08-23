@@ -673,16 +673,139 @@
   }
 }
 
+.commission-list-body {
+  padding: 1.5rem;
+
+  .loading-container {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+    font-size: 1.1rem;
+  }
+
+  .commission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+
+    .commission-month-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .month-header {
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #dee2e6;
+
+        h6 {
+          margin: 0;
+          color: #2c3e50;
+          font-weight: 600;
+          text-align: center;
+        }
+      }
+
+      .month-status {
+        text-align: center;
+
+        .status-paid {
+          color: #28a745;
+          font-weight: 600;
+          padding: 0.5rem;
+          background: #d4edda;
+          border-radius: 6px;
+          border: 1px solid #c3e6cb;
+
+          i {
+            color: #155724;
+          }
+        }
+
+        // ✅ STYLE CHO TRẠNG THÁI "CHƯA ĐẾN THỜI GIAN"
+        .status-future {
+          color: #6c757d;
+          font-weight: 600;
+          padding: 0.75rem;
+          background: linear-gradient(135deg, #e9ecef, #dee2e6);
+          border-radius: 8px;
+          border: 1px solid #ced4da;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+
+          i {
+            color: #868e96;
+            font-size: 1.1rem;
+          }
+        }
+
+        .create-commission-btn {
+          width: 100%;
+          background: linear-gradient(45deg, #ffc107, #e0a800);
+          border: none;
+          font-weight: 600;
+          padding: 0.5rem 1rem;
+
+          &:hover {
+            background: linear-gradient(45deg, #e0a800, #d39e00);
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+  }
+}
+
+.manage-commission-btn {
+  background: linear-gradient(45deg, #f39c12, #e67e22);
+  border: none;
+  font-weight: 600;
+
+  &:hover {
+    background: linear-gradient(45deg, #e67e22, #d35400);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    transform: none;
+  }
+}
+
+// Responsive cho commission grid
 @media (max-width: 768px) {
-  .commission-modal-body {
+  .commission-list-body {
     padding: 1rem;
 
-    .info-grid {
+    .commission-grid {
       grid-template-columns: 1fr;
-    }
+      gap: 0.75rem;
 
-    .payment-amount .amount-display {
-      font-size: 1.5rem;
+      .commission-month-card {
+        padding: 0.75rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .commission-grid {
+    .commission-month-card {
+      .month-status {
+        .create-commission-btn {
+          font-size: 0.9rem;
+          padding: 0.4rem 0.8rem;
+        }
+      }
     }
   }
 }
