@@ -37,7 +37,7 @@ const FacilitiesRecommend = (props) => {
 
   const requestBody = {
     name: "",
-    type: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    type: [],
     city: "",
     ward: "",
     order: 3,
@@ -191,7 +191,9 @@ const FacilitiesRecommend = (props) => {
                   <Button
                     className="detail-btn"
                     variant="primary"
-                    onClick={() => navigate(`/facility-details/${facility.facilityId}`)}
+                    onClick={() =>
+                      navigate(`/facility-details/${facility.facilityId}`)
+                    }
                   >
                     <i className="fas fa-eye me-2"></i>
                     <span className="btn-text">Xem chi tiết</span>
