@@ -104,6 +104,7 @@ const UserProfile = (props) => {
         url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
       if (fileIdMatch) {
         const fileId = fileIdMatch[1];
+        console.log("Converting Google Drive URL, fileId:", fileId);
         return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
       }
     }
