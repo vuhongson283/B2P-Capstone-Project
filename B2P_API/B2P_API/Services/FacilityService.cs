@@ -221,14 +221,13 @@ namespace B2P_API.Services
                         maxEndTime = RoundTimeToMinute(facilityTimeSlots.Max(ts => ts.EndTime.Value));
                     }
 
-                    var activeTimeSlots = f.TimeSlots?.Where(ts => ts.StatusId == 1 && ts.Discount.HasValue).ToList();
+                    var allTimeSlots = f.TimeSlots?.Where(ts => ts.StatusId == 1).ToList() ?? new List<TimeSlot>();
 
-                    var minDiscount = (activeTimeSlots != null && activeTimeSlots.Any())
-                        ? activeTimeSlots.Min(ts => ts.Discount.Value)
+                    var minDiscount = allTimeSlots.Any()
+                        ? allTimeSlots.Min(ts => ts.Discount ?? 0)
                         : 0;
-
-                    var maxDiscount = (activeTimeSlots != null && activeTimeSlots.Any())
-                        ? activeTimeSlots.Max(ts => ts.Discount.Value)
+                    var maxDiscount = allTimeSlots.Any()
+                        ? allTimeSlots.Max(ts => ts.Discount ?? 0)
                         : 0;
 
                     return new SearchFacilityResponse
