@@ -200,19 +200,63 @@ const BookingHistory = () => {
     // ✅ NEW: Function to show slots modal
     const showSlotsModal = (booking) => {
         console.log('🎯 [showSlotsModal] Booking slots:', booking.rawSlotData);
+        console.log('🎯 [showSlotsModal] Full booking data:', booking);
 
-        // Format slots data for table display
-        const formattedSlots = (booking.rawSlotData || []).map((slot, index) => ({
-            key: index,
-            slotNumber: index + 1,
-            courtName: slot.courtName || `Sân ${slot.courtId}`,
-            timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            duration: calculateDuration(slot.startTime, slot.endTime),
-            price: formatPrice(slot.price || slot.amount || slot.cost || 0),
-            rawPrice: slot.price || slot.amount || slot.cost || 0
-        }));
+        // Format slots data with correct individual prices
+        const formattedSlots = (booking.rawSlotData || []).map((slot, index) => {
+            // ✅ DEBUG: Log tất cả các trường có thể chứa giá tiền
+            console.log(`🔍 [Slot ${index + 1}] All possible price fields:`, {
+                price: slot.price,
+                amount: slot.amount,
+                cost: slot.cost,
+                totalPrice: slot.totalPrice,
+                finalPrice: slot.finalPrice,
+                money: slot.money,
+                value: slot.value,
+                slotPrice: slot.slotPrice,
+                unitPrice: slot.unitPrice,
+                originalPrice: slot.originalPrice,
+                basePrice: slot.basePrice,
+                rawSlot: slot
+            });
+
+            // ✅ FIX: Kiểm tra tất cả các trường có thể chứa giá tiền
+            const slotPrice = slot.price ||
+                slot.amount ||
+                slot.cost ||
+                slot.totalPrice ||
+                slot.finalPrice ||
+                slot.money ||
+                slot.value ||
+                slot.slotPrice ||
+                slot.unitPrice ||
+                slot.originalPrice ||
+                slot.basePrice ||
+                0;
+
+            console.log(`💰 [Slot ${index + 1}] Final calculated price:`, slotPrice);
+
+            return {
+                key: index,
+                slotNumber: index + 1,
+                courtName: slot.courtName || `Sân ${slot.courtId}`,
+                timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                duration: calculateDuration(slot.startTime, slot.endTime),
+                price: formatPrice(slotPrice), // ✅ Giá đã format để hiển thị
+                rawPrice: slotPrice // ✅ Giá thô để tính toán
+            };
+        });
+
+        // ✅ DEBUG: Kiểm tra tổng tiền tính từ slots
+        const calculatedTotal = formattedSlots.reduce((total, slot) => total + slot.rawPrice, 0);
+        console.log('📊 [showSlotsModal] Price verification:', {
+            bookingTotalPrice: booking.price,
+            calculatedFromSlots: calculatedTotal,
+            formattedSlots: formattedSlots,
+            match: booking.price === calculatedTotal
+        });
 
         setSelectedBookingSlots(formattedSlots);
         setIsSlotsModalOpen(true);
@@ -786,12 +830,6 @@ const BookingHistory = () => {
             key: 'duration',
             align: 'center',
         },
-        {
-            title: 'Giá tiền',
-            dataIndex: 'price',
-            key: 'price',
-            align: 'right',
-        },
     ];
 
     if (loading) {
@@ -1099,7 +1137,6 @@ const BookingHistory = () => {
                         const match = slot.duration.match(/(\d+)/);
                         return total + (match ? parseInt(match[1]) : 0);
                     }, 0)} giờ</p>
-                    <p><strong>Tổng tiền:</strong> {formatPrice(selectedBookingSlots.reduce((total, slot) => total + slot.rawPrice, 0))}</p>
                 </div>
 
                 <Table
