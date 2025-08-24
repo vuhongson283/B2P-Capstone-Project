@@ -38,6 +38,9 @@ const { Option } = Select;
 const { confirm } = Modal;
 
 const ManageCourtCategories = () => {
+  useEffect(() => {
+    document.title = "Quản lý thể loại sân - B2P";
+  }, []);
   // State management
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   Table,
   Button,
@@ -17,7 +17,7 @@ import {
   Card,
   Row,
   Col,
-  Tag
+  Tag,
 } from "antd";
 import {
   SearchOutlined,
@@ -25,11 +25,16 @@ import {
   PlusOutlined,
   UploadOutlined,
   DeleteOutlined,
-  EyeOutlined
+  EyeOutlined,
 } from "@ant-design/icons";
 import {
-  getFacilitiesByCourtOwnerId, createFacility, uploadFacilityImages,
-  deleteFacilityImage, getFacilityById, updateFacility, deleteFacility
+  getFacilitiesByCourtOwnerId,
+  createFacility,
+  uploadFacilityImages,
+  deleteFacilityImage,
+  getFacilityById,
+  updateFacility,
+  deleteFacility,
 } from "../../services/apiService";
 import "./FacilityTable.scss";
 
@@ -38,8 +43,8 @@ const { Text } = Typography;
 // THAY ĐỔI 1: Sửa convertGoogleDriveUrl - thêm extract file ID từ /d/ format
 const convertGoogleDriveUrl = (originalUrl) => {
   if (!originalUrl) return "/src/assets/images/default.jpg";
-  if (originalUrl.includes('thumbnail')) return originalUrl;
-  if (originalUrl.includes('/assets/')) return originalUrl;
+  if (originalUrl.includes("thumbnail")) return originalUrl;
+  if (originalUrl.includes("/assets/")) return originalUrl;
 
   // THÊM: Extract từ format /d/FILE_ID/
   let fileId = originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
@@ -59,17 +64,19 @@ const convertGoogleDriveUrl = (originalUrl) => {
 
 const cleanAddressForDisplay = (address) => {
   if (!address) return "";
-  return address.replace(/\$\$/g, '');
+  return address.replace(/\$\$/g, "");
 };
 const handleImageError = (e, originalSrc, retryCount = 0) => {
   const img = e.target;
 
-  if (retryCount >= 4) { // Tăng lên 4 để có thêm 1 lần thử
+  if (retryCount >= 4) {
+    // Tăng lên 4 để có thêm 1 lần thử
     img.src = "/src/assets/images/default.jpg";
     return;
   }
 
-  const fileId = originalSrc.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+  const fileId =
+    originalSrc.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
     originalSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
 
   if (!fileId) {
@@ -82,7 +89,7 @@ const handleImageError = (e, originalSrc, retryCount = 0) => {
     `https://lh3.googleusercontent.com/d/${fileId}=w300-h200-c`, // THÊM format này
     `https://drive.google.com/uc?export=view&id=${fileId}`,
     `https://drive.google.com/thumbnail?id=${fileId}&sz=w300-h200`,
-    `https://docs.google.com/uc?export=download&id=${fileId}`
+    `https://docs.google.com/uc?export=download&id=${fileId}`,
   ];
 
   if (formats[retryCount]) {
@@ -95,20 +102,28 @@ const handleImageError = (e, originalSrc, retryCount = 0) => {
   }
 };
 const FacilityTable = () => {
+  useEffect(() => {
+    document.title = "Thông tin cơ sở - B2P";
+  }, []);
   const navigate = useNavigate();
   const { Option } = Select;
   const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
 
   // ✅ FIX: Tạo hàm getCourtOwnerId không dependency vào state
   const getCourtOwnerId = useCallback(() => {
-    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
+    console.log(
+      "🔍 Getting court owner ID - isLoggedIn:",
+      isLoggedIn,
+      "userId:",
+      userId
+    );
 
     if (isLoggedIn && userId) {
       return userId;
     }
 
     // ✅ Không có fallback - return null khi chưa đăng nhập
-    console.warn('⚠️ Court owner not logged in');
+    console.warn("⚠️ Court owner not logged in");
     return null;
   }, [isLoggedIn, userId]);
   // ✅ STATES CHO ĐỊA CHỈ API
@@ -148,98 +163,110 @@ const FacilityTable = () => {
   });
 
   // ✅ FIX: Tối ưu fetchFacilities với dependencies rõ ràng
-  const fetchFacilities = useCallback(async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
-    try {
-      setLoading(true);
+  const fetchFacilities = useCallback(
+    async (page = 1, pageSize = 3, searchQuery = "", status = null) => {
+      try {
+        setLoading(true);
 
-      // ✅ FIX: Kiểm tra auth loading trước
-      if (authLoading) {
-        console.log('⏳ Auth is still loading, skipping fetch...');
-        return;
-      }
+        // ✅ FIX: Kiểm tra auth loading trước
+        if (authLoading) {
+          console.log("⏳ Auth is still loading, skipping fetch...");
+          return;
+        }
 
-      // ✅ FIX: Lấy courtOwnerId từ callback
-      const courtOwnerId = getCourtOwnerId();
+        // ✅ FIX: Lấy courtOwnerId từ callback
+        const courtOwnerId = getCourtOwnerId();
 
-      if (!courtOwnerId) {
-        console.error('❌ No valid court owner ID, user not authenticated');
-        message.error('Người dùng chưa đăng nhập hoặc không có quyền truy cập');
+        if (!courtOwnerId) {
+          console.error("❌ No valid court owner ID, user not authenticated");
+          message.error(
+            "Người dùng chưa đăng nhập hoặc không có quyền truy cập"
+          );
+          setFacilities([]);
+          return;
+        }
+
+        console.log("🚀 Fetching facilities for courtOwnerId:", courtOwnerId, {
+          page,
+          pageSize,
+          searchQuery,
+          status,
+        });
+
+        const response = await getFacilitiesByCourtOwnerId(
+          courtOwnerId,
+          searchQuery,
+          status,
+          page,
+          pageSize
+        );
+
+        let success, payload;
+        if (response?.data?.success !== undefined) {
+          success = response.data.success;
+          payload = response.data.data;
+        } else if (response?.success !== undefined) {
+          success = response.success;
+          payload = response.data;
+        } else if (response?.data) {
+          success = true;
+          payload = response.data;
+        } else {
+          success = false;
+          payload = null;
+        }
+
+        if (success && payload && payload.items) {
+          const { items, totalItems, currentPage, itemsPerPage } = payload;
+
+          const mappedFacilities = items.map((facility) => ({
+            key: facility.facilityId,
+            id: facility.facilityId,
+            name: facility.facilityName,
+            address: cleanAddressForDisplay(facility.location),
+            courtCount: facility.courtCount,
+            status: facility.status,
+            image:
+              facility.images?.length > 0
+                ? convertGoogleDriveUrl(facility.images[0].imageUrl)
+                : "https://placehold.co/300x200?text=No+Image",
+          }));
+
+          setFacilities(mappedFacilities);
+          setTimeout(() => setForceUpdate((prev) => prev + 1), 100);
+          setPagination((prev) => ({
+            ...prev,
+            current: currentPage,
+            pageSize: itemsPerPage,
+            total: totalItems,
+          }));
+
+          console.log(
+            "✅ Facilities loaded successfully:",
+            mappedFacilities.length,
+            "items"
+          );
+        } else {
+          console.log("❌ No facilities data or failed response");
+          setFacilities([]);
+        }
+      } catch (error) {
+        console.error("💥 Error fetching facilities:", error);
         setFacilities([]);
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      console.log('🚀 Fetching facilities for courtOwnerId:', courtOwnerId, {
-        page, pageSize, searchQuery, status
-      });
-
-      const response = await getFacilitiesByCourtOwnerId(
-        courtOwnerId,
-        searchQuery,
-        status,
-        page,
-        pageSize
-      );
-
-      let success, payload;
-      if (response?.data?.success !== undefined) {
-        success = response.data.success;
-        payload = response.data.data;
-      } else if (response?.success !== undefined) {
-        success = response.success;
-        payload = response.data;
-      } else if (response?.data) {
-        success = true;
-        payload = response.data;
-      } else {
-        success = false;
-        payload = null;
-      }
-
-      if (success && payload && payload.items) {
-        const { items, totalItems, currentPage, itemsPerPage } = payload;
-
-        const mappedFacilities = items.map((facility) => ({
-          key: facility.facilityId,
-          id: facility.facilityId,
-          name: facility.facilityName,
-          address: cleanAddressForDisplay(facility.location),
-          courtCount: facility.courtCount,
-          status: facility.status,
-          image:
-            facility.images?.length > 0
-              ? convertGoogleDriveUrl(facility.images[0].imageUrl)
-              : "https://placehold.co/300x200?text=No+Image",
-        }));
-
-        setFacilities(mappedFacilities);
-        setTimeout(() => setForceUpdate(prev => prev + 1), 100);
-        setPagination(prev => ({
-          ...prev,
-          current: currentPage,
-          pageSize: itemsPerPage,
-          total: totalItems,
-        }));
-
-        console.log('✅ Facilities loaded successfully:', mappedFacilities.length, 'items');
-      } else {
-        console.log('❌ No facilities data or failed response');
-        setFacilities([]);
-      }
-    } catch (error) {
-      console.error("💥 Error fetching facilities:", error);
-      setFacilities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [authLoading, getCourtOwnerId]);
+    },
+    [authLoading, getCourtOwnerId]
+  );
 
   // ✅ FIX: useEffect chính để fetch dữ liệu khi auth sẵn sàng
   useEffect(() => {
-    console.log('🔄 Auth state changed:', {
+    console.log("🔄 Auth state changed:", {
       authLoading,
       isLoggedIn,
       userId,
-      hasInitialized
+      hasInitialized,
     });
 
     // Chỉ fetch khi:
@@ -248,7 +275,7 @@ const FacilityTable = () => {
     // 3. Có userId
     // 4. Chưa initialize
     if (!authLoading && isLoggedIn && userId && !hasInitialized) {
-      console.log('🚀 Conditions met, fetching facilities...');
+      console.log("🚀 Conditions met, fetching facilities...");
       fetchFacilities(1, 3, "", null);
       setHasInitialized(true);
     }
@@ -257,7 +284,7 @@ const FacilityTable = () => {
   // ✅ FIX: Reset hasInitialized khi user thay đổi
   useEffect(() => {
     if (!authLoading && (!isLoggedIn || !userId)) {
-      console.log('🔄 User logged out or changed, resetting...');
+      console.log("🔄 User logged out or changed, resetting...");
       setHasInitialized(false);
       setFacilities([]);
     }
@@ -286,7 +313,9 @@ const FacilityTable = () => {
 
     try {
       console.log("🏘️ Fetching districts for:", provinceName);
-      const selectedProvinceObj = provinces.find(p => p.name === provinceName);
+      const selectedProvinceObj = provinces.find(
+        (p) => p.name === provinceName
+      );
       if (!selectedProvinceObj) {
         console.error("❌ Province not found:", provinceName);
         return;
@@ -323,7 +352,7 @@ const FacilityTable = () => {
       const result = {
         detail: parts[0].trim(),
         district: district,
-        province: parts[2].trim()
+        province: parts[2].trim(),
       };
       console.log("✅ Parsed result (3 parts):", result);
       return result;
@@ -332,7 +361,7 @@ const FacilityTable = () => {
       const result = {
         detail: parts[0].trim(),
         district: "",
-        province: parts[1].trim()
+        province: parts[1].trim(),
       };
       console.log("✅ Parsed result (2 parts):", result);
       return result;
@@ -341,7 +370,7 @@ const FacilityTable = () => {
       const result = {
         detail: fullAddress.trim(),
         district: "",
-        province: ""
+        province: "",
       };
       console.log("✅ Parsed result (detail only):", result);
       return result;
@@ -441,13 +470,17 @@ const FacilityTable = () => {
         }
 
         // Load images
-        const convertedImages = (data.images || []).map(image => ({
+        const convertedImages = (data.images || []).map((image) => ({
           ...image,
-          imageUrl: convertGoogleDriveUrl(image.imageUrl)
+          imageUrl: convertGoogleDriveUrl(image.imageUrl),
         }));
         setFacilityImages(convertedImages);
         setUploadFileList([]);
-        console.log("🖼️ Facility images loaded:", convertedImages.length, "images");
+        console.log(
+          "🖼️ Facility images loaded:",
+          convertedImages.length,
+          "images"
+        );
 
         // Set form values
         editForm.setFieldsValue({
@@ -463,7 +496,11 @@ const FacilityTable = () => {
       }
     } catch (error) {
       console.error("💥 Error fetching facility:", error);
-      message.error(`Lỗi khi tải thông tin cơ sở: ${error.response?.data?.message || error.message}`);
+      message.error(
+        `Lỗi khi tải thông tin cơ sở: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     } finally {
       setEditLoading(false);
     }
@@ -472,11 +509,11 @@ const FacilityTable = () => {
   // ✅ HANDLE DELETE IMAGE
   const handleDeleteImage = async (imageId, imageName) => {
     Modal.confirm({
-      title: 'Xác nhận xóa ảnh',
-      content: `Bạn có chắc chắn muốn xóa ảnh "${imageName || 'này'}"?`,
-      okText: 'Xóa',
-      cancelText: 'Hủy',
-      okType: 'danger',
+      title: "Xác nhận xóa ảnh",
+      content: `Bạn có chắc chắn muốn xóa ảnh "${imageName || "này"}"?`,
+      okText: "Xóa",
+      cancelText: "Hủy",
+      okType: "danger",
       onOk: async () => {
         try {
           console.log("🗑️ Deleting image ID:", imageId);
@@ -490,19 +527,30 @@ const FacilityTable = () => {
             success = true;
           } else if (response?.success === true) {
             success = true;
-          } else if (!response?.message?.includes("not found") && !response?.message?.includes("failed")) {
+          } else if (
+            !response?.message?.includes("not found") &&
+            !response?.message?.includes("failed")
+          ) {
             success = true;
           }
 
           if (success) {
-            setFacilityImages(prev => prev.filter(img => img.imageId !== imageId));
-            message.success('Xóa ảnh thành công');
+            setFacilityImages((prev) =>
+              prev.filter((img) => img.imageId !== imageId)
+            );
+            message.success("Xóa ảnh thành công");
           } else {
-            message.error(response?.message || response?.data?.message || 'Xóa ảnh thất bại');
+            message.error(
+              response?.message || response?.data?.message || "Xóa ảnh thất bại"
+            );
           }
         } catch (error) {
-          console.error('💥 Error deleting image:', error);
-          message.error(`Xóa ảnh thất bại: ${error.response?.data?.message || error.message}`);
+          console.error("💥 Error deleting image:", error);
+          message.error(
+            `Xóa ảnh thất bại: ${
+              error.response?.data?.message || error.message
+            }`
+          );
         }
       },
     });
@@ -511,22 +559,22 @@ const FacilityTable = () => {
   // ✅ HANDLE PREVIEW IMAGE
   const handlePreviewImage = (imageUrl, caption) => {
     let previewUrl = imageUrl;
-    if (imageUrl.includes('thumbnail')) {
-      previewUrl = imageUrl.replace('thumbnail', 'uc');
+    if (imageUrl.includes("thumbnail")) {
+      previewUrl = imageUrl.replace("thumbnail", "uc");
     }
 
     Modal.info({
-      title: caption || 'Xem ảnh',
+      title: caption || "Xem ảnh",
       content: (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: "center" }}>
           <img
             src={previewUrl}
             alt="Preview"
             style={{
-              maxWidth: '100%',
-              maxHeight: '500px',
-              objectFit: 'contain',
-              borderRadius: '8px'
+              maxWidth: "100%",
+              maxHeight: "500px",
+              objectFit: "contain",
+              borderRadius: "8px",
             }}
             onError={(e) => {
               e.target.src = imageUrl;
@@ -535,14 +583,14 @@ const FacilityTable = () => {
         </div>
       ),
       width: 700,
-      okText: 'Đóng',
+      okText: "Đóng",
     });
   };
 
   // ✅ HANDLE UPLOAD CHANGE
   const handleUploadChange = ({ fileList }) => {
-    const validFiles = fileList.filter(file => {
-      const isImage = file.type?.startsWith('image/');
+    const validFiles = fileList.filter((file) => {
+      const isImage = file.type?.startsWith("image/");
       if (!isImage && file.originFileObj) {
         message.error(`${file.name} không phải là file ảnh hợp lệ`);
         return false;
@@ -555,7 +603,7 @@ const FacilityTable = () => {
       return true;
     });
 
-    const filesWithPreview = validFiles.map(file => {
+    const filesWithPreview = validFiles.map((file) => {
       if (!file.url && !file.preview && file.originFileObj) {
         file.preview = URL.createObjectURL(file.originFileObj);
       }
@@ -563,14 +611,18 @@ const FacilityTable = () => {
     });
 
     setUploadFileList(filesWithPreview);
-    console.log("📁 Upload file list changed:", filesWithPreview.length, "files");
+    console.log(
+      "📁 Upload file list changed:",
+      filesWithPreview.length,
+      "files"
+    );
   };
 
   // ✅ HANDLE IMAGE CHANGE (cho modal thêm mới)
   const handleImageChange = (info) => {
     const { fileList } = info;
-    const validFiles = fileList.filter(file => {
-      const isImage = file.type?.startsWith('image/');
+    const validFiles = fileList.filter((file) => {
+      const isImage = file.type?.startsWith("image/");
       if (!isImage && file.originFileObj) {
         message.error(`${file.name} không phải là file ảnh hợp lệ`);
         return false;
@@ -583,7 +635,7 @@ const FacilityTable = () => {
       return true;
     });
 
-    const filesWithPreview = validFiles.map(file => {
+    const filesWithPreview = validFiles.map((file) => {
       if (!file.url && !file.preview && file.originFileObj) {
         file.preview = URL.createObjectURL(file.originFileObj);
       }
@@ -601,20 +653,22 @@ const FacilityTable = () => {
     }
 
     try {
-      console.log(`📸 Uploading ${imageFiles.length} images for facility ${facilityId}`);
+      console.log(
+        `📸 Uploading ${imageFiles.length} images for facility ${facilityId}`
+      );
       const formData = new FormData();
 
-      imageFiles.forEach(fileObj => {
+      imageFiles.forEach((fileObj) => {
         const file = fileObj.originFileObj || fileObj;
-        formData.append('files', file);
+        formData.append("files", file);
       });
 
-      formData.append('entityId', facilityId.toString());
-      formData.append('caption', 'Facility image');
+      formData.append("entityId", facilityId.toString());
+      formData.append("caption", "Facility image");
 
       console.log("📤 FormData prepared:", {
         files: imageFiles.length,
-        entityId: facilityId
+        entityId: facilityId,
       });
 
       const uploadResponse = await uploadFacilityImages(formData);
@@ -627,20 +681,23 @@ const FacilityTable = () => {
         responseData = uploadResponse;
       }
 
-      const isValidResponse = Array.isArray(responseData) &&
+      const isValidResponse =
+        Array.isArray(responseData) &&
         responseData.length > 0 &&
         responseData[0].imageId;
 
       if (isValidResponse) {
-        console.log(`✅ Upload successful: ${imageFiles.length} images uploaded`);
+        console.log(
+          `✅ Upload successful: ${imageFiles.length} images uploaded`
+        );
         return { success: true, data: responseData };
       } else {
         throw new Error("Upload response không hợp lệ");
       }
-
     } catch (error) {
       console.error("💥 Error uploading images:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Upload ảnh thất bại";
+      const errorMessage =
+        error.response?.data?.message || error.message || "Upload ảnh thất bại";
       message.error(`Upload ảnh thất bại: ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
@@ -689,7 +746,7 @@ const FacilityTable = () => {
         statusId: values.statusId,
         openHour: values.openHour,
         closeHour: values.closeHour,
-        slotDuration: values.slotDuration
+        slotDuration: values.slotDuration,
       };
 
       console.log("🚀 Step 1: Creating facility...", facilityData);
@@ -698,7 +755,8 @@ const FacilityTable = () => {
       console.log("✅ Create facility response:", createResponse);
 
       const success = createResponse?.data?.success || createResponse?.success;
-      const message_text = createResponse?.data?.message || createResponse?.message;
+      const message_text =
+        createResponse?.data?.message || createResponse?.message;
 
       if (!success) {
         message.error(message_text || "Tạo cơ sở thất bại");
@@ -706,7 +764,8 @@ const FacilityTable = () => {
       }
 
       // Lấy facilityId
-      const facilityId = createResponse?.data?.data?.facilityId ||
+      const facilityId =
+        createResponse?.data?.data?.facilityId ||
         createResponse?.data?.facilityId ||
         createResponse?.facilityId;
 
@@ -738,11 +797,12 @@ const FacilityTable = () => {
       // Reset và refresh
       handleModalClose();
       await fetchFacilities(1, pagination.pageSize, searchText, statusFilter);
-      setPagination(prev => ({ ...prev, current: 1 }));
-
+      setPagination((prev) => ({ ...prev, current: 1 }));
     } catch (error) {
       console.error("💥 Error in create facility flow:", error);
-      message.error(`Tạo cơ sở thất bại: ${error.response?.data?.message || error.message}`);
+      message.error(
+        `Tạo cơ sở thất bại: ${error.response?.data?.message || error.message}`
+      );
     } finally {
       setSubmitLoading(false);
     }
@@ -760,7 +820,11 @@ const FacilityTable = () => {
       }
 
       // Validate địa chỉ
-      if (!editSelectedProvince || !editSelectedDistrict || !values.detailAddress) {
+      if (
+        !editSelectedProvince ||
+        !editSelectedDistrict ||
+        !values.detailAddress
+      ) {
         message.error("Vui lòng chọn đầy đủ thông tin địa chỉ");
         return;
       }
@@ -781,7 +845,10 @@ const FacilityTable = () => {
       };
 
       console.log("🚀 Step 1: Updating facility data...", updateData);
-      const response = await updateFacility(editingFacility.facilityId, updateData);
+      const response = await updateFacility(
+        editingFacility.facilityId,
+        updateData
+      );
       console.log("✅ Update facility response:", response);
 
       let success, message_text;
@@ -805,13 +872,17 @@ const FacilityTable = () => {
       let uploadResult = { success: true };
       if (uploadFileList && uploadFileList.length > 0) {
         console.log("🚀 Step 2: Uploading new images...");
-        uploadResult = await uploadImages(editingFacility.facilityId, uploadFileList);
+        uploadResult = await uploadImages(
+          editingFacility.facilityId,
+          uploadFileList
+        );
       }
 
       if (uploadResult.success) {
-        const successMsg = uploadFileList.length > 0
-          ? `Cập nhật cơ sở và thêm ${uploadFileList.length} ảnh mới thành công!`
-          : "Cập nhật cơ sở thành công!";
+        const successMsg =
+          uploadFileList.length > 0
+            ? `Cập nhật cơ sở và thêm ${uploadFileList.length} ảnh mới thành công!`
+            : "Cập nhật cơ sở thành công!";
         message.success(successMsg);
       } else {
         message.warning("Cập nhật cơ sở thành công nhưng upload ảnh thất bại");
@@ -819,10 +890,19 @@ const FacilityTable = () => {
 
       // Close modal và refresh
       handleEditModalClose();
-      await fetchFacilities(pagination.current, pagination.pageSize, searchText, statusFilter);
+      await fetchFacilities(
+        pagination.current,
+        pagination.pageSize,
+        searchText,
+        statusFilter
+      );
     } catch (error) {
       console.error("💥 Error updating facility:", error);
-      message.error(`Cập nhật cơ sở thất bại: ${error.response?.data?.message || error.message}`);
+      message.error(
+        `Cập nhật cơ sở thất bại: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     } finally {
       setEditLoading(false);
     }
@@ -830,8 +910,8 @@ const FacilityTable = () => {
 
   // ✅ HANDLE MODAL CLOSE
   const handleModalClose = () => {
-    selectedImages.forEach(file => {
-      if (file.preview && file.preview.startsWith('blob:')) {
+    selectedImages.forEach((file) => {
+      if (file.preview && file.preview.startsWith("blob:")) {
         URL.revokeObjectURL(file.preview);
       }
     });
@@ -844,8 +924,8 @@ const FacilityTable = () => {
   };
 
   const handleEditModalClose = () => {
-    uploadFileList.forEach(file => {
-      if (file.preview && file.preview.startsWith('blob:')) {
+    uploadFileList.forEach((file) => {
+      if (file.preview && file.preview.startsWith("blob:")) {
         URL.revokeObjectURL(file.preview);
       }
     });
@@ -895,19 +975,33 @@ const FacilityTable = () => {
       const { success, message: apiMessage } = response;
 
       if (success) {
-        message.success(apiMessage || `Đã xóa cơ sở "${record.name}" thành công!`);
-        await fetchFacilities(pagination.current, pagination.pageSize, searchText, statusFilter);
+        message.success(
+          apiMessage || `Đã xóa cơ sở "${record.name}" thành công!`
+        );
+        await fetchFacilities(
+          pagination.current,
+          pagination.pageSize,
+          searchText,
+          statusFilter
+        );
 
         if (facilities.length === 1 && pagination.current > 1) {
-          setPagination(prev => ({ ...prev, current: prev.current - 1 }));
-          await fetchFacilities(pagination.current - 1, pagination.pageSize, searchText, statusFilter);
+          setPagination((prev) => ({ ...prev, current: prev.current - 1 }));
+          await fetchFacilities(
+            pagination.current - 1,
+            pagination.pageSize,
+            searchText,
+            statusFilter
+          );
         }
       } else {
         message.error(apiMessage || "Xóa cơ sở thất bại");
       }
     } catch (error) {
       console.error("💥 Error deleting facility:", error);
-      message.error(`Xóa cơ sở thất bại: ${error.message || 'Lỗi không xác định'}`);
+      message.error(
+        `Xóa cơ sở thất bại: ${error.message || "Lỗi không xác định"}`
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -922,7 +1016,7 @@ const FacilityTable = () => {
     }
 
     setStatusFilter(parsedValue);
-    setPagination(prev => ({ ...prev, current: 1 }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
     fetchFacilities(1, pagination.pageSize, searchText, parsedValue);
   };
 
@@ -952,9 +1046,9 @@ const FacilityTable = () => {
             crossOrigin="anonymous"
             onError={(e) => handleImageError(e, record.image)}
             style={{
-              maxWidth: '100%',
-              height: 'auto',
-              display: 'block' // THÊM để tránh broken image icon
+              maxWidth: "100%",
+              height: "auto",
+              display: "block", // THÊM để tránh broken image icon
             }}
           />
         </div>
@@ -1018,9 +1112,19 @@ const FacilityTable = () => {
             title="Xóa cơ sở"
             description={
               <div>
-                <p>Bạn có chắc chắn muốn xóa cơ sở <strong>"{record.name}"</strong>?</p>
-                <p style={{ color: '#ff4d4f', fontSize: '12px', margin: '4px 0 0 0' }}>
-                  ⚠️ Thao tác này sẽ xóa tất cả dữ liệu liên quan và không thể hoàn tác!
+                <p>
+                  Bạn có chắc chắn muốn xóa cơ sở{" "}
+                  <strong>"{record.name}"</strong>?
+                </p>
+                <p
+                  style={{
+                    color: "#ff4d4f",
+                    fontSize: "12px",
+                    margin: "4px 0 0 0",
+                  }}
+                >
+                  ⚠️ Thao tác này sẽ xóa tất cả dữ liệu liên quan và không thể
+                  hoàn tác!
                 </p>
               </div>
             }
@@ -1031,18 +1135,18 @@ const FacilityTable = () => {
             placement="topRight"
             okButtonProps={{
               loading: deleteLoading,
-              danger: true
+              danger: true,
             }}
           >
             <Tooltip title="Xóa cơ sở">
               <DeleteOutlined
                 className="delete-icon"
                 style={{
-                  color: deleteLoading ? '#ccc' : '#ff4d4f',
-                  fontSize: '16px',
-                  cursor: deleteLoading ? 'not-allowed' : 'pointer',
-                  marginLeft: '12px',
-                  transition: 'all 0.3s ease'
+                  color: deleteLoading ? "#ccc" : "#ff4d4f",
+                  fontSize: "16px",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  marginLeft: "12px",
+                  transition: "all 0.3s ease",
                 }}
               />
             </Tooltip>
@@ -1133,11 +1237,11 @@ const FacilityTable = () => {
         destroyOnClose
         styles={{
           body: {
-            maxHeight: '80vh',
-            minHeight: '600px',
-            overflow: 'auto',
-            padding: '24px'
-          }
+            maxHeight: "80vh",
+            minHeight: "600px",
+            overflow: "auto",
+            padding: "24px",
+          },
         }}
       >
         <Form
@@ -1151,18 +1255,15 @@ const FacilityTable = () => {
             name="facilityName"
             rules={[
               { required: true, message: "Vui lòng nhập tên cơ sở" },
-              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" }
+              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" },
             ]}
           >
             <Input placeholder="Nhập tên cơ sở..." />
           </Form.Item>
 
           {/* ✅ CÁC SELECT ĐỊA CHỈ API */}
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <Form.Item
-              label="Tỉnh/Thành phố"
-              style={{ flex: 1 }}
-            >
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item label="Tỉnh/Thành phố" style={{ flex: 1 }}>
               <Select
                 getPopupContainer={(trigger) => trigger.parentElement}
                 placeholder={`Chọn tỉnh/thành phố (${provinces.length} tỉnh)`}
@@ -1174,7 +1275,9 @@ const FacilityTable = () => {
                 showSearch
                 optionFilterProp="children"
                 loading={provinces.length === 0}
-                notFoundContent={provinces.length === 0 ? "Đang tải..." : "Không tìm thấy"}
+                notFoundContent={
+                  provinces.length === 0 ? "Đang tải..." : "Không tìm thấy"
+                }
                 key={provinces.length}
               >
                 {provinces.length > 0 ? (
@@ -1184,15 +1287,14 @@ const FacilityTable = () => {
                     </Option>
                   ))
                 ) : (
-                  <Option disabled value="">Đang tải tỉnh thành...</Option>
+                  <Option disabled value="">
+                    Đang tải tỉnh thành...
+                  </Option>
                 )}
               </Select>
             </Form.Item>
 
-            <Form.Item
-              label="Quận/Huyện"
-              style={{ flex: 1 }}
-            >
+            <Form.Item label="Quận/Huyện" style={{ flex: 1 }}>
               <Select
                 getPopupContainer={(trigger) => trigger.parentElement}
                 placeholder="Chọn quận/huyện"
@@ -1217,29 +1319,41 @@ const FacilityTable = () => {
             name="detailAddress"
             rules={[
               { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
-              { min: 5, message: "Địa chỉ chi tiết phải có ít nhất 5 ký tự" }
+              { min: 5, message: "Địa chỉ chi tiết phải có ít nhất 5 ký tự" },
             ]}
           >
             <Input placeholder="Số nhà, tên đường..." />
           </Form.Item>
 
-          {(form.getFieldValue('detailAddress') || selectedDistrict || selectedProvince) && (
-            <div style={{
-              padding: '12px',
-              background: '#f0f2f5',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              border: '1px solid #d9d9d9'
-            }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1890ff' }}>
+          {(form.getFieldValue("detailAddress") ||
+            selectedDistrict ||
+            selectedProvince) && (
+            <div
+              style={{
+                padding: "12px",
+                background: "#f0f2f5",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                border: "1px solid #d9d9d9",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                  color: "#1890ff",
+                }}
+              >
                 📍 Địa chỉ đầy đủ:
               </div>
-              <div style={{ color: '#333' }}>
-                {cleanAddressForDisplay(buildAddress(
-                  form.getFieldValue('detailAddress') || '',
-                  selectedDistrict,
-                  selectedProvince
-                ))}
+              <div style={{ color: "#333" }}>
+                {cleanAddressForDisplay(
+                  buildAddress(
+                    form.getFieldValue("detailAddress") || "",
+                    selectedDistrict,
+                    selectedProvince
+                  )
+                )}
               </div>
             </div>
           )}
@@ -1249,25 +1363,29 @@ const FacilityTable = () => {
             name="contact"
             rules={[
               { required: true, message: "Vui lòng nhập số điện thoại" },
-              { pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/, message: "Số điện thoại không hợp lệ" }
+              {
+                pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/,
+                message: "Số điện thoại không hợp lệ",
+              },
             ]}
           >
             <Input placeholder="Nhập số điện thoại (VD: 0987654321)" />
           </Form.Item>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: "flex", gap: "16px" }}>
             <Form.Item
               label="Giờ mở cửa"
               name="openHour"
               rules={[{ required: true, message: "Vui lòng chọn giờ mở cửa" }]}
               style={{ flex: 1 }}
             >
-              <Select placeholder="Chọn giờ mở cửa"
+              <Select
+                placeholder="Chọn giờ mở cửa"
                 getPopupContainer={(trigger) => trigger.parentElement}
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <Option key={i} value={i}>
-                    {i.toString().padStart(2, '0')}:00
+                    {i.toString().padStart(2, "0")}:00
                   </Option>
                 ))}
               </Select>
@@ -1276,15 +1394,18 @@ const FacilityTable = () => {
             <Form.Item
               label="Giờ đóng cửa"
               name="closeHour"
-              rules={[{ required: true, message: "Vui lòng chọn giờ đóng cửa" }]}
+              rules={[
+                { required: true, message: "Vui lòng chọn giờ đóng cửa" },
+              ]}
               style={{ flex: 1 }}
             >
-              <Select placeholder="Chọn giờ đóng cửa"
+              <Select
+                placeholder="Chọn giờ đóng cửa"
                 getPopupContainer={(trigger) => trigger.parentElement}
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <Option key={i} value={i}>
-                    {i.toString().padStart(2, '0')}:00
+                    {i.toString().padStart(2, "0")}:00
                   </Option>
                 ))}
               </Select>
@@ -1294,9 +1415,12 @@ const FacilityTable = () => {
           <Form.Item
             label="Thời lượng mỗi slot (phút)"
             name="slotDuration"
-            rules={[{ required: true, message: "Vui lòng chọn thời lượng slot" }]}
+            rules={[
+              { required: true, message: "Vui lòng chọn thời lượng slot" },
+            ]}
           >
-            <Select placeholder="Chọn thời lượng mỗi slot"
+            <Select
+              placeholder="Chọn thời lượng mỗi slot"
               getPopupContainer={(trigger) => trigger.parentElement}
             >
               <Option value={30}>30 phút</Option>
@@ -1312,7 +1436,8 @@ const FacilityTable = () => {
             name="statusId"
             rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
           >
-            <Select placeholder="Chọn trạng thái"
+            <Select
+              placeholder="Chọn trạng thái"
               getPopupContainer={(trigger) => trigger.parentElement}
             >
               <Option value={1}>🟢 Hoạt động</Option>
@@ -1331,11 +1456,14 @@ const FacilityTable = () => {
               accept="image/*"
               maxCount={10}
               onPreview={(file) => {
-                const previewUrl = file.url || file.preview || URL.createObjectURL(file.originFileObj);
+                const previewUrl =
+                  file.url ||
+                  file.preview ||
+                  URL.createObjectURL(file.originFileObj);
                 handlePreviewImage(previewUrl, file.name);
               }}
               onRemove={(file) => {
-                if (file.preview && file.preview.startsWith('blob:')) {
+                if (file.preview && file.preview.startsWith("blob:")) {
                   URL.revokeObjectURL(file.preview);
                 }
               }}
@@ -1347,25 +1475,25 @@ const FacilityTable = () => {
                 </div>
               )}
             </Upload>
-            <div style={{ marginTop: 8, color: '#666', fontSize: '12px' }}>
-              * Chọn tối đa 10 ảnh, mỗi ảnh không quá 5MB. Click vào ảnh để xem trước.
+            <div style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
+              * Chọn tối đa 10 ảnh, mỗi ảnh không quá 5MB. Click vào ảnh để xem
+              trước.
             </div>
           </Form.Item>
 
           <Form.Item>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <Button onClick={handleModalClose}>
-                Hủy
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={submitLoading}
-              >
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Button onClick={handleModalClose}>Hủy</Button>
+              <Button type="primary" htmlType="submit" loading={submitLoading}>
                 {selectedImages.length > 0
                   ? `Thêm cơ sở + ${selectedImages.length} ảnh`
-                  : 'Thêm mới cơ sở'
-                }
+                  : "Thêm mới cơ sở"}
               </Button>
             </div>
           </Form.Item>
@@ -1374,7 +1502,7 @@ const FacilityTable = () => {
 
       {/* ✅ MODAL CHỈNH SỬA CƠ SỞ */}
       <Modal
-        title={`Chỉnh sửa cơ sở: ${editingFacility?.facilityName || ''}`}
+        title={`Chỉnh sửa cơ sở: ${editingFacility?.facilityName || ""}`}
         open={editModalVisible}
         onCancel={handleEditModalClose}
         footer={null}
@@ -1383,11 +1511,11 @@ const FacilityTable = () => {
         destroyOnClose
         styles={{
           body: {
-            maxHeight: '80vh',
-            minHeight: '600px',
-            overflow: 'auto',
-            padding: '24px'
-          }
+            maxHeight: "80vh",
+            minHeight: "600px",
+            overflow: "auto",
+            padding: "24px",
+          },
         }}
       >
         <Form
@@ -1401,18 +1529,15 @@ const FacilityTable = () => {
             name="facilityName"
             rules={[
               { required: true, message: "Vui lòng nhập tên cơ sở" },
-              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" }
+              { min: 2, message: "Tên cơ sở phải có ít nhất 2 ký tự" },
             ]}
           >
             <Input placeholder="Nhập tên cơ sở..." />
           </Form.Item>
 
           {/* ✅ CÁC SELECT ĐỊA CHỈ API - EDIT */}
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <Form.Item
-              label="Tỉnh/Thành phố"
-              style={{ flex: 1 }}
-            >
+          <div style={{ display: "flex", gap: "16px" }}>
+            <Form.Item label="Tỉnh/Thành phố" style={{ flex: 1 }}>
               <Select
                 getPopupContainer={(trigger) => trigger.parentElement}
                 placeholder="Chọn tỉnh/thành phố"
@@ -1430,10 +1555,7 @@ const FacilityTable = () => {
               </Select>
             </Form.Item>
 
-            <Form.Item
-              label="Quận/Huyện"
-              style={{ flex: 1 }}
-            >
+            <Form.Item label="Quận/Huyện" style={{ flex: 1 }}>
               <Select
                 placeholder="Chọn quận/huyện"
                 value={editSelectedDistrict}
@@ -1458,30 +1580,42 @@ const FacilityTable = () => {
             name="detailAddress"
             rules={[
               { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
-              { min: 5, message: "Địa chỉ chi tiết phải có ít nhất 5 ký tự" }
+              { min: 5, message: "Địa chỉ chi tiết phải có ít nhất 5 ký tự" },
             ]}
           >
             <Input placeholder="Số nhà, tên đường..." />
           </Form.Item>
 
           {/* ✅ PREVIEW ĐỊA CHỈ - Modal chỉnh sửa */}
-          {(editForm.getFieldValue('detailAddress') || editSelectedDistrict || editSelectedProvince) && (
-            <div style={{
-              padding: '12px',
-              background: '#f0f2f5',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              border: '1px solid #d9d9d9'
-            }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1890ff' }}>
+          {(editForm.getFieldValue("detailAddress") ||
+            editSelectedDistrict ||
+            editSelectedProvince) && (
+            <div
+              style={{
+                padding: "12px",
+                background: "#f0f2f5",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                border: "1px solid #d9d9d9",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: "4px",
+                  color: "#1890ff",
+                }}
+              >
                 📍 Địa chỉ đầy đủ:
               </div>
-              <div style={{ color: '#333' }}>
-                {cleanAddressForDisplay(buildAddress(
-                  editForm.getFieldValue('detailAddress') || '',
-                  editSelectedDistrict,
-                  editSelectedProvince
-                ))}
+              <div style={{ color: "#333" }}>
+                {cleanAddressForDisplay(
+                  buildAddress(
+                    editForm.getFieldValue("detailAddress") || "",
+                    editSelectedDistrict,
+                    editSelectedProvince
+                  )
+                )}
               </div>
             </div>
           )}
@@ -1491,7 +1625,10 @@ const FacilityTable = () => {
             name="contact"
             rules={[
               { required: true, message: "Vui lòng nhập số điện thoại" },
-              { pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/, message: "Số điện thoại không hợp lệ" }
+              {
+                pattern: /(84|0[3|5|7|8|9])+([0-9]{8})\b/,
+                message: "Số điện thoại không hợp lệ",
+              },
             ]}
           >
             <Input placeholder="Nhập số điện thoại (VD: 0987654321)" />
@@ -1502,8 +1639,10 @@ const FacilityTable = () => {
             name="statusId"
             rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
           >
-            <Select placeholder="Chọn trạng thái"
-              getPopupContainer={(trigger) => trigger.parentElement}>
+            <Select
+              placeholder="Chọn trạng thái"
+              getPopupContainer={(trigger) => trigger.parentElement}
+            >
               <Option value={1}>🟢 Hoạt động</Option>
               <Option value={2}>🔴 Bị khóa</Option>
             </Select>
@@ -1515,7 +1654,7 @@ const FacilityTable = () => {
               {/* Hiển thị ảnh hiện tại */}
               {facilityImages.length > 0 ? (
                 <div className="current-images">
-                  <h4 style={{ marginBottom: 16, color: '#1890ff' }}>
+                  <h4 style={{ marginBottom: 16, color: "#1890ff" }}>
                     Ảnh hiện tại ({facilityImages.length}):
                   </h4>
                   <Row gutter={[16, 16]}>
@@ -1524,19 +1663,25 @@ const FacilityTable = () => {
                         <Card
                           hoverable
                           cover={
-                            <div style={{ height: 120, overflow: 'hidden' }}>
+                            <div style={{ height: 120, overflow: "hidden" }}>
                               <img
                                 src={image.imageUrl}
-                                alt={image.caption || 'Facility image'}
+                                alt={image.caption || "Facility image"}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  cursor: 'pointer'
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  cursor: "pointer",
                                 }}
-                                onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
+                                onClick={() =>
+                                  handlePreviewImage(
+                                    image.imageUrl,
+                                    image.caption
+                                  )
+                                }
                                 onError={(e) => {
-                                  e.target.src = "https://placehold.co/300x200?text=Error+Loading";
+                                  e.target.src =
+                                    "https://placehold.co/300x200?text=Error+Loading";
                                 }}
                               />
                             </div>
@@ -1544,23 +1689,35 @@ const FacilityTable = () => {
                           actions={[
                             <EyeOutlined
                               key="view"
-                              onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
-                              style={{ color: '#1890ff' }}
+                              onClick={() =>
+                                handlePreviewImage(
+                                  image.imageUrl,
+                                  image.caption
+                                )
+                              }
+                              style={{ color: "#1890ff" }}
                               title="Xem ảnh"
                             />,
                             <DeleteOutlined
                               key="delete"
-                              onClick={() => handleDeleteImage(image.imageId, image.caption)}
-                              style={{ color: '#ff4d4f' }}
+                              onClick={() =>
+                                handleDeleteImage(image.imageId, image.caption)
+                              }
+                              style={{ color: "#ff4d4f" }}
                               title="Xóa ảnh"
-                            />
+                            />,
                           ]}
                           size="small"
                         >
                           <Card.Meta
                             description={
-                              <div style={{ fontSize: '12px', textAlign: 'center' }}>
-                                {image.caption || 'Không có mô tả'}
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {image.caption || "Không có mô tả"}
                               </div>
                             }
                           />
@@ -1570,20 +1727,26 @@ const FacilityTable = () => {
                   </Row>
                 </div>
               ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '20px',
-                  background: '#fafafa',
-                  borderRadius: '6px',
-                  border: '1px dashed #d9d9d9'
-                }}>
-                  <p style={{ color: '#999', margin: 0 }}>Cơ sở này chưa có ảnh nào</p>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    background: "#fafafa",
+                    borderRadius: "6px",
+                    border: "1px dashed #d9d9d9",
+                  }}
+                >
+                  <p style={{ color: "#999", margin: 0 }}>
+                    Cơ sở này chưa có ảnh nào
+                  </p>
                 </div>
               )}
 
               {/* Upload ảnh mới */}
               <div className="upload-new-images" style={{ marginTop: 20 }}>
-                <h4 style={{ marginBottom: 12, color: '#52c41a' }}>Thêm ảnh mới:</h4>
+                <h4 style={{ marginBottom: 12, color: "#52c41a" }}>
+                  Thêm ảnh mới:
+                </h4>
                 <Upload
                   listType="picture-card"
                   fileList={uploadFileList}
@@ -1593,7 +1756,10 @@ const FacilityTable = () => {
                   accept="image/*"
                   maxCount={8}
                   onPreview={(file) => {
-                    const previewUrl = file.url || file.preview || URL.createObjectURL(file.originFileObj);
+                    const previewUrl =
+                      file.url ||
+                      file.preview ||
+                      URL.createObjectURL(file.originFileObj);
                     handlePreviewImage(previewUrl, file.name);
                   }}
                 >
@@ -1604,7 +1770,7 @@ const FacilityTable = () => {
                     </div>
                   )}
                 </Upload>
-                <p style={{ color: '#999', fontSize: '12px', marginTop: 8 }}>
+                <p style={{ color: "#999", fontSize: "12px", marginTop: 8 }}>
                   * Chọn tối đa 8 ảnh mới để thêm vào cơ sở
                 </p>
               </div>
@@ -1612,15 +1778,15 @@ const FacilityTable = () => {
           </Form.Item>
 
           <Form.Item>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <Button onClick={handleEditModalClose}>
-                Hủy
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={editLoading}
-              >
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Button onClick={handleEditModalClose}>Hủy</Button>
+              <Button type="primary" htmlType="submit" loading={editLoading}>
                 Cập nhật cơ sở
               </Button>
             </div>

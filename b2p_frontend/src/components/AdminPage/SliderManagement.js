@@ -270,6 +270,9 @@ const SliderForm = ({ initialValues, onSubmit, loading }) => {
 };
 
 const SliderManagement = () => {
+  useEffect(() => {
+    document.title = "Quản lý Slider - B2P";
+  }, []);
   const [sliders, setSliders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");

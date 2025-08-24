@@ -7,6 +7,9 @@ import altImg from "../../assets/images/sports-tools.jpg";
 import SearchField from "./SearchField";
 
 const SliderField = (props) => {
+  useEffect(() => {
+    document.title = "Trang chủ - B2P";
+  }, []);
   const [index, setIndex] = useState(0);
   const [sliders, setSliders] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -93,6 +93,9 @@ const Blog = () => {
     roleId: user?.roleId || 2,
   });
 
+  useEffect(() => {
+    document.title = "Bài viết - B2P";
+  }, []);
   // User cache for displaying other users
   const [userCache, setUserCache] = useState({
     [currentUser.userId]: currentUser,
