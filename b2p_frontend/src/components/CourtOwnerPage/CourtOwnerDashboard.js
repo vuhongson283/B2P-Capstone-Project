@@ -1019,7 +1019,7 @@ const OwnerDashboard = () => {
 
       <div className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">Xin Chào, {user?.fullName || 'Chủ sân'}</h2>
+          <h2 className="dashboard-title">Xin chào, {user?.fullName || 'Chủ sân'}</h2>
           <p className="dashboard-subtitle">
             Đây là trang web quản lý dành cho chủ sân
           </p>

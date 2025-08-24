@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom'; // ✅ THÊM useLocation
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   getAllCourts, 
   addNewCourt, 
@@ -14,9 +15,13 @@ import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { Tooltip } from 'antd'; // Chỉ import Tooltip từ antd
 import './CourtManagement.scss';
 
+
 const CourtManagement = () => {
+  const { userId } = useAuth();
   const { facilityId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation(); // ✅ THÊM useLocation
+  
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +31,11 @@ const CourtManagement = () => {
     totalItems: 0,
     totalPages: 0
   });
-  const [currentFacility, setCurrentFacility] = useState(null);
+  // ✅ CẬP NHẬT currentFacility STATE ĐỂ LƯU TRỮ TÊN FACILITY
+  const [currentFacility, setCurrentFacility] = useState({
+    id: facilityId,
+    name: 'Đang tải...' // Default value
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState(null);
@@ -71,9 +80,13 @@ const CourtManagement = () => {
   const [loadingCourtIds, setLoadingCourtIds] = useState([]);
 
   // Thêm state cho modal thông báo
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationType, setNotificationType] = useState('');
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationData, setNotificationData] = useState({
+    type: 'success', // 'success', 'error', 'warning', 'info'
+    title: '',
+    message: '',
+    icon: 'fa-check-circle'
+  });
 
   // Fetch courts data
   const fetchCourts = async () => {
@@ -106,10 +119,11 @@ const CourtManagement = () => {
           totalPages: response.data.totalPages || 0
         }));
         
-        setCurrentFacility({
-          id: facilityId,
-          name: `Cơ sở ${facilityId}`
-        });
+        // ✅ CHỈ CẬP NHẬT ID, KHÔNG GHI ĐÈ NAME
+        setCurrentFacility(prev => ({
+          ...prev,
+          id: facilityId
+        }));
       } else {
         setCourts([]);
       }
@@ -119,6 +133,31 @@ const CourtManagement = () => {
       setCourts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ HÀM HIỂN THỊ NOTIFICATION
+  const showNotification = (type, title, message) => {
+    const icons = {
+      success: 'fa-check-circle',
+      error: 'fa-exclamation-circle',
+      warning: 'fa-exclamation-triangle',
+      info: 'fa-info-circle'
+    };
+
+    setNotificationData({
+      type,
+      title,
+      message,
+      icon: icons[type] || icons.info
+    });
+    setShowNotificationModal(true);
+
+    // ✅ TỰ ĐỘNG ĐÓNG SAU 3 GIÂY NẾU LÀ SUCCESS
+    if (type === 'success') {
+      setTimeout(() => {
+        setShowNotificationModal(false);
+      }, 3000);
     }
   };
 
@@ -162,13 +201,26 @@ const CourtManagement = () => {
         setShowAddModal(false);
         setNewCourt({ courtName: '', categoryId: '', pricePerHour: '' });
         fetchCourts();
-        alert(response.message || 'Court added successfully!');
+        // ✅ THAY ALERT BẰNG NOTIFICATION
+        showNotification(
+          'success',
+          'Thêm sân thành công!',
+          `Sân "${newCourt.courtName}" đã được thêm vào hệ thống.`
+        );
       } else {
-        setError(response.message || 'Failed to add court');
+        showNotification(
+          'error',
+          'Thêm sân thất bại!',
+          response.message || 'Không thể thêm sân. Vui lòng thử lại.'
+        );
       }
     } catch (error) {
       console.error('Error adding court:', error);
-      setError('Error adding court: ' + (error.response?.message || error.message));
+      showNotification(
+        'error',
+        'Có lỗi xảy ra!',
+        'Lỗi khi thêm sân: ' + (error.response?.message || error.message)
+      );
     }
   };
 
@@ -269,17 +321,30 @@ const CourtManagement = () => {
         pricePerHour: parseInt(editCourt.pricePerHour)
       };
       console.log('Court data sending to API:', courtData);
-      const response = await updateCourt(courtData);
+      const response = await updateCourt(courtData, userId);
       if (response.success) {
         setShowEditModal(false);
         fetchCourts();
-        alert(response.message || 'Cập nhật sân thành công!');
+        // ✅ THAY ALERT BẰNG NOTIFICATION
+        showNotification(
+          'success',
+          'Cập nhật sân thành công!',
+          `Thông tin sân "${editCourt.courtName}" đã được cập nhật.`
+        );
       } else {
-        alert(response.message || 'Cập nhật sân thất bại');
+        showNotification(
+          'error',
+          'Cập nhật sân thất bại!',
+          response.message || 'Không thể cập nhật sân. Vui lòng thử lại.'
+        );
       }
     } catch (error) {
       console.error('Error updating court:', error);
-      alert('Lỗi khi cập nhật sân: ' + (error.response?.data?.message || error.message));
+      showNotification(
+        'error',
+        'Có lỗi xảy ra!',
+        'Lỗi khi cập nhật sân: ' + (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -340,37 +405,45 @@ const CourtManagement = () => {
     setPagination(prev => ({ ...prev, pageNumber: newPage }));
   };
 
-  const handleDeleteCourt = async (courtId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sân này không?')) {
-      try {
-        const response = await deleteCourt(courtId);
-        
-        if (response.success) {
-          fetchCourts();
-          alert(response.message || 'Xóa sân thành công!');
-        } else {
-          alert(response.message || 'Không thể xóa sân');
-        }
-      } catch (error) {
-        console.error('Error deleting court:', error);
-        alert(error.response?.message || 'Lỗi khi xóa sân');
-      }
-    }
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [courtToDelete, setCourtToDelete] = useState(null);
+
+  // ✅ CẬP NHẬT HÀM DELETE COURT VỚI CONFIRMATION MODAL
+  const handleDeleteCourt = (court) => {
+    setCourtToDelete(court);
+    setShowDeleteModal(true);
   };
 
-  // Add this handler function
-  const handleViewDetail = async (courtId) => {
+  const confirmDeleteCourt = async () => {
+    if (!courtToDelete) return;
+
     try {
-      const response = await getCourtDetail(courtId);
+      const response = await deleteCourt(courtToDelete.courtId, userId);
+
       if (response.success) {
-        setCourtDetail(response.data);
-        setShowDetailModal(true);
+        setShowDeleteModal(false);
+        setCourtToDelete(null);
+        fetchCourts();
+        // ✅ THAY ALERT BẰNG NOTIFICATION
+        showNotification(
+          'success',
+          'Xóa sân thành công!',
+          `Sân "${courtToDelete.courtName}" đã được xóa khỏi hệ thống.`
+        );
       } else {
-        alert('Không thể tải thông tin sân');
+        showNotification(
+          'error',
+          'Xóa sân thất bại!',
+          response.message || 'Không thể xóa sân. Vui lòng thử lại.'
+        );
       }
     } catch (error) {
-      console.error('Error fetching court detail:', error);
-      alert('Lỗi khi tải thông tin sân');
+      console.error('Error deleting court:', error);
+      showNotification(
+        'error',
+        'Có lỗi xảy ra!',
+        'Lỗi khi xóa sân: ' + (error.response?.message || error.message)
+      );
     }
   };
 
@@ -434,23 +507,32 @@ const CourtManagement = () => {
       setLoadingCourtIds(prev => [...prev, courtId]);
       
       const newStatus = currentStatus === 'Active' ? 2 : 1;
-      const response = await lockCourt(courtId, newStatus, 6);
+      const response = await lockCourt(courtId, newStatus, userId);
       
       if (response?.status === 200) {
         fetchCourts();
-        setNotificationMessage(`${currentStatus === 'Active' ? 'Khóa' : 'Mở khóa'} sân thành công!`);
-        setNotificationType('success');
-        setShowNotification(true);
+        // ✅ THAY ALERT BẰNG NOTIFICATION
+        const action = currentStatus === 'Active' ? 'Khóa' : 'Mở khóa';
+        const court = courts.find(c => c.courtId === courtId);
+        showNotification(
+          'success',
+          `${action} sân thành công!`,
+          `Sân "${court?.courtName || 'N/A'}" đã được ${action.toLowerCase()}.`
+        );
       } else {
-        setNotificationMessage('Không thể cập nhật trạng thái sân');
-        setNotificationType('danger');
-        setShowNotification(true);
+        showNotification(
+          'error',
+          'Cập nhật trạng thái thất bại!',
+          'Không thể cập nhật trạng thái sân. Vui lòng thử lại.'
+        );
       }
     } catch (error) {
       console.error('Error toggling court status:', error);
-      setNotificationMessage('Lỗi khi cập nhật trạng thái sân');
-      setNotificationType('danger');
-      setShowNotification(true);
+      showNotification(
+        'error',
+        'Có lỗi xảy ra!',
+        'Lỗi khi cập nhật trạng thái sân. Vui lòng thử lại.'
+      );
     } finally {
       setLoadingCourtIds(prev => prev.filter(id => id !== courtId));
     }
@@ -472,6 +554,71 @@ const CourtManagement = () => {
       pricePerHour: ''
     });
   };
+
+  // ✅ THÊM HÀM handleViewDetail VÀO COMPONENT
+  const handleViewDetail = async (courtId) => {
+    try {
+      setShowDetailModal(true);
+      setCourtDetail(null); // Reset data cũ
+      
+      // ✅ HIỂN THỊ LOADING TRONG MODAL
+      const loadingData = {
+        courtId: courtId,
+        courtName: 'Đang tải...',
+        pricePerHour: 0,
+        status: { statusName: 'Đang tải...' },
+        category: { categoryName: 'Đang tải...' },
+        facility: { 
+          facilityName: 'Đang tải...', 
+          location: 'Đang tải...', 
+          contact: 'Đang tải...' 
+        }
+      };
+      setCourtDetail(loadingData);
+      
+      // ✅ GỌI API ĐỂ LẤY CHI TIẾT SÂN
+      const response = await getCourtDetail(courtId);
+      
+      if (response && response.success && response.data) {
+        setCourtDetail(response.data);
+      } else {
+        // ✅ HIỂN THỊ LỖI NẾU KHÔNG TẢI ĐƯỢC
+        showNotification(
+          'error',
+          'Không thể tải thông tin!',
+          'Không thể tải chi tiết sân. Vui lòng thử lại.'
+        );
+        setShowDetailModal(false);
+      }
+    } catch (error) {
+      console.error('Error fetching court detail:', error);
+      showNotification(
+        'error',
+        'Có lỗi xảy ra!',
+        'Lỗi khi tải chi tiết sân: ' + (error.response?.message || error.message)
+      );
+      setShowDetailModal(false);
+    }
+  };
+
+  // ✅ THÊM useEffect ĐỂ LẤY facilityName TỪ URL QUERY
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const facilityName = searchParams.get('name');
+    
+    if (facilityName) {
+      setCurrentFacility({
+        id: facilityId,
+        name: decodeURIComponent(facilityName)
+      });
+    } else {
+      // ✅ NẾU KHÔNG CÓ NAME TRONG URL, CÓ THỂ GỌI API ĐỂ LẤY
+      setCurrentFacility({
+        id: facilityId,
+        name: `Cơ sở ${facilityId}` // Fallback
+      });
+    }
+  }, [facilityId, location.search]);
 
   if (loading) {
     return (
@@ -496,7 +643,7 @@ const CourtManagement = () => {
   return (
     <div className="court-management-container">
       <div className="facility-header">
-        <h1>Quản Lý Sân - {currentFacility?.name || 'Đang tải...'}</h1>
+        <h1><i className="fas fa-building me-2"></i> Quản Lý Sân - {currentFacility?.name || 'Đang tải...'}</h1>
       </div>
 
       <div className="management-controls">
@@ -621,7 +768,7 @@ const CourtManagement = () => {
                         <Button 
                           variant="danger" 
                           size="sm"
-                          onClick={() => handleDeleteCourt(court.courtId)}
+                          onClick={() => handleDeleteCourt(court)} // ✅ THAY ĐỔI Ở ĐÂY
                           title="Xóa sân"
                         >
                           <i className="fas fa-trash"></i>
@@ -959,22 +1106,91 @@ const CourtManagement = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Thêm Modal thông báo */}
+      {/* ✅ NOTIFICATION MODAL - THAY THẾ ALERT */}
       <Modal 
-        show={showNotification} 
-        onHide={() => setShowNotification(false)}
+        show={showNotificationModal} 
+        onHide={() => setShowNotificationModal(false)}
         centered
+        className="notification-modal"
       >
-        <Modal.Header closeButton className={`bg-${notificationType} text-white`}>
-          <Modal.Title>
-            <i className={`fas ${notificationType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2`}></i>
-            {notificationType === 'success' ? 'Thành công' : 'Lỗi'}
+        <Modal.Header closeButton className={`notification-header ${notificationData.type}`}>
+          <Modal.Title className="notification-title">
+            <i className={`fas ${notificationData.icon} me-3`}></i>
+            {notificationData.title}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>{notificationMessage}</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowNotification(false)}>
-            Đóng
+        <Modal.Body className="notification-body">
+          <div className="notification-content">
+            <div className={`notification-icon ${notificationData.type}`}>
+              <i className={`fas ${notificationData.icon}`}></i>
+            </div>
+            <div className="notification-message">
+              {notificationData.message}
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="notification-footer">
+          <Button 
+            variant={notificationData.type === 'success' ? 'success' : 'primary'}
+            onClick={() => setShowNotificationModal(false)}
+            className="notification-btn"
+          >
+            <i className="fas fa-check me-2"></i>
+            Đã hiểu
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ✅ DELETE CONFIRMATION MODAL */}
+      <Modal 
+        show={showDeleteModal} 
+        onHide={() => setShowDeleteModal(false)}
+        centered
+        className="delete-confirmation-modal"
+      >
+        <Modal.Header closeButton className="delete-header">
+          <Modal.Title className="delete-title">
+            <i className="fas fa-exclamation-triangle me-3"></i>
+            Xác nhận xóa sân
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="delete-body">
+          <div className="delete-content">
+            <div className="delete-icon">
+              <i className="fas fa-trash-alt"></i>
+            </div>
+            <div className="delete-message">
+              <h5>Bạn có chắc chắn muốn xóa sân này?</h5>
+              {courtToDelete && (
+                <div className="court-info">
+                  <p><strong>Tên sân:</strong> {courtToDelete.courtName}</p>
+                  <p><strong>Loại sân:</strong> {courtToDelete.category?.categoryName}</p>
+                  <p><strong>Giá:</strong> {courtToDelete.pricePerHour?.toLocaleString('vi-VN')} VNĐ/giờ</p>
+                </div>
+              )}
+              <div className="warning-note">
+                <i className="fas fa-exclamation-circle me-2"></i>
+                <span>Hành động này không thể hoàn tác!</span>
+              </div>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="delete-footer">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowDeleteModal(false)}
+            className="cancel-btn"
+          >
+            <i className="fas fa-times me-2"></i>
+            Hủy bỏ
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={confirmDeleteCourt}
+            className="confirm-delete-btn"
+          >
+            <i className="fas fa-trash me-2"></i>
+            Xóa sân
           </Button>
         </Modal.Footer>
       </Modal>

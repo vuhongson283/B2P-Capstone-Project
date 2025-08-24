@@ -373,7 +373,8 @@ const CourtOwnerSideBar = ({
           onClick={() => {
             handleMenuClick(
               `facility-${facilityId}`,
-              `/court-owner/facilities/${facilityId}/courts`
+              // ✅ TRUYỀN CẢ facilityName VÀO URL
+              `/court-owner/facilities/${facilityId}/courts?name=${encodeURIComponent(facilityName)}`
             );
             setSelectedFacilityId(facilityId);
           }}
