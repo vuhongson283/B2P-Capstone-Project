@@ -1,979 +1,1742 @@
-// ✅ MODERN GREEN SPORT PALETTE
-:root {
-  --primary-green: #4CAF50;
-  --deep-green: #2E7D32;
-  --light-green: #81C784;
-  --accent-green: #66BB6A;
-  --neon-green: #00E676;
-  --forest-green: #1B5E20;
-  
-  --white: #FFFFFF;
-  --light-gray: #F5F5F5;
-  --border-light: #E8F5E9;
-  --text-dark: #1B5E20;
-  --text-medium: #4A4A4A;
-  --text-light: #6B7280;
-  
-  --gradient-primary: linear-gradient(135deg, var(--primary-green) 0%, var(--deep-green) 100%);
-  --gradient-light: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
-  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fffe 100%);
-  
-  --shadow-sm: 0 1px 4px rgba(76, 175, 80, 0.1);
-  --shadow-md: 0 2px 8px rgba(76, 175, 80, 0.15);
-  --shadow-lg: 0 4px 16px rgba(76, 175, 80, 0.2);
-  
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 10px;
-  
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+// Sport Theme Variables - Bold & Wide Layout
+$sport-primary: #1B5E20;      // Deep Green
+$sport-secondary: #2E7D32;    // Sport Green  
+$sport-accent: #FF6B35;       // Energy Orange
+$sport-blue: #1976D2;         // Sport Blue
+$sport-yellow: #F57F17;       // Champion Yellow
+$sport-red: #D32F2F;          // Alert Red
 
-// ✅ RESET & BASE
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+$field-green: #4CAF50;
+$grass-green: #66BB6A;
+$court-blue: #42A5F5;
+$energy-orange: #FF9800;
+$champion-gold: #FFC107;
 
-body {
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.4;
-  color: var(--text-dark);
-  background: var(--light-gray);
-  font-size: 14px;
-}
+$gray-50: #FAFAFA;
+$gray-100: #F5F5F5;
+$gray-200: #EEEEEE;
+$gray-300: #E0E0E0;
+$gray-400: #BDBDBD;
+$gray-500: #9E9E9E;
+$gray-600: #757575;
+$gray-700: #616161;
+$gray-800: #424242;
+$gray-900: #212121;
 
-// ✅ ANIMATIONS
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+$white: #FFFFFF;
+$black: #000000;
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
+// Sport Gradients
+$gradient-sport-primary: linear-gradient(135deg, $sport-primary 0%, $sport-secondary 50%, $field-green 100%);
+$gradient-sport-energy: linear-gradient(135deg, $sport-accent 0%, $energy-orange 50%, $champion-gold 100%);
+$gradient-sport-blue: linear-gradient(135deg, $sport-blue 0%, $court-blue 100%);
+$gradient-hero: linear-gradient(135deg, 
+  rgba(27, 94, 32, 0.95) 0%, 
+  rgba(46, 125, 50, 0.9) 30%,
+  rgba(76, 175, 80, 0.85) 70%,
+  rgba(102, 187, 106, 0.9) 100%);
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+// Enhanced Shadows
+$shadow-sport-sm: 0 4px 8px rgba(27, 94, 32, 0.12);
+$shadow-sport-md: 0 8px 16px rgba(27, 94, 32, 0.18);
+$shadow-sport-lg: 0 16px 32px rgba(27, 94, 32, 0.24);
+$shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-// ✅ LOADING SPINNER
-.loading-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 2px;
-  
-  .spinner-ring {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--primary-green);
-    animation: pulse 1.4s ease-in-out infinite both;
-    
-    &:nth-child(1) { animation-delay: -0.32s; }
-    &:nth-child(2) { animation-delay: -0.16s; }
-    &:nth-child(3) { animation-delay: 0s; }
-  }
-}
-
-// ✅ STAR RATING COMPONENT
-.star-rating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  
-  .stars {
-    display: flex;
-    gap: 1px;
-  }
-  
-  .star {
-    color: #E5E7EB;
-    transition: var(--transition);
-    
-    &.filled {
-      color: #FFD700;
-    }
-    
-    &.small { font-size: 10px; }
-    &.medium { font-size: 12px; }
-    &.large { font-size: 16px; }
-  }
-  
-  .rating-value {
-    font-size: 11px;
-    color: var(--text-light);
-    font-weight: 500;
-  }
-}
-
-// ✅ MAIN LAYOUT
-.facility-page {
-  width: 100%;
+// WIDE Layout Mixins
+@mixin wide-container {
+  width: 100vw;
   max-width: none;
-  margin: 60px auto 0;
-  padding: 0 12px;
-  animation: fadeInUp 0.6s ease-out;
+  margin: 0;
+  padding: 0 60px;
+  
+  @media (max-width: 768px) {
+    padding: 0 20px;
+  }
 }
 
-// ✅ HEADER SECTION
-.facility-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--gradient-primary);
-  color: var(--white);
-  padding: 16px 20px;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: var(--shadow-lg);
+@mixin big-sport-card {
+  background: $white;
+  border-radius: 24px;
+  box-shadow: $shadow-sport-lg;
+  border: 3px solid rgba(27, 94, 32, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   
   &::before {
     content: '';
     position: absolute;
-    inset: 0;
-    background: 
-      radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%);
-    pointer-events: none;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: $gradient-sport-primary;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
-  
-  .header-btn {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: var(--white);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-    z-index: 2;
-    
-    .btn-icon {
-      font-size: 14px;
-      font-weight: bold;
-    }
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: scale(1.05);
-    }
-    
-    &.favorite-btn.active {
-      background: rgba(255, 255, 255, 0.3);
-      color: #FF6B6B;
-    }
-  }
-  
-  .header-content {
-    flex: 1;
-    margin: 0 16px;
-    z-index: 2;
-    text-align: center;
-  }
-  
-  .facility-name {
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  
-  .facility-owner {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 12px;
-    
-    .owner-icon {
-      font-size: 10px;
-    }
-  }
-}
-
-// ✅ MAIN CONTENT
-.facility-main {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  padding: 20px;
-  background: var(--white);
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  animation: slideInLeft 0.8s ease-out 0.1s both;
-}
-
-// ✅ IMAGE CAROUSEL
-.image-carousel {
-  background: var(--gradient-card);
-  border-radius: var(--radius-lg);
-  padding: 8px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
-  transition: var(--transition);
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-green);
+    box-shadow: $shadow-sport-xl;
+    transform: translateY(-4px);
+    border-color: rgba(27, 94, 32, 0.3);
+    
+    &::before {
+      opacity: 1;
+    }
   }
+}
+
+@mixin big-sport-button {
+  background: $gradient-sport-primary;
+  color: $white;
+  border: none;
+  border-radius: 16px;
+  padding: 20px 40px;
+  font-weight: 800;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: $shadow-sport-lg;
   
-  .carousel-container {
-    position: relative;
-    height: 240px;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--light-gray);
-  }
-  
-  .image-loading {
+  &::before {
+    content: '';
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--light-gray);
-    z-index: 2;
-  }
-  
-  .carousel-image {
+    top: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: var(--transition);
-    
-    &:hover {
-      transform: scale(1.02);
-    }
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s ease;
   }
-  
-  .image-overlay {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: var(--gradient-primary);
-    color: var(--white);
-    padding: 4px 6px;
-    border-radius: var(--radius-md);
-    backdrop-filter: blur(10px);
-    font-weight: 600;
-    font-size: 10px;
-  }
-  
-  .carousel-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    background: var(--gradient-primary);
-    border: none;
-    border-radius: 50%;
-    color: var(--white);
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: var(--transition);
-    z-index: 3;
-    box-shadow: var(--shadow-md);
-    
-    &:hover {
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: var(--shadow-lg);
-    }
-    
-    &.prev-btn { left: 8px; }
-    &.next-btn { right: 8px; }
-  }
-  
-  .carousel-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin-top: 8px;
-  }
-  
-  .indicator {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    border: none;
-    background: #DDD;
-    cursor: pointer;
-    transition: var(--transition);
-    
-    &:hover {
-      background: var(--light-green);
-    }
-    
-    &.active {
-      background: var(--primary-green);
-      transform: scale(1.25);
-    }
-  }
-}
-
-// ✅ FACILITY INFO SIDEBAR
-.facility-info {
-  background: var(--gradient-card);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
-  height: fit-content;
-  transition: var(--transition);
   
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-  }
-  
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--deep-green);
-    margin-bottom: 12px;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: $shadow-sport-xl;
     
-    .title-icon {
-      font-size: 1rem;
+    &::before {
+      left: 100%;
     }
   }
   
-  .info-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 16px;
+  &:active {
+    transform: translateY(-1px) scale(0.98);
   }
   
-  .info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px;
-    background: var(--gradient-light);
-    border-radius: var(--radius-sm);
-    border-left: 2px solid var(--primary-green);
-    transition: var(--transition);
+  &:disabled {
+    background: $gray-400;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
     
-    &:hover {
-      transform: translateX(2px);
-      box-shadow: var(--shadow-sm);
-    }
-    
-    .info-label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--deep-green);
-      font-weight: 600;
-      font-size: 12px;
-      
-      .item-icon {
-        font-size: 12px;
-      }
-    }
-    
-    .info-value {
-      font-weight: 700;
-      color: var(--text-dark);
-      text-align: right;
-      font-size: 12px;
-    }
-  }
-  
-  .facility-categories {
-    .categories-title {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--deep-green);
-      margin-bottom: 8px;
-      
-      .title-icon {
-        font-size: 0.9rem;
-      }
-    }
-    
-    .categories-grid {
-      display: grid;
-      gap: 4px;
-    }
-    
-    .category-card {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 6px;
-      background: var(--white);
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow-sm);
-      transition: var(--transition);
-      border: 1px solid transparent;
-      
-      &:hover {
-        transform: translateY(-1px);
-        border-color: var(--primary-green);
-        box-shadow: var(--shadow-md);
-      }
-      
-      .category-icon {
-        font-size: 10px;
-      }
-      
-      .category-name {
-        font-weight: 600;
-        color: var(--deep-green);
-        font-size: 10px;
-      }
+    &::before {
+      display: none;
     }
   }
 }
 
-// ✅ SECTION STYLES
-section {
-  margin: 24px 0;
+// Animations
+@keyframes sportFloat {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-12px) rotate(3deg); 
+  }
+}
+
+@keyframes sportPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.8;
+  }
+}
+
+@keyframes championShine {
+  0%, 100% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  50% {
+    transform: translateX(100%) skewX(-15deg);
+  }
+}
+
+@keyframes spin {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+// Base Styles - Clean Background
+.facility-page {
+  background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
+  min-height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+// SIMPLIFIED Header (No Title)
+.facility-header {
+  background: $gradient-hero;
+  color: $white;
+  padding: 24px 0; // Reduced padding since no title
+  position: relative;
+  overflow: hidden;
+  box-shadow: $shadow-sport-lg;
+  width: 100vw;
   
-  .section-title {
+  // Subtle background elements
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+    animation: sportFloat 8s ease-in-out infinite;
+  }
+  
+  &::after {
+    content: '🏆';
+    position: absolute;
+    top: 15px;
+    right: 60px;
+    font-size: 2.5rem;
+    opacity: 0.15;
+    animation: sportFloat 6s ease-in-out infinite reverse;
+  }
+  
+  .header-inner {
+    @include wide-container;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+  }
+  
+  &__content {
+    flex: 1;
+    margin: 0 40px;
+  }
+}
+
+.owner-name {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 50px;
+  padding: 12px 24px; // Smaller since no title
+  font-size: 1rem;
+  color: $sport-primary;
+  font-weight: 700;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: $shadow-sport-lg;
+  
+  &::before {
+    content: '👨‍💼';
+    margin-right: 8px;
     font-size: 1.2rem;
-    font-weight: 800;
-    color: var(--deep-green);
-    margin-bottom: 20px;
+  }
+}
+
+.btn-icon {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  color: $white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 16px;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: $shadow-sport-lg;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.15) rotate(12deg);
+    box-shadow: $shadow-sport-xl;
+  }
+  
+  &.btn-back:hover {
+    transform: scale(1.15) translateX(-8px);
+  }
+  
+  &.btn-favorite:hover {
+    color: $sport-accent;
+    animation: sportPulse 0.6s ease-in-out;
+  }
+}
+
+// BIG Main Layout - 8:4 Ratio (2:1)
+.facility-main {
+  width: 100vw;
+  display: grid;
+  grid-template-columns: 2fr 1fr; // 8:4 ratio (2:1)
+  gap: 60px;
+  padding: 60px;
+  
+  @media (max-width: 1400px) {
+    gap: 50px;
+    padding: 50px;
+  }
+  
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 40px 30px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 30px 20px;
+    gap: 30px;
+  }
+}
+
+// ENHANCED Image Section with Title Below
+.facility-image-section {
+  .carousel {
+    @include big-sport-card;
+    padding: 0;
+    border-radius: 32px;
+    
+    &__container {
+      position: relative;
+      height: 700px; // Much bigger
+      border-radius: 32px;
+      overflow: hidden;
+      
+      @media (max-width: 1400px) {
+        height: 600px;
+      }
+      
+      @media (max-width: 1200px) {
+        height: 500px;
+      }
+      
+      @media (max-width: 768px) {
+        height: 350px;
+      }
+    }
+    
+    &__image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      &:hover {
+        transform: scale(1.03);
+      }
+    }
+    
+    &__overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      padding: 50px;
+      color: $white;
+    }
+    
+    &__image-counter {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      color: $sport-primary;
+      padding: 16px 28px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 800;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: $shadow-sport-lg;
+    }
+    
+    &__btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(27, 94, 32, 0.9);
+      backdrop-filter: blur(20px);
+      border: none;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: $white;
+      font-size: 2.2rem;
+      font-weight: bold;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 3;
+      box-shadow: $shadow-sport-xl;
+      
+      &--prev { left: 40px; }
+      &--next { right: 40px; }
+      
+      &:hover {
+        background: $sport-primary;
+        transform: translateY(-50%) scale(1.2);
+        box-shadow: $shadow-sport-xl;
+      }
+    }
+    
+    &__dots {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 16px;
+    }
+    
+    &__dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      &.active {
+        background: $white;
+        transform: scale(1.4);
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+  
+  // NEW: Facility Title Below Image
+  .facility-title-section {
+    margin-top: 40px;
+    padding: 40px;
+    background: $gradient-hero;
+    border-radius: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: $shadow-sport-lg;
+    
+    // Background decoration
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+      animation: sportFloat 8s ease-in-out infinite;
+    }
+    
+    &::after {
+      content: '⚽';
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      font-size: 3rem;
+      opacity: 0.2;
+      animation: sportFloat 6s ease-in-out infinite reverse;
+    }
+  }
+  
+  .facility-title {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 900;
+    margin: 0 0 20px 0;
+    color: $white;
+    text-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    z-index: 2;
+    
+    // Sport emoji with animation
+    &::before {
+      content: '🏟️ ';
+      opacity: 0.9;
+      animation: sportPulse 3s ease-in-out infinite;
+    }
+    
+    // Shine effect
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      animation: championShine 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+  }
+  
+  .facility-description {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+    
+    &::before {
+      content: '📍 ';
+      opacity: 0.8;
+    }
+  }
+}
+
+// BIG Info Sidebar - Takes 4/12 parts
+.facility-info-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.facility-info {
+  @include big-sport-card;
+  padding: 50px;
+  
+  &__title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: $sport-primary;
+    margin: 0 0 40px 0;
+    position: relative;
     text-align: center;
     
-    .title-icon {
-      font-size: 1.3rem;
+    &::before {
+      content: 'ℹ️';
+      margin-right: 16px;
+      font-size: 2.5rem;
     }
     
     &::after {
       content: '';
       position: absolute;
-      bottom: -4px;
+      bottom: -20px;
       left: 50%;
       transform: translateX(-50%);
-      width: 40px;
-      height: 2px;
-      background: var(--gradient-primary);
-      border-radius: 1px;
+      width: 80px;
+      height: 6px;
+      background: $gradient-sport-primary;
+      border-radius: 3px;
+    }
+  }
+  
+  &__details {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+    transition: all 0.3s ease;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      padding-left: 12px;
+      border-bottom-color: rgba(27, 94, 32, 0.3);
+    }
+    
+    .info-label {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: $gray-600;
+      font-weight: 700;
+      font-size: 1.1rem;
+      
+      .info-icon {
+        font-size: 2rem;
+        width: 40px;
+        text-align: center;
+      }
+    }
+    
+    .info-value {
+      color: $sport-primary;
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-align: right;
+      background: rgba(27, 94, 32, 0.1);
+      padding: 12px 20px;
+      border-radius: 16px;
     }
   }
 }
 
-// ✅ BOOKING SECTION
+.facility-categories {
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 3px solid rgba(27, 94, 32, 0.1);
+  
+  .categories-title {
+    font-size: 1.6rem;
+    font-weight: 900;
+    margin-bottom: 28px;
+    color: $sport-primary;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    
+    &::before {
+      content: '🏟️';
+      font-size: 1.8rem;
+    }
+  }
+  
+  .categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .category-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: $gradient-sport-primary;
+    color: $white;
+    padding: 20px 28px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: $shadow-sport-lg;
+    
+    .category-icon {
+      font-size: 1.6rem;
+    }
+    
+    &:hover {
+      transform: translateX(12px) scale(1.03);
+      box-shadow: $shadow-sport-xl;
+    }
+  }
+}
+
+// Enhanced Booking Section
 .booking-section {
-  background: var(--gradient-card);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-light);
-  margin: 24px 0;
-  transition: var(--transition);
+  background: $white;
+  border-top: 6px solid $sport-primary;
+  padding: 80px 0;
+  position: relative;
+  width: 100vw;
+  
+  .booking-inner {
+    @include wide-container;
+    position: relative;
+    z-index: 1;
+  }
+  
+  &__title {
+    font-size: clamp(2.5rem, 7vw, 4rem);
+    font-weight: 900;
+    color: $sport-primary;
+    margin: 0 0 60px 0;
+    text-align: center;
+    position: relative;
+    
+    &::before {
+      content: '🎯';
+      margin-right: 20px;
+      font-size: clamp(3rem, 7vw, 4.5rem);
+      animation: sportPulse 3s ease-in-out infinite;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 6px;
+      background: $gradient-sport-primary;
+      border-radius: 3px;
+    }
+  }
+}
+
+// FIXED Booking Controls - Perfect Alignment & Better Typography
+.booking-toolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 60px;
+}
+
+.booking-controls {
+  @include big-sport-card;
+  padding: 48px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch; // Changed from 'end' to 'stretch'
+  background: linear-gradient(135deg, $white 0%, rgba(76, 175, 80, 0.04) 100%);
+  min-width: 700px;
+  border: 3px solid rgba(27, 94, 32, 0.08);
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 40px 32px;
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  height: 100%; // Ensure equal height
+  
+  // Enhanced focus ring
+  &:focus-within {
+    .control-label {
+      color: $sport-primary;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.control-label {
+  display: flex;
+  align-items: center;
+  gap: 16px; // Increased gap
+  font-weight: 800;
+  color: $sport-secondary;
+  font-size: 1.3rem; // Increased from 1.1rem
+  text-transform: uppercase;
+  letter-spacing: 1.2px; // Increased spacing
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 12px; // Increased from 8px
+  
+  .label-icon {
+    font-size: 2rem; // Increased from 1.8rem
+    padding: 10px; // Increased from 8px
+    background: rgba(27, 94, 32, 0.12);
+    border-radius: 14px; // Increased from 12px
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    min-width: 44px; // Fixed width for consistency
+    min-height: 44px; // Fixed height for consistency
+  }
+  
+  &:hover .label-icon {
+    background: rgba(27, 94, 32, 0.2);
+    transform: scale(1.1);
+  }
+}
+
+.form-select,
+.form-date {
+  padding: 22px 26px; // Increased padding
+  border: 3px solid rgba(27, 94, 32, 0.15);
+  border-radius: 20px;
+  font-size: 1.25rem; // Increased from 1.1rem - BIGGER TEXT
+  background: $white;
+  color: $sport-primary;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(27, 94, 32, 0.08);
+  position: relative;
+  width: 100%; // Ensure full width
+  height: 64px; // Fixed height for consistency
+  
+  // Enhanced styling
+  appearance: none;
+  cursor: pointer;
+  line-height: 1.2; // Better line height
+  
+  &:focus {
+    outline: none;
+    border-color: $sport-primary;
+    box-shadow: 
+      0 0 0 4px rgba(27, 94, 32, 0.15),
+      0 8px 24px rgba(27, 94, 32, 0.12);
+    transform: translateY(-3px);
+  }
   
   &:hover {
+    border-color: $sport-secondary;
+    box-shadow: 0 6px 20px rgba(27, 94, 32, 0.12);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-green);
   }
   
-  .booking-controls {
+  // Custom dropdown arrow for select
+  &[type="date"] {
+    position: relative;
+    
+    &::-webkit-calendar-picker-indicator {
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E") no-repeat center;
+      background-size: 24px; // Increased from 20px
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+      margin-left: 8px; // Add spacing from text
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// Enhanced select styling with BIGGER dropdown arrow
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 22px center; // Adjusted position
+  background-size: 20px; // Increased from 16px
+  padding-right: 60px; // Increased padding for larger arrow
+  
+  &:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%231B5E20' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  }
+  
+  // BIGGER dropdown options
+  option {
+    font-size: 1.2rem; // Bigger option text
+    padding: 12px 16px; // More padding for options
+    color: $sport-primary;
+    background: $white;
+    
+    &:hover,
+    &:focus {
+      background: rgba(27, 94, 32, 0.1);
+    }
+    
+    &:checked {
+      background: $sport-primary;
+      color: $white;
+    }
+  }
+}
+
+// ENHANCED date input styling
+.form-date {
+  // Better date text alignment
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  // Enhanced calendar icon
+  &::-webkit-datetime-edit-fields-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+  
+  &::-webkit-datetime-edit-text {
+    color: $sport-primary;
+    padding: 0 4px;
+    font-weight: 700;
+  }
+  
+  &::-webkit-datetime-edit-month-field,
+  &::-webkit-datetime-edit-day-field,
+  &::-webkit-datetime-edit-year-field {
+    color: $sport-primary;
+    font-weight: 700;
+    font-size: 1.25rem; // Match the input font size
+  }
+  
+  &::-webkit-inner-spin-button,
+  &::-webkit-clear-button {
+    display: none;
+  }
+}
+
+// Enhanced Table
+.table-container {
+  margin-bottom: 60px;
+}
+
+.table-responsive {
+  @include big-sport-card;
+  overflow-x: auto;
+  margin-bottom: 28px;
+  border-radius: 28px;
+}
+
+.booking-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  
+  th {
+    background: $gradient-sport-primary;
+    color: $white;
+    padding: 28px 20px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    
+    &:first-child {
+      border-radius: 28px 0 0 0;
+      background: $gradient-sport-energy;
+    }
+    
+    &:last-child {
+      border-radius: 0 28px 0 0;
+    }
+    
+    .header-icon {
+      margin-right: 12px;
+      font-size: 1.5rem;
+    }
+  }
+  
+  .slot-header {
+    .slot-time {
+      font-size: 1rem;
+      opacity: 0.95;
+      font-weight: 800;
+    }
+  }
+  
+  td {
+    padding: 28px 20px;
+    text-align: center;
+    background: $white;
+    border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &:first-child {
+      background: rgba(27, 94, 32, 0.05);
+      color: $sport-primary;
+      font-weight: 800;
+      
+      .label-icon {
+        margin-right: 12px;
+        font-size: 1.5rem;
+      }
+    }
+  }
+  
+  .availability-cell {
+    cursor: pointer;
+    
+    &.available {
+      &:hover {
+        background: rgba(76, 175, 80, 0.1);
+        transform: scale(1.06);
+        box-shadow: inset 0 0 0 4px rgba(76, 175, 80, 0.3);
+      }
+    }
+    
+    &.unavailable {
+      background: rgba(211, 47, 47, 0.05);
+      
+      &:hover {
+        background: rgba(211, 47, 47, 0.1);
+      }
+    }
+  }
+  
+  .availability-info {
+    .count {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: $field-green;
+      display: block;
+      line-height: 1;
+    }
+    
+    .status-text {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: $gray-600;
+      margin-top: 6px;
+      font-weight: 700;
+    }
+  }
+  
+  tbody tr:last-child td {
+    border-bottom: none;
+    
+    &:first-child {
+      border-radius: 0 0 0 28px;
+    }
+    
+    &:last-child {
+      border-radius: 0 0 28px 0;
+    }
+  }
+}
+
+.table-legend {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  margin-top: 32px;
+  
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: $sport-primary;
+    
+    .legend-color {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      
+      &.available {
+        background: rgba(76, 175, 80, 0.3);
+        border: 4px solid $field-green;
+      }
+      
+      &.unavailable {
+        background: rgba(211, 47, 47, 0.3);
+        border: 4px solid $sport-red;
+      }
+    }
+  }
+}
+
+// ENHANCED Booking Action Button - PERFECT ALIGNMENT
+.booking-action {
+  text-align: center;
+  padding-top: 60px;
+  border-top: 3px solid rgba(27, 94, 32, 0.1);
+  margin-top: 40px;
+}
+
+.btn-booking {
+  background: $gradient-sport-primary;
+  color: $white;
+  border: none;
+  border-radius: 24px;
+  padding: 26px 64px; // Increased padding
+  font-weight: 900;
+  font-size: 1.4rem; // Increased from 1.3rem
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 1.8px; // Increased spacing
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(27, 94, 32, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 18px; // Increased gap
+  min-width: 320px; // Increased from 280px
+  justify-content: center;
+  
+  // Animated background
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.8s ease;
+  }
+  
+  // Animated border
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 24px;
+    padding: 3px;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .btn-icon {
+    font-size: 2rem; // Increased from 1.8rem
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; // Increased from 32px
+    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 16px 48px rgba(27, 94, 32, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    
+    &::before {
+      left: 100%;
+    }
+    
+    &::after {
+      opacity: 1;
+    }
+    
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(15deg) scale(1.1);
+    }
+  }
+  
+  &:active {
+    transform: translateY(-2px) scale(0.98);
+  }
+  
+  &:disabled {
+    background: linear-gradient(135deg, $gray-400 0%, $gray-500 100%);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    &::before,
+    &::after {
+      display: none;
+    }
+    
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.1);
+      transform: none;
+    }
+  }
+  
+  // Loading state
+  &.loading {
+    .btn-icon {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// Enhanced Reviews Section
+.reviews-section {
+  background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
+  padding: 80px 0;
+  border-top: 6px solid $sport-secondary;
+  position: relative;
+  width: 100vw;
+  
+  .reviews-inner {
+    @include wide-container;
+    position: relative;
+    z-index: 1;
+  }
+  
+  &__title {
+    font-size: clamp(2.5rem, 7vw, 3.5rem);
+    font-weight: 900;
+    color: $sport-primary;
+    margin: 0 0 60px 0;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    
+    .title-icon {
+      font-size: clamp(3rem, 7vw, 4rem);
+      animation: sportPulse 3s ease-in-out infinite;
+    }
+  }
+}
+
+.rating-summary {
+  @include big-sport-card;
+  padding: 50px;
+  margin-bottom: 50px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 50px;
+  align-items: center;
+  background: $gradient-sport-primary;
+  color: $white;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 32px;
+    padding: 40px;
+  }
+  
+  .rating-main {
+    text-align: center;
+    
+    .rating-value {
+      font-size: 5rem;
+      font-weight: 900;
+      color: $white;
+      display: block;
+      line-height: 1;
+      text-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+    
+    .rating-stars {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 16px 0;
+      
+      .star {
+        font-size: 2.5rem;
+        color: $champion-gold;
+        text-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        
+        &.filled {
+          animation: sportPulse 2s ease-in-out infinite;
+        }
+        
+        &:not(.filled) {
+          color: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+  }
+  
+  .rating-breakdown {
+    .breakdown-header {
+      margin-bottom: 28px;
+      
+      .total-reviews {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.95);
+      }
+    }
+    
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .breakdown-item {
+      display: grid;
+      grid-template-columns: 60px 1fr 60px;
+      align-items: center;
+      gap: 20px;
+      
+      .star-label {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: $white;
+      }
+      
+      .progress-bar {
+        height: 14px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 7px;
+        overflow: hidden;
+        
+        .progress-fill {
+          height: 100%;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 7px;
+          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: championShine 2s ease-in-out infinite;
+          }
+        }
+      }
+      
+      .count-label {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: $white;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.reviews-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 32px;
+  margin-bottom: 50px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.review-card {
+  @include big-sport-card;
+  padding: 36px;
+  background: $white;
+  
+  &__avatar {
+    width: 80px;
+    height: 80px;
+    background: $gradient-sport-primary;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $white;
+    font-weight: 800;
+    margin: 0 auto 24px;
+    box-shadow: $shadow-sport-xl;
+    
+    .avatar-text {
+      font-size: 1.3rem;
+    }
+  }
+  
+  &__content {
+    text-align: center;
+  }
+  
+  &__header {
     margin-bottom: 20px;
+    
+    .reviewer-info {
+      margin-bottom: 12px;
+      
+      .reviewer-name {
+        font-weight: 800;
+        color: $sport-primary;
+        font-size: 1.3rem;
+        display: block;
+      }
+      
+      .review-time {
+        color: $gray-500;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+    }
+    
+    .review-stars {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      
+      .star {
+        font-size: 1.8rem;
+        color: $champion-gold;
+        
+        &:not(.filled) {
+          color: $gray-300;
+        }
+      }
+    }
   }
   
-  .control-row {
+  .review-text {
+    color: $gray-700;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  
+  .review-actions {
     display: flex;
     justify-content: center;
     gap: 16px;
-    flex-wrap: wrap;
   }
   
-  .control-group {
+  .review-action-btn {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 140px;
-    
-    .control-label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-weight: 600;
-      color: var(--deep-green);
-      font-size: 11px;
-      
-      .label-icon {
-        font-size: 12px;
-      }
-    }
-  }
-  
-  .form-control {
-    padding: 8px 12px;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 600;
-    background: var(--white);
-    color: var(--text-dark);
-    transition: var(--transition);
-    
-    &:focus {
-      outline: none;
-      border-color: var(--primary-green);
-      box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
-    }
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: transparent;
+    border: 3px solid rgba(27, 94, 32, 0.2);
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $sport-primary;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
     &:hover {
-      border-color: var(--accent-green);
+      background: rgba(27, 94, 32, 0.1);
+      border-color: rgba(27, 94, 32, 0.4);
+      transform: translateY(-3px);
     }
-    
-    &.select-control {
-      cursor: pointer;
-    }
-  }
-  
-  .loading-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 24px;
-    
-    p {
-      color: var(--text-medium);
-      font-weight: 600;
-      font-size: 13px;
-    }
-  }
-  
-  .schedule-container {
-    .schedule-table-wrapper {
-      overflow-x: auto;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      margin-bottom: 16px;
-    }
-    
-    .schedule-table {
-      width: 100%;
-      min-width: 600px;
-      border-collapse: separate;
-      border-spacing: 0;
-      background: var(--white);
-      
-      thead th {
-        background: var(--gradient-primary);
-        color: var(--white);
-        padding: 10px 8px;
-        text-align: center;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        
-        &:first-child { border-radius: var(--radius-lg) 0 0 0; }
-        &:last-child { border-radius: 0 var(--radius-lg) 0 0; }
-        
-        .column-header {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          
-          .header-icon {
-            font-size: 12px;
-          }
-        }
-        
-        .slot-header {
-          font-weight: 600;
-          font-size: 10px;
-        }
-      }
-      
-      tbody {
-        tr:hover {
-          background: var(--gradient-light);
-        }
-        
-        td {
-          padding: 10px 8px;
-          text-align: center;
-          border-bottom: 1px solid var(--border-light);
-          transition: var(--transition);
-          
-          &.label-cell {
-            background: var(--gradient-light);
-            font-weight: 700;
-            color: var(--deep-green);
-            border-right: 1px solid var(--primary-green);
-            font-size: 11px;
-            
-            .row-label {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 4px;
-              
-              .label-icon {
-                font-size: 12px;
-              }
-            }
-          }
-          
-          &.availability-cell {
-            cursor: pointer;
-            
-            &:hover {
-              transform: scale(1.02);
-              border-radius: var(--radius-sm);
-            }
-            
-            &.available {
-              .availability-content {
-                color: var(--deep-green);
-                
-                .court-count {
-                  display: block;
-                  background: var(--gradient-primary);
-                  color: var(--white);
-                  padding: 2px 4px;
-                  border-radius: var(--radius-sm);
-                  font-weight: 800;
-                  margin-bottom: 2px;
-                  font-size: 10px;
-                }
-                
-                .availability-status {
-                  font-size: 9px;
-                  font-weight: 600;
-                }
-              }
-            }
-            
-            &.unavailable {
-              opacity: 0.6;
-              
-              .availability-content {
-                color: var(--text-light);
-                
-                .court-count {
-                  display: block;
-                  background: #DDD;
-                  color: #999;
-                  padding: 2px 4px;
-                  border-radius: var(--radius-sm);
-                  font-weight: 800;
-                  margin-bottom: 2px;
-                  font-size: 10px;
-                }
-                
-                .availability-status {
-                  font-size: 9px;
-                  font-weight: 600;
-                }
-              }
-            }
-          }
-        }
-        
-        tr:last-child td {
-          border-bottom: none;
-          
-          &:first-child { border-radius: 0 0 0 var(--radius-lg); }
-          &:last-child { border-radius: 0 0 var(--radius-lg) 0; }
-        }
-      }
-    }
-    
-    .schedule-legend {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      padding: 12px;
-      background: var(--gradient-light);
-      border-radius: var(--radius-md);
-      
-      .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-weight: 600;
-        color: var(--text-dark);
-        font-size: 11px;
-        
-        .legend-indicator {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          
-          &.available { background: var(--primary-green); }
-          &.unavailable { background: #DDD; }
-        }
-      }
-    }
-  }
-  
-  .empty-schedule {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 40px;
-    
-    .empty-icon {
-      font-size: 2rem;
-      opacity: 0.5;
-    }
-    
-    p {
-      color: var(--text-medium);
-      font-weight: 600;
-      text-align: center;
-      font-size: 13px;
-    }
-  }
-  
-  .booking-action {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
   }
 }
 
-// ✅ REVIEWS SECTION
-.reviews-section {
-  background: var(--gradient-card);
-  border-radius: var(--radius-xl);
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-light);
-  transition: var(--transition);
+.reviews-bottom {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+  padding-top: 50px;
+  border-top: 3px solid rgba(27, 94, 32, 0.1);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.btn-write-review {
+  @include big-sport-button;
+  background: $gradient-sport-energy;
+  font-size: 1.2rem;
+  padding: 20px 40px;
+  
+  .btn-icon {
+    font-size: 1.5rem;
+  }
+}
+
+.btn-view-all {
+  background: transparent;
+  color: $sport-primary;
+  border: 3px solid $sport-primary;
+  border-radius: 20px;
+  padding: 20px 40px;
+  font-weight: 800;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-green);
+    background: $sport-primary;
+    color: $white;
+    transform: translateY(-3px);
+    box-shadow: $shadow-sport-lg;
   }
   
-  .rating-overview {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 24px;
-    margin-bottom: 20px;
-    padding: 16px;
-    background: var(--gradient-primary);
-    color: var(--white);
-    border-radius: var(--radius-lg);
+  .btn-arrow {
+    transition: transform 0.3s ease;
+    font-size: 1.4rem;
+  }
+  
+  &:hover .btn-arrow {
+    transform: translateX(8px);
+  }
+}
+
+// Enhanced States
+.loading-state {
+  text-align: center;
+  padding: 60px 40px;
+  
+  .loading-spinner {
+    font-size: 4rem;
+    margin-bottom: 24px;
+    display: block;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  p {
+    color: $sport-primary;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 40px;
+  
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 24px;
+    display: block;
+    opacity: 0.6;
+  }
+  
+  p {
+    color: $gray-600;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+}
+
+.error-state {
+  text-align: center;
+  padding: 80px 60px;
+  
+  .error-icon {
+    font-size: 6rem;
+    margin-bottom: 32px;
+    display: block;
+    animation: sportFloat 3s ease-in-out infinite;
+  }
+  
+  h2, p {
+    color: $sport-red;
+    margin: 16px 0;
+    font-weight: 700;
+  }
+  
+  h2 {
+    font-size: 2.2rem;
+    font-weight: 900;
+  }
+  
+  p {
+    font-size: 1.3rem;
+  }
+}
+
+// RESPONSIVE fixes
+@media (max-width: 768px) {
+  .booking-controls {
+    grid-template-columns: 1fr;
+    gap: 28px; // Increased gap
+    padding: 36px 28px; // Increased padding
+  }
+  
+  .control-label {
+    font-size: 1.1rem; // Bigger on mobile
     
-    .rating-score {
-      display: flex;
+    .label-icon {
+      font-size: 1.7rem; // Bigger icon on mobile
+      min-width: 40px;
+      min-height: 40px;
+    }
+  }
+  
+  .form-select,
+  .form-date {
+    padding: 20px 24px; // Bigger padding on mobile
+    font-size: 1.15rem; // Bigger text on mobile
+    height: 60px; // Consistent height on mobile
+  }
+  
+  .btn-booking {
+    padding: 22px 52px; // Adjusted for mobile
+    font-size: 1.2rem; // Adjusted for mobile
+    min-width: 280px;
+    
+    .btn-icon {
+      font-size: 1.7rem;
+      width: 32px;
+      height: 32px;
+    }
+  }
+}
+
+// ENHANCED alignment for dropdown options
+.form-select {
+  // Better vertical alignment
+  display: flex;
+  align-items: center;
+  
+  // Custom styling for better appearance
+  &::-ms-expand {
+    display: none; // Hide default arrow in IE
+  }
+}
+
+// Additional fixes for perfect alignment
+.control-group {
+  // Ensure both controls have same baseline
+  justify-content: flex-end; // Align to bottom
+  
+  .control-label {
+    margin-bottom: auto; // Push label to top
+  }
+  
+  .form-select,
+  .form-date {
+    margin-top: auto; // Align inputs to bottom
+  }
+}
+
+// Better focus states
+.control-group:focus-within {
+  .form-select,
+  .form-date {
+    border-color: $sport-primary;
+    box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
+  }
+}
+
+// Enhanced focus states
+.control-group:focus-within {
+  .form-select,
+  .form-date {
+    border-color: $sport-primary;
+    box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
+  }
+}
+
+// Improved accessibility
+.btn-booking:focus-visible {
+  outline: 4px solid rgba(27, 94, 32, 0.5);
+  outline-offset: 4px;
+}
+
+.form-select:focus-visible,
+.form-date:focus-visible {
+  outline: 2px solid $sport-primary;
+  outline-offset: 2px;
+}
+
+// Responsive Design
+@media (max-width: 1400px) {
+  .facility-main {
+    grid-template-columns: 2fr 1fr; // Keep 2:1 ratio
+    gap: 50px;
+    padding: 50px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .facility-main {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 40px 30px;
+  }
+  
+  .facility-title {
+    font-size: 2.8rem;
+  }
+  
+  .booking-section__title,
+  .reviews-section__title {
+    font-size: 2.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .facility-header {
+    padding: 20px 0;
+    
+    .header-inner {
       flex-direction: column;
-      align-items: center;
+      gap: 16px;
       text-align: center;
-      
-      .score-number {
-        font-size: 2rem;
-        font-weight: 900;
-        margin-bottom: 4px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      }
-      
-      .score-text {
-        font-size: 11px;
-        font-weight: 600;
-        opacity: 0.9;
-        margin-top: 4px;
-      }
+      padding: 0 20px;
     }
     
-    .rating-distribution {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      
-      .distribution-item {
-        display: grid;
-        grid-template-columns: 20px 1fr 30px;
-        align-items: center;
-        gap: 8px;
-        
-        .star-label {
-          font-size: 11px;
-          font-weight: 600;
-          text-align: right;
-        }
-        
-        .progress-track {
-          height: 4px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
-          overflow: hidden;
-          
-          .progress-fill {
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 2px;
-            transition: width 1s ease;
-          }
-        }
-        
-        .count-label {
-          font-size: 11px;
-          font-weight: 600;
-          text-align: center;
-          background: rgba(255, 255, 255, 0.2);
-          padding: 1px 4px;
-          border-radius: var(--radius-sm);
-        }
-      }
+    &__content {
+      margin: 0;
     }
+  }
+  
+  .booking-table {
+    font-size: 0.9rem;
+    
+    th, td {
+      padding: 20px 12px;
+    }
+  }
+  
+  .facility-main {
+    padding: 30px 20px;
+  }
+  
+  .carousel__container {
+    height: 300px;
   }
   
   .reviews-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
+    grid-template-columns: 1fr;
   }
   
-  .review-card {
-    display: flex;
-    gap: 12px;
-    padding: 12px;
-    background: var(--white);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    transition: var(--transition);
-    
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-      border-color: var(--primary-green);
-    }
-    
-    .review-avatar {
-      width: 28px;
-      height: 28px;
-      background: var(--gradient-primary);
-      color: var(--white);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 11px;
-      flex-shrink: 0;
-    }
-    
-    .review-content {
-      flex: 1;
-      
-      .review-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 8px;
-        
-        .reviewer-info {
-          .reviewer-name {
-            font-weight: 700;
-            color: var(--deep-green);
-            font-size: 13px;
-          }
-          
-          .review-meta {
-            color: var(--text-light);
-            font-size: 11px;
-            font-weight: 500;
-          }
-        }
-      }
-      
-      .review-text {
-        color: var(--text-dark);
-        line-height: 1.4;
-        margin-bottom: 10px;
-        font-size: 12px;
-      }
-      
-      .review-actions {
-        display: flex;
-        gap: 8px;
-        
-        .action-btn {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 8px;
-          background: transparent;
-          border: 1px solid var(--border-light);
-          border-radius: 12px;
-          cursor: pointer;
-          transition: var(--transition);
-          font-size: 10px;
-          font-weight: 600;
-          
-          .action-icon {
-            font-size: 10px;
-          }
-          
-          &:hover {
-            border-color: var(--primary-green);
-            background: var(--gradient-light);
-            color: var(--deep-green);
-          }
-        }
-      }
-    }
+  .facility-title-section {
+    margin-top: 20px;
+    padding: 30px 20px;
   }
   
-  .reviews-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-light);
-    gap: 12px;
+  .facility-title {
+    font-size: 2rem;
   }
+}
+
+// Focus States
+.btn-icon:focus,
+.form-select:focus,
+.form-date:focus,
+.btn-booking:focus,
+.btn-write-review:focus,
+.btn-view-all:focus {
+  outline: 4px solid rgba(27, 94, 32, 0.5);
+  outline-offset: 4px;
 }

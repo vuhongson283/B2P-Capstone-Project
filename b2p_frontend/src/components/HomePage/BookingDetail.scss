@@ -36,17 +36,17 @@ $gradient-hero: linear-gradient(135deg,
   rgba(76, 175, 80, 0.85) 70%,
   rgba(102, 187, 106, 0.9) 100%);
 
-// Enhanced Shadows
-$shadow-sport-sm: 0 4px 8px rgba(27, 94, 32, 0.12);
-$shadow-sport-md: 0 8px 16px rgba(27, 94, 32, 0.18);
-$shadow-sport-lg: 0 16px 32px rgba(27, 94, 32, 0.24);
-$shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
+// Enhanced Shadows - Reduced
+$shadow-sport-sm: 0 2px 4px rgba(27, 94, 32, 0.08);
+$shadow-sport-md: 0 4px 8px rgba(27, 94, 32, 0.12);
+$shadow-sport-lg: 0 8px 16px rgba(27, 94, 32, 0.16);
+$shadow-sport-xl: 0 12px 24px rgba(27, 94, 32, 0.2);
 
 // Animations
 @keyframes sportSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(-30px) scale(0.95);
+    transform: translateY(-20px) scale(0.98);
   }
   100% {
     opacity: 1;
@@ -69,8 +69,8 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     opacity: 1;
   }
   50% {
-    transform: scale(1.05);
-    opacity: 0.8;
+    transform: scale(1.03);
+    opacity: 0.9;
   }
 }
 
@@ -100,26 +100,26 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   right: 0;
   bottom: 0;
   background: rgba(27, 94, 32, 0.8);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1001;
-  padding: 20px;
+  padding: 16px;
   animation: sportFadeIn 0.3s ease-out;
 
   .booking-detail-modal {
     background: $white;
-    border-radius: 24px;
+    border-radius: 16px;
     width: 90%;
-    max-width: 900px;
-    max-height: 90vh;
+    max-width: 700px; // Reduced from 900px
+    max-height: 80vh; // Reduced from 90vh
     display: flex;
     flex-direction: column;
-    box-shadow: $shadow-sport-xl;
+    box-shadow: $shadow-sport-lg;
     overflow: hidden;
     animation: sportSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 4px solid rgba(27, 94, 32, 0.1);
+    border: 2px solid rgba(27, 94, 32, 0.1); // Reduced from 4px
 
     // Sport pattern overlay
     &::before {
@@ -128,7 +128,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
       top: 0;
       left: 0;
       right: 0;
-      height: 6px;
+      height: 4px;
       background: $gradient-sport-primary;
       z-index: 1;
     }
@@ -136,7 +136,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     .modal-header {
       background: $gradient-hero;
       color: $white;
-      padding: 32px 40px;
+      padding: 20px 24px; // Reduced from 32px 40px
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -150,8 +150,8 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
         position: absolute;
         top: -50%;
         right: -20%;
-        width: 200px;
-        height: 200px;
+        width: 150px; // Reduced from 200px
+        height: 150px;
         background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
         animation: sportPulse 8s ease-in-out infinite;
       }
@@ -162,12 +162,12 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
         .modal-title {
           margin: 0;
-          font-size: 2rem;
+          font-size: 1.5rem; // Reduced from 2rem
           font-weight: 900;
           display: flex;
           align-items: center;
-          gap: 16px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          gap: 12px; // Reduced from 16px
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
           position: relative;
 
           // Shine effect
@@ -185,8 +185,8 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
         }
 
         .modal-subtitle {
-          margin: 8px 0 0 0;
-          font-size: 1.1rem;
+          margin: 6px 0 0 0; // Reduced from 8px
+          font-size: 0.95rem; // Reduced from 1.1rem
           opacity: 0.95;
           font-weight: 600;
         }
@@ -194,16 +194,16 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
       .close-btn {
         background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(8px);
         border: 2px solid rgba(255, 255, 255, 0.3);
-        width: 44px;
-        height: 44px;
+        width: 36px; // Reduced from 44px
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        font-size: 1.5rem;
+        font-size: 1.2rem; // Reduced from 1.5rem
         color: $white;
         font-weight: bold;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -224,7 +224,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
       overflow-x: hidden;
 
       &::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
 
       &::-webkit-scrollbar-track {
@@ -233,7 +233,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
       &::-webkit-scrollbar-thumb {
         background: $gradient-sport-primary;
-        border-radius: 4px;
+        border-radius: 3px;
 
         &:hover {
           background: $sport-primary;
@@ -245,23 +245,23 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     .contact-form-section,
     .payment-method-section,
     .user-status-section {
-      padding: 32px 40px;
+      padding: 20px 24px; // Reduced from 32px 40px
 
       .section-title {
-        margin: 0 0 24px 0;
-        font-size: 1.5rem;
+        margin: 0 0 16px 0; // Reduced from 24px
+        font-size: 1.3rem; // Reduced from 1.5rem
         font-weight: 800;
         color: $sport-primary;
         position: relative;
-        padding-bottom: 12px;
+        padding-bottom: 8px; // Reduced from 12px
 
         &::after {
           content: '';
           position: absolute;
           bottom: 0;
           left: 0;
-          width: 60px;
-          height: 4px;
+          width: 50px; // Reduced from 60px
+          height: 3px; // Reduced from 4px
           background: $gradient-sport-primary;
           border-radius: 2px;
         }
@@ -270,87 +270,89 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
     .booking-summary-section {
       background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
-      border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+      border-bottom: 2px solid rgba(27, 94, 32, 0.1);
 
       .price-breakdown {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+        margin-top: 0.8rem;
+        padding: 0.8rem;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e9ecef;
 
-  .price-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    
-    &:not(:last-child) {
-      border-bottom: 1px solid #dee2e6;
-    }
+        .price-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.4rem 0;
+          
+          &:not(:last-child) {
+            border-bottom: 1px solid #dee2e6;
+          }
 
-    .price-label {
-      font-weight: 500;
-      color: #495057;
-    }
+          .price-label {
+            font-weight: 500;
+            color: #495057;
+            font-size: 0.9rem;
+          }
 
-    .price-value {
-      font-weight: 600;
-      color: #212529;
-    }
+          .price-value {
+            font-weight: 600;
+            color: #212529;
+            font-size: 0.9rem;
+          }
 
-    &.deposit {
-      .price-label {
-        color: #28a745;
-        font-weight: 600;
+          &.deposit {
+            .price-label {
+              color: #28a745;
+              font-weight: 600;
+            }
+            
+            .deposit-amount {
+              color: #28a745;
+              font-size: 1rem;
+              font-weight: 700;
+            }
+          }
+
+          &.remaining {
+            .price-label {
+              color: #6c757d;
+            }
+            
+            .price-value {
+              color: #6c757d;
+            }
+          }
+        }
       }
-      
-      .deposit-amount {
-        color: #28a745;
-        font-size: 1.1em;
-        font-weight: 700;
-      }
-    }
 
-    &.remaining {
-      .price-label {
-        color: #6c757d;
-      }
-      
-      .price-value {
-        color: #6c757d;
-      }
-    }
-  }
-}
+      .payment-note {
+        margin-top: 0.8rem;
+        padding: 0.8rem;
+        background-color: #e3f2fd;
+        border-left: 3px solid #2196f3;
+        border-radius: 3px;
 
-.payment-note {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #e3f2fd;
-  border-left: 4px solid #2196f3;
-  border-radius: 4px;
-
-  p {
-    margin: 0;
-    color: #1565c0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-}
+        p {
+          margin: 0;
+          color: #1565c0;
+          font-size: 0.8rem;
+          line-height: 1.4;
+        }
+      }
 
       .summary-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); // Reduced from 300px
+        gap: 16px; // Reduced from 20px
 
         .summary-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 20px 24px;
+          padding: 16px 20px; // Reduced from 20px 24px
           background: $white;
-          border-radius: 16px;
+          border-radius: 12px; // Reduced from 16px
           border: 2px solid rgba(27, 94, 32, 0.1);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           box-shadow: $shadow-sport-sm;
@@ -358,14 +360,14 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           &:hover {
             border-color: rgba(27, 94, 32, 0.2);
             box-shadow: $shadow-sport-md;
-            transform: translateY(-2px);
+            transform: translateY(-1px); // Reduced from -2px
           }
 
           &.total {
             background: $gradient-sport-primary;
             color: $white;
             border: none;
-            box-shadow: $shadow-sport-lg;
+            box-shadow: $shadow-sport-md;
 
             .summary-label,
             .summary-value {
@@ -373,14 +375,14 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
             }
 
             .total-price {
-              font-size: 1.4rem;
+              font-size: 1.2rem; // Reduced from 1.4rem
               font-weight: 900;
-              text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             }
           }
 
           .summary-label {
-            font-size: 1rem;
+            font-size: 0.9rem; // Reduced from 1rem
             color: $gray-600;
             font-weight: 600;
           }
@@ -388,7 +390,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           .summary-value {
             font-weight: 800;
             color: $sport-primary;
-            font-size: 1.1rem;
+            font-size: 1rem; // Reduced from 1.1rem
           }
         }
       }
@@ -396,15 +398,15 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
     .user-status-section {
       background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(27, 94, 32, 0.08) 100%);
-      border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+      border-bottom: 2px solid rgba(27, 94, 32, 0.1);
 
       .user-status-info {
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 20px 24px;
+        gap: 12px; // Reduced from 16px
+        padding: 16px 20px; // Reduced from 20px 24px
         background: $white;
-        border-radius: 16px;
+        border-radius: 12px; // Reduced from 16px
         border: 2px solid rgba(76, 175, 80, 0.2);
         box-shadow: $shadow-sport-sm;
 
@@ -413,15 +415,15 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
           strong {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 4px; // Reduced from 6px
             color: $sport-primary;
-            font-size: 1.2rem;
+            font-size: 1.1rem; // Reduced from 1.2rem
             font-weight: 800;
           }
 
           p {
             margin: 0;
-            font-size: 1rem;
+            font-size: 0.9rem; // Reduced from 1rem
             color: $gray-600;
             font-weight: 500;
           }
@@ -430,29 +432,29 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     }
 
     .contact-form-section {
-      border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+      border-bottom: 2px solid rgba(27, 94, 32, 0.1);
 
       .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); // Reduced from 300px
+        gap: 16px; // Reduced from 24px
       }
 
       .form-group {
         .form-label {
           display: block;
-          font-size: 1rem;
+          font-size: 0.9rem; // Reduced from 1rem
           font-weight: 700;
           color: $sport-primary;
-          margin-bottom: 8px;
+          margin-bottom: 6px; // Reduced from 8px
         }
 
         .form-input {
           width: 100%;
-          padding: 16px 20px;
-          border: 3px solid $gray-300;
-          border-radius: 12px;
-          font-size: 1rem;
+          padding: 12px 16px; // Reduced from 16px 20px
+          border: 2px solid $gray-300; // Reduced from 3px
+          border-radius: 10px; // Reduced from 12px
+          font-size: 0.9rem; // Reduced from 1rem
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           background: $white;
           box-sizing: border-box;
@@ -461,13 +463,13 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           &:focus {
             outline: none;
             border-color: $sport-primary;
-            box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.15); // Reduced from 4px
+            transform: translateY(-1px); // Reduced from -2px
           }
 
           &.error {
             border-color: $sport-red;
-            box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.15);
+            box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15); // Reduced from 4px
           }
 
           &::placeholder {
@@ -478,44 +480,44 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
         .error-message {
           display: block;
-          font-size: 0.9rem;
+          font-size: 0.8rem; // Reduced from 0.9rem
           color: $sport-red;
-          margin-top: 6px;
+          margin-top: 4px; // Reduced from 6px
           font-weight: 600;
         }
       }
 
       .form-note {
-        margin-top: 20px;
-        padding: 16px 20px;
+        margin-top: 16px; // Reduced from 20px
+        padding: 12px 16px; // Reduced from 16px 20px
         background: rgba(66, 165, 245, 0.1);
         border: 2px solid rgba(66, 165, 245, 0.2);
-        border-radius: 12px;
-        font-size: 0.95rem;
+        border-radius: 10px; // Reduced from 12px
+        font-size: 0.85rem; // Reduced from 0.95rem
         color: $sport-blue;
         font-weight: 600;
-        line-height: 1.5;
+        line-height: 1.4;
       }
     }
 
     .payment-method-section {
       .form-group {
-        margin-bottom: 24px;
+        margin-bottom: 16px; // Reduced from 24px
 
         .form-label {
           display: block;
-          font-size: 1rem;
+          font-size: 0.9rem; // Reduced from 1rem
           font-weight: 700;
           color: $sport-primary;
-          margin-bottom: 8px;
+          margin-bottom: 6px; // Reduced from 8px
         }
 
         .form-input {
           width: 100%;
-          padding: 16px 20px;
-          border: 3px solid $gray-300;
-          border-radius: 12px;
-          font-size: 1rem;
+          padding: 12px 16px; // Reduced from 16px 20px
+          border: 2px solid $gray-300; // Reduced from 3px
+          border-radius: 10px; // Reduced from 12px
+          font-size: 0.9rem; // Reduced from 1rem
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           background: $white;
           box-sizing: border-box;
@@ -524,22 +526,22 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           &:focus {
             outline: none;
             border-color: $sport-primary;
-            box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.15); // Reduced from 4px
+            transform: translateY(-1px); // Reduced from -2px
           }
 
           &.error {
             border-color: $sport-red;
-            box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.15);
+            box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15); // Reduced from 4px
           }
         }
 
         .form-select {
           background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="3"><polyline points="6,9 12,15 18,9"></polyline></svg>');
           background-repeat: no-repeat;
-          background-position: right 16px center;
-          background-size: 20px;
-          padding-right: 50px;
+          background-position: right 12px center; // Reduced from 16px
+          background-size: 16px; // Reduced from 20px
+          padding-right: 40px; // Reduced from 50px
           cursor: pointer;
           appearance: none;
           -webkit-appearance: none;
@@ -552,23 +554,23 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
         .error-message {
           display: block;
-          font-size: 0.9rem;
+          font-size: 0.8rem; // Reduced from 0.9rem
           color: $sport-red;
-          margin-top: 6px;
+          margin-top: 4px; // Reduced from 6px
           font-weight: 600;
         }
       }
 
       .payment-info {
-        margin-top: 16px;
+        margin-top: 12px; // Reduced from 16px
 
         .payment-detail {
           display: flex;
           align-items: flex-start;
-          gap: 16px;
-          padding: 20px;
+          gap: 12px; // Reduced from 16px
+          padding: 16px; // Reduced from 20px
           background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(27, 94, 32, 0.08) 100%);
-          border-radius: 16px;
+          border-radius: 12px; // Reduced from 16px
           border: 2px solid rgba(27, 94, 32, 0.1);
           animation: sportSlideIn 0.3s ease-out;
 
@@ -577,23 +579,23 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
             strong {
               display: block;
-              margin-bottom: 8px;
+              margin-bottom: 6px; // Reduced from 8px
               color: $sport-primary;
-              font-size: 1.1rem;
+              font-size: 1rem; // Reduced from 1.1rem
               font-weight: 800;
             }
 
             p {
-              margin: 6px 0;
-              font-size: 0.95rem;
+              margin: 4px 0; // Reduced from 6px
+              font-size: 0.85rem; // Reduced from 0.95rem
               color: $gray-600;
-              line-height: 1.5;
+              line-height: 1.4;
               font-weight: 500;
 
               &:last-child {
                 color: $field-green;
                 font-weight: 700;
-                margin-top: 12px;
+                margin-top: 8px; // Reduced from 12px
               }
             }
           }
@@ -602,25 +604,25 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     }
 
     .modal-footer {
-      padding: 32px 40px;
-      border-top: 3px solid rgba(27, 94, 32, 0.1);
+      padding: 20px 24px; // Reduced from 32px 40px
+      border-top: 2px solid rgba(27, 94, 32, 0.1);
       background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
       flex-shrink: 0;
 
       .action-buttons {
         display: flex;
-        gap: 20px;
+        gap: 16px; // Reduced from 20px
         justify-content: center;
-        max-width: 500px;
+        max-width: 400px; // Reduced from 500px
         margin: 0 auto;
 
         .btn-cancel,
         .btn-confirm {
           flex: 1;
-          max-width: 200px;
-          padding: 16px 32px;
-          border-radius: 16px;
-          font-size: 1.1rem;
+          max-width: 160px; // Reduced from 200px
+          padding: 12px 24px; // Reduced from 16px 32px
+          border-radius: 12px; // Reduced from 16px
+          font-size: 1rem; // Reduced from 1.1rem
           font-weight: 700;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -628,9 +630,9 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
+          gap: 8px; // Reduced from 10px
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.3px; // Reduced from 0.5px
 
           &:disabled {
             opacity: 0.6;
@@ -639,8 +641,8 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           }
 
           .loading-spinner {
-            width: 20px;
-            height: 20px;
+            width: 16px; // Reduced from 20px
+            height: 16px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top: 2px solid $white;
             border-radius: 50%;
@@ -651,13 +653,13 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
         .btn-cancel {
           background: transparent;
           color: $gray-700;
-          border: 3px solid $gray-400;
+          border: 2px solid $gray-400; // Reduced from 3px
 
           &:hover:not(:disabled) {
             border-color: $sport-red;
             color: $sport-red;
             background: rgba(211, 47, 47, 0.05);
-            transform: translateY(-2px);
+            transform: translateY(-1px); // Reduced from -2px
           }
         }
 
@@ -667,7 +669,7 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           box-shadow: $shadow-sport-md;
 
           &:hover:not(:disabled) {
-            transform: translateY(-3px) scale(1.02);
+            transform: translateY(-2px) scale(1.02); // Reduced from -3px
             box-shadow: $shadow-sport-lg;
           }
         }
@@ -676,14 +678,14 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   }
 }
 
-// Responsive design
+// Responsive design - Compact
 @media (max-width: 768px) {
   .booking-detail-overlay {
     padding: 12px;
 
     .booking-detail-modal {
       width: 95%;
-      max-height: 95vh;
+      max-height: 85vh; // Reduced from 95vh
 
       .modal-header,
       .booking-summary-section,
@@ -691,11 +693,11 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
       .payment-method-section,
       .user-status-section,
       .modal-footer {
-        padding: 24px 28px;
+        padding: 16px 20px; // Reduced from 24px 28px
       }
 
       .modal-header .modal-title {
-        font-size: 1.6rem;
+        font-size: 1.3rem; // Reduced from 1.6rem
       }
 
       .booking-summary-section .summary-grid {
@@ -728,16 +730,16 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
       .payment-method-section,
       .user-status-section,
       .modal-footer {
-        padding: 20px 24px;
+        padding: 16px 20px; // Reduced from 20px 24px
       }
 
       .modal-footer .action-buttons {
-        gap: 16px;
+        gap: 12px; // Reduced from 16px
 
         .btn-cancel,
         .btn-confirm {
-          padding: 14px 24px;
-          font-size: 1rem;
+          padding: 10px 20px; // Reduced from 14px 24px
+          font-size: 0.9rem; // Reduced from 1rem
         }
       }
     }
