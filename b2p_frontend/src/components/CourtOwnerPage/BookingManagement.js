@@ -280,91 +280,42 @@ const BookingManagement = () => {
   useEffect(() => {
     const handleBookingPaidUpdate = (event) => {
       const notification = event.detail;
-      console.log('🎯 [BookingManagement] Payment update received:', notification);
-      console.log('🔍 [DEBUG] BookingId from notification:', notification.bookingId);
+      console.log("🎯 [BookingManagement] Payment update received:", notification);
 
-      // ✅ STRONG CHECK: Block payment if booking is cancelled
-      if (
-        notification.status === 'cancelled' ||
-        notification.action === 'cancelled' ||
-        notification.statusId === 9 ||
-        notification.originalStatus === 'Cancelled'
-      ) {
-        console.log(`🚫 BLOCKED: Payment update for cancelled booking ${notification.bookingId}`);
-        console.log('🔍 [DEBUG] Cancellation indicators:', {
-          status: notification.status,
-          action: notification.action,
-          statusId: notification.statusId,
-          originalStatus: notification.originalStatus
-        });
-        return; // ✅ EARLY EXIT - DON'T UPDATE UI
-      }
-
-      // ✅ CHECK GLOBAL BLOCKING
-      if (window.globalBlockedBookings && window.globalBlockedBookings.has(notification.bookingId.toString())) {
-        console.log(`🚫 GLOBALLY BLOCKED: Payment UI update for cancelled booking ${notification.bookingId}`);
-        return;
-      }
-
-      console.log('🔍 [DEBUG] Current bookingData structure:');
-      Object.keys(bookingData).forEach(slotKey => {
-        const booking = bookingData[slotKey];
-        console.log(`🔍 Slot [${slotKey}]:`, booking);
-      });
-
-      let foundSlot = null;
-      let foundKey = null;
-
-      Object.keys(bookingData).forEach(bookingKey => {
+      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
+      const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
         const booking = bookingData[bookingKey];
-
         const possibleIds = [
           booking?.bookingId,
           booking?.id,
-          booking?.Id
-        ].filter(id => id !== undefined && id !== null);
-
-        possibleIds.forEach(id => {
-          if (id.toString() === notification.bookingId.toString()) {
-            foundSlot = booking;
-            foundKey = bookingKey;
-            console.log(`✅ FOUND MATCH! Slot: ${bookingKey}, ID: ${id}`);
-          }
-        });
+          booking?.Id,
+          booking?.booking?.id,
+          booking?.booking?.bookingId,
+        ].filter((id) => id !== undefined && id !== null);
+        return possibleIds.some(
+          (id) => id.toString() === notification.bookingId.toString()
+        );
       });
 
-      if (foundKey) {
-        // ✅ ADDITIONAL CHECK: Don't update if slot is already cancelled
-        const currentBooking = bookingData[foundKey];
-        if (
-          currentBooking.status === 'cancelled' ||
-          currentBooking.originalStatus === 'Cancelled' ||
-          currentBooking.statusId === 9
-        ) {
-          console.log(`🚫 SLOT ALREADY CANCELLED: Not updating ${foundKey} to paid`);
-          return;
-        }
-
-        console.log(`🔄 Updating slot: ${foundKey}`);
-        console.log('🔍 Before update:', foundSlot);
-
-        setBookingData(prev => {
-          const updated = {
-            ...prev,
-            [foundKey]: {
-              ...prev[foundKey],
-              status: 'paid',
+      if (matchingKeys.length > 0) {
+        setBookingData((prev) => {
+          const updated = { ...prev };
+          matchingKeys.forEach((key) => {
+            updated[key] = {
+              ...prev[key],
+              status: "paid",
               statusId: 7,
-              statusDescription: 'Đã Cọc',
-              paymentStatus: 'paid'
-            }
-          };
-
-          console.log('✅ After update:', updated[foundKey]);
+              paymentStatus: "deposit",
+              statusDescription: "Đã Cọc",
+            };
+          });
           return updated;
         });
+        matchingKeys.forEach((key) => {
+          console.log(`✅ After update:`, bookingData[key]);
+        });
       } else {
-        console.log('❌ No matching slot found for payment ID:', notification.bookingId);
+        console.log("❌ NO MATCHING SLOT FOUND!");
       }
     };
 
