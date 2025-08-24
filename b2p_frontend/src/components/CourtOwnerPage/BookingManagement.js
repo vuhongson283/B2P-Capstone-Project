@@ -329,39 +329,61 @@ const BookingManagement = () => {
     const handleBookingCancelledUpdate = (event) => {
       const notification = event.detail;
       console.log('🎯 [BookingManagement] Cancellation update received:', notification);
+      console.log('🔍 [DEBUG] BookingId from notification:', notification.bookingId);
 
-      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
-      const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
+      // ✅ IMMEDIATELY BLOCK THIS BOOKING GLOBALLY
+      if (!window.globalBlockedBookings) {
+        window.globalBlockedBookings = new Set();
+      }
+      window.globalBlockedBookings.add(notification.bookingId.toString());
+      console.log(`🚫 BLOCKED booking ${notification.bookingId} from future payment updates`);
+
+      console.log('🔍 [DEBUG] Current bookingData structure:');
+      Object.keys(bookingData).forEach(slotKey => {
+        const booking = bookingData[slotKey];
+        console.log(`🔍 Slot [${slotKey}]:`, booking);
+      });
+
+      let foundSlot = null;
+      let foundKey = null;
+
+      Object.keys(bookingData).forEach(bookingKey => {
         const booking = bookingData[bookingKey];
+
         const possibleIds = [
           booking?.bookingId,
           booking?.id,
-          booking?.Id,
-          booking?.booking?.id,
-          booking?.booking?.bookingId,
-        ].filter((id) => id !== undefined && id !== null);
-        return possibleIds.some(
-          (id) => id.toString() === notification.bookingId.toString()
-        );
+          booking?.Id
+        ].filter(id => id !== undefined && id !== null);
+
+        possibleIds.forEach(id => {
+          if (id.toString() === notification.bookingId.toString()) {
+            foundSlot = booking;
+            foundKey = bookingKey;
+            console.log(`✅ FOUND MATCH for cancellation! Slot: ${bookingKey}, ID: ${id}`);
+          }
+        });
       });
 
-      if (matchingKeys.length > 0) {
-        setBookingData((prev) => {
-          const updated = { ...prev };
-          matchingKeys.forEach((key) => {
-            updated[key] = {
-              ...prev[key],
-              status: "cancelled",
-              statusId: 9,
-              paymentStatus: "cancelled",
-              statusDescription: "Đã Hủy",
-              originalStatus: "Cancelled"
-            };
-          });
+      if (foundKey) {
+        console.log(`🔄 Updating slot to CANCELLED: ${foundKey}`);
+        console.log('🔍 Before cancellation update:', foundSlot);
+
+        setBookingData(prev => {
+          const updated = {
+            ...prev,
+            [foundKey]: {
+              ...prev[foundKey],
+              status: 'cancelled',
+              statusId: 9, // ✅ Use correct statusId for cancelled
+              statusDescription: 'Đã Hủy',
+              paymentStatus: 'cancelled',
+              originalStatus: 'Cancelled'
+            }
+          };
+
+          console.log(`✅ Slot ${foundKey} updated to CANCELLED status:`, updated[foundKey]);
           return updated;
-        });
-        matchingKeys.forEach((key) => {
-          console.log(`✅ Slot ${key} updated to CANCELLED status`);
         });
       } else {
         console.log('❌ No matching slot found for cancellation ID:', notification.bookingId);
@@ -373,6 +395,33 @@ const BookingManagement = () => {
       window.removeEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
     };
   }, [bookingData]);
+
+  useEffect(() => {
+    const handleBookingStatusChanged = (data) => {
+      // Kiểm tra trạng thái hủy
+      if (
+        data.status === 'cancelled' ||
+        data.newStatus === 'cancelled' ||
+        data.status === 'Cancelled' ||
+        data.newStatus === 'Cancelled' ||
+        data.statusId === 9 ||
+        data.newStatusId === 9 ||
+        data.action === 'cancelled' ||
+        data.action === 'cancel'
+      ) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+      }
+    };
+
+    // Đăng ký listener CHUẨN:
+    signalRService.on('BookingStatusChanged', handleBookingStatusChanged);
+
+    return () => {
+      signalRService.off('BookingStatusChanged', handleBookingStatusChanged);
+    };
+  }, []);
 
   const createProcessedBooking = useCallback(
     (booking, slot, courtId, timeSlot, bookingDate, status) => {
