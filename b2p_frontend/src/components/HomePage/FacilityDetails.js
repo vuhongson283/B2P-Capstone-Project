@@ -454,9 +454,8 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
                   }}
                 >
                   <button
-                    className={`filter-btn ${
-                      selectedStars === "all" ? "active" : ""
-                    }`}
+                    className={`filter-btn ${selectedStars === "all" ? "active" : ""
+                      }`}
                     onClick={() => setSelectedStars("all")}
                     style={{
                       padding: "8px 16px",
@@ -488,9 +487,8 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
                   {[5, 4, 3, 2, 1].map((stars) => (
                     <button
                       key={stars}
-                      className={`filter-btn ${
-                        selectedStars === stars.toString() ? "active" : ""
-                      }`}
+                      className={`filter-btn ${selectedStars === stars.toString() ? "active" : ""
+                        }`}
                       onClick={() => setSelectedStars(stars.toString())}
                       style={{
                         padding: "8px 16px",
@@ -971,7 +969,11 @@ const FacilityInfo = ({ facilityData }) => {
     {
       icon: "📍",
       label: "Địa điểm",
-      value: facilityData?.location || "Chưa có thông tin",
+      value: facilityData?.location
+        ? facilityData.location.includes('$$')
+          ? facilityData.location.split('$$')[1].trim()
+          : facilityData.location
+        : "Chưa có thông tin",
     },
     {
       icon: "🕐",
@@ -979,14 +981,9 @@ const FacilityInfo = ({ facilityData }) => {
       value:
         facilityData?.openTime && facilityData?.closeTime
           ? `${formatTime(facilityData.openTime)} - ${formatTime(
-              facilityData.closeTime
-            )}`
+            facilityData.closeTime
+          )}`
           : "Chưa có thông tin",
-    },
-    {
-      icon: "📞",
-      label: "Số điện thoại",
-      value: facilityData?.contact || "Chưa có thông tin",
     },
     {
       icon: "🏟️",
@@ -1113,13 +1110,13 @@ const FacilityDetails = () => {
           availableCount: slot.availableCourtCount,
           totalCourts: slot.totalCourtCount || "N/A",
           updated: new Date().toLocaleTimeString(),
-          user: "bachnhhe173308",
+          user: "người dùng",
         });
       });
 
       setTimeSlots(newSlots);
       console.log(
-        "✅ [FacilityDetails] Slots updated successfully for user bachnhhe173308"
+        "✅ [FacilityDetails] Slots updated successfully for user người dùng"
       );
     } catch (error) {
       console.error(
@@ -1140,7 +1137,7 @@ const FacilityDetails = () => {
         {
           isConnected,
           facilityId,
-          user: "bachnhhe173308",
+          user: "người dùng",
           timestamp: "2025-08-23 06:05:37 UTC",
         }
       );
@@ -1156,7 +1153,7 @@ const FacilityDetails = () => {
       selectedCategory
     );
     console.log("🔔 [FacilityDetails] Current selected date:", selectedDate);
-    console.log("🔔 [FacilityDetails] Current user: bachnhhe173308");
+    console.log("🔔 [FacilityDetails] Current user: người dùng");
 
     // Import signalRService to listen for events
     const signalRService = require("../../services/signalRService").default;
@@ -1198,7 +1195,7 @@ const FacilityDetails = () => {
           convertedNotificationDate: notificationDate,
           selectedDate,
           matches: notificationDate === selectedDate,
-          currentUser: "bachnhhe173308",
+          currentUser: "người dùng",
         });
 
         if (notificationDate === selectedDate) {
@@ -1212,7 +1209,7 @@ const FacilityDetails = () => {
             court: notification.courtName,
             timeSlot: notification.timeSlot,
             customer: notification.customerName,
-            currentUser: "bachnhhe173308",
+            currentUser: "người dùng",
             willRefreshAt: new Date(Date.now() + 2000).toLocaleTimeString(),
           });
 
@@ -1221,12 +1218,12 @@ const FacilityDetails = () => {
             refreshAvailableSlots();
             setLastUpdateTime(new Date().toLocaleTimeString());
             console.log(
-              "🔄 [FacilityDetails] Real-time refresh completed for user bachnhhe173308"
+              "🔄 [FacilityDetails] Real-time refresh completed for user người dùng"
             );
           }, 2000); // 2 second delay
         } else {
           console.log(
-            "📅 [FacilityDetails] Date mismatch, skipping refresh for user bachnhhe173308"
+            "📅 [FacilityDetails] Date mismatch, skipping refresh for user người dùng"
           );
         }
       } else {
@@ -1245,12 +1242,12 @@ const FacilityDetails = () => {
     // ✅ Also listen to direct SignalR connection events
     if (signalRService.connection) {
       console.log(
-        "🎧 [FacilityDetails] Setting up direct SignalR event listeners for user bachnhhe173308..."
+        "🎧 [FacilityDetails] Setting up direct SignalR event listeners for user người dùng..."
       );
 
       const directBookingHandler = (data) => {
         console.log(
-          "📡 [FacilityDetails] Direct SignalR booking event for user bachnhhe173308:",
+          "📡 [FacilityDetails] Direct SignalR booking event for user người dùng:",
           data
         );
         handleBookingNotification(data);
@@ -1265,13 +1262,13 @@ const FacilityDetails = () => {
       // ✅ Listen for slot availability updates
       signalRService.connection.on("SlotAvailabilityChanged", (data) => {
         console.log(
-          "🎯 [FacilityDetails] Slot availability changed for user bachnhhe173308:",
+          "🎯 [FacilityDetails] Slot availability changed for user người dùng:",
           data
         );
 
         if (data.facilityId === parseInt(facilityId)) {
           console.log(
-            "✅ [FacilityDetails] Slot change for current facility, refreshing for user bachnhhe173308..."
+            "✅ [FacilityDetails] Slot change for current facility, refreshing for user người dùng..."
           );
           setTimeout(() => {
             refreshAvailableSlots();
@@ -1283,13 +1280,13 @@ const FacilityDetails = () => {
       // ✅ Listen for facility-specific updates
       signalRService.connection.on("FacilityUpdate", (data) => {
         console.log(
-          "🏢 [FacilityDetails] Facility update received for user bachnhhe173308:",
+          "🏢 [FacilityDetails] Facility update received for user người dùng:",
           data
         );
 
         if (data.facilityId === parseInt(facilityId)) {
           console.log(
-            "✅ [FacilityDetails] Update for current facility, refreshing for user bachnhhe173308..."
+            "✅ [FacilityDetails] Update for current facility, refreshing for user người dùng..."
           );
           setTimeout(() => {
             refreshAvailableSlots();
@@ -1313,7 +1310,7 @@ const FacilityDetails = () => {
         signalRService.off("onBookingCompleted");
 
         console.log(
-          "🧹 [FacilityDetails] All SignalR event listeners cleaned up for user bachnhhe173308"
+          "🧹 [FacilityDetails] All SignalR event listeners cleaned up for user người dùng"
         );
       };
     }
@@ -1325,7 +1322,7 @@ const FacilityDetails = () => {
       signalRService.off("onBookingUpdated");
       signalRService.off("onBookingCompleted");
       console.log(
-        "🧹 [FacilityDetails] SignalR event listeners cleaned up for user bachnhhe173308"
+        "🧹 [FacilityDetails] SignalR event listeners cleaned up for user người dùng"
       );
     };
   }, [isConnected, facilityId, selectedDate]); // ✅ Add selectedDate dependency
@@ -1338,7 +1335,7 @@ const FacilityDetails = () => {
       !joinedFacilities.includes(parseInt(facilityId))
     ) {
       console.log(
-        `🔗 [FacilityDetails] Joining facility group: ${facilityId} for user bachnhhe173308`
+        `🔗 [FacilityDetails] Joining facility group: ${facilityId} for user người dùng`
       );
       joinFacilityForUpdates(parseInt(facilityId));
       setIsRealTimeActive(true);
@@ -1348,7 +1345,7 @@ const FacilityDetails = () => {
     return () => {
       if (facilityId && joinedFacilities.includes(parseInt(facilityId))) {
         console.log(
-          `🔗 [FacilityDetails] Leaving facility group: ${facilityId} for user bachnhhe173308`
+          `🔗 [FacilityDetails] Leaving facility group: ${facilityId} for user người dùng`
         );
         leaveFacilityUpdates(parseInt(facilityId));
         setIsRealTimeActive(false);
@@ -1359,7 +1356,7 @@ const FacilityDetails = () => {
   // ✅ Debug effect to monitor slot changes
   useEffect(() => {
     console.log(
-      "📊 [FacilityDetails] TimeSlots changed for user bachnhhe173308:",
+      "📊 [FacilityDetails] TimeSlots changed for user người dùng:",
       {
         count: timeSlots.length,
         slots: timeSlots.map((slot) => ({
@@ -1376,7 +1373,7 @@ const FacilityDetails = () => {
   // ✅ Debug selected values
   useEffect(() => {
     console.log(
-      "🎯 [FacilityDetails] Selection changed for user bachnhhe173308:",
+      "🎯 [FacilityDetails] Selection changed for user người dùng:",
       {
         facilityId,
         selectedCategory,
@@ -1404,7 +1401,7 @@ const FacilityDetails = () => {
 
       try {
         console.log(
-          "🏢 [FacilityDetails] Fetching facility details for user bachnhhe173308:",
+          "🏢 [FacilityDetails] Fetching facility details for user người dùng:",
           facilityId
         );
         const response = await getFacilityDetailsById(parseInt(facilityId));
@@ -1412,7 +1409,7 @@ const FacilityDetails = () => {
         if (response.data) {
           const facilityInfo = response.data;
           console.log(
-            "✅ [FacilityDetails] Facility data loaded for user bachnhhe173308:",
+            "✅ [FacilityDetails] Facility data loaded for user người dùng:",
             facilityInfo.facilityName
           );
 
@@ -1424,7 +1421,7 @@ const FacilityDetails = () => {
               facilityInfo.categories[0].categoryId.toString()
             );
             console.log(
-              "🏟️ [FacilityDetails] Default category set for user bachnhhe173308:",
+              "🏟️ [FacilityDetails] Default category set for user người dùng:",
               facilityInfo.categories[0].categoryName
             );
           }
@@ -1433,7 +1430,7 @@ const FacilityDetails = () => {
         }
       } catch (error) {
         console.error(
-          "❌ [FacilityDetails] Error fetching facility details for user bachnhhe173308:",
+          "❌ [FacilityDetails] Error fetching facility details for user người dùng:",
           error
         );
         setError("Không thể tải thông tin cơ sở");
@@ -1454,7 +1451,7 @@ const FacilityDetails = () => {
 
   const handleCategoryChange = (categoryId) => {
     console.log(
-      "🏟️ [FacilityDetails] Category changed for user bachnhhe173308:",
+      "🏟️ [FacilityDetails] Category changed for user người dùng:",
       categoryId
     );
     setSelectedCategory(categoryId);
@@ -1463,7 +1460,7 @@ const FacilityDetails = () => {
 
   const handleDateChange = (date) => {
     console.log(
-      "📅 [FacilityDetails] Date changed for user bachnhhe173308:",
+      "📅 [FacilityDetails] Date changed for user người dùng:",
       date
     );
     setSelectedDate(date);
@@ -1473,7 +1470,7 @@ const FacilityDetails = () => {
   // ✅ Enhanced manual refresh with user feedback
   const handleManualRefresh = () => {
     console.log(
-      "🔄 [FacilityDetails] Manual refresh triggered by user bachnhhe173308"
+      "🔄 [FacilityDetails] Manual refresh triggered by user người dùng"
     );
 
     // Show immediate feedback
@@ -1483,7 +1480,7 @@ const FacilityDetails = () => {
       refreshAvailableSlots();
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log(
-        "✅ [FacilityDetails] Manual refresh completed for user bachnhhe173308"
+        "✅ [FacilityDetails] Manual refresh completed for user người dùng"
       );
     }, 100);
   };
@@ -1491,7 +1488,7 @@ const FacilityDetails = () => {
   // Handle proceed to booking detail - callback từ BookingModal
   const handleProceedToBookingDetail = (data) => {
     console.log(
-      "📝 [FacilityDetails] Proceeding to booking detail for user bachnhhe173308:",
+      "📝 [FacilityDetails] Proceeding to booking detail for user người dùng:",
       data
     );
     setBookingDetailData(data);
@@ -1501,7 +1498,7 @@ const FacilityDetails = () => {
   // Handle close booking detail modal
   const handleCloseBookingDetail = () => {
     console.log(
-      "❌ [FacilityDetails] Closing booking detail for user bachnhhe173308"
+      "❌ [FacilityDetails] Closing booking detail for user người dùng"
     );
     setBookingDetailOpen(false);
     setBookingDetailData(null);
@@ -1510,13 +1507,13 @@ const FacilityDetails = () => {
   // ✅ Handle successful booking with slot refresh
   const handleBookingSuccess = () => {
     console.log(
-      "✅ [FacilityDetails] Booking successful for user bachnhhe173308, refreshing slots..."
+      "✅ [FacilityDetails] Booking successful for user người dùng, refreshing slots..."
     );
     setTimeout(() => {
       refreshAvailableSlots();
       setLastUpdateTime(new Date().toLocaleTimeString());
       console.log(
-        "🔄 [FacilityDetails] Post-booking refresh completed for user bachnhhe173308"
+        "🔄 [FacilityDetails] Post-booking refresh completed for user người dùng"
       );
     }, 1000);
 
@@ -1669,11 +1666,10 @@ const FacilityDetails = () => {
                       {timeSlots.map((slot) => (
                         <td
                           key={slot.timeSlotId}
-                          className={`availability-cell ${
-                            slot.availableCourtCount > 0
+                          className={`availability-cell ${slot.availableCourtCount > 0
                               ? "available"
                               : "unavailable"
-                          } ${lastUpdateTime ? "updated" : ""}`}
+                            } ${lastUpdateTime ? "updated" : ""}`}
                         >
                           <div className="availability-info">
                             <span className="count">
@@ -1781,9 +1777,9 @@ const FacilityDetails = () => {
                       const averageRating =
                         uniqueRatings.length > 0
                           ? uniqueRatings.reduce(
-                              (sum, rating) => sum + rating.stars,
-                              0
-                            ) / uniqueRatings.length
+                            (sum, rating) => sum + rating.stars,
+                            0
+                          ) / uniqueRatings.length
                           : 0;
                       const isFilled = index < Math.round(averageRating);
                       return (
@@ -1886,9 +1882,8 @@ const FacilityDetails = () => {
                           {[...Array(5)].map((_, starIndex) => (
                             <span
                               key={starIndex}
-                              className={`star ${
-                                starIndex < rating.stars ? "filled" : ""
-                              }`}
+                              className={`star ${starIndex < rating.stars ? "filled" : ""
+                                }`}
                             >
                               ★
                             </span>
