@@ -23,7 +23,7 @@ class SignalRService {
 
     initializeConnection() {
         // ✅ FORCE URL để debug - HARDCODE THAY VÌ ĐỌC TỪ ENV
-        const hubUrl = 'https://api.book2play.site/bookingHub';
+        const hubUrl = 'https://localhost:5000/bookinghub';
 
         console.log('🔧 FORCED SignalR URL (ignoring env):', hubUrl);
         console.log('🔧 Original env URL was:', process.env.REACT_APP_SIGNALR_HUB_URL);
@@ -490,7 +490,7 @@ class SignalRService {
             isConnected: this.isConnected,
             connectionState: this.connectionState,
             reconnectAttempts: this.reconnectAttempts,
-            hubUrl: 'https://api.book2play.site/bookingHub', // HARDCODED for debug
+            hubUrl: 'https://localhost:5000/bookinghub', // HARDCODED for debug
             joinedGroups: this.joinedGroupsInfo,
             currentUserId: this.currentUserId
         };
