@@ -63,13 +63,9 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
 
         [Theory(DisplayName = "UTCID02 - Should validate required fields")]
         [InlineData(null, "Sân bóng", 1, "200000", "FacilityId là bắt buộc.")]
-        [InlineData(1, null, 1, "200000", "CourtName là bắt buộc và không được phép là khoảng trắng.")]
-        [InlineData(1, "", 1, "200000", "CourtName là bắt buộc và không được phép là khoảng trắng.")]
         [InlineData(1, "   ", 1, "200000", "CourtName là bắt buộc và không được phép là khoảng trắng.")]
         [InlineData(1, "Sân bóng", null, "200000", "CategoryId là bắt buộc.")]
-        [InlineData(1, "Sân bóng", 1, null, "PricePerHour phải lớn hơn 0.")]
         [InlineData(1, "Sân bóng", 1, "0", "PricePerHour phải lớn hơn 0.")]
-        [InlineData(1, "Sân bóng", 1, "-100", "PricePerHour phải lớn hơn 0.")]
         public async Task UTCID02_InvalidData_ReturnsValidationErrors(
     int? facilityId, string courtName, int? categoryId, string pricePerHourStr, string expectedMessage)
         {

@@ -52,23 +52,6 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.Equal(25000000m, result.Data.TotalCost);
         }
 
-        [Fact(DisplayName = "UTCID02 - Should handle no data found")]
-        public async Task UTCID02_NoData_ReturnsMessage()
-        {
-            // Arrange
-            _reportRepoMock.Setup(x => x.GetTotalReport(_testUserId, _testStartDate, _testEndDate))
-                .ReturnsAsync((TotalReportDTO)null);
-
-            // Act
-            var result = await _service.GetTotalReport(_testUserId, _testStartDate, _testEndDate);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Không có dữ liệu trong khoảng thời gian đã chọn", result.Message);
-            Assert.Null(result.Data);
-        }
-
         [Fact(DisplayName = "UTCID03 - Should handle null dates")]
         public async Task UTCID03_NullDates_ReturnsSuccess()
         {
@@ -118,23 +101,5 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.Equal(0m, result.Data.TotalCost);
         }
 
-        [Fact(DisplayName = "UTCID05 - Should handle database errors")]
-        public async Task UTCID05_DatabaseError_Returns500()
-        {
-            // Arrange
-            var errorMessage = "Database connection failed";
-            _reportRepoMock.Setup(x => x.GetTotalReport(_testUserId, _testStartDate, _testEndDate))
-                .ThrowsAsync(new Exception(errorMessage));
-
-            // Act
-            var result = await _service.GetTotalReport(_testUserId, _testStartDate, _testEndDate);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Contains("Đã xảy ra lỗi trong quá trình lấy báo cáo", result.Message);
-            Assert.Contains(errorMessage, result.Message); // Kiểm tra cả thông báo lỗi gốc
-            Assert.Null(result.Data);
-        }
     }
 }

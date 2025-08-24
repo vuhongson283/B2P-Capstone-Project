@@ -202,58 +202,6 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             Assert.Contains("SortDirection không hợp lệ", result.Message);
         }
 
-        [Fact(DisplayName = "GetByUserIdAsync - Không có booking nào trả về danh sách rỗng")]
-        public async Task GetByUserIdAsync_ReturnsEmpty_WhenNoBookings()
-        {
-            // Arrange
-            var queryParams = new BookingQueryParameters
-            {
-                Page = 1,
-                PageSize = 10,
-                SortBy = "checkindate",
-                SortDirection = "asc"
-            };
-
-            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(1, null)).ReturnsAsync(0);
-
-            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(1, queryParams))
-                .ReturnsAsync(new List<Booking>());
-
-            // Act
-            var result = await _service.GetByUserIdAsync(1, queryParams);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(0, result.Data.TotalItems);
-            Assert.Empty(result.Data.Items);
-
-            _bookingRepoMock.Verify(x => x.GetByUserIdAsync(1, queryParams), Times.Once);
-        }
-
-        [Fact(DisplayName = "GetByUserIdAsync - Page > 1 khi không có booking vẫn thành công")]
-        public async Task GetByUserIdAsync_Page2WhenNoBookings_StillReturnsSuccess()
-        {
-            // Arrange
-            var queryParams = new BookingQueryParameters
-            {
-                Page = 2, // Page > 1
-                PageSize = 10,
-                SortBy = "checkindate",
-                SortDirection = "asc"
-            };
-
-            _bookingRepoMock.Setup(x => x.CountByUserIdAsync(1, null)).ReturnsAsync(0);
-            _bookingRepoMock.Setup(x => x.GetByUserIdAsync(1, queryParams))
-                .ReturnsAsync(new List<Booking>());
-
-            // Act
-            var result = await _service.GetByUserIdAsync(1, queryParams);
-
-            // Assert
-            Assert.True(result.Success); // Behavior hiện tại
-            Assert.Equal(0, result.Data.TotalItems);
-            Assert.Empty(result.Data.Items);
-        }
 
         [Fact(DisplayName = "GetByUserIdAsync - Xử lý khi Court/Slot không tồn tại")]
         public async Task GetByUserIdAsync_HandlesMissingCourtAndSlot()

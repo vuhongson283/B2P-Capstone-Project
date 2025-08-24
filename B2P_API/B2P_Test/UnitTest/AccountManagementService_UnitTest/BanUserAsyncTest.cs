@@ -5,8 +5,42 @@ using B2P_API.Services;
 using B2P_API.Utils;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+
+// Fake repo để pass constructor
+public class FacilityManageRepositoryFake : IFacilityManageRepository
+{
+    public Task<List<Facility>> GetByUserIdAsync(int userId) => Task.FromResult(new List<Facility>());
+    public Task<Facility> GetByIdAsync(int facilityId) => throw new NotImplementedException();
+    public Task<Facility> CreateFacilityAsync(Facility facility) => throw new NotImplementedException();
+    public Task<Facility> UpdateAsync(Facility facility) => throw new NotImplementedException();
+    public Task<bool> HasActiveBookingsAsync(int facilityId) => throw new NotImplementedException();
+    public Task<bool> DeleteCascadeAsync(int facilityId) => throw new NotImplementedException();
+    public Task<List<Facility>> GetAllAsync() => throw new NotImplementedException();
+    public Task<bool> DeleteAsync(int id) => throw new NotImplementedException();
+}
+
+public class FacilityRepositoryForUserFake : IFacilityRepositoryForUser
+{
+    public Task<List<Facility>> GetAllFacilitiesByPlayer() => throw new NotImplementedException();
+    public Task<B2P_API.DTOs.FacilityDTO.FacilityDetailsDto> GetFacilityDetails(int facilityId) => throw new NotImplementedException();
+}
+
+// Fake FacilityService dùng cho test. KHÔNG override, chỉ shadow method.
+public class FacilityServiceFake : FacilityService
+{
+    private readonly bool _result;
+    public FacilityServiceFake(bool result = true)
+        : base(new FacilityManageRepositoryFake(), new FacilityRepositoryForUserFake())
+    {
+        _result = result;
+    }
+    // Shadow new method
+    public new Task<bool> UpdateFacilitiesStatusByUserIdAsync(int userId, int statusId)
+        => Task.FromResult(_result);
+}
 
 namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 {
@@ -14,10 +48,9 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
     {
         private readonly Mock<IAccountManagementRepository> _repoMock = new();
 
-        private AccountManagementService CreateService()
+        private AccountManagementService CreateService(FacilityService facilityService = null)
         {
-            // Chỉ cần repo, không cần mapper cho hàm này
-            return new AccountManagementService(_repoMock.Object, null);
+            return new AccountManagementService(_repoMock.Object, facilityService, null);
         }
 
         [Fact(DisplayName = "UTCID01 - User not found returns 404")]
@@ -25,7 +58,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             _repoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((User)null);
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.BanUserAsync(1);
 
@@ -38,14 +71,10 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         [Fact(DisplayName = "UTCID02 - User already banned returns 400")]
         public async Task UTCID02_UserAlreadyBanned_Returns400()
         {
-            var user = new User
-            {
-                UserId = 2,
-                StatusId = 4 // Đã bị cấm
-            };
+            var user = new User { UserId = 2, StatusId = 4 };
             _repoMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(user);
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.BanUserAsync(2);
 
@@ -58,15 +87,14 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         [Fact(DisplayName = "UTCID03 - Ban user success returns 200")]
         public async Task UTCID03_BanUserSuccess_Returns200()
         {
-            var user = new User
-            {
-                UserId = 3,
-                StatusId = 1 // Chưa bị cấm
-            };
+            var user = new User { UserId = 3, StatusId = 1 };
             _repoMock.Setup(x => x.GetByIdAsync(3)).ReturnsAsync(user);
             _repoMock.Setup(x => x.UpdateStatusAsync(user, 4)).ReturnsAsync(true);
 
-            var service = CreateService();
+            // Cast về base type để gọi đúng method thật
+            FacilityService facilityService = new FacilityServiceFake(true);
+
+            var service = CreateService(facilityService);
 
             var result = await service.BanUserAsync(3);
 
@@ -81,7 +109,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.BanUserAsync(99);
 
@@ -100,7 +128,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
             _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.BanUserAsync(999);
 
