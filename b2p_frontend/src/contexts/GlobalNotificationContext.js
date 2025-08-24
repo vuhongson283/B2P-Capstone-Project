@@ -320,16 +320,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
         }, 200);
 
-        // 👉 Thêm đoạn này vào cuối hàm handleGlobalBookingCancelled:
-        if (
-            notification.status?.toLowerCase() === 'cancelled' ||
-            notification.statusId === 9
-        ) {
-            setTimeout(() => {
-                window.location.reload();
-            }, 800); // delay để notification hiển thị trước khi reload
-        }
-
     }, []);
 
     // ✅ PERSISTENT Global booking updated handler
@@ -605,7 +595,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         signalRService.on('onBookingCreated', handleGlobalBookingCreated);
         console.log('✅ Registered onBookingCreated handler');
 
-        signalRService.on('BookingCancelled', handleGlobalBookingCancelled); // ✅ USE DEDICATED HANDLER
+        signalRService.on('onBookingCancelled', handleGlobalBookingCancelled); // ✅ USE DEDICATED HANDLER
         console.log('✅ Registered onBookingCancelled handler');
 
         signalRService.on('onBookingCompleted', handleGlobalBookingUpdated);

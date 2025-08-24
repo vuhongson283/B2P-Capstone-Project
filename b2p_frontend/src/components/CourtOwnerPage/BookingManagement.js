@@ -280,9 +280,12 @@ const BookingManagement = () => {
   useEffect(() => {
     const handleBookingPaidUpdate = (event) => {
       const notification = event.detail;
-      console.log("🎯 [BookingManagement] Payment update received:", notification);
+      console.log(
+        "🎯 [BookingManagement] Payment update received:",
+        notification
+      );
 
-      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
+      // ✅ Tìm tất cả các slot có bookingId trùng
       const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
         const booking = bookingData[bookingKey];
         const possibleIds = [
@@ -312,25 +315,31 @@ const BookingManagement = () => {
           return updated;
         });
         matchingKeys.forEach((key) => {
-          console.log(`✅ After update:`, bookingData[key]);
+          console.log(`✅ Slot ${key} updated to PAID status`);
         });
       } else {
         console.log("❌ NO MATCHING SLOT FOUND!");
+        Object.keys(bookingData).forEach((key) => {
+          const booking = bookingData[key];
+          console.log(
+            `Slot ${key}: ${booking?.bookingId || booking?.id} vs ${notification.bookingId}`
+          );
+        });
       }
     };
 
-    window.addEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
+    window.addEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
     return () => {
-      window.removeEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
+      window.removeEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
     };
   }, [bookingData]);
-
+  // ✅ ADD THIS CANCELLATION HANDLER AFTER THE PAYMENT HANDLER
   useEffect(() => {
     const handleBookingCancelledUpdate = (event) => {
       const notification = event.detail;
       console.log('🎯 [BookingManagement] Cancellation update received:', notification);
 
-      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
+      // ✅ Tìm tất cả các slot có bookingId trùng
       const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
         const booking = bookingData[bookingKey];
         const possibleIds = [
