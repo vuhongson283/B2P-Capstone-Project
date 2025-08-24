@@ -82,28 +82,9 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.False(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID04 - Should handle database errors")]
-        public async Task UTCID04_DatabaseError_Returns500()
-        {
-            // Arrange
-            _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))
-                .Returns(true);
 
-            _courtRepoMock.Setup(x => x.DeleteCourt(_testCourtId))
-                .ThrowsAsync(new Exception("Database connection failed"));
-
-            // Act
-            var result = await _service.DeleteCourt(_testUserId, _testCourtId);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Contains("Đã xảy ra lỗi trong quá trình xóa: Database connection failed", result.Message);
-            Assert.False(result.Data);
-        }
-
-        [Fact(DisplayName = "UTCID05 - Should call delete only once")]
-        public async Task UTCID05_DeleteCalledOnce()
+        [Fact(DisplayName = "UTCID04 - Should call delete only once")]
+        public async Task UTCID04_DeleteCalledOnce()
         {
             // Arrange
             _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))

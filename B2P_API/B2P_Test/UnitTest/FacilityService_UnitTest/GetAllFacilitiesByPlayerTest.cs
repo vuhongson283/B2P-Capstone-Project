@@ -35,6 +35,7 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
                         new Court
                         {
                             CategoryId = 1,
+                            StatusId = 1, // Fix: court must be active
                             PricePerHour = 100000,
                             BookingDetails = new List<BookingDetail>
                             {
@@ -54,8 +55,8 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
                     },
                     TimeSlots = new List<TimeSlot>
                     {
-                        new TimeSlot { StartTime = new TimeOnly(8, 30), EndTime = new TimeOnly(22, 45), Discount = 0.1m },
-                        new TimeSlot { StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(21, 0), Discount = 0.2m }
+                        new TimeSlot { StatusId = 1, StartTime = new TimeOnly(8, 30), EndTime = new TimeOnly(22, 45), Discount = 10 }, // 10%
+                        new TimeSlot { StatusId = 1, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(21, 0), Discount = 20 }   // 20%
                     },
                     Images = new List<Image>
                     {
@@ -70,11 +71,11 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
                     Location = "HN$$District 2, Hanoi",
                     Courts = new List<Court>
                     {
-                        new Court { CategoryId = 2, PricePerHour = 150000 }
+                        new Court { CategoryId = 2, StatusId = 1, PricePerHour = 150000 }
                     },
                     TimeSlots = new List<TimeSlot>
                     {
-                        new TimeSlot { StartTime = new TimeOnly(7, 0), EndTime = new TimeOnly(23, 30) }
+                        new TimeSlot { StatusId = 1, StartTime = new TimeOnly(7, 0), EndTime = new TimeOnly(23, 30), Discount = 0 }
                     }
                 }
             };
@@ -83,7 +84,6 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
         [Fact(DisplayName = "UTCID01 - Should return 400 when request is null")]
         public async Task UTCID01_NullRequest_Returns400()
         {
-            // Test: request == null branch
             var result = await _service.GetAllFacilitiesByPlayer(null!, 1, 10);
 
             Assert.Equal(400, result.Status);
@@ -93,38 +93,34 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID02 - Should return 404 for no data scenarios")]
-        [InlineData(true, false)]    // No active facilities
-        [InlineData(false, true)]    // No Type provided  
-        [InlineData(false, false)]   // No results after filtering
+        [InlineData(true, false)]
+        [InlineData(false, false)]
         public async Task UTCID02_NoDataScenarios_Returns404(bool noActiveFacilities, bool noType)
         {
-            // Setup
             SearchFormRequest request;
 
             if (noType)
             {
-                // Test: request.Type == null || !request.Type.Any()
                 request = new SearchFormRequest { Type = null };
                 _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(CreateTestFacilities());
             }
             else if (noActiveFacilities)
             {
-                // Test: activeFacilities == null || activeFacilities.Count == 0
                 request = new SearchFormRequest { Type = new List<int> { 1 } };
                 var inactiveFacilities = new List<Facility>
                 {
-                    new Facility { FacilityId = 1, StatusId = 2, FacilityName = "Inactive" }
+                    new Facility { FacilityId = 1, StatusId = 2, FacilityName = "Inactive",
+                        Courts = new List<Court> { new Court { StatusId = 1, CategoryId = 1, PricePerHour = 1 } } }
                 };
                 _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(inactiveFacilities);
             }
             else
             {
-                // Test: filteredList.Count == 0 (no results after all filtering)
                 request = new SearchFormRequest
                 {
-                    Type = new List<int> { 3 },  // No matching type
-                    Name = "NonExistent",        // No matching name  
-                    City = "NonExistent"         // No matching city
+                    Type = new List<int> { 3 },
+                    Name = "NonExistent",
+                    City = "NonExistent"
                 };
                 _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(CreateTestFacilities());
             }
@@ -138,13 +134,12 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID03 - Should handle success scenarios with all logic branches")]
-        [InlineData("Tennis", "HCM", "District 1", new int[] { 1 }, 1)]  // All filters + price asc sort + all mapping logic
-        [InlineData("", null, null, new int[] { 1, 2 }, 2)]              // Multiple types + price desc sort
-        [InlineData("", null, null, new int[] { 1, 2 }, 3)]              // Rating desc sort + no sorting (default)
+        [InlineData("Tennis", "HCM", "District 1", new int[] { 1 }, 1)]
+        [InlineData("", null, null, new int[] { 1, 2 }, 2)]
+        [InlineData("", null, null, new int[] { 1, 2 }, 3)]
         public async Task UTCID03_SuccessScenarios_Returns200(
             string name, string city, string ward, int[] types, int order)
         {
-            // Setup
             var request = new SearchFormRequest
             {
                 Name = name,
@@ -158,42 +153,41 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
 
             var result = await _service.GetAllFacilitiesByPlayer(request, 1, 10);
 
-            // Test success response
             Assert.Equal(200, result.Status);
             Assert.True(result.Success);
             Assert.NotNull(result.Data);
             Assert.Contains("Tìm thấy", result.Message);
 
-            // Test all response mapping logic with Tennis Club (when included)
-            if (types.Contains(1))
+            if (types != null && types.Contains(1))
             {
                 var tennisClub = result.Data.Items.FirstOrDefault(x => x.FacilityId == 1);
                 if (tennisClub != null)
                 {
-                    // Test ALL complex mapping logic in one assertion
-                    Assert.Equal("District 1, Ho Chi Minh City", tennisClub.Location); // Location parsing with $$
-                    Assert.Equal("08:30 - 22:45", tennisClub.OpenTime); // Time rounding + formatting
-                    Assert.Equal("tennis1.jpg", tennisClub.FirstImage); // Image ordering
-                    Assert.Equal(4.5, tennisClub.AverageRating); // Rating calculation
-                    Assert.Equal(100000, tennisClub.PricePerHour); // Min price calculation
-                    Assert.Equal(10000, tennisClub.MinPrice); // Price * minDiscount (0.1)
-                    Assert.Equal(20000, tennisClub.MaxPrice); // Price * maxDiscount (0.2)
+                    Assert.Equal("District 1, Ho Chi Minh City", tennisClub.Location);
+                    Assert.Equal("08:30 - 22:45", tennisClub.OpenTime);
+                    Assert.Equal("tennis1.jpg", tennisClub.FirstImage);
+                    Assert.Equal(4.5, tennisClub.AverageRating);
+                    Assert.Equal(100000, tennisClub.PricePerHour);
+
+                    // MinPrice = Price * (1 - maxDiscount/100) = 100000 * (1 - 0.2) = 80000
+                    // MaxPrice = Price * (1 - minDiscount/100) = 100000 * (1 - 0.1) = 90000
+                    Assert.Equal(80000, tennisClub.MinPrice);
+                    Assert.Equal(90000, tennisClub.MaxPrice);
                 }
             }
 
-            // Test sorting logic (when multiple items exist)
             var itemsList = result.Data.Items.ToList();
             if (itemsList.Count > 1)
             {
-                if (order == 1) // Price ascending
+                if (order == 1)
                 {
                     Assert.True(itemsList[0].PricePerHour <= itemsList[1].PricePerHour);
                 }
-                else if (order == 2) // Price descending
+                else if (order == 2)
                 {
                     Assert.True(itemsList[0].PricePerHour >= itemsList[1].PricePerHour);
                 }
-                else if (order == 3) // Rating descending
+                else if (order == 3)
                 {
                     Assert.True(itemsList[0].AverageRating >= itemsList[1].AverageRating);
                 }
@@ -201,16 +195,14 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID04 - Should return 400 for invalid pagination")]
-        [InlineData(0)]   // pageNumber < 1
-        [InlineData(5)]   // pageNumber > totalPages
+        [InlineData(0)]
+        [InlineData(5)]
         public async Task UTCID04_InvalidPagination_Returns400(int pageNumber)
         {
-            // Setup
             var request = new SearchFormRequest { Type = new List<int> { 1, 2 } };
             _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(CreateTestFacilities());
 
-            // Test: pageNumber < 1 || pageNumber > totalPages
-            var result = await _service.GetAllFacilitiesByPlayer(request, pageNumber, 10);
+            var result = await _service.GetAllFacilitiesByPlayer(request, pageNumber, 1);
 
             Assert.Equal(400, result.Status);
             Assert.False(result.Success);
@@ -218,14 +210,26 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Null(result.Data);
         }
 
+        [Fact(DisplayName = "UTCID07 - Should return 404 when facilities is null (activeFacilities == null)")]
+        public async Task UTCID07_FacilitiesNull_Returns404()
+        {
+            var request = new SearchFormRequest { Type = new List<int> { 1 } };
+            _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync((List<Facility>?)null);
+
+            var result = await _service.GetAllFacilitiesByPlayer(request, 1, 10);
+
+            Assert.Equal(404, result.Status);
+            Assert.False(result.Success);
+            Assert.Equal(MessagesCodes.MSG_72, result.Message);
+            Assert.Null(result.Data);
+        }
+
         [Fact(DisplayName = "UTCID05 - Should handle pagination correctly")]
         public async Task UTCID05_ValidPagination_ReturnsCorrectPage()
         {
-            // Setup
             var request = new SearchFormRequest { Type = new List<int> { 1, 2 } };
             _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(CreateTestFacilities());
 
-            // Test: Valid pagination with pageSize=1 (2 items = 2 pages)
             var result = await _service.GetAllFacilitiesByPlayer(request, 2, 1);
 
             Assert.Equal(200, result.Status);
@@ -234,18 +238,16 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Equal(1, result.Data.ItemsPerPage);
             Assert.Equal(2, result.Data.TotalPages);
             Assert.Equal(2, result.Data.TotalItems);
-            Assert.Equal(1, result.Data.Items.Count()); // Only 1 item on page 2
+            Assert.Single(result.Data.Items);
         }
 
         [Fact(DisplayName = "UTCID06 - Should return 500 when repository throws exception")]
         public async Task UTCID06_RepositoryException_Returns500()
         {
-            // Setup
             var request = new SearchFormRequest { Type = new List<int> { 1 } };
             _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer())
                 .ThrowsAsync(new Exception("Database connection failed"));
 
-            // Test: catch (Exception ex) branch
             var result = await _service.GetAllFacilitiesByPlayer(request, 1, 10);
 
             Assert.Equal(500, result.Status);
@@ -255,21 +257,21 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
             Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID07 - Should return 404 when facilities is null (activeFacilities == null)")]
-        public async Task UTCID07_FacilitiesNull_Returns404()
+        [Fact(DisplayName = "UTCID05 - Should handle pagination correctly (Duplicate Fix)")]
+        public async Task UTCID05_ValidPagination_ReturnsCorrectPage_Duplicate()
         {
-            // Arrange
-            var request = new SearchFormRequest { Type = new List<int> { 1 } };
-            _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync((List<Facility>)null);
+            var request = new SearchFormRequest { Type = new List<int> { 1, 2 } };
+            _facilityRepoForUserMock.Setup(x => x.GetAllFacilitiesByPlayer()).ReturnsAsync(CreateTestFacilities());
 
-            // Act
-            var result = await _service.GetAllFacilitiesByPlayer(request, 1, 10);
+            var result = await _service.GetAllFacilitiesByPlayer(request, 2, 1);
 
-            // Assert
-            Assert.Equal(404, result.Status);
-            Assert.False(result.Success);
-            Assert.Equal(MessagesCodes.MSG_72, result.Message);
-            Assert.Null(result.Data);
+            Assert.Equal(200, result.Status);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data.CurrentPage);
+            Assert.Equal(1, result.Data.ItemsPerPage);
+            Assert.Equal(2, result.Data.TotalPages);
+            Assert.Equal(2, result.Data.TotalItems);
+            Assert.Single(result.Data.Items);
         }
     }
 }

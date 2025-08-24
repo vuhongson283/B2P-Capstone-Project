@@ -136,6 +136,15 @@ namespace B2P_Test.UnitTest.ImageService_UnitTest
         public async Task DeleteImageAsync_ShouldReturnTrue_WhenSuccess()
         {
             // Arrange
+            var image = new Image
+            {
+                ImageId = 1,
+                ImageUrl = "https://drive.google.com/uc?id=some-file-id"
+            };
+            _imageRepoMock.Setup(x => x.GetByIdAsync(1))
+                .ReturnsAsync(image);
+            _driveServiceMock.Setup(x => x.DeleteFileAsync(It.IsAny<string>()))
+                .ReturnsAsync(true);
             _imageRepoMock.Setup(x => x.DeleteAsync(1))
                 .ReturnsAsync(true);
 
@@ -151,6 +160,15 @@ namespace B2P_Test.UnitTest.ImageService_UnitTest
         public async Task DeleteImageAsync_ShouldReturnFalse_WhenFail()
         {
             // Arrange
+            var image = new Image
+            {
+                ImageId = 1,
+                ImageUrl = "https://drive.google.com/uc?id=some-file-id"
+            };
+            _imageRepoMock.Setup(x => x.GetByIdAsync(1))
+                .ReturnsAsync(image);
+            _driveServiceMock.Setup(x => x.DeleteFileAsync(It.IsAny<string>()))
+                .ReturnsAsync(true);
             _imageRepoMock.Setup(x => x.DeleteAsync(1))
                 .ReturnsAsync(false);
 

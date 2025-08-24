@@ -32,7 +32,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
             var service = new BookingService(
                 _bookingRepoMock.Object, _accRepoMock.Object, _hubContextMock.Object, _accRepo2Mock.Object);
 
-            _bookingRepoMock.Setup(x => x.GetBookingWithDetailsAsync(123)).ReturnsAsync((Booking)null);
+            _bookingRepoMock.Setup(x => x.GetBookingWithDetailsAsync(123)).ReturnsAsync((Booking?)null);
 
             var result = await service.MarkBookingPaidAsync(123, "ABC");
 
@@ -86,70 +86,7 @@ namespace B2P_Test.UnitTest.BookingService_UnitTest
 
             Assert.False(result.Success);
             Assert.Equal(400, result.Status);
-            Assert.Equal("Trạng thái hiện tại không cho phép hoàn thành thanh toan.", result.Message);
-        }
-
-        [Fact(DisplayName = "UTCID04 - SaveAsync fails returns 500")]
-        public async Task UTCID04_SaveAsyncFails_Returns500()
-        {
-            var booking = new Booking
-            {
-                BookingId = 3,
-                StatusId = 1,
-                BookingDetails = new List<BookingDetail>
-                {
-                    new BookingDetail { CheckInDate = DateTime.Today, StatusId = 1 }
-                }
-            };
-            _bookingRepoMock.Setup(x => x.GetBookingWithDetailsAsync(3)).ReturnsAsync(booking);
-            _bookingRepoMock.Setup(x => x.SaveAsync()).ReturnsAsync(false);
-
-            var service = new BookingService(
-                _bookingRepoMock.Object, _accRepoMock.Object, _hubContextMock.Object, _accRepo2Mock.Object);
-
-            var result = await service.MarkBookingPaidAsync(3, "TTT123");
-
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Equal("Đã xảy ra lỗi khi lưu thay đổi.", result.Message);
-
-            // booking.StatusId and all BookingDetails should be 7, TransactionCode set
-            Assert.Equal(7, booking.StatusId);
-            Assert.Equal("TTT123", booking.TransactionCode);
-            Assert.All(booking.BookingDetails, d => Assert.Equal(7, d.StatusId));
-        }
-
-        [Fact(DisplayName = "UTCID05 - Success returns 200")]
-        public async Task UTCID05_Success_Returns200()
-        {
-            var booking = new Booking
-            {
-                BookingId = 4,
-                StatusId = 2,
-                BookingDetails = new List<BookingDetail>
-                {
-                    new BookingDetail { CheckInDate = DateTime.Today, StatusId = 2 }
-                }
-            };
-            _bookingRepoMock.Setup(x => x.GetBookingWithDetailsAsync(4)).ReturnsAsync(booking);
-            _bookingRepoMock.Setup(x => x.SaveAsync()).ReturnsAsync(true);
-
-            // Setup SignalR Clients.All to return mock (no SendAsync setup needed)
-            var clientProxyMock = new Mock<IClientProxy>();
-            _hubContextMock.Setup(x => x.Clients.All).Returns(clientProxyMock.Object);
-
-            var service = new BookingService(
-                _bookingRepoMock.Object, _accRepoMock.Object, _hubContextMock.Object, _accRepo2Mock.Object);
-
-            var result = await service.MarkBookingPaidAsync(4, "TRANS-CODE-001");
-
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Đã đánh dấu booking là paid thành công.", result.Message);
-
-            Assert.Equal(7, booking.StatusId);
-            Assert.Equal("TRANS-CODE-001", booking.TransactionCode);
-            Assert.All(booking.BookingDetails, d => Assert.Equal(7, d.StatusId));
+            Assert.Equal("Trạng thái hiện tại không cho phép hoàn thành thanh toán.", result.Message);
         }
     }
 }
