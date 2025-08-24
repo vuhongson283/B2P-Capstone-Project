@@ -53,6 +53,7 @@ import {
   getBlogImages,
   deleteImage,
   getUserById,
+  getUserImage
 } from "../../services/apiService";
 import "./Blog.scss";
 import CommentModal from "../Common/CommentModal";
@@ -62,15 +63,6 @@ const { TextArea } = Input;
 const { Search } = Input;
 const { Option } = Select;
 
-const convertGoogleDriveUrl = (url) => {
-  if (!url) return "";
-  const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-  if (fileIdMatch) {
-    const fileId = fileIdMatch[1];
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
-  }
-  return url;
-};
 
 const Blog = () => {
   // =============== STATE MANAGEMENT ===============
@@ -83,16 +75,72 @@ const Blog = () => {
 
   // Current user info
   const { user, isLoggedIn, isLoading: authLoading } = useAuth();
-  const [currentUser] = useState({
-    userId: user?.userId,
-    fullName: user?.fullName || "",
-    userName: user?.userName || "bachnhhe173308",
-    avatar:
-      user?.avatar ||
-      "https://ui-avatars.com/api/?name=bachnhhe173308&background=27ae60&color=fff&size=200",
-    roleId: user?.roleId || 2,
-  });
+  const convertGoogleDriveUrl = (url) => {
+  if (!url) return "";
+  const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (fileIdMatch) {
+    const fileId = fileIdMatch[1];
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+  }
+  return url;
+};
+const convertGoogleDriveLink = (driveUrl) => {
+  if (!driveUrl) return null;
+  
+  // Check if it's a Google Drive link
+  if (driveUrl.includes('drive.google.com')) {
+    // Extract file ID from different Google Drive URL formats
+    let fileId = null;
+    
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    const match1 = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+    
+    // Format 2: https://drive.google.com/open?id=FILE_ID
+    const match2 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match2) {
+      fileId = match2[1];
+    }
+    
+    // Convert to googleusercontent format - MUCH BETTER!
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}=s400-c`;
+    }
+  }
+  
+  // If not Google Drive link, return as is
+  return driveUrl;
+};
+useEffect(() => {
+  const loadUserAvatar = async () => {
+    if (user?.userId) {
+      try {
+        const response = await getUserImage(user.userId);
+        if (response.data) {
+          const convertedAvatarUrl = convertGoogleDriveLink(response.data);
+          setCurrentUser(prev => ({
+            ...prev,
+            avatar: convertedAvatarUrl || prev.avatar
+          }));
+        }
+      } catch (error) {
+        console.error('❌ Error loading user avatar:', error);
+      }
+    }
+  };
 
+  loadUserAvatar();
+}, [user?.userId]);
+const [currentUser, setCurrentUser] = useState({
+  userId: user?.userId,
+  fullName: user?.fullName || "",
+  userName: user?.userName || "Người dùng",
+  avatar: user?.avatar ||
+    "https://ui-avatars.com/api/?name=Người dùng&background=27ae60&color=fff&size=200",
+  roleId: user?.roleId || 2,
+});
   useEffect(() => {
     document.title = "Bài viết - B2P";
   }, []);
