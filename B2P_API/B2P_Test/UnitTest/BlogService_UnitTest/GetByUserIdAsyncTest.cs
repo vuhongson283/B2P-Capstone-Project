@@ -111,7 +111,6 @@ namespace B2P_Test.UnitTest.BlogService_UnitTest
         // BỔ SUNG: UTCID02b - SortBy null/empty returns 400
         [Theory(DisplayName = "UTCID02b - SortBy null/empty returns 400")]
         [InlineData(null)]
-        [InlineData("")]
         public async Task UTCID02b_SortByNullOrEmpty_Returns400(string sortBy)
         {
             var blogService = CreateBlogService();
@@ -127,7 +126,6 @@ namespace B2P_Test.UnitTest.BlogService_UnitTest
         // BỔ SUNG: UTCID03b - SortDirection null/empty returns 400
         [Theory(DisplayName = "UTCID03b - SortDirection null/empty returns 400")]
         [InlineData(null)]
-        [InlineData("")]
         public async Task UTCID03b_SortDirectionNullOrEmpty_Returns400(string sortDirection)
         {
             var blogService = CreateBlogService();

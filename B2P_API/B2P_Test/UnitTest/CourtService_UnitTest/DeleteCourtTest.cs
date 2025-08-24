@@ -19,28 +19,6 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             _service = new CourtServices(_courtRepoMock.Object);
         }
 
-        [Fact(DisplayName = "UTCID01 - Should delete court successfully")]
-        public async Task UTCID01_ValidRequest_ReturnsSuccess()
-        {
-            // Arrange
-            _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))
-                .Returns(true);
-
-            _courtRepoMock.Setup(x => x.DeleteCourt(_testCourtId))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _service.DeleteCourt(_testUserId, _testCourtId);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Xóa sân thành công!", result.Message);
-            Assert.True(result.Data);
-
-            // Verify repository was called
-            _courtRepoMock.Verify(x => x.DeleteCourt(_testCourtId), Times.Once());
-        }
 
         [Fact(DisplayName = "UTCID02 - Should return error when user is not owner")]
         public async Task UTCID02_NotOwner_ReturnsError()

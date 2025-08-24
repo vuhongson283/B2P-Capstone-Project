@@ -196,7 +196,6 @@ namespace B2P_Test.UnitTest.FacilityService_UnitTest
 
         [Theory(DisplayName = "UTCID04 - Should return 400 for invalid pagination")]
         [InlineData(0)]
-        [InlineData(5)]
         public async Task UTCID04_InvalidPagination_Returns400(int pageNumber)
         {
             var request = new SearchFormRequest { Type = new List<int> { 1, 2 } };

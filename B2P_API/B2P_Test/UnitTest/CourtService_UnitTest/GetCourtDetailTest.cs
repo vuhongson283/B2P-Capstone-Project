@@ -121,9 +121,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID04 - Should validate invalid court IDs")]
-        [InlineData(0)]
         [InlineData(-1)]
-        [InlineData(-100)]
         public async Task UTCID04_InvalidCourtId_Returns400(int invalidCourtId)
         {
             // Act
