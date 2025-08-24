@@ -66,56 +66,136 @@ export const SignalRProvider = ({ children }) => {
                 setIsConnected(true);
                 setConnectionStatus('Connected');
 
-                // Test the connection by listening to a general event
+                // ✅ FIXED BookingStatusChanged handler - NO API CALL
                 newConnection.on('BookingStatusChanged', async (data) => {
                     console.log('🎯 [SignalRProvider] RAW BookingStatusChanged received:', data);
 
                     try {
                         const bookingId = data.bookingId || data.BookingId;
-                        const apiUrl = `/api/Booking/${bookingId}`;
-
-                        console.log('🔍 [DEBUG] Fetching booking details...');
-                        console.log('🔍 [DEBUG] BookingId:', bookingId);
-                        console.log('🔍 [DEBUG] API URL:', apiUrl);
-                        console.log('🔍 [DEBUG] Auth token:', localStorage.getItem('authToken') ? 'EXISTS' : 'MISSING');
-
-                        const response = await fetch(apiUrl, {
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
-
-                        console.log('🔍 [DEBUG] Response status:', response.status);
-                        console.log('🔍 [DEBUG] Response headers:', response.headers);
-
-                        if (!response.ok) {
-                            console.error('❌ API response not OK:', response.status, response.statusText);
-                            return;
+                        if (window.globalBlockedBookings && window.globalBlockedBookings.has(bookingId.toString())) {
+                            console.log(`🚫 SUPER BLOCKED: Ignoring ALL events for cancelled booking ${bookingId}`);
+                            return; // ✅ IGNORE COMPLETELY
                         }
 
-                        const responseText = await response.text();
-                        console.log('🔍 [DEBUG] Raw response:', responseText.substring(0, 200));
+                        console.log('🔍 [DEBUG] Processing SignalR data directly:', data);
+                        console.log('🔍 [DEBUG] Data keys:', Object.keys(data));
+                        console.log('🔍 [DEBUG] Status-related fields:', {
+                            status: data.status,
+                            newStatus: data.newStatus,
+                            statusId: data.statusId,
+                            newStatusId: data.newStatusId,
+                            action: data.action
+                        });
 
-                        const result = JSON.parse(responseText);
-                        console.log('🔍 [DEBUG] Parsed result:', result);
+                        // ✅ CHECK IF THIS IS A CANCELLATION FIRST
+                        const isCancellation =
+                            data.status === 'cancelled' ||
+                            data.newStatus === 'cancelled' ||
+                            data.status === 'Cancelled' ||
+                            data.newStatus === 'Cancelled' ||
+                            data.statusId === 9 ||
+                            data.newStatusId === 9 ||
+                            data.action === 'cancelled' ||
+                            data.action === 'cancel';
 
-                        const bookingDetails = result.data;
+                        if (isCancellation) {
+                            console.log('🚨 [SignalRProvider] CANCELLATION detected:', data);
 
-                        // ✅ SIMPLE APPROACH: Just trigger notification without API call
+                            // ✅ IMMEDIATELY BLOCK ALL FUTURE EVENTS FOR THIS BOOKING
+                            if (!window.globalBlockedBookings) {
+                                window.globalBlockedBookings = new Set();
+                            }
+                            window.globalBlockedBookings.add(bookingId.toString());
+
+                            console.log(`🚫 GLOBALLY BLOCKED booking ${bookingId} from future payments`);
+
+                            const cancellationNotification = {
+                                bookingId: bookingId,
+                                courtName: data.courtName || data.CourtName || `Booking #${bookingId}`,
+                                customerName: data.customerName || data.CustomerName || 'Khách hàng',
+                                date: data.date || data.Date || dayjs().format('DD/MM/YYYY'),
+                                timeSlot: data.timeSlot || data.TimeSlot || 'Unknown time',
+                                totalAmount: data.totalAmount || data.TotalAmount || 0,
+                                status: 'cancelled',
+                                statusId: 9,
+                                action: 'cancelled',
+                                reason: data.reason || data.Reason || 'Hủy đơn'
+                            };
+
+                            console.log('🎯 [DEBUG] Cancellation notification:', cancellationNotification);
+
+                            // ✅ DEBOUNCE FOR CANCELLATION
+                            const eventKey = `cancel-${bookingId}`;
+
+                            if (window.lastCancelEvents && window.lastCancelEvents[eventKey]) {
+                                const timeSinceLastEvent = Date.now() - window.lastCancelEvents[eventKey];
+                                if (timeSinceLastEvent < 3000) {
+                                    console.log('⏭️ Ignoring duplicate cancellation event within 3 seconds');
+                                    return;
+                                }
+                            }
+
+                            if (!window.lastCancelEvents) window.lastCancelEvents = {};
+                            window.lastCancelEvents[eventKey] = Date.now();
+
+                            setTimeout(() => {
+                                if (window.lastCancelEvents && window.lastCancelEvents[eventKey]) {
+                                    delete window.lastCancelEvents[eventKey];
+                                }
+                            }, 10000);
+
+                            // Trigger cancellation notification
+                            if (signalRService.eventHandlers.onBookingCancelled) {
+                                signalRService.eventHandlers.onBookingCancelled(cancellationNotification);
+                            }
+
+                            return; // Don't process as payment
+                        }
+
+                        // ✅ CHECK IF BOOKING IS GLOBALLY BLOCKED
+                        if (window.globalBlockedBookings && window.globalBlockedBookings.has(bookingId.toString())) {
+                            console.log(`🚫 GLOBALLY BLOCKED: Ignoring payment event for cancelled booking ${bookingId}`);
+                            return; // ✅ COMPLETELY IGNORE THIS EVENT
+                        }
+
+                        // ✅ OTHERWISE, PROCESS AS PAYMENT (using SignalR data only)
+                        console.log('💰 [SignalRProvider] Processing as PAYMENT:', data);
+
                         const paymentNotification = {
                             bookingId: bookingId,
-                            courtName: `Booking #${bookingId}`,
-                            customerName: 'Khách hàng',
-                            date: dayjs().format('DD/MM/YYYY'),
-                            timeSlot: 'Unknown time',
-                            totalAmount: 0,
+                            courtName: data.courtName || data.CourtName || `Booking #${bookingId}`,
+                            customerName: data.customerName || data.CustomerName || 'Khách hàng',
+                            date: data.date || data.Date || dayjs().format('DD/MM/YYYY'),
+                            timeSlot: data.timeSlot || data.TimeSlot || 'Unknown time',
+                            totalAmount: data.totalAmount || data.TotalAmount || 0,
                             status: 'paid',
                             statusId: 7,
                             action: 'paid'
                         };
 
-                        // Trigger global notification
+                        console.log('🎯 [DEBUG] Payment notification:', paymentNotification);
+
+                        // ✅ DEBOUNCE FOR PAYMENT
+                        const paymentEventKey = `payment-${bookingId}`;
+
+                        if (window.lastPaymentEvents && window.lastPaymentEvents[paymentEventKey]) {
+                            const timeSinceLastEvent = Date.now() - window.lastPaymentEvents[paymentEventKey];
+                            if (timeSinceLastEvent < 3000) {
+                                console.log('⏭️ Ignoring duplicate payment event within 3 seconds');
+                                return;
+                            }
+                        }
+
+                        if (!window.lastPaymentEvents) window.lastPaymentEvents = {};
+                        window.lastPaymentEvents[paymentEventKey] = Date.now();
+
+                        setTimeout(() => {
+                            if (window.lastPaymentEvents && window.lastPaymentEvents[paymentEventKey]) {
+                                delete window.lastPaymentEvents[paymentEventKey];
+                            }
+                        }, 10000);
+
+                        // Trigger payment notification
                         if (signalRService.eventHandlers.onBookingPaid) {
                             signalRService.eventHandlers.onBookingPaid(paymentNotification);
                         }
@@ -139,12 +219,13 @@ export const SignalRProvider = ({ children }) => {
                             action: 'paid'
                         };
 
-                        // Still trigger notification even if API fails
+                        // Still trigger notification even if processing fails
                         if (signalRService.eventHandlers.onBookingPaid) {
                             signalRService.eventHandlers.onBookingPaid(fallbackNotification);
                         }
                     }
                 });
+
             } catch (error) {
                 console.error('❌ SignalR Connection Error:', error);
                 console.error('❌ Error details:', error.message);

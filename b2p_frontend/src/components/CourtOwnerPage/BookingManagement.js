@@ -280,37 +280,11 @@ const BookingManagement = () => {
   useEffect(() => {
     const handleBookingPaidUpdate = (event) => {
       const notification = event.detail;
-      console.log(
-        "🎯 [BookingManagement] Payment update received:",
-        notification
-      );
-      console.log(
-        "🔍 [DEBUG] BookingId from notification:",
-        notification.bookingId
-      );
-      console.log("🔍 [DEBUG] Current bookingData structure:");
+      console.log("🎯 [BookingManagement] Payment update received:", notification);
 
-      // ✅ LOG ALL BOOKING DATA TO UNDERSTAND STRUCTURE
-      Object.keys(bookingData).forEach((key) => {
-        const booking = bookingData[key];
-        console.log(`🔍 Slot [${key}]:`, {
-          bookingId: booking?.bookingId,
-          id: booking?.id,
-          Id: booking?.Id,
-          status: booking?.status,
-          statusDescription: booking?.statusDescription,
-          paymentStatus: booking?.paymentStatus,
-        });
-      });
-
-      // ✅ TRY MULTIPLE WAYS TO FIND MATCHING BOOKING
-      let foundSlot = null;
-      let foundKey = null;
-
-      Object.keys(bookingData).forEach((bookingKey) => {
+      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
+      const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
         const booking = bookingData[bookingKey];
-
-        // Try different possible ID fields
         const possibleIds = [
           booking?.bookingId,
           booking?.id,
@@ -318,52 +292,85 @@ const BookingManagement = () => {
           booking?.booking?.id,
           booking?.booking?.bookingId,
         ].filter((id) => id !== undefined && id !== null);
-
-        possibleIds.forEach((id) => {
-          if (id.toString() === notification.bookingId.toString()) {
-            foundSlot = booking;
-            foundKey = bookingKey;
-            console.log(`✅ FOUND MATCH! Slot: ${bookingKey}, ID: ${id}`);
-          }
-        });
+        return possibleIds.some(
+          (id) => id.toString() === notification.bookingId.toString()
+        );
       });
 
-      if (foundKey) {
-        console.log(`🔄 Updating slot: ${foundKey}`);
-        console.log(`🔍 Before update:`, foundSlot);
-
+      if (matchingKeys.length > 0) {
         setBookingData((prev) => {
-          const updated = {
-            ...prev,
-            [foundKey]: {
-              ...prev[foundKey],
+          const updated = { ...prev };
+          matchingKeys.forEach((key) => {
+            updated[key] = {
+              ...prev[key],
               status: "paid",
               statusId: 7,
               paymentStatus: "deposit",
               statusDescription: "Đã Cọc",
-            },
-          };
-
-          console.log(`✅ After update:`, updated[foundKey]);
+            };
+          });
           return updated;
+        });
+        matchingKeys.forEach((key) => {
+          console.log(`✅ After update:`, bookingData[key]);
         });
       } else {
         console.log("❌ NO MATCHING SLOT FOUND!");
-        console.log("🔍 Available IDs vs Target:");
-        Object.keys(bookingData).forEach((key) => {
-          const booking = bookingData[key];
-          console.log(
-            `Slot ${key}: ${booking?.bookingId || booking?.id} vs ${
-              notification.bookingId
-            }`
-          );
-        });
       }
     };
 
-    window.addEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+    window.addEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
     return () => {
-      window.removeEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+      window.removeEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
+    };
+  }, [bookingData]);
+
+  useEffect(() => {
+    const handleBookingCancelledUpdate = (event) => {
+      const notification = event.detail;
+      console.log('🎯 [BookingManagement] Cancellation update received:', notification);
+
+      // Tìm tất cả các slot có bookingId trùng với notification.bookingId
+      const matchingKeys = Object.keys(bookingData).filter((bookingKey) => {
+        const booking = bookingData[bookingKey];
+        const possibleIds = [
+          booking?.bookingId,
+          booking?.id,
+          booking?.Id,
+          booking?.booking?.id,
+          booking?.booking?.bookingId,
+        ].filter((id) => id !== undefined && id !== null);
+        return possibleIds.some(
+          (id) => id.toString() === notification.bookingId.toString()
+        );
+      });
+
+      if (matchingKeys.length > 0) {
+        setBookingData((prev) => {
+          const updated = { ...prev };
+          matchingKeys.forEach((key) => {
+            updated[key] = {
+              ...prev[key],
+              status: "cancelled",
+              statusId: 9,
+              paymentStatus: "cancelled",
+              statusDescription: "Đã Hủy",
+              originalStatus: "Cancelled"
+            };
+          });
+          return updated;
+        });
+        matchingKeys.forEach((key) => {
+          console.log(`✅ Slot ${key} updated to CANCELLED status`);
+        });
+      } else {
+        console.log('❌ No matching slot found for cancellation ID:', notification.bookingId);
+      }
+    };
+
+    window.addEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
+    return () => {
+      window.removeEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
     };
   }, [bookingData]);
 
@@ -917,9 +924,9 @@ const BookingManagement = () => {
             setSelectedBooking((prev) =>
               prev
                 ? {
-                    ...prev,
-                    ...customerDetails,
-                  }
+                  ...prev,
+                  ...customerDetails,
+                }
                 : null
             );
             console.log("✅ Customer details loaded successfully");
@@ -928,11 +935,11 @@ const BookingManagement = () => {
             setSelectedBooking((prev) =>
               prev
                 ? {
-                    ...prev,
-                    customerName: "Không tìm thấy thông tin",
-                    customerPhone: "Không tìm thấy thông tin",
-                    customerEmail: "Không tìm thấy thông tin",
-                  }
+                  ...prev,
+                  customerName: "Không tìm thấy thông tin",
+                  customerPhone: "Không tìm thấy thông tin",
+                  customerEmail: "Không tìm thấy thông tin",
+                }
                 : null
             );
           }
@@ -941,11 +948,11 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: "Lỗi tải thông tin",
-                  customerPhone: "Lỗi tải thông tin",
-                  customerEmail: "Lỗi tải thông tin",
-                }
+                ...prev,
+                customerName: "Lỗi tải thông tin",
+                customerPhone: "Lỗi tải thông tin",
+                customerEmail: "Lỗi tải thông tin",
+              }
               : null
           );
         }
@@ -965,12 +972,12 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: booking.customerName,
-                  customerPhone: booking.customerPhone,
-                  customerEmail: booking.customerEmail,
-                  customerAvatar: null,
-                }
+                ...prev,
+                customerName: booking.customerName,
+                customerPhone: booking.customerPhone,
+                customerEmail: booking.customerEmail,
+                customerAvatar: null,
+              }
               : null
           );
         } else {
@@ -980,11 +987,11 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: "Admin (Court Owner)",
-                  customerPhone: CUSTOMER_PHONE || "0000000000",
-                  customerEmail: CUSTOMER_EMAIL || "admin@courtowner.com",
-                }
+                ...prev,
+                customerName: "Admin (Court Owner)",
+                customerPhone: CUSTOMER_PHONE || "0000000000",
+                customerEmail: CUSTOMER_EMAIL || "admin@courtowner.com",
+              }
               : null
           );
         }
@@ -1042,12 +1049,12 @@ const BookingManagement = () => {
         setSelectedBooking((prev) =>
           prev
             ? {
-                ...prev,
-                status: newStatus,
-                statusId: 10,
-                paymentStatus: "paid",
-                originalStatus: "Completed",
-              }
+              ...prev,
+              status: newStatus,
+              statusId: 10,
+              paymentStatus: "paid",
+              originalStatus: "Completed",
+            }
             : null
         );
 
@@ -1488,9 +1495,8 @@ const BookingManagement = () => {
       return (
         <div
           key={slot}
-          className={`time-slot-card ${
-            selectedTimeSlots.includes(slot) ? "selected" : ""
-          }`}
+          className={`time-slot-card ${selectedTimeSlots.includes(slot) ? "selected" : ""
+            }`}
           onClick={() => handleTimeSlotToggle(slot)}
         >
           <div className="slot-time">
@@ -1586,9 +1592,8 @@ const BookingManagement = () => {
                   ? (e) => handleEmptySlotClick(e, court, slot)
                   : undefined
               }
-              title={`${
-                court.courtName || court.name
-              } - ${slot} - ${getSlotDisplayText(status)}`}
+              title={`${court.courtName || court.name
+                } - ${slot} - ${getSlotDisplayText(status)}`}
               style={{
                 cursor: isAvailable ? "context-menu" : "pointer",
                 position: "relative",
@@ -1872,7 +1877,7 @@ const BookingManagement = () => {
             if (
               selectedBooking &&
               selectedBooking.id.toString() ===
-                notification.bookingId.toString()
+              notification.bookingId.toString()
             ) {
               const newStatus = getBookingStatusFromString(notification.status);
               let paymentStatus = selectedBooking.paymentStatus;
@@ -1889,12 +1894,12 @@ const BookingManagement = () => {
               setSelectedBooking((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      status: newStatus,
-                      originalStatus: notification.status,
-                      paymentStatus,
-                      statusId,
-                    }
+                    ...prev,
+                    status: newStatus,
+                    originalStatus: notification.status,
+                    paymentStatus,
+                    statusId,
+                  }
                   : null
               );
             }
@@ -2397,7 +2402,7 @@ const BookingManagement = () => {
             <div className="modal-actions">
               <Button onClick={closeModal}>Đóng</Button>
               {selectedBooking.status === "paid" &&
-              !dayjs(selectedBooking.checkInDate).isAfter(dayjs(), "day") ? (
+                !dayjs(selectedBooking.checkInDate).isAfter(dayjs(), "day") ? (
                 <Button
                   type="primary"
                   className="action-button"

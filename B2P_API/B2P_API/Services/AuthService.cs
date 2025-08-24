@@ -619,6 +619,7 @@ namespace B2P_API.Services
                     };
 
                     var createdUser = await _authRepository.CreateUserAsync(user);
+                    await _imageRepository.CreateUserDefaultImageAsync(createdUser.UserId);
                     if (createdUser == null)
                     {
                         return new ApiResponse<object>
