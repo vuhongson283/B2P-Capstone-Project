@@ -1,6 +1,8 @@
 // contexts/SignalRContext.js
 import { createContext, useContext, useEffect, useState } from 'react';
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import signalRService from '../services/signalRService'; // ✅ ADD THIS
+import dayjs from 'dayjs';
 
 const SignalRContext = createContext();
 
@@ -14,10 +16,10 @@ export const SignalRProvider = ({ children }) => {
 
         const connectToSignalR = async () => {
             try {
-                console.log('🔌 Creating SignalR connection to: https://localhost:5000/bookinghub');
+                console.log('🔌 Creating SignalR connection to: https://api.book2play.site/bookinghub');
 
                 const newConnection = new HubConnectionBuilder()
-                    .withUrl('https://ccce5ebbfdd9.ngrok-free.app/bookinghub')
+                    .withUrl('https://api.book2play.site/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect({
                         nextRetryDelayInMilliseconds: retryContext => {
@@ -65,10 +67,84 @@ export const SignalRProvider = ({ children }) => {
                 setConnectionStatus('Connected');
 
                 // Test the connection by listening to a general event
-                newConnection.on('BookingStatusChanged', (data) => {
+                newConnection.on('BookingStatusChanged', async (data) => {
                     console.log('🎯 [SignalRProvider] RAW BookingStatusChanged received:', data);
-                });
 
+                    try {
+                        const bookingId = data.bookingId || data.BookingId;
+                        const apiUrl = `/api/Booking/${bookingId}`;
+
+                        console.log('🔍 [DEBUG] Fetching booking details...');
+                        console.log('🔍 [DEBUG] BookingId:', bookingId);
+                        console.log('🔍 [DEBUG] API URL:', apiUrl);
+                        console.log('🔍 [DEBUG] Auth token:', localStorage.getItem('authToken') ? 'EXISTS' : 'MISSING');
+
+                        const response = await fetch(apiUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        console.log('🔍 [DEBUG] Response status:', response.status);
+                        console.log('🔍 [DEBUG] Response headers:', response.headers);
+
+                        if (!response.ok) {
+                            console.error('❌ API response not OK:', response.status, response.statusText);
+                            return;
+                        }
+
+                        const responseText = await response.text();
+                        console.log('🔍 [DEBUG] Raw response:', responseText.substring(0, 200));
+
+                        const result = JSON.parse(responseText);
+                        console.log('🔍 [DEBUG] Parsed result:', result);
+
+                        const bookingDetails = result.data;
+
+                        // ✅ SIMPLE APPROACH: Just trigger notification without API call
+                        const paymentNotification = {
+                            bookingId: bookingId,
+                            courtName: `Booking #${bookingId}`,
+                            customerName: 'Khách hàng',
+                            date: dayjs().format('DD/MM/YYYY'),
+                            timeSlot: 'Unknown time',
+                            totalAmount: 0,
+                            status: 'paid',
+                            statusId: 7,
+                            action: 'paid'
+                        };
+
+                        // Trigger global notification
+                        if (signalRService.eventHandlers.onBookingPaid) {
+                            signalRService.eventHandlers.onBookingPaid(paymentNotification);
+                        }
+
+                    } catch (error) {
+                        console.error('❌ Error handling BookingStatusChanged:', error);
+                        console.error('❌ Error message:', error.message);
+                        console.error('❌ Error stack:', error.stack);
+
+                        // ✅ FALLBACK: Still trigger notification with basic info
+                        const bookingId = data.bookingId || data.BookingId;
+                        const fallbackNotification = {
+                            bookingId: bookingId,
+                            courtName: `Booking #${bookingId}`,
+                            customerName: 'Khách hàng',
+                            date: dayjs().format('DD/MM/YYYY'),
+                            timeSlot: 'Unknown time',
+                            totalAmount: 0,
+                            status: 'paid',
+                            statusId: 7,
+                            action: 'paid'
+                        };
+
+                        // Still trigger notification even if API fails
+                        if (signalRService.eventHandlers.onBookingPaid) {
+                            signalRService.eventHandlers.onBookingPaid(fallbackNotification);
+                        }
+                    }
+                });
             } catch (error) {
                 console.error('❌ SignalR Connection Error:', error);
                 console.error('❌ Error details:', error.message);
@@ -89,10 +165,10 @@ export const SignalRProvider = ({ children }) => {
 
         const tryHttpConnection = async () => {
             try {
-                console.log('🔌 Trying HTTP connection to: https://localhost:5000/bookinghub');
+                console.log('🔌 Trying HTTP connection to: http://api.book2play.site/bookinghub');
 
                 const httpConnection = new HubConnectionBuilder()
-                    .withUrl('https://localhost:5000/bookinghub')
+                    .withUrl('http://api.book2play.site/bookinghub')
                     .configureLogging(LogLevel.Information)
                     .withAutomaticReconnect()
                     .build();

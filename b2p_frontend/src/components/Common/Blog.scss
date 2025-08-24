@@ -330,451 +330,6 @@
     max-width     : 100%; // 🎯 Ensure it doesn't exceed container
 }
 
-.blog-card-ultra {
-    background     : rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius  : 16px; // 🎯 Increased border radius for better visual separation
-    box-shadow     : 0 6px 16px rgba(46, 204, 113, 0.12); // 🎯 Enhanced shadow
-    border         : 1px solid rgba(255, 255, 255, 0.3);
-    overflow       : hidden;
-    transition     : all 0.3s ease;
-    margin-bottom  : 8px; // 🎯 Add explicit margin-bottom for additional spacing
-
-    .ant-card-body {
-        padding: 24px; // 🎯 Significantly increased padding for better spacing
-    }
-
-    &:hover {
-        transform : translateY(-4px); // 🎯 More pronounced hover effect
-        box-shadow: 0 12px 32px rgba(46, 204, 113, 0.25); // 🎯 Enhanced hover shadow
-    }
-
-    &.my-blog {
-        border-left: 5px solid #27ae60; // 🎯 Thicker accent border
-        box-shadow : 0 6px 16px rgba(39, 174, 96, 0.15); // 🎯 Special shadow for own posts
-    }
-
-    .blog-card-header {
-        display        : flex;
-        justify-content: space-between;
-        align-items    : flex-start;
-        margin-bottom  : 20px; // 🎯 Increased spacing significantly
-
-        .blog-author {
-            display    : flex;
-            gap        : 14px; // 🎯 Increased gap
-            align-items: center;
-
-            .author-info {
-                h4 {
-                    margin     : 0;
-                    font-size  : 15px; // 🎯 Increased font size
-                    font-weight: 600;
-                    color      : #2c3e50;
-                    display    : flex;
-                    align-items: center;
-                    gap        : 8px;
-                    line-height: 1.2;
-                }
-
-                .blog-meta {
-                    display    : flex;
-                    align-items: center;
-                    gap        : 10px; // 🎯 Increased gap
-                    font-size  : 12px; // 🎯 Slightly increased
-                    color      : #6c757d;
-                    margin-top : 6px; // 🎯 Increased spacing
-
-                    .anticon {
-                        font-size: 11px; // 🎯 Slightly increased
-                    }
-
-                    .updated {
-                        color     : #f39c12;
-                        font-style: italic;
-                    }
-                }
-            }
-        }
-    }
-
-    .blog-content {
-        margin-bottom: 20px; // 🎯 Increased spacing significantly
-
-        .blog-title {
-            font-size    : 18px; // 🎯 Increased font size for better visibility
-            font-weight  : 600;
-            color        : #2c3e50;
-            margin-bottom: 12px; // 🎯 Increased spacing
-            line-height  : 1.4;
-        }
-
-        .blog-text {
-            color        : #495057;
-            line-height  : 1.6;
-            font-size    : 15px; // 🎯 Increased font size for better readability
-            margin-bottom: 16px; // 🎯 Increased spacing
-        }
-    }
-
-    .blog-actions {
-        display        : flex;
-        align-items    : center;
-        justify-content: flex-start;
-        gap            : 16px; // 🎯 Increased gap
-        padding-top    : 16px; // 🎯 Increased spacing
-        border-top     : 1px solid rgba(233, 236, 239, 0.8);
-
-        .ant-tag {
-            border-radius: 12px; // 🎯 Increased border radius
-            font-weight  : 500;
-            border       : none;
-            background   : linear-gradient(135deg, #e7f3ff, #d4edda);
-            color        : #27ae60;
-            padding      : 4px 10px; // 🎯 Increased padding
-            font-size    : 12px; // 🎯 Slightly increased
-            margin       : 0;
-        }
-
-        .ant-btn {
-            border       : none;
-            color        : #6c757d;
-            font-weight  : 500;
-            font-size    : 13px; // 🎯 Increased font size
-            height       : 32px; // 🎯 Increased height
-            padding      : 0 12px; // 🎯 Increased padding
-            border-radius: 10px; // 🎯 Increased border radius
-
-            &:hover {
-                color     : #27ae60;
-                background: rgba(39, 174, 96, 0.1);
-                transform : scale(1.05);
-            }
-        }
-    }
-}
-
-/* ================== PAGINATION ================== */
-.blog-pagination-ultra {
-    display        : flex;
-    justify-content: center;
-    padding        : 20px; // 🎯 Increased padding
-    background     : rgba(255, 255, 255, 0.9);
-    border-radius  : 12px;
-    backdrop-filter: blur(20px);
-    box-shadow     : 0 4px 12px rgba(46, 204, 113, 0.12); // 🎯 Enhanced shadow
-    margin-top     : 16px; // 🎯 Increased top margin
-
-    .ant-pagination {
-        .ant-pagination-item {
-            border-radius: 8px; // 🎯 Increased border radius
-            border       : 1px solid rgba(39, 174, 96, 0.2);
-            font-size    : 13px; // 🎯 Increased font size
-            min-width    : 32px; // 🎯 Increased width
-            height       : 32px; // 🎯 Increased height
-            line-height  : 30px;
-
-            &.ant-pagination-item-active {
-                background  : linear-gradient(135deg, #27ae60, #2ecc71);
-                border-color: #27ae60;
-
-                a {
-                    color      : white;
-                    font-weight: 600;
-                }
-            }
-        }
-
-        .ant-pagination-prev,
-        .ant-pagination-next {
-            border-radius: 8px;
-            border       : 1px solid rgba(39, 174, 96, 0.2);
-            min-width    : 32px;
-            height       : 32px;
-            line-height  : 30px;
-        }
-
-        .ant-pagination-total-text {
-            font-size: 12px; // 🎯 Slightly increased
-            color    : #666;
-        }
-    }
-}
-
-/* ================== MOBILE RESPONSIVE ================== */
-@media (max-width: 768px) {
-    .blog-page-fixed-layout {
-        flex-direction: column;
-        gap           : 12px;
-        padding       : 80px 12px 12px 12px; // 🎯 Keep increased top padding
-    }
-
-    .fixed-sidebar {
-        width: 100%;
-        order: 2; // 🎯 Move sidebar below main content on mobile
-
-        &.collapsed {
-            width: 100%;
-        }
-    }
-
-    .main-content-area {
-        max-width: none;
-        order    : 1;
-        margin   : 0; // 🎯 Remove auto margin on mobile
-
-        &.sidebar-collapsed {
-            max-width: none;
-        }
-    }
-
-    .mobile-search {
-        display: block !important;
-        order  : 0; // 🎯 Show search first on mobile
-    }
-
-    .blog-header-ultra-compact {
-        flex-direction: column;
-        text-align    : center;
-        gap           : 12px;
-
-        .create-blog-btn {
-            width : 100%;
-            height: 38px;
-        }
-    }
-
-    .blog-list-container {
-        gap: 20px; // 🎯 Reduced but still significant gap for mobile
-    }
-
-    .blog-card-ultra {
-        margin-bottom: 4px; // 🎯 Reduced margin for mobile
-
-        .ant-card-body {
-            padding: 16px; // 🎯 Reduced padding for mobile
-        }
-
-        .blog-card-header {
-            margin-bottom: 16px; // 🎯 Adjusted for mobile
-        }
-
-        .blog-content {
-            margin-bottom: 16px; // 🎯 Adjusted for mobile
-
-            .blog-title {
-                font-size: 16px; // 🎯 Slightly reduced for mobile
-            }
-
-            .blog-text {
-                font-size: 14px; // 🎯 Adjusted for mobile
-            }
-        }
-    }
-}
-
-/* ================== ANIMATIONS ================== */
-@keyframes fadeInUp {
-    from {
-        opacity  : 0;
-        transform: translateY(24px); // 🎯 More pronounced animation
-    }
-
-    to {
-        opacity  : 1;
-        transform: translateY(0);
-    }
-}
-
-.blog-card-ultra {
-    animation: fadeInUp 0.5s ease-out; // 🎯 Longer animation duration
-}
-
-/* ================== ENHANCED HOVER EFFECTS ================== */
-.blog-card-ultra:hover {
-    .blog-title {
-        color: #27ae60;
-    }
-
-    .user-avatar-wrapper .ant-avatar {
-        transform: scale(1.15); // 🎯 More pronounced scale
-    }
-}
-
-/* ================== USER AVATAR STYLING ================== */
-.user-avatar-wrapper {
-    transition: all 0.3s ease;
-
-    .ant-avatar {
-        transition: all 0.3s ease;
-        border    : 2px solid rgba(39, 174, 96, 0.1);
-        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.15); // 🎯 Enhanced shadow
-
-        &:hover {
-            border-color: rgba(39, 174, 96, 0.3);
-            box-shadow  : 0 6px 16px rgba(39, 174, 96, 0.3); // 🎯 Enhanced hover shadow
-        }
-    }
-}
-
-/* ================== BLOG IMAGES STYLING ================== */
-.blog-images-display {
-    margin-top: 12px;
-
-    &.card-images {
-        .image-grid {
-            display: grid;
-            gap    : 8px;
-
-            &.single-image {
-                grid-template-columns: 1fr;
-            }
-
-            &.two-images {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            &.three-or-more-images {
-                grid-template-columns: 2fr 1fr 1fr;
-
-                .blog-image-item:first-child {
-                    grid-row: 1 / 3;
-                }
-            }
-        }
-
-        .blog-image-item {
-            position     : relative;
-            overflow     : hidden;
-            border-radius: 8px;
-            transition   : all 0.3s ease;
-
-            &:hover {
-                transform: scale(1.02);
-            }
-
-            // 🎯 Overlay trên ảnh thứ 3
-            .image-overlay-on-third {
-                position       : absolute;
-                top            : 0;
-                left           : 0;
-                right          : 0;
-                bottom         : 0;
-                background     : rgba(0, 0, 0, 0.65);
-                backdrop-filter: blur(2px); // 🎯 Thêm blur effect
-                display        : flex;
-                align-items    : center;
-                justify-content: center;
-                color          : white;
-                font-weight    : 600;
-                transition     : all 0.3s ease;
-                cursor         : pointer;
-                border-radius  : 8px;
-
-                .overlay-content {
-                    text-align     : center;
-                    transition     : transform 0.2s ease;
-                    padding        : 8px;
-                    border-radius  : 12px;
-                    background     : rgba(0, 0, 0, 0.3);
-                    backdrop-filter: blur(4px);
-
-                    .anticon {
-                        display      : block;
-                        margin-bottom: 4px;
-                    }
-
-                    .more-count {
-                        font-size  : 18px;
-                        font-weight: 700;
-                        display    : block;
-                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-                    }
-                }
-
-                &:hover {
-                    background: rgba(0, 0, 0, 0.8);
-
-                    .overlay-content {
-                        transform : scale(1.1);
-                        background: rgba(0, 0, 0, 0.5);
-                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-
-                        .more-count {
-                            font-size: 20px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Modal images styling giữ nguyên
-    &.modal-images {
-        margin-top: 16px;
-
-        .blog-image-item {
-            margin-bottom: 16px;
-
-            .ant-image {
-                width        : 100%;
-                border-radius: 12px;
-                overflow     : hidden;
-                display      : block;
-
-                img {
-                    width        : 100% !important;
-                    border-radius: 12px;
-                    margin-bottom: 12px;
-                    max-height   : 400px;
-                    object-fit   : cover;
-                    display      : block;
-                }
-            }
-
-            .image-caption {
-                text-align: center;
-                font-size : 14px;
-                color     : #666;
-                font-style: italic;
-                margin-top: 8px;
-                padding   : 0 16px;
-            }
-        }
-    }
-}
-
-/* ================== RESPONSIVE IMAGES ================== */
-@media (max-width: 480px) {
-    .blog-images-display.card-images {
-        .image-grid {
-
-            &.single-image,
-            &.two-images,
-            &.three-or-more-images {
-                grid-template-columns: 1fr !important;
-            }
-
-            .blog-image-item:first-child {
-                grid-row: unset !important;
-            }
-        }
-
-        // 🎯 Điều chỉnh overlay cho mobile
-        .image-overlay-on-third {
-            .overlay-content {
-                .more-count {
-                    font-size: 16px !important;
-                }
-
-                .anticon {
-                    font-size: 18px !important;
-                }
-            }
-        }
-    }
-}
-
 /* ================== BLOG CARD STYLING ================== */
 .blog-card {
     background     : rgba(255, 255, 255, 0.95);
@@ -883,25 +438,657 @@
         justify-content: flex-start;
         gap            : 16px;
         padding-top    : 16px;
-        border-top     : 1px solid rgba(233, 236, 239, 0.8);
+        border-top     : 1px solid transparent;
 
         .comment-btn {
             width        : 100%;
-            border       : none;
             color        : #6c757d;
             font-weight  : 500;
             font-size    : 13px;
             height       : 32px;
             padding      : 0 12px;
-            border-radius: 10px;
+            border-radius: 20px;
             border       : 1px solid black;
 
             &:hover {
                 color     : #27ae60;
                 background: rgba(39, 174, 96, 0.1);
                 transform : scale(1.05);
+                border    : 1px solid rgba(39, 174, 96, 0.2);
             }
         }
+    }
+}
+
+/* ================== FACEBOOK-STYLE IMAGE LAYOUTS ================== */
+.blog-images-display {
+    margin-top: 16px;
+
+    &.facebook-style {
+        .fb-image-layout {
+            border-radius: 12px;
+            overflow     : hidden;
+            background   : transparent;
+            margin-top   : 16px;
+
+            // Single image layout
+            &.single {
+                .fb-image-container {
+                    position: relative;
+                    overflow: hidden;
+
+                    &:hover {
+                        .preview-mask {
+                            opacity: 1;
+                        }
+                    }
+                }
+            }
+
+            // Two images side by side
+            &.two-images {
+                display              : grid;
+                grid-template-columns: 1fr 1fr;
+                gap                  : 4px;
+
+                .fb-image-container {
+                    position: relative;
+                    overflow: hidden;
+
+                    &:hover {
+                        .preview-mask {
+                            opacity: 1;
+                        }
+                    }
+                }
+            }
+
+            // Three images layout
+            &.three-images {
+                display              : grid;
+                grid-template-columns: 2fr 1fr;
+                gap                  : 4px;
+                height               : 400px;
+
+                .fb-image-container.main {
+                    position: relative;
+                    overflow: hidden;
+
+                    &:hover {
+                        .preview-mask {
+                            opacity: 1;
+                        }
+                    }
+                }
+
+                .fb-image-sidebar {
+                    display       : flex;
+                    flex-direction: column;
+                    gap           : 4px;
+
+                    .fb-image-container.small {
+                        position: relative;
+                        overflow: hidden;
+                        flex    : 1;
+
+                        &:hover {
+                            .preview-mask {
+                                opacity: 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Four images layout
+            &.four-images {
+                display              : grid;
+                grid-template-columns: 2fr 1fr;
+                gap                  : 4px;
+                height               : 400px;
+
+                .fb-image-container.main {
+                    position: relative;
+                    overflow: hidden;
+
+                    &:hover {
+                        .preview-mask {
+                            opacity: 1;
+                        }
+                    }
+                }
+
+                .fb-image-sidebar {
+                    display       : flex;
+                    flex-direction: column;
+                    gap           : 4px;
+
+                    .fb-image-container.tiny {
+                        position: relative;
+                        overflow: hidden;
+                        flex    : 1;
+
+                        &:hover {
+                            .preview-mask {
+                                opacity: 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Five+ images layout
+            &.five-plus-images {
+                display              : grid;
+                grid-template-columns: 2fr 1fr;
+                gap                  : 4px;
+                height               : 400px;
+
+                .fb-image-container.main {
+                    position: relative;
+                    overflow: hidden;
+
+                    &:hover {
+                        .preview-mask {
+                            opacity: 1;
+                        }
+                    }
+                }
+
+                .fb-image-sidebar {
+                    display       : flex;
+                    flex-direction: column;
+                    gap           : 4px;
+
+                    .fb-image-container.small {
+                        position: relative;
+                        overflow: hidden;
+                        flex    : 1;
+
+                        .image-wrapper {
+                            position: relative;
+                            height  : 100%;
+                        }
+
+                        &:hover {
+                            .preview-mask {
+                                opacity: 1;
+                            }
+                        }
+
+                        .more-images-overlay {
+                            position       : absolute;
+                            top            : 0;
+                            left           : 0;
+                            right          : 0;
+                            bottom         : 0;
+                            background     : rgba(0, 0, 0, 0.75);
+                            display        : flex;
+                            align-items    : center;
+                            justify-content: center;
+                            cursor         : pointer;
+                            transition     : all 0.3s ease;
+                            backdrop-filter: blur(2px);
+                            border-radius  : 8px;
+
+                            &:hover {
+                                background: rgba(0, 0, 0, 0.85);
+                            }
+
+                            .overlay-content {
+                                text-align: center;
+                                color     : white;
+
+                                .more-count {
+                                    display    : block;
+                                    font-size  : 24px;
+                                    font-weight: 700;
+                                    line-height: 1;
+                                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+                                }
+
+                                .more-text {
+                                    display    : block;
+                                    font-size  : 12px;
+                                    font-weight: 500;
+                                    margin-top : 4px;
+                                    opacity    : 0.9;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Common preview mask styles
+            .preview-mask {
+                position       : absolute;
+                top            : 0;
+                left           : 0;
+                right          : 0;
+                bottom         : 0;
+                background     : rgba(0, 0, 0, 0.4);
+                color          : white;
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                opacity        : 0;
+                transition     : opacity 0.3s ease;
+                font-size      : 14px;
+                font-weight    : 500;
+                backdrop-filter: blur(1px);
+                border-radius  : 8px;
+            }
+        }
+    }
+
+    // OLD CARD IMAGES STYLING - Keep for backward compatibility
+    &.card-images {
+        .image-grid {
+            display: grid;
+            gap    : 8px;
+
+            &.single-image {
+                grid-template-columns: 1fr;
+            }
+
+            &.two-images {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            &.three-or-more-images {
+                grid-template-columns: 2fr 1fr 1fr;
+
+                .blog-image-item:first-child {
+                    grid-row: 1 / 3;
+                }
+            }
+        }
+
+        .blog-image-item {
+            position     : relative;
+            overflow     : hidden;
+            border-radius: 8px;
+            transition   : all 0.3s ease;
+
+            &:hover {
+                transform: scale(1.02);
+            }
+
+            // 🎯 Overlay trên ảnh thứ 3
+            .image-overlay-on-third {
+                position       : absolute;
+                top            : 0;
+                left           : 0;
+                right          : 0;
+                bottom         : 0;
+                background     : rgba(0, 0, 0, 0.65);
+                backdrop-filter: blur(2px); // 🎯 Thêm blur effect
+                display        : flex;
+                align-items    : center;
+                justify-content: center;
+                color          : white;
+                font-weight    : 600;
+                transition     : all 0.3s ease;
+                cursor         : pointer;
+                border-radius  : 8px;
+
+                .overlay-content {
+                    text-align     : center;
+                    transition     : transform 0.2s ease;
+                    padding        : 8px;
+                    border-radius  : 12px;
+                    background     : rgba(0, 0, 0, 0.3);
+                    backdrop-filter: blur(4px);
+
+                    .anticon {
+                        display      : block;
+                        margin-bottom: 4px;
+                    }
+
+                    .more-count {
+                        font-size  : 18px;
+                        font-weight: 700;
+                        display    : block;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+                    }
+                }
+
+                &:hover {
+                    background: rgba(0, 0, 0, 0.8);
+
+                    .overlay-content {
+                        transform : scale(1.1);
+                        background: rgba(0, 0, 0, 0.5);
+                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+                        .more-count {
+                            font-size: 20px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal images styling
+    &.modal-images {
+        margin-top: 16px;
+
+        .blog-image-item {
+            margin-bottom: 16px;
+
+            .ant-image {
+                width        : 100%;
+                border-radius: 12px;
+                overflow     : hidden;
+                display      : block;
+
+                img {
+                    width        : 100% !important;
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                    max-height   : 400px;
+                    object-fit   : cover;
+                    display      : block;
+                }
+            }
+
+            .image-caption {
+                text-align: center;
+                font-size : 14px;
+                color     : #666;
+                font-style: italic;
+                margin-top: 8px;
+                padding   : 0 16px;
+            }
+        }
+    }
+}
+
+/* ================== BLOG IMAGES LOADING STATE ================== */
+.blog-images-loading {
+    display      : flex;
+    align-items  : center;
+    padding      : 16px;
+    color        : #666;
+    font-size    : 14px;
+    border       : 1px dashed #d9d9d9;
+    border-radius: 8px;
+    background   : #fafafa;
+}
+
+/* ================== PAGINATION ================== */
+.blog-pagination-ultra {
+    display        : flex;
+    justify-content: center;
+    padding        : 20px; // 🎯 Increased padding
+    background     : rgba(255, 255, 255, 0.9);
+    border-radius  : 12px;
+    backdrop-filter: blur(20px);
+    box-shadow     : 0 4px 12px rgba(46, 204, 113, 0.12); // 🎯 Enhanced shadow
+    margin-top     : 16px; // 🎯 Increased top margin
+
+    .ant-pagination {
+        .ant-pagination-item {
+            border-radius: 8px; // 🎯 Increased border radius
+            border       : 1px solid rgba(39, 174, 96, 0.2);
+            font-size    : 13px; // 🎯 Increased font size
+            min-width    : 32px; // 🎯 Increased width
+            height       : 32px; // 🎯 Increased height
+            line-height  : 30px;
+
+            &.ant-pagination-item-active {
+                background  : linear-gradient(135deg, #27ae60, #2ecc71);
+                border-color: #27ae60;
+
+                a {
+                    color      : white;
+                    font-weight: 600;
+                }
+            }
+        }
+
+        .ant-pagination-prev,
+        .ant-pagination-next {
+            border-radius: 8px;
+            border       : 1px solid rgba(39, 174, 96, 0.2);
+            min-width    : 32px;
+            height       : 32px;
+            line-height  : 30px;
+        }
+
+        .ant-pagination-total-text {
+            font-size: 12px; // 🎯 Slightly increased
+            color    : #666;
+        }
+    }
+}
+
+/* ================== USER AVATAR STYLING ================== */
+.user-avatar-wrapper {
+    transition: all 0.3s ease;
+
+    .ant-avatar {
+        transition: all 0.3s ease;
+        border    : 2px solid rgba(39, 174, 96, 0.1);
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.15); // 🎯 Enhanced shadow
+
+        &:hover {
+            border-color: rgba(39, 174, 96, 0.3);
+            box-shadow  : 0 6px 16px rgba(39, 174, 96, 0.3); // 🎯 Enhanced hover shadow
+            transform   : scale(1.05);
+        }
+    }
+}
+
+/* ================== RESPONSIVE FACEBOOK IMAGES ================== */
+@media (max-width: 768px) {
+    .blog-images-display.facebook-style {
+        .fb-image-layout {
+
+            &.three-images,
+            &.four-images,
+            &.five-plus-images {
+                grid-template-columns: 1fr;
+                height               : auto;
+
+                .fb-image-sidebar {
+                    grid-row      : 2;
+                    flex-direction: row;
+                    gap           : 4px;
+
+                    .fb-image-container {
+                        height: 150px;
+                    }
+                }
+            }
+
+            &.two-images {
+                grid-template-columns: 1fr;
+                gap                  : 4px;
+
+                .fb-image-container {
+                    height: 200px;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .blog-images-display.facebook-style {
+        .fb-image-layout {
+
+            &.three-images,
+            &.four-images,
+            &.five-plus-images {
+                .fb-image-sidebar {
+                    flex-direction: column;
+
+                    .fb-image-container {
+                        height: 120px;
+                    }
+                }
+            }
+        }
+    }
+
+    // Old card images responsive
+    .blog-images-display.card-images {
+        .image-grid {
+
+            &.single-image,
+            &.two-images,
+            &.three-or-more-images {
+                grid-template-columns: 1fr !important;
+            }
+
+            .blog-image-item:first-child {
+                grid-row: unset !important;
+            }
+        }
+
+        // 🎯 Điều chỉnh overlay cho mobile
+        .image-overlay-on-third {
+            .overlay-content {
+                .more-count {
+                    font-size: 16px !important;
+                }
+
+                .anticon {
+                    font-size: 18px !important;
+                }
+            }
+        }
+    }
+}
+
+/* ================== MOBILE RESPONSIVE ================== */
+@media (max-width: 768px) {
+    .blog-page-fixed-layout {
+        flex-direction: column;
+        gap           : 12px;
+        padding       : 80px 12px 12px 12px; // 🎯 Keep increased top padding
+    }
+
+    .fixed-sidebar {
+        width: 100%;
+        order: 2; // 🎯 Move sidebar below main content on mobile
+
+        &.collapsed {
+            width: 100%;
+        }
+    }
+
+    .main-content-area {
+        max-width: none;
+        order    : 1;
+        margin   : 0; // 🎯 Remove auto margin on mobile
+
+        &.sidebar-collapsed {
+            max-width: none;
+        }
+    }
+
+    .mobile-search {
+        display: block !important;
+        order  : 0; // 🎯 Show search first on mobile
+    }
+
+    .blog-header-ultra-compact {
+        flex-direction: column;
+        text-align    : center;
+        gap           : 12px;
+
+        .create-blog-btn {
+            width : 100%;
+            height: 38px;
+        }
+    }
+
+    .blog-list-container {
+        gap: 20px; // 🎯 Reduced but still significant gap for mobile
+    }
+
+    .blog-card {
+        margin-bottom: 4px; // 🎯 Reduced margin for mobile
+
+        .ant-card-body {
+            padding: 16px; // 🎯 Reduced padding for mobile
+        }
+
+        .blog-header {
+            margin-bottom: 16px; // 🎯 Adjusted for mobile
+        }
+
+        .blog-content {
+            margin-bottom: 16px; // 🎯 Adjusted for mobile
+
+            .blog-title {
+                font-size: 16px; // 🎯 Slightly reduced for mobile
+            }
+
+            .blog-text {
+                font-size: 14px; // 🎯 Adjusted for mobile
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .blog-card {
+        .ant-card-body {
+            padding: 12px;
+        }
+
+        .blog-header {
+            flex-direction: column;
+            gap           : 12px;
+            align-items   : flex-start;
+        }
+
+        .blog-content {
+            .blog-title {
+                font-size: 16px;
+            }
+
+            .blog-text {
+                font-size: 14px;
+            }
+        }
+
+        .blog-actions {
+            justify-content: center;
+        }
+    }
+}
+
+/* ================== ANIMATIONS ================== */
+@keyframes fadeInUp {
+    from {
+        opacity  : 0;
+        transform: translateY(24px); // 🎯 More pronounced animation
+    }
+
+    to {
+        opacity  : 1;
+        transform: translateY(0);
+    }
+}
+
+.blog-card {
+    animation: fadeInUp 0.5s ease-out; // 🎯 Longer animation duration
+}
+
+/* ================== ENHANCED HOVER EFFECTS ================== */
+.blog-card:hover {
+    .blog-title {
+        color: #27ae60;
+    }
+
+    .user-avatar-wrapper .ant-avatar {
+        transform: scale(1.15); // 🎯 More pronounced scale
     }
 }
 
@@ -1065,54 +1252,10 @@
     }
 }
 
-/* ================== ADDITIONAL MOBILE RESPONSIVE ================== */
-@media (max-width: 480px) {
-    .blog-card {
-        .ant-card-body {
-            padding: 12px;
-        }
-
-        .blog-header {
-            flex-direction: column;
-            gap           : 12px;
-            align-items   : flex-start;
-        }
-
-        .blog-content {
-            .blog-title {
-                font-size: 16px;
-            }
-
-            .blog-text {
-                font-size: 14px;
-            }
-        }
-
-        .blog-actions {
-            justify-content: center;
-        }
-    }
-
-    .blog-images-display.card-images {
-        .image-grid {
-
-            &.single-image,
-            &.two-images,
-            &.three-or-more-images {
-                grid-template-columns: 1fr !important;
-            }
-
-            .blog-image-item:first-child {
-                grid-row: unset !important;
-            }
-        }
-    }
-}
-
+// Additional responsive handling for main content area width
 .main-content-area {
-    width: calc(100vw - 360px);
-    max-width: none;
-    padding: 20px 40px;
+    width    : calc(80vw - 360px);
+    max-width: 50%;
 
     &.sidebar-collapsed {
         width: calc(100vw - 120px);

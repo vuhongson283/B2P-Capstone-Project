@@ -23,7 +23,7 @@ class SignalRService {
 
     initializeConnection() {
         // ✅ FORCE URL để debug - HARDCODE THAY VÌ ĐỌC TỪ ENV
-        const hubUrl = 'https://localhost:5000/bookinghub';
+        const hubUrl = 'https://api.book2play.site/bookingHub';
 
         console.log('🔧 FORCED SignalR URL (ignoring env):', hubUrl);
         console.log('🔧 Original env URL was:', process.env.REACT_APP_SIGNALR_HUB_URL);
@@ -96,8 +96,14 @@ class SignalRService {
         });
 
         this.connection.on('BookingUpdated', (notification) => {
+            console.log('📝 [DEBUG] BookingUpdated received:', notification);
+            console.log('📝 [DEBUG] Status:', notification.status);
+            console.log('📝 [DEBUG] StatusId:', notification.statusId);
+            console.log('📝 [DEBUG] Timestamp:', new Date().toISOString());
+            console.log('📝 [DEBUG] Full notification object:', JSON.stringify(notification, null, 2));
+
             console.log('📝 Booking updated:', notification);
-            this.eventHandlers.onBookingUpdated?.(notification);
+            this.eventHandlers.BookingUpdated?.(notification);
         });
 
         this.connection.on('BookingCompleted', (notification) => {
@@ -111,8 +117,14 @@ class SignalRService {
         });
 
         this.connection.on('ReceiveBookingUpdate', (notification) => {
-            console.log('🔄 Received booking update:', notification);
-            this.eventHandlers.onBookingUpdated?.(notification);
+            console.log('📝 [DEBUG] BookingUpdated received:', notification);
+            console.log('📝 [DEBUG] Status:', notification.status);
+            console.log('📝 [DEBUG] StatusId:', notification.statusId);
+            console.log('📝 [DEBUG] Timestamp:', new Date().toISOString());
+            console.log('📝 [DEBUG] Full notification object:', JSON.stringify(notification, null, 2));
+
+            console.log('📝 Booking updated:', notification);
+            this.eventHandlers.BookingUpdated?.(notification);
         });
 
         // ✅ NEW: Comment notification events
@@ -478,7 +490,7 @@ class SignalRService {
             isConnected: this.isConnected,
             connectionState: this.connectionState,
             reconnectAttempts: this.reconnectAttempts,
-            hubUrl: 'https://localhost:5000/bookinghub', // HARDCODED for debug
+            hubUrl: 'https://api.book2play.site/bookingHub', // HARDCODED for debug
             joinedGroups: this.joinedGroupsInfo,
             currentUserId: this.currentUserId
         };

@@ -10,6 +10,7 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     margin-bottom: 24px;
     color: white;
+    width: auto !important;
 
     h1 {
       font-size: 28px;
@@ -105,7 +106,8 @@
         width: auto; // Cho phép mở rộng theo nội dung
         border-radius: 8px;
         border: 1px solid #e0e0e0;
-        padding: 8px 12px;
+        
+        height: auto !important;
         white-space: nowrap; // Ngăn text bị wrap
         text-overflow: ellipsis; // Thêm dấu ... nếu text quá dài
         

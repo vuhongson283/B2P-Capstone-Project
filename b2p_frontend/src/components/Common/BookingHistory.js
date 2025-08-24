@@ -98,7 +98,8 @@ const BookingHistory = () => {
         setBookingToCancel(null);
     };
 
-    // ✅ NEW: Handle confirmed cancel
+    
+    // ✅ NEW: Handle confirmed cancel với cập nhật trạng thái
     const handleConfirmedCancel = async () => {
         if (!bookingToCancel) return;
 
@@ -125,11 +126,36 @@ const BookingHistory = () => {
                 finalTransactionCode: transactionCode
             });
 
+            // ✅ CẬP NHẬT TRẠNG THÁI LOCAL TRƯỚC KHI CALL API
+            const updateBookingStatus = (bookingId) => {
+                setBookings(prevBookings => 
+                    prevBookings.map(booking => 
+                        booking.id === bookingId 
+                            ? { 
+                                ...booking, 
+                                status: 'cancelled',
+                                originalStatus: 'Cancelled',
+                                // ✅ Cập nhật thêm các trường liên quan
+                                statusId: 6, // Assuming 6 is cancelled status ID
+                                paymentMethod: 'Đã hủy'
+                              }
+                            : booking
+                    )
+                );
+            };
+
+            // ✅ CẬP NHẬT TRẠNG THÁI NGAY LẬP TỨC
+            updateBookingStatus(bookingToCancel.id);
+            
+            // Đóng modal confirm
+            closeCancelConfirm();
+
             if (!transactionCode) {
-                console.error('❌ [handleConfirmedCancel] Missing TransactionCode, but showing success anyway');
-                // ✅ LUÔN HIỆN THÀNH CÔNG dù không có transaction code
+                console.error('❌ [handleConfirmedCancel] Missing TransactionCode, but updating status locally');
                 message.success('Đã hủy đặt sân thành công');
-                window.location.reload(); // ✅ Reload trang
+                
+                // ✅ KHÔNG RELOAD TRANG NỮA, CHỈ CẬP NHẬT LOCAL STATE
+                // window.location.reload(); // Removed
                 return;
             }
 
@@ -141,7 +167,7 @@ const BookingHistory = () => {
                 userLogin: 'bachnhhe173308'
             });
 
-            // ✅ TRY CALL API NHƯNG LUÔN HIỆN THÀNH CÔNG
+            // ✅ TRY CALL API NHƯNG ĐÃ CẬP NHẬT TRẠNG THÁI RỒI
             try {
                 const response = await cancelPayment(transactionCode);
 
@@ -152,10 +178,11 @@ const BookingHistory = () => {
                     timestamp: new Date().toISOString()
                 });
 
-                console.log('✅ [handleConfirmedCancel] API called successfully, showing success message');
+                console.log('✅ [handleConfirmedCancel] API called successfully');
+                message.success('Đã hủy đặt sân thành công');
 
             } catch (apiError) {
-                console.error('❌ [API ERROR] Cancel API failed but showing success anyway:', {
+                console.error('❌ [API ERROR] Cancel API failed but status already updated locally:', {
                     error: apiError,
                     message: apiError.message,
                     response: apiError.response,
@@ -170,49 +197,105 @@ const BookingHistory = () => {
                         url: apiError.response.config?.url
                     });
                 }
+
+                // ✅ DÙ API FAIL NHƯNG VẪN HIỆN THÀNH CÔNG VÌ ĐÃ CẬP NHẬT LOCAL
+                message.success('Đã hủy đặt sân thành công');
             }
 
-            // ✅ LUÔN LUÔN HIỆN THÀNH CÔNG - KẾT THÚC TẠI ĐÂY
-            message.success('Đã hủy đặt sân thành công');
-
-            console.log('🔄 [handleConfirmedCancel] Reloading page...');
-
-            // ✅ RELOAD TRANG NGAY LẬP TỨC
-            window.location.reload();
+            // ✅ KHÔNG CẦN RELOAD TRANG NỮA
+            // window.location.reload(); // Removed
 
         } catch (error) {
-            // ✅ CATCH TỔNG THỂ - VẪN HIỆN THÀNH CÔNG
-            console.error('❌ [handleConfirmedCancel] Unexpected error but showing success:', {
+            // ✅ CATCH TỔNG THỂ - XỬ LÝ LỖI VÀ ROLLBACK TRẠNG THÁI
+            console.error('❌ [handleConfirmedCancel] Unexpected error:', {
                 error: error,
                 message: error.message,
                 timestamp: new Date().toISOString(),
                 userLogin: 'bachnhhe173308'
             });
 
-            // ✅ DÙ CÓ LỖI GÌ VẪN HIỆN THÀNH CÔNG
-            message.success('Đã hủy đặt sân thành công');
+            // ✅ ROLLBACK TRẠNG THÁI VỀ TRẠNG THÁI CŨ
+            setBookings(prevBookings => 
+                prevBookings.map(booking => 
+                    booking.id === bookingToCancel.id 
+                        ? { 
+                            ...booking, 
+                            status: 'deposit-paid', // Rollback về trạng thái cũ
+                            originalStatus: bookingToCancel.originalStatus,
+                            statusId: bookingToCancel.statusId,
+                            paymentMethod: bookingToCancel.paymentMethod
+                          }
+                        : booking
+                )
+            );
 
-            // ✅ VÀ RELOAD TRANG
-            window.location.reload();
+            // Đóng modal confirm
+            closeCancelConfirm();
+            
+            message.error('Có lỗi xảy ra khi hủy đặt sân. Vui lòng thử lại!');
         }
     };
 
     // ✅ NEW: Function to show slots modal
     const showSlotsModal = (booking) => {
         console.log('🎯 [showSlotsModal] Booking slots:', booking.rawSlotData);
+        console.log('🎯 [showSlotsModal] Full booking data:', booking);
 
-        // Format slots data for table display
-        const formattedSlots = (booking.rawSlotData || []).map((slot, index) => ({
-            key: index,
-            slotNumber: index + 1,
-            courtName: slot.courtName || `Sân ${slot.courtId}`,
-            timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            duration: calculateDuration(slot.startTime, slot.endTime),
-            price: formatPrice(slot.price || slot.amount || slot.cost || 0),
-            rawPrice: slot.price || slot.amount || slot.cost || 0
-        }));
+        // Format slots data with correct individual prices
+        const formattedSlots = (booking.rawSlotData || []).map((slot, index) => {
+            // ✅ DEBUG: Log tất cả các trường có thể chứa giá tiền
+            console.log(`🔍 [Slot ${index + 1}] All possible price fields:`, {
+                price: slot.price,
+                amount: slot.amount,
+                cost: slot.cost,
+                totalPrice: slot.totalPrice,
+                finalPrice: slot.finalPrice,
+                money: slot.money,
+                value: slot.value,
+                slotPrice: slot.slotPrice,
+                unitPrice: slot.unitPrice,
+                originalPrice: slot.originalPrice,
+                basePrice: slot.basePrice,
+                rawSlot: slot
+            });
+
+            // ✅ FIX: Kiểm tra tất cả các trường có thể chứa giá tiền
+            const slotPrice = slot.price ||
+                slot.amount ||
+                slot.cost ||
+                slot.totalPrice ||
+                slot.finalPrice ||
+                slot.money ||
+                slot.value ||
+                slot.slotPrice ||
+                slot.unitPrice ||
+                slot.originalPrice ||
+                slot.basePrice ||
+                0;
+
+            console.log(`💰 [Slot ${index + 1}] Final calculated price:`, slotPrice);
+
+            return {
+                key: index,
+                slotNumber: index + 1,
+                courtName: slot.courtName || `Sân ${slot.courtId}`,
+                timeSlot: `${slot.startTime?.substring(0, 5)} - ${slot.endTime?.substring(0, 5)}`,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                duration: calculateDuration(slot.startTime, slot.endTime),
+                price: formatPrice(slotPrice), // ✅ Giá đã format để hiển thị
+                rawPrice: slotPrice // ✅ Giá thô để tính toán
+            };
+        });
+
+        // ✅ DEBUG: Kiểm tra tổng tiền tính từ slots
+        const calculatedTotal = formattedSlots.reduce((total, slot) => total + slot.rawPrice, 0);
+        console.log('📊 [showSlotsModal] Price verification:', {
+            bookingTotalPrice: booking.price,
+            calculatedFromSlots: calculatedTotal,
+            formattedSlots: formattedSlots,
+            match: booking.price === calculatedTotal
+        });
 
         setSelectedBookingSlots(formattedSlots);
         setIsSlotsModalOpen(true);
@@ -786,12 +869,6 @@ const BookingHistory = () => {
             key: 'duration',
             align: 'center',
         },
-        {
-            title: 'Giá tiền',
-            dataIndex: 'price',
-            key: 'price',
-            align: 'right',
-        },
     ];
 
     if (loading) {
@@ -876,7 +953,7 @@ const BookingHistory = () => {
                                                 </div>
 
                                                 <div className="court-info">
-                                                    <h3 className="court-name">{booking.courtName}</h3>
+                                                   
                                                     <span className={`court-type type-${booking.courtType.toLowerCase()
                                                         .replace(/\s+/g, '-')
                                                         .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
@@ -956,9 +1033,7 @@ const BookingHistory = () => {
                                                         onClick={() => showSlotsModal(booking)}
                                                         style={{ marginRight: '8px' }}
                                                     >
-                                                        <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                                                        </svg>
+                                                       
                                                         Xem slots ({booking.totalSlots})
                                                     </button>
 
@@ -966,10 +1041,7 @@ const BookingHistory = () => {
                                                         className="btn btn-outline btn-sm"
                                                         onClick={() => openModal(booking)}
                                                     >
-                                                        <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                        </svg>
+                                                       
                                                         Chi tiết
                                                     </button>
 
@@ -980,9 +1052,7 @@ const BookingHistory = () => {
                                                             onClick={() => showCancelConfirm(booking)}
                                                             style={{ marginLeft: '8px' }}
                                                         >
-                                                            <svg className="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                            </svg>
+                                                            
                                                             Hủy
                                                         </button>
                                                     )}
@@ -1099,7 +1169,6 @@ const BookingHistory = () => {
                         const match = slot.duration.match(/(\d+)/);
                         return total + (match ? parseInt(match[1]) : 0);
                     }, 0)} giờ</p>
-                    <p><strong>Tổng tiền:</strong> {formatPrice(selectedBookingSlots.reduce((total, slot) => total + slot.rawPrice, 0))}</p>
                 </div>
 
                 <Table

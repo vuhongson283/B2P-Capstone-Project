@@ -509,18 +509,50 @@ const FacilityTable = () => {
   };
 
   // ✅ HANDLE PREVIEW IMAGE
+
   const handlePreviewImage = (imageUrl, caption) => {
-    let previewUrl = imageUrl;
-    if (imageUrl.includes('thumbnail')) {
-      previewUrl = imageUrl.replace('thumbnail', 'uc');
-    }
+  // Convert URL trước khi đưa vào modal
+  const convertedUrl = convertGoogleDriveUrl(imageUrl);
+  
+  Modal.info({
+    title: caption || 'Xem ảnh',
+    content: (
+      <div style={{ textAlign: 'center' }}>
+        <img
+          src={convertedUrl}
+          alt="Preview"
+          referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
+          style={{
+            maxWidth: '100%',
+            maxHeight: '500px',
+            objectFit: 'contain',
+            borderRadius: '8px'
+          }}
+          onError={(e) => {
+            // Nếu converted URL fail, thử URL gốc
+            if (e.target.src !== imageUrl) {
+              e.target.src = imageUrl;
+            } else {
+              e.target.src = "/src/assets/images/default.jpg";
+            }
+          }}
+        />
+      </div>
+    ),
+    width: 700,
+    okText: 'Đóng',
+  });
+};
+  const handlePreviewImageFromElement = (imgElement, caption) => {
+    const currentSrc = imgElement.src; // Lấy src hiện tại của img đã load thành công
 
     Modal.info({
       title: caption || 'Xem ảnh',
       content: (
         <div style={{ textAlign: 'center' }}>
           <img
-            src={previewUrl}
+            src={currentSrc} // Dùng src đã work từ img tag
             alt="Preview"
             style={{
               maxWidth: '100%',
@@ -529,7 +561,7 @@ const FacilityTable = () => {
               borderRadius: '8px'
             }}
             onError={(e) => {
-              e.target.src = imageUrl;
+              e.target.src = "/src/assets/images/default.jpg";
             }}
           />
         </div>
@@ -1526,18 +1558,19 @@ const FacilityTable = () => {
                           cover={
                             <div style={{ height: 120, overflow: 'hidden' }}>
                               <img
-                                src={image.imageUrl}
+                                src={convertGoogleDriveUrl(image.imageUrl)}
                                 alt={image.caption || 'Facility image'}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
                                 style={{
                                   width: '100%',
                                   height: '100%',
                                   objectFit: 'cover',
-                                  cursor: 'pointer'
+                                  cursor: 'pointer',
+                                  display: 'block'
                                 }}
                                 onClick={() => handlePreviewImage(image.imageUrl, image.caption)}
-                                onError={(e) => {
-                                  e.target.src = "https://placehold.co/300x200?text=Error+Loading";
-                                }}
+                                onError={(e) => handleImageError(e, image.imageUrl)}
                               />
                             </div>
                           }

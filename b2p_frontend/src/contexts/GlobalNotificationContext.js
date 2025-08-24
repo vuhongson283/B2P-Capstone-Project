@@ -284,6 +284,126 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         });
 
     }, []);
+    const handleGlobalBookingPaid = useCallback((notification) => {
+        // Nếu đơn đã hủy thì không gửi thông báo thanh toán
+        if (
+            notification.status?.toLowerCase() === 'cancelled' ||
+            notification.action === 'cancelled' ||
+            notification.statusId === 9 // Nếu statusId 9 là "Đã hủy"
+        ) {
+            console.log('⏭️ Đơn đã hủy, không gửi thông báo thanh toán');
+            return;
+        }
+
+        console.log('🔔 GLOBAL: Booking paid received!', notification);
+
+        // ✅ SUPER STRONG DEBOUNCE - USING WINDOW OBJECT
+        const debounceKey = `payment-${notification.bookingId}`;
+        const now = Date.now();
+
+        // Initialize global tracking
+        if (!window.paymentNotificationTracker) {
+            window.paymentNotificationTracker = {};
+        }
+
+        // Check if we already processed this payment recently
+        if (window.paymentNotificationTracker[debounceKey]) {
+            const timeSinceLastCall = now - window.paymentNotificationTracker[debounceKey];
+            if (timeSinceLastCall < 10000) { // 10 seconds debounce
+                console.log(`⏭️ SUPER DEBOUNCE: Ignoring duplicate payment for booking ${notification.bookingId} (${timeSinceLastCall}ms ago)`);
+                return; // ✅ EARLY EXIT - NO NOTIFICATION
+            }
+        }
+
+        // Mark this payment as processed
+        window.paymentNotificationTracker[debounceKey] = now;
+
+        // Clean up old entries after 30 seconds
+        setTimeout(() => {
+            if (window.paymentNotificationTracker && window.paymentNotificationTracker[debounceKey]) {
+                delete window.paymentNotificationTracker[debounceKey];
+                console.log(`🧹 Cleaned up payment tracker for booking ${notification.bookingId}`);
+            }
+        }, 30000);
+
+        console.log(`✅ Processing payment notification for booking ${notification.bookingId}`);
+
+        cleanupOldNotifications();
+
+        // ✅ ALSO DESTROY ANY EXISTING ANTD NOTIFICATION
+        const notificationKey = `payment-${notification.bookingId}`;
+        antdNotification.destroy(notificationKey);
+
+        // Rest of your existing code...
+        const newNotification = {
+            id: `global-booking-paid-${notification.bookingId}-${Date.now()}`,
+            type: 'booking_paid',
+            title: 'Thanh toán thành công',
+            message: `${notification.courtName || 'Sân thể thao'} - ${notification.date} ${notification.timeSlot}`,
+            data: notification,
+            timestamp: new Date().toISOString(),
+            read: false
+        };
+
+        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
+        setUnreadCount(prev => prev + 1);
+        console.log('💾 GLOBAL paid notification added to persistent storage');
+
+        // Show notification after small delay
+        setTimeout(() => {
+            const notificationContent = (
+                <div style={{ cursor: 'pointer' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                        fontWeight: 'bold',
+                        color: '#52c41a'
+                    }}>
+                        <CheckCircleOutlined style={{ marginRight: '8px', fontSize: '16px' }} />
+                        💰 Thanh toán thành công
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
+                        <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
+                        <div><strong>Khách hàng:</strong> {notification.customerName || notification.customerEmail?.split('@')[0] || 'Khách'}</div>
+                        <div><strong>Thời gian:</strong> {notification.date} • {notification.timeSlot}</div>
+                        {notification.totalAmount && (
+                            <div><strong>Số tiền:</strong> {Number(notification.totalAmount).toLocaleString('vi-VN')} VND</div>
+                        )}
+                        <div style={{ marginTop: '4px', color: '#52c41a', fontWeight: 'bold' }}>
+                            ✅ Trạng thái: Đã Cọc
+                        </div>
+                    </div>
+                </div>
+            );
+
+            antdNotification.success({
+                key: notificationKey,
+                message: notificationContent,
+                duration: 6,
+                placement: 'topRight',
+                style: {
+                    width: '420px',
+                    borderLeft: '4px solid #52c41a',
+                    marginTop: '10px'
+                },
+                onClick: () => {
+                    console.log('🔔 Payment notification clicked');
+                    if (window.location.pathname !== '/court-owner/booking-management') {
+                        window.location.href = '/court-owner/booking-management';
+                    }
+                    antdNotification.destroy(notificationKey);
+                }
+            });
+
+            // Trigger UI update
+            window.dispatchEvent(new CustomEvent('bookingPaidUpdate', {
+                detail: notification
+            }));
+
+        }, 200); // Delay to ensure previous is destroyed
+
+    }, []);
 
     const handleConnectionChanged = useCallback((connected) => {
         console.log(`🔗 GLOBAL connection status changed: ${connected ? 'Connected' : 'Disconnected'}`);
@@ -343,19 +463,33 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
         console.log('🚀 GLOBAL: Setting up PERMANENT global handlers...');
 
+        // ✅ ADD DEBUG LOGS
+        console.log('🔍 [DEBUG] signalRService object:', signalRService);
+        console.log('🔍 [DEBUG] signalRService.on function:', typeof signalRService.on);
+
         // ✅ Set handlers directly on signalRService
         signalRService.on('onBookingCreated', handleGlobalBookingCreated);
-        signalRService.on('onBookingUpdated', handleGlobalBookingUpdated);
+        console.log('✅ Registered onBookingCreated handler');
+
+        signalRService.on('BookingUpdated', handleGlobalBookingUpdated);
+        console.log('✅ Registered BookingUpdated handler');
+
         signalRService.on('onBookingCompleted', handleGlobalBookingUpdated);
+        console.log('✅ Registered onBookingCompleted handler');
+
         signalRService.on('onBookingCancelled', handleGlobalBookingUpdated);
+        console.log('✅ Registered onBookingCancelled handler');
+
         signalRService.on('onConnectionChanged', handleConnectionChanged);
+        console.log('✅ Registered onConnectionChanged handler');
+
+        signalRService.on('onBookingPaid', handleGlobalBookingPaid);
+        console.log('✅ Registered onBookingPaid handler');
 
         globalHandlersSet.current = true;
         console.log('✅ GLOBAL: Permanent handlers set');
 
-        // ✅ NO CLEANUP - Let handlers persist across page changes
-
-    }, [handleGlobalBookingCreated, handleGlobalBookingUpdated, handleConnectionChanged]);
+    }, [handleGlobalBookingCreated, handleGlobalBookingUpdated, handleConnectionChanged, handleGlobalBookingPaid]);
 
     // ✅ Initialize connection ONCE
     useEffect(() => {
