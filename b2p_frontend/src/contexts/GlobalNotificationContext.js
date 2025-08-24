@@ -203,125 +203,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
     }, []);
 
-    // Thêm function này vào GlobalNotificationContext.js (sau handleGlobalBookingPaid):
-    const handleGlobalBookingCancelled = useCallback((notification) => {
-        console.log('🔔 GLOBAL: Booking cancelled received!', notification);
-
-        // ✅ SUPER DEBOUNCE FOR CANCELLATION
-        const debounceKey = `cancel-${notification.bookingId}`;
-        const now = Date.now();
-
-        if (!window.cancellationNotificationTracker) {
-            window.cancellationNotificationTracker = {};
-        }
-
-        if (window.cancellationNotificationTracker[debounceKey]) {
-            const timeSinceLastCall = now - window.cancellationNotificationTracker[debounceKey];
-            if (timeSinceLastCall < 10000) {
-                console.log(`⏭️ DEBOUNCE: Ignoring duplicate cancellation for booking ${notification.bookingId}`);
-                return;
-            }
-        }
-
-        window.cancellationNotificationTracker[debounceKey] = now;
-
-        setTimeout(() => {
-            if (window.cancellationNotificationTracker && window.cancellationNotificationTracker[debounceKey]) {
-                delete window.cancellationNotificationTracker[debounceKey];
-            }
-        }, 30000);
-
-        console.log(`✅ Processing cancellation notification for booking ${notification.bookingId}`);
-
-        cleanupOldNotifications();
-
-        // ✅ DESTROY ANY EXISTING NOTIFICATIONS FOR THIS BOOKING
-        const notificationKey = `cancel-${notification.bookingId}`;
-        const paymentKey = `payment-${notification.bookingId}`;
-        antdNotification.destroy(notificationKey);
-        antdNotification.destroy(paymentKey);
-
-        // ✅ BLOCK FUTURE PAYMENT NOTIFICATIONS FOR THIS BOOKING
-        if (!window.blockedPaymentNotifications) {
-            window.blockedPaymentNotifications = new Set();
-        }
-        window.blockedPaymentNotifications.add(notification.bookingId.toString());
-
-        setTimeout(() => {
-            if (window.blockedPaymentNotifications) {
-                window.blockedPaymentNotifications.delete(notification.bookingId.toString());
-            }
-        }, 60000); // Block for 1 minute
-
-        const newNotification = {
-            id: `global-booking-cancelled-${notification.bookingId}-${Date.now()}`,
-            type: 'booking_cancelled',
-            title: 'Đơn đặt sân đã bị hủy',
-            message: `${notification.courtName || 'Sân thể thao'} - ${notification.date} ${notification.timeSlot}`,
-            data: notification,
-            timestamp: new Date().toISOString(),
-            read: false
-        };
-
-        setNotifications(prev => [newNotification, ...prev.slice(0, 49)]);
-        setUnreadCount(prev => prev + 1);
-        console.log('💾 GLOBAL cancellation notification added to persistent storage');
-
-        setTimeout(() => {
-            const notificationContent = (
-                <div style={{ cursor: 'pointer' }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: '8px',
-                        fontWeight: 'bold',
-                        color: '#ff4d4f'
-                    }}>
-                        <CloseCircleOutlined style={{ marginRight: '8px', fontSize: '16px' }} />
-                        ❌ Đơn đặt sân đã bị hủy
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
-                        <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
-                        <div><strong>Khách hàng:</strong> {notification.customerName || 'Khách'}</div>
-                        <div><strong>Thời gian:</strong> {notification.date} • {notification.timeSlot}</div>
-                        {notification.reason && (
-                            <div><strong>Lý do:</strong> {notification.reason}</div>
-                        )}
-                        <div style={{ marginTop: '4px', color: '#ff4d4f', fontWeight: 'bold' }}>
-                            ❌ Trạng thái: Đã Hủy
-                        </div>
-                    </div>
-                </div>
-            );
-
-            antdNotification.error({
-                key: notificationKey,
-                message: notificationContent,
-                duration: 6,
-                placement: 'topRight',
-                style: {
-                    width: '420px',
-                    borderLeft: '4px solid #ff4d4f',
-                    marginTop: '10px'
-                },
-                onClick: () => {
-                    console.log('🔔 Cancellation notification clicked');
-                    if (window.location.pathname !== '/court-owner/booking-management') {
-                        window.location.href = '/court-owner/booking-management';
-                    }
-                    antdNotification.destroy(notificationKey);
-                }
-            });
-
-            // Trigger UI update
-            window.dispatchEvent(new CustomEvent('bookingCancelledUpdate', {
-                detail: notification
-            }));
-
-        }, 200);
-
-    }, []);
-
     // ✅ PERSISTENT Global booking updated handler
     const handleGlobalBookingUpdated = useCallback((notification) => {
         console.log('🔔 GLOBAL: Booking updated received!', notification);
@@ -404,11 +285,6 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
     }, []);
     const handleGlobalBookingPaid = useCallback((notification) => {
-        if (window.blockedPaymentNotifications &&
-            window.blockedPaymentNotifications.has(notification.bookingId.toString())) {
-            console.log(`⏭️ BLOCKED: Payment notification for cancelled booking ${notification.bookingId}`);
-            return;
-        }
         // Nếu đơn đã hủy thì không gửi thông báo thanh toán
         if (
             notification.status?.toLowerCase() === 'cancelled' ||
@@ -595,14 +471,14 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         signalRService.on('onBookingCreated', handleGlobalBookingCreated);
         console.log('✅ Registered onBookingCreated handler');
 
-        signalRService.on('BookingCancelled', handleGlobalBookingCancelled); // ✅ USE DEDICATED HANDLER
-        console.log('✅ Registered BookingCancelled handler');
+        signalRService.on('BookingUpdated', handleGlobalBookingUpdated);
+        console.log('✅ Registered BookingUpdated handler');
 
         signalRService.on('onBookingCompleted', handleGlobalBookingUpdated);
         console.log('✅ Registered onBookingCompleted handler');
 
-        // ❌ REMOVE THIS DUPLICATE LINE:
-        // signalRService.on('onBookingCancelled', handleGlobalBookingUpdated);
+        signalRService.on('onBookingCancelled', handleGlobalBookingUpdated);
+        console.log('✅ Registered onBookingCancelled handler');
 
         signalRService.on('onConnectionChanged', handleConnectionChanged);
         console.log('✅ Registered onConnectionChanged handler');
@@ -613,7 +489,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         globalHandlersSet.current = true;
         console.log('✅ GLOBAL: Permanent handlers set');
 
-    }, [handleGlobalBookingCreated, handleGlobalBookingUpdated, handleConnectionChanged, handleGlobalBookingPaid, handleGlobalBookingCancelled]);
+    }, [handleGlobalBookingCreated, handleGlobalBookingUpdated, handleConnectionChanged, handleGlobalBookingPaid]);
 
     // ✅ Initialize connection ONCE
     useEffect(() => {
