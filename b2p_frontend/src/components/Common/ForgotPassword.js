@@ -10,6 +10,9 @@ import {
 } from "../../services/apiService";
 
 const ForgotPassword = (props) => {
+  useEffect(() => {
+    document.title = "Quên mật khẩu - B2P";
+  }, []);
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState("");
   const [loading, setLoading] = useState(false);

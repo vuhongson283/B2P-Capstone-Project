@@ -42,7 +42,7 @@ const App = () => {
       setUserLocation(location);
       console.log(`📍 Vị trí: ${location.lat}, ${location.lng}`);
     } catch (error) {
-      console.error('❌ Lỗi khi lấy vị trí:', {
+      console.error("❌ Lỗi khi lấy vị trí:", {
         error: error.message,
         stack: error.stack,
       });
@@ -73,29 +73,37 @@ const App = () => {
   // ✅ Show loading while AuthContext is loading
   if (isLoading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '16px'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          fontSize: "16px",
+        }}
+      >
         🔄 Đang tải thông tin người dùng...
       </div>
     );
   }
 
   // ✅ Create currentUser object for SignalR (normalize the structure)
-  const currentUser = user ? {
-    userId: user.userId || user.id,
-    fullName: user.fullName || user.name || user.userName || user.username,
-    userName: user.userName || user.username,
-    avatar: user.avatar || user.profilePicture ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || user.userName || user.username || 'User')}&background=27ae60&color=fff&size=200`,
-    roleId: user.roleId,
-    roleName: user.roleName,
-    loginTime: new Date().toISOString(),
-  } : null;
+  const currentUser = user
+    ? {
+        userId: user.userId || user.id,
+        fullName: user.fullName || user.name || user.userName || user.username,
+        userName: user.userName || user.username,
+        avatar:
+          user.avatar ||
+          user.profilePicture ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            user.fullName || user.userName || user.username || "User"
+          )}&background=27ae60&color=fff&size=200`,
+        roleId: user.roleId,
+        roleName: user.roleName,
+        loginTime: new Date().toISOString(),
+      }
+    : null;
 
   return (
     <SignalRProvider>

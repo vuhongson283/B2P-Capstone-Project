@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Typography, DatePicker } from 'antd';
-import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import { getAdminReport } from '../../services/apiService';
-import './AdminDashboard.scss';
+import React, { useState, useEffect } from "react";
+import { Card, Row, Col, Statistic, Table, Typography, DatePicker } from "antd";
+import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
+import { getAdminReport } from "../../services/apiService";
+import "./AdminDashboard.scss";
 
 const { Title, Text } = Typography;
 
 const CourtOwnerDashboard = () => {
+  useEffect(() => {
+    document.title = "Thống kê - B2P";
+  }, []);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [topFacilities, setTopFacilities] = useState([]);
@@ -19,7 +22,7 @@ const CourtOwnerDashboard = () => {
       try {
         // Sửa lại cách lấy month và year
         let month, year;
-        
+
         if (selectedDate) {
           month = selectedDate.month() + 1;
           year = selectedDate.year();
@@ -28,9 +31,9 @@ const CourtOwnerDashboard = () => {
           month = currentDate.getMonth() + 1;
           year = currentDate.getFullYear();
         }
-        
+
         const response = await getAdminReport(month, year);
-        console.log('Response received:', response); // Log response
+        console.log("Response received:", response); // Log response
 
         if (response.success) {
           setStats(response.data.monthlyStats);
@@ -38,11 +41,11 @@ const CourtOwnerDashboard = () => {
           setPopularCourtCategories(response.data.popularCourtCategories);
           setTotalStats(response.data.totalStats);
         } else {
-          console.error('Failed to fetch admin report:', response.message);
+          console.error("Failed to fetch admin report:", response.message);
         }
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error("Error fetching dashboard data:", error);
         setLoading(false);
       }
     };
@@ -52,46 +55,46 @@ const CourtOwnerDashboard = () => {
 
   // Hàm format tiền tệ
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('vi-VN', { 
-      style: 'currency', 
-      currency: 'VND' 
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(value);
   };
 
   // Columns cho bảng top facilities
   const facilityColumns = [
     {
-      title: 'Tên Cơ Sở',
-      dataIndex: 'facilityName',
-      key: 'facilityName',
+      title: "Tên Cơ Sở",
+      dataIndex: "facilityName",
+      key: "facilityName",
     },
     {
-      title: 'Số Đơn',
-      dataIndex: 'totalBooking',
-      key: 'totalBooking',
-      align: 'center',
+      title: "Số Đơn",
+      dataIndex: "totalBooking",
+      key: "totalBooking",
+      align: "center",
     },
     {
-      title: 'Doanh Thu',
-      dataIndex: 'totalRevenue',
-      key: 'totalRevenue',
+      title: "Doanh Thu",
+      dataIndex: "totalRevenue",
+      key: "totalRevenue",
       render: (value) => formatCurrency(value),
-      align: 'right',
+      align: "right",
     },
   ];
 
   // Columns cho bảng loại sân phổ biến
   const courtCategoryColumns = [
     {
-      title: 'Loại Sân',
-      dataIndex: 'categoryName',
-      key: 'categoryName',
+      title: "Loại Sân",
+      dataIndex: "categoryName",
+      key: "categoryName",
     },
     {
-      title: 'Số Lượng Đặt',
-      dataIndex: 'totalBooking', // Thay đổi từ bookingCount sang totalBooking
-      key: 'totalBooking',
-      align: 'center',
+      title: "Số Lượng Đặt",
+      dataIndex: "totalBooking", // Thay đổi từ bookingCount sang totalBooking
+      key: "totalBooking",
+      align: "center",
     },
   ];
 
@@ -99,12 +102,15 @@ const CourtOwnerDashboard = () => {
     <div className="court-owner-dashboard">
       <div className="dashboard-header">
         <Title level={3} className="dashboard-title">
-          Thống Kê {selectedDate ? `Tháng ${selectedDate.month() + 1}/${selectedDate.year()}` : 'Tháng Hiện Tại'}
+          Thống Kê{" "}
+          {selectedDate
+            ? `Tháng ${selectedDate.month() + 1}/${selectedDate.year()}`
+            : "Tháng Hiện Tại"}
         </Title>
-        <DatePicker 
-          picker="month" 
+        <DatePicker
+          picker="month"
           onChange={(date) => {
-            console.log('DatePicker onChange:', date);
+            console.log("DatePicker onChange:", date);
             setSelectedDate(date);
           }}
           placeholder="Chọn tháng"
@@ -113,7 +119,7 @@ const CourtOwnerDashboard = () => {
           allowClear={true}
         />
       </div>
-      
+
       {/* Thống kê tổng quan */}
       <Row gutter={[16, 16]} className="stats-row">
         <Col xs={24} sm={12} md={8} lg={6}>
@@ -122,7 +128,7 @@ const CourtOwnerDashboard = () => {
               title="Tổng Đơn Đặt"
               value={stats?.totalBooking || 0}
               prefix={<ArrowUpOutlined />}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
@@ -133,7 +139,7 @@ const CourtOwnerDashboard = () => {
               value={stats?.totalRevenue ? stats.totalRevenue / 1000000 : 0}
               precision={2}
               suffix="triệu"
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
@@ -142,7 +148,7 @@ const CourtOwnerDashboard = () => {
             <Statistic
               title="Đơn Hoàn Thành"
               value={stats?.completedBookings || 0}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
@@ -151,7 +157,7 @@ const CourtOwnerDashboard = () => {
             <Statistic
               title="Đơn Đã Hủy"
               value={stats?.cancelledBookings || 0}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: "#cf1322" }}
               prefix={<ArrowDownOutlined />}
             />
           </Card>
@@ -161,8 +167,8 @@ const CourtOwnerDashboard = () => {
       {/* Thống kê chi tiết */}
       <Row gutter={[16, 16]} className="detailed-stats-row">
         <Col xs={24} md={12}>
-          <Card 
-            title="Top 3 Cơ Sở Hoạt Động Tốt Nhất" 
+          <Card
+            title="Top 3 Cơ Sở Hoạt Động Tốt Nhất"
             loading={loading}
             className="top-facilities-card"
           >
@@ -176,8 +182,8 @@ const CourtOwnerDashboard = () => {
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card 
-            title="Top 3 Loại Sân Phổ Biến" 
+          <Card
+            title="Top 3 Loại Sân Phổ Biến"
             loading={loading}
             className="popular-court-categories-card"
           >
@@ -195,8 +201,8 @@ const CourtOwnerDashboard = () => {
       {/* Thống kê khác */}
       <Row gutter={[16, 16]} className="other-stats-row">
         <Col xs={24}>
-          <Card 
-            title="Thống Kê Khác" 
+          <Card
+            title="Thống Kê Khác"
             loading={loading}
             className="additional-stats-card"
           >
@@ -223,7 +229,11 @@ const CourtOwnerDashboard = () => {
                 <Col xs={24} sm={12} md={8} lg={6}>
                   <div className="stat-item">
                     <Text strong>Doanh Thu Trung Bình/Đơn:</Text>
-                    <Text>{stats?.averageRevenuePerBooking ? formatCurrency(stats.averageRevenuePerBooking) : 0}</Text>
+                    <Text>
+                      {stats?.averageRevenuePerBooking
+                        ? formatCurrency(stats.averageRevenuePerBooking)
+                        : 0}
+                    </Text>
                   </div>
                 </Col>
               </Row>

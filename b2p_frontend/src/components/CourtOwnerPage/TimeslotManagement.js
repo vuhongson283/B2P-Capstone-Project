@@ -1,7 +1,13 @@
-import React, { useState, useEffect,useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { getFacilitiesByCourtOwnerId, getTimeslotsByFacilityId, createTimeslot, deleteTimeslot, updateTimeslot } from '../../services/apiService';
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  getFacilitiesByCourtOwnerId,
+  getTimeslotsByFacilityId,
+  createTimeslot,
+  deleteTimeslot,
+  updateTimeslot,
+} from "../../services/apiService";
 import {
   Table,
   Button,
@@ -22,7 +28,7 @@ import {
   Tooltip,
   Switch,
   InputNumber,
-} from 'antd';
+} from "antd";
 import {
   ClockCircleOutlined,
   PlusOutlined,
@@ -35,21 +41,24 @@ import {
   InfoCircleOutlined,
   PercentageOutlined,
   QuestionCircleOutlined,
-  FilterOutlined
-} from '@ant-design/icons';
-import dayjs from 'dayjs';
-import './TimeslotManagement.scss';
-import { set } from 'nprogress';
+  FilterOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import "./TimeslotManagement.scss";
+import { set } from "nprogress";
 const { Text } = Typography;
 const { Option } = Select;
 
 // ✅ Updated status mapping
 const STATUS_CONFIG = {
-  1: { name: 'Active', description: 'Hoạt động', color: 'success' },
-  2: { name: 'Inactive', description: 'Tạm dừng', color: 'default' }
+  1: { name: "Active", description: "Hoạt động", color: "success" },
+  2: { name: "Inactive", description: "Tạm dừng", color: "default" },
 };
 
 const TimeslotManagement = () => {
+  useEffect(() => {
+    document.title = "Quản lý khung giờ - B2P";
+  }, []);
   const { userId, isLoggedIn, isLoading: authLoading } = useAuth();
   // States
   const [facilities, setFacilities] = useState([]);
@@ -69,19 +78,24 @@ const TimeslotManagement = () => {
   const [stats, setStats] = useState({
     totalSlots: 0,
     activeSlots: 0,
-    avgDiscount: 0
+    avgDiscount: 0,
   });
 
   // ✅ Get Court Owner ID from localStorage
   const getCourtOwnerId = useCallback(() => {
-    console.log('🔍 Getting court owner ID - isLoggedIn:', isLoggedIn, 'userId:', userId);
+    console.log(
+      "🔍 Getting court owner ID - isLoggedIn:",
+      isLoggedIn,
+      "userId:",
+      userId
+    );
 
     if (isLoggedIn && userId) {
       return userId;
     }
 
     // ✅ Không có fallback - return null khi chưa đăng nhập
-    console.warn('⚠️ Court owner not logged in');
+    console.warn("⚠️ Court owner not logged in");
     return null;
   }, [isLoggedIn, userId]);
 
@@ -94,21 +108,26 @@ const TimeslotManagement = () => {
   useEffect(() => {
     if (facilityId && facilities.length > 0) {
       const facilityIdNum = parseInt(facilityId);
-      const facilityExists = facilities.some(f => f.facilityId === facilityIdNum);
+      const facilityExists = facilities.some(
+        (f) => f.facilityId === facilityIdNum
+      );
 
       if (facilityExists) {
         setSelectedFacility(facilityIdNum);
 
         // Get status from URL
         const searchParams = new URLSearchParams(location.search);
-        const status = searchParams.get('status');
+        const status = searchParams.get("status");
         if (status) {
           setSelectedStatus(parseInt(status));
         }
       } else {
         // Redirect to first facility if URL facility doesn't exist
         if (facilities.length > 0) {
-          navigate(`/court-owner/facility/time-slots/${facilities[0].facilityId}`, { replace: true });
+          navigate(
+            `/court-owner/facility/time-slots/${facilities[0].facilityId}`,
+            { replace: true }
+          );
         }
       }
     }
@@ -133,51 +152,63 @@ const TimeslotManagement = () => {
     setFacilitiesLoading(true);
     try {
       const courtOwnerId = getCourtOwnerId();
-      console.log('Loading facilities for court owner:', courtOwnerId);
+      console.log("Loading facilities for court owner:", courtOwnerId);
 
       const response = await getFacilitiesByCourtOwnerId(
         courtOwnerId,
         "", // facilityName - empty to get all
-        1,  // statusId - 1 for active only
-        1,  // currentPage
+        1, // statusId - 1 for active only
+        1, // currentPage
         100 // itemsPerPage - high number to get all
       );
 
-      console.log('Facilities API response:', response.data);
+      console.log("Facilities API response:", response.data);
 
-      if (response.data && response.data.items && Array.isArray(response.data.items)) {
+      if (
+        response.data &&
+        response.data.items &&
+        Array.isArray(response.data.items)
+      ) {
         const facilitiesData = response.data.items;
 
         // Map to simple format for dropdown
         const mappedFacilities = facilitiesData.map((facility) => ({
           facilityId: facility.facilityId,
           facilityName: facility.facilityName,
-          status: facility.status?.statusName || 'Active'
+          status: facility.status?.statusName || "Active",
         }));
 
-        console.log('Mapped facilities:', mappedFacilities);
+        console.log("Mapped facilities:", mappedFacilities);
         setFacilities(mappedFacilities);
 
         // ✅ Auto select from URL or first facility
         if (mappedFacilities.length > 0) {
           if (facilityId) {
             const facilityIdNum = parseInt(facilityId);
-            const facilityExists = mappedFacilities.some(f => f.facilityId === facilityIdNum);
+            const facilityExists = mappedFacilities.some(
+              (f) => f.facilityId === facilityIdNum
+            );
             if (!facilityExists) {
-              navigate(`/court-owner/facility/time-slots/${mappedFacilities[0].facilityId}`, { replace: true });
+              navigate(
+                `/court-owner/facility/time-slots/${mappedFacilities[0].facilityId}`,
+                { replace: true }
+              );
             }
           } else {
-            navigate(`/court-owner/facility/time-slots/${mappedFacilities[0].facilityId}`, { replace: true });
+            navigate(
+              `/court-owner/facility/time-slots/${mappedFacilities[0].facilityId}`,
+              { replace: true }
+            );
           }
         }
       } else {
-        console.log('No facilities found in response');
-        message.info('Không tìm thấy cơ sở nào');
+        console.log("No facilities found in response");
+        message.info("Không tìm thấy cơ sở nào");
         setFacilities([]);
       }
     } catch (error) {
-      console.error('Error loading facilities:', error);
-      message.error('Có lỗi xảy ra khi tải danh sách cơ sở');
+      console.error("Error loading facilities:", error);
+      message.error("Có lỗi xảy ra khi tải danh sách cơ sở");
       setFacilities([]);
     } finally {
       setFacilitiesLoading(false);
@@ -185,29 +216,48 @@ const TimeslotManagement = () => {
   };
 
   // ✅ Updated loadTimeslots to accept statusId parameter
-  const loadTimeslots = async (facilityId, statusId = null, pageNumber = 1, pageSize = 100) => {
+  const loadTimeslots = async (
+    facilityId,
+    statusId = null,
+    pageNumber = 1,
+    pageSize = 100
+  ) => {
     setLoading(true);
     try {
-      console.log('Loading timeslots for facility:', facilityId, 'status:', statusId);
+      console.log(
+        "Loading timeslots for facility:",
+        facilityId,
+        "status:",
+        statusId
+      );
 
-      const response = await getTimeslotsByFacilityId(facilityId, statusId, pageNumber, pageSize);
-      console.log('Timeslots API response:', response.data);
+      const response = await getTimeslotsByFacilityId(
+        facilityId,
+        statusId,
+        pageNumber,
+        pageSize
+      );
+      console.log("Timeslots API response:", response.data);
 
-      if (response.data && response.data.items && Array.isArray(response.data.items)) {
+      if (
+        response.data &&
+        response.data.items &&
+        Array.isArray(response.data.items)
+      ) {
         const timeslotsData = response.data.items;
-        console.log('Timeslots data:', timeslotsData);
+        console.log("Timeslots data:", timeslotsData);
         setTimeslots(timeslotsData);
       } else {
-        console.log('No timeslots found in response');
+        console.log("No timeslots found in response");
         setTimeslots([]);
       }
     } catch (error) {
-      console.error('Error loading timeslots:', error);
+      console.error("Error loading timeslots:", error);
       if (error.response?.status === 404) {
         setTimeslots([]);
-        message.info('Chưa có khung giờ nào cho cơ sở này');
+        message.info("Chưa có khung giờ nào cho cơ sở này");
       } else {
-        message.error('Có lỗi xảy ra khi tải danh sách khung giờ');
+        message.error("Có lỗi xảy ra khi tải danh sách khung giờ");
         setTimeslots([]);
       }
     } finally {
@@ -217,43 +267,57 @@ const TimeslotManagement = () => {
 
   const calculateStats = () => {
     const totalSlots = timeslots.length;
-    const activeSlots = timeslots.filter(slot => slot.statusId === 1).length;
-    const slotsWithDiscount = timeslots.filter(slot => slot.discount !== null && slot.discount > 0);
-    const avgDiscount = slotsWithDiscount.length > 0
-      ? slotsWithDiscount.reduce((sum, slot) => sum + slot.discount, 0) / slotsWithDiscount.length
-      : 0;
+    const activeSlots = timeslots.filter((slot) => slot.statusId === 1).length;
+    const slotsWithDiscount = timeslots.filter(
+      (slot) => slot.discount !== null && slot.discount > 0
+    );
+    const avgDiscount =
+      slotsWithDiscount.length > 0
+        ? slotsWithDiscount.reduce((sum, slot) => sum + slot.discount, 0) /
+          slotsWithDiscount.length
+        : 0;
 
     setStats({
       totalSlots,
       activeSlots,
-      avgDiscount
+      avgDiscount,
     });
   };
 
   const handleFacilityChange = (facilityId) => {
-    console.log('Facility changed to:', facilityId);
+    console.log("Facility changed to:", facilityId);
     setSelectedFacility(facilityId);
     setTimeslots([]);
 
     // ✅ Update URL with correct nested route
     const params = new URLSearchParams(location.search);
     if (selectedStatus !== null) {
-      params.set('status', selectedStatus);
+      params.set("status", selectedStatus);
     }
-    navigate(`/court-owner/facility/time-slots/${facilityId}${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
+    navigate(
+      `/court-owner/facility/time-slots/${facilityId}${
+        params.toString() ? "?" + params.toString() : ""
+      }`,
+      { replace: true }
+    );
   };
 
   // ✅ Handle status filter change
   const handleStatusFilterChange = (statusId) => {
-    console.log('Status filter changed to:', statusId);
+    console.log("Status filter changed to:", statusId);
     setSelectedStatus(statusId);
 
     // ✅ Update URL with correct nested route
     const params = new URLSearchParams();
     if (statusId !== null) {
-      params.set('status', statusId);
+      params.set("status", statusId);
     }
-    navigate(`/court-owner/facility/time-slots/${selectedFacility}${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
+    navigate(
+      `/court-owner/facility/time-slots/${selectedFacility}${
+        params.toString() ? "?" + params.toString() : ""
+      }`,
+      { replace: true }
+    );
   };
 
   const handleAddTimeslot = () => {
@@ -265,7 +329,7 @@ const TimeslotManagement = () => {
   };
 
   const handleEditTimeslot = (record) => {
-    console.log('🔄 Editing timeslot:', record);
+    console.log("🔄 Editing timeslot:", record);
 
     setEditingTimeslot(record);
 
@@ -273,8 +337,8 @@ const TimeslotManagement = () => {
     form.setFieldsValue({
       statusId: record.statusId,
       discount: record.discount || 0,
-      startTime: dayjs(record.startTime, 'HH:mm:ss'),
-      endTime: dayjs(record.endTime, 'HH:mm:ss')
+      startTime: dayjs(record.startTime, "HH:mm:ss"),
+      endTime: dayjs(record.endTime, "HH:mm:ss"),
     });
 
     setModalVisible(true);
@@ -282,44 +346,43 @@ const TimeslotManagement = () => {
 
   const handleDeleteTimeslot = async (timeSlotId) => {
     try {
-      console.log('🗑️ Deleting timeslot:', timeSlotId);
+      console.log("🗑️ Deleting timeslot:", timeSlotId);
 
       const response = await deleteTimeslot(timeSlotId);
-      console.log('✅ Delete response:', response);
+      console.log("✅ Delete response:", response);
 
       if (response.status === 200 || response.status === 204) {
-        message.success('🗑️ Xóa khung giờ thành công!');
+        message.success("🗑️ Xóa khung giờ thành công!");
         await loadTimeslots(selectedFacility, selectedStatus); // ✅ Pass status filter
       } else if (response.status === 409) {
         message.warning(response.message);
         await loadTimeslots(selectedFacility, selectedStatus);
       } else {
-        message.warning(' Phản hồi không xác định từ server');
+        message.warning(" Phản hồi không xác định từ server");
         await loadTimeslots(selectedFacility, selectedStatus);
       }
-
     } catch (error) {
-      console.error('💥 Error deleting timeslot:', error);
+      console.error("💥 Error deleting timeslot:", error);
 
       if (error.response?.data) {
         const errorData = error.response.data;
-        console.log('🚨 Delete error response:', errorData);
+        console.log("🚨 Delete error response:", errorData);
 
         if (error.response.status === 404) {
-          message.error('❌ Khung giờ không tồn tại hoặc đã bị xóa');
+          message.error("❌ Khung giờ không tồn tại hoặc đã bị xóa");
         } else if (error.response.status === 400) {
-          message.error(` ${errorData.message || 'Dữ liệu không hợp lệ'}`);
+          message.error(` ${errorData.message || "Dữ liệu không hợp lệ"}`);
         } else if (error.response.status === 409) {
-          message.error(' Không thể xóa khung giờ đang được sử dụng');
+          message.error(" Không thể xóa khung giờ đang được sử dụng");
         } else if (errorData.message) {
           message.error(` ${errorData.message}`);
         } else {
-          message.error(' Có lỗi xảy ra từ server khi xóa khung giờ');
+          message.error(" Có lỗi xảy ra từ server khi xóa khung giờ");
         }
       } else if (error.request) {
-        message.error(' Không thể kết nối đến server');
+        message.error(" Không thể kết nối đến server");
       } else {
-        message.error(' Có lỗi xảy ra khi xóa khung giờ');
+        message.error(" Có lỗi xảy ra khi xóa khung giờ");
       }
 
       await loadTimeslots(selectedFacility, selectedStatus);
@@ -328,13 +391,20 @@ const TimeslotManagement = () => {
 
   const handleToggleStatus = async (timeSlotId, currentStatusId) => {
     try {
-      console.log('🔄 Toggling status for timeslot:', timeSlotId, 'current status:', currentStatusId);
+      console.log(
+        "🔄 Toggling status for timeslot:",
+        timeSlotId,
+        "current status:",
+        currentStatusId
+      );
 
       const newStatusId = currentStatusId === 1 ? 2 : 1;
-      const currentTimeslot = timeslots.find(slot => slot.timeSlotId === timeSlotId);
+      const currentTimeslot = timeslots.find(
+        (slot) => slot.timeSlotId === timeSlotId
+      );
 
       if (!currentTimeslot) {
-        message.error(' Không tìm thấy thông tin khung giờ');
+        message.error(" Không tìm thấy thông tin khung giờ");
         return;
       }
 
@@ -342,56 +412,56 @@ const TimeslotManagement = () => {
         startTime: currentTimeslot.startTime,
         endTime: currentTimeslot.endTime,
         statusId: newStatusId,
-        discount: currentTimeslot.discount || 0
+        discount: currentTimeslot.discount || 0,
       };
 
-      console.log('📤 Update payload:', updateData);
+      console.log("📤 Update payload:", updateData);
 
       const response = await updateTimeslot(timeSlotId, updateData);
-      console.log(' Update response:', response);
+      console.log(" Update response:", response);
 
       if (response.status === 200) {
-        const statusText = newStatusId === 1 ? 'Kích hoạt' : 'Tạm dừng';
+        const statusText = newStatusId === 1 ? "Kích hoạt" : "Tạm dừng";
         message.success(`${statusText} khung giờ thành công!`);
 
-        setTimeslots(prev =>
-          prev.map(slot =>
+        setTimeslots((prev) =>
+          prev.map((slot) =>
             slot.timeSlotId === timeSlotId
               ? { ...slot, statusId: newStatusId }
               : slot
           )
         );
-
       } else if (response.status === 408) {
         message.warning(response.message);
         await loadTimeslots(selectedFacility, selectedStatus);
-      }else{
-        message.warning(' Phản hồi không xác định từ server');
+      } else {
+        message.warning(" Phản hồi không xác định từ server");
         await loadTimeslots(selectedFacility, selectedStatus);
       }
-
     } catch (error) {
-      console.error(' Error toggling timeslot status:', error);
+      console.error(" Error toggling timeslot status:", error);
 
       if (error.response?.data) {
         const errorData = error.response.data;
-        console.log('🚨 Update error response:', errorData);
+        console.log("🚨 Update error response:", errorData);
 
         if (error.response.status === 404) {
-          message.error(' Khung giờ không tồn tại');
+          message.error(" Khung giờ không tồn tại");
         } else if (error.response.status === 400) {
-          message.error(` ${errorData.message || 'Dữ liệu không hợp lệ'}`);
+          message.error(` ${errorData.message || "Dữ liệu không hợp lệ"}`);
         } else if (error.response.status === 409) {
-          message.error(` ${errorData.message || 'Khung giờ bị trùng với TimeSlot khác'}`);
+          message.error(
+            ` ${errorData.message || "Khung giờ bị trùng với TimeSlot khác"}`
+          );
         } else if (errorData.message) {
           message.error(` ${errorData.message}`);
         } else {
-          message.error(' Có lỗi xảy ra từ server khi cập nhật');
+          message.error(" Có lỗi xảy ra từ server khi cập nhật");
         }
       } else if (error.request) {
-        message.error('❌ Không thể kết nối đến server');
+        message.error("❌ Không thể kết nối đến server");
       } else {
-        message.error('❌ Có lỗi xảy ra khi cập nhật trạng thái');
+        message.error("❌ Có lỗi xảy ra khi cập nhật trạng thái");
       }
 
       await loadTimeslots(selectedFacility, selectedStatus);
@@ -400,131 +470,153 @@ const TimeslotManagement = () => {
 
   const handleModalSubmit = async (values) => {
     try {
-      console.log('Form values:', values);
+      console.log("Form values:", values);
 
       const startTime = values.startTime;
       const endTime = values.endTime;
 
       if (!startTime || !endTime) {
-        message.error('⚠️ Vui lòng chọn đầy đủ giờ bắt đầu và kết thúc!');
+        message.error("⚠️ Vui lòng chọn đầy đủ giờ bắt đầu và kết thúc!");
         return;
       }
 
       if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
-        message.error('⚠️ Giờ kết thúc phải sau giờ bắt đầu!');
+        message.error("⚠️ Giờ kết thúc phải sau giờ bắt đầu!");
         return;
       }
 
       const requestData = {
         statusId: values.statusId,
-        startTime: startTime.format('HH:mm:ss'),
-        endTime: endTime.format('HH:mm:ss'),
-        discount: values.discount || 0
+        startTime: startTime.format("HH:mm:ss"),
+        endTime: endTime.format("HH:mm:ss"),
+        discount: values.discount || 0,
       };
 
-      console.log('📝 Request data:', requestData);
+      console.log("📝 Request data:", requestData);
 
       if (editingTimeslot) {
-        console.log('🔄 Updating timeslot:', editingTimeslot.timeSlotId);
+        console.log("🔄 Updating timeslot:", editingTimeslot.timeSlotId);
 
-        const response = await updateTimeslot(editingTimeslot.timeSlotId, requestData);
+        const response = await updateTimeslot(
+          editingTimeslot.timeSlotId,
+          requestData
+        );
 
-        console.log('✅ Update response:', response);
-        console.log('✅ Update response.status:', response.status);
-        console.log('✅ Update response.data:', response.data);
+        console.log("✅ Update response:", response);
+        console.log("✅ Update response.status:", response.status);
+        console.log("✅ Update response.data:", response.data);
 
         if (response.status === 200 || response.status === 201) {
-          console.log('✅ SUCCESS: Update HTTP status indicates success');
-          message.success(`Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          console.log("✅ SUCCESS: Update HTTP status indicates success");
+          message.success(
+            `Cập nhật khung giờ ${startTime.format("HH:mm")} - ${endTime.format(
+              "HH:mm"
+            )} thành công!`
+          );
 
-          setTimeslots(prev =>
-            prev.map(slot =>
+          setTimeslots((prev) =>
+            prev.map((slot) =>
               slot.timeSlotId === editingTimeslot.timeSlotId
                 ? {
-                  ...slot,
-                  statusId: requestData.statusId,
-                  startTime: requestData.startTime,
-                  endTime: requestData.endTime,
-                  discount: requestData.discount
-                }
+                    ...slot,
+                    statusId: requestData.statusId,
+                    startTime: requestData.startTime,
+                    endTime: requestData.endTime,
+                    discount: requestData.discount,
+                  }
                 : slot
             )
           );
-
         } else if (response.status === 409) {
-          console.log('⚠️ CONFLICT: Update returned 409');
+          console.log("⚠️ CONFLICT: Update returned 409");
 
           Modal.warning({
-            title: 'Khung giờ bị trùng',
-            content: 'Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.',
-            okText: 'Đã hiểu',
+            title: "Khung giờ bị trùng",
+            content:
+              "Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.",
+            okText: "Đã hiểu",
             zIndex: 9999,
           });
 
           return;
-
         } else if (response.data && response.data.success) {
-          console.log('✅ SUCCESS: Update response.data indicates success');
-          message.success(` Cập nhật khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          console.log("✅ SUCCESS: Update response.data indicates success");
+          message.success(
+            ` Cập nhật khung giờ ${startTime.format(
+              "HH:mm"
+            )} - ${endTime.format("HH:mm")} thành công!`
+          );
 
-          setTimeslots(prev =>
-            prev.map(slot =>
+          setTimeslots((prev) =>
+            prev.map((slot) =>
               slot.timeSlotId === editingTimeslot.timeSlotId
                 ? {
-                  ...slot,
-                  statusId: requestData.statusId,
-                  startTime: requestData.startTime,
-                  endTime: requestData.endTime,
-                  discount: requestData.discount
-                }
+                    ...slot,
+                    statusId: requestData.statusId,
+                    startTime: requestData.startTime,
+                    endTime: requestData.endTime,
+                    discount: requestData.discount,
+                  }
                 : slot
             )
           );
-
-        } else if (response.status == 408) 
-          {
-            message.warning(response.message );
-            await loadTimeslots(selectedFacility, selectedStatus);
-          }
-        else{
-          console.log('❓ Unknown update response format:', response.data);
-          console.log('❓ Response status:', response.status);
-          message.warning('⚠️ Phản hồi không xác định từ server - check console');
+        } else if (response.status == 408) {
+          message.warning(response.message);
+          await loadTimeslots(selectedFacility, selectedStatus);
+        } else {
+          console.log("❓ Unknown update response format:", response.data);
+          console.log("❓ Response status:", response.status);
+          message.warning(
+            "⚠️ Phản hồi không xác định từ server - check console"
+          );
           await loadTimeslots(selectedFacility, selectedStatus);
         }
-
       } else {
         const createRequest = {
           facilityId: selectedFacility,
-          ...requestData
+          ...requestData,
         };
 
-        console.log('📝 Create request data:', createRequest);
+        console.log("📝 Create request data:", createRequest);
 
         const response = await createTimeslot(createRequest);
 
-        console.log('🔍 Full response:', response);
+        console.log("🔍 Full response:", response);
 
         if (response.data && response.data.timeSlotId) {
-          console.log('✅ SUCCESS: TimeSlot created with ID:', response.data.timeSlotId);
-          message.success(`Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          console.log(
+            "✅ SUCCESS: TimeSlot created with ID:",
+            response.data.timeSlotId
+          );
+          message.success(
+            `Thêm khung giờ ${startTime.format("HH:mm")} - ${endTime.format(
+              "HH:mm"
+            )} thành công!`
+          );
           await loadTimeslots(selectedFacility, selectedStatus); // ✅ Pass status filter
         } else if (response.status === 200 || response.status === 201) {
-          console.log('✅ SUCCESS: HTTP status indicates success');
-          message.success(`Thêm khung giờ ${startTime.format('HH:mm')} - ${endTime.format('HH:mm')} thành công!`);
+          console.log("✅ SUCCESS: HTTP status indicates success");
+          message.success(
+            `Thêm khung giờ ${startTime.format("HH:mm")} - ${endTime.format(
+              "HH:mm"
+            )} thành công!`
+          );
           await loadTimeslots(selectedFacility, selectedStatus);
         } else if (response.status === 409) {
-          console.log('⚠️ CONFLICT: Create returned 409');
+          console.log("⚠️ CONFLICT: Create returned 409");
           Modal.warning({
-            title: 'Khung giờ bị trùng',
-            content: 'Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.',
-            okText: 'Đã hiểu',
+            title: "Khung giờ bị trùng",
+            content:
+              "Khung giờ bị trùng hoặc bị đè lên khung giờ đã tồn tại. Vui lòng chọn thời gian khác.",
+            okText: "Đã hiểu",
             zIndex: 9999,
           });
           return;
         } else {
-          console.log('❓ Unknown response format:', response.data);
-          message.warning('⚠️ Phản hồi không xác định từ server - check console');
+          console.log("❓ Unknown response format:", response.data);
+          message.warning(
+            "⚠️ Phản hồi không xác định từ server - check console"
+          );
           await loadTimeslots(selectedFacility, selectedStatus);
         }
       }
@@ -532,34 +624,32 @@ const TimeslotManagement = () => {
       setModalVisible(false);
       form.resetFields();
       setEditingTimeslot(null);
-
     } catch (error) {
-      console.error('💥 Error submitting timeslot:', error);
+      console.error("💥 Error submitting timeslot:", error);
 
       if (error.response?.status === 409) {
-        const errorMessage = error.response.data?.message || 'Khung giờ bị trùng với TimeSlot đã tồn tại';
+        const errorMessage =
+          error.response.data?.message ||
+          "Khung giờ bị trùng với TimeSlot đã tồn tại";
         message.warning({
           content: `⚠️ ${errorMessage}`,
           duration: 5,
         });
-        console.log('🔄 Keeping modal open for user to adjust time...');
+        console.log("🔄 Keeping modal open for user to adjust time...");
         return;
       }
 
       if (error.response?.status === 400) {
-        const errorMessage = error.response.data?.message || 'Dữ liệu không hợp lệ';
+        const errorMessage =
+          error.response.data?.message || "Dữ liệu không hợp lệ";
         message.error(`❌ ${errorMessage}`);
-      }
-      else if (error.response?.data?.message) {
+      } else if (error.response?.data?.message) {
         message.error(`❌ ${error.response.data.message}`);
-      }
-      else if (error.response) {
+      } else if (error.response) {
         message.error(`❌ Lỗi server (${error.response.status})`);
-      }
-      else if (error.request) {
-        message.error('❌ Không thể kết nối đến server');
-      }
-      else {
+      } else if (error.request) {
+        message.error("❌ Không thể kết nối đến server");
+      } else {
         message.error(`❌ Lỗi: ${error.message}`);
       }
 
@@ -571,38 +661,42 @@ const TimeslotManagement = () => {
 
   const formatTime = (timeString) => {
     // Convert "HH:mm:ss" to "HH:mm"
-    return timeString ? timeString.substring(0, 5) : '';
+    return timeString ? timeString.substring(0, 5) : "";
   };
 
   const calculateDuration = (startTime, endTime) => {
-    const start = dayjs(startTime, 'HH:mm:ss');
-    const end = dayjs(endTime, 'HH:mm:ss');
-    return end.diff(start, 'minute');
+    const start = dayjs(startTime, "HH:mm:ss");
+    const end = dayjs(endTime, "HH:mm:ss");
+    return end.diff(start, "minute");
   };
 
   // Helper function to get status info
   const getStatusInfo = (statusId) => {
-    return STATUS_CONFIG[statusId] || { name: 'Unknown', description: 'Không xác định', color: 'default' };
+    return (
+      STATUS_CONFIG[statusId] || {
+        name: "Unknown",
+        description: "Không xác định",
+        color: "default",
+      }
+    );
   };
 
   // ✅ Get filtered status text for display
   const getStatusFilterText = () => {
-    if (selectedStatus === null) return 'Tất cả trạng thái';
-    return STATUS_CONFIG[selectedStatus]?.description || 'Không xác định';
+    if (selectedStatus === null) return "Tất cả trạng thái";
+    return STATUS_CONFIG[selectedStatus]?.description || "Không xác định";
   };
 
   const columns = [
     {
-      title: 'STT',
-      key: 'index',
+      title: "STT",
+      key: "index",
       width: 60,
-      render: (_, __, index) => (
-        <span className="row-index">{index + 1}</span>
-      )
+      render: (_, __, index) => <span className="row-index">{index + 1}</span>,
     },
     {
-      title: 'Khung giờ',
-      key: 'timeRange',
+      title: "Khung giờ",
+      key: "timeRange",
       width: 180,
       render: (record) => (
         <div className="time-range">
@@ -614,11 +708,11 @@ const TimeslotManagement = () => {
             ({calculateDuration(record.startTime, record.endTime)} phút)
           </div>
         </div>
-      )
+      ),
     },
     {
-      title: 'Giảm giá (%)',
-      dataIndex: 'discount',
+      title: "Giảm giá (%)",
+      dataIndex: "discount",
       width: 120,
       render: (discount) => (
         <span className="discount-text">
@@ -630,28 +724,32 @@ const TimeslotManagement = () => {
             <Tag color="default">Không có</Tag>
           )}
         </span>
-      )
+      ),
     },
     {
-      title: 'Trạng thái',
-      key: 'status',
+      title: "Trạng thái",
+      key: "status",
       width: 140,
       render: (record) => {
         const statusInfo = getStatusInfo(record.statusId);
         return (
           <Switch
             checked={record.statusId === 1}
-            onChange={() => handleToggleStatus(record.timeSlotId, record.statusId)}
+            onChange={() =>
+              handleToggleStatus(record.timeSlotId, record.statusId)
+            }
             checkedChildren={<PlayCircleOutlined />}
             unCheckedChildren={<PauseCircleOutlined />}
-            className={`status-switch ${record.statusId === 1 ? 'active' : 'inactive'}`}
+            className={`status-switch ${
+              record.statusId === 1 ? "active" : "inactive"
+            }`}
           />
         );
-      }
+      },
     },
     {
-      title: 'Thao tác',
-      key: 'actions',
+      title: "Thao tác",
+      key: "actions",
       width: 120,
       render: (record) => (
         <Space size="small">
@@ -680,11 +778,13 @@ const TimeslotManagement = () => {
             </Popconfirm>
           </Tooltip>
         </Space>
-      )
-    }
+      ),
+    },
   ];
 
-  const selectedFacilityName = facilities.find(f => f.facilityId === selectedFacility)?.facilityName;
+  const selectedFacilityName = facilities.find(
+    (f) => f.facilityId === selectedFacility
+  )?.facilityName;
 
   return (
     <div className="timeslot-management">
@@ -717,17 +817,25 @@ const TimeslotManagement = () => {
                 className="facility-select"
                 size="large"
                 loading={facilitiesLoading}
-                notFoundContent={facilitiesLoading ? "Đang tải..." : "Không có cơ sở nào"}
+                notFoundContent={
+                  facilitiesLoading ? "Đang tải..." : "Không có cơ sở nào"
+                }
               >
-                {facilities.map(facility => (
+                {facilities.map((facility) => (
                   <Option key={facility.facilityId} value={facility.facilityId}>
                     <div className="facility-option">
-                      <span className="facility-name">{facility.facilityName}</span>
+                      <span className="facility-name">
+                        {facility.facilityName}
+                      </span>
                       <Tag
-                        color={facility.status === 'Active' ? 'success' : 'default'}
+                        color={
+                          facility.status === "Active" ? "success" : "default"
+                        }
                         className="facility-status"
                       >
-                        {facility.status === 'Active' ? 'Hoạt động' : 'Tạm dừng'}
+                        {facility.status === "Active"
+                          ? "Hoạt động"
+                          : "Tạm dừng"}
                       </Tag>
                     </div>
                   </Option>
@@ -756,9 +864,7 @@ const TimeslotManagement = () => {
                 {Object.entries(STATUS_CONFIG).map(([id, config]) => (
                   <Option key={id} value={parseInt(id)}>
                     <Space>
-                      <Tag color={config.color}>
-                        {config.description}
-                      </Tag>
+                      <Tag color={config.color}>{config.description}</Tag>
                     </Space>
                   </Option>
                 ))}
@@ -793,7 +899,10 @@ const TimeslotManagement = () => {
               Thống kê khung giờ - {selectedFacilityName}
               {/* ✅ Show current filter */}
               {selectedStatus !== null && (
-                <Tag color={STATUS_CONFIG[selectedStatus]?.color} style={{ marginLeft: 8 }}>
+                <Tag
+                  color={STATUS_CONFIG[selectedStatus]?.color}
+                  style={{ marginLeft: 8 }}
+                >
                   {getStatusFilterText()}
                 </Tag>
               )}
@@ -805,7 +914,7 @@ const TimeslotManagement = () => {
                 title="Tổng khung giờ"
                 value={stats.totalSlots}
                 prefix={<ClockCircleOutlined />}
-                valueStyle={{ color: '#1890ff' }}
+                valueStyle={{ color: "#1890ff" }}
                 className="stat-item"
               />
             </Col>
@@ -814,7 +923,7 @@ const TimeslotManagement = () => {
                 title="Đang hoạt động"
                 value={stats.activeSlots}
                 prefix={<PlayCircleOutlined />}
-                valueStyle={{ color: '#52c41a' }}
+                valueStyle={{ color: "#52c41a" }}
                 className="stat-item"
               />
             </Col>
@@ -825,7 +934,7 @@ const TimeslotManagement = () => {
                 suffix="%"
                 precision={1}
                 prefix={<PercentageOutlined />}
-                valueStyle={{ color: '#722ed1' }}
+                valueStyle={{ color: "#722ed1" }}
                 className="stat-item"
               />
             </Col>
@@ -864,7 +973,7 @@ const TimeslotManagement = () => {
               showQuickJumper: true,
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} của ${total} khung giờ`,
-              className: 'custom-pagination'
+              className: "custom-pagination",
             }}
             locale={{
               emptyText: (
@@ -873,8 +982,7 @@ const TimeslotManagement = () => {
                   <p>
                     {selectedStatus !== null
                       ? `Không có khung giờ nào với trạng thái "${getStatusFilterText()}"`
-                      : 'Chưa có khung giờ nào'
-                    }
+                      : "Chưa có khung giờ nào"}
                   </p>
                   <Button
                     type="primary"
@@ -884,7 +992,7 @@ const TimeslotManagement = () => {
                     Thêm khung giờ đầu tiên
                   </Button>
                 </div>
-              )
+              ),
             }}
             className="timeslots-table"
           />
@@ -907,7 +1015,7 @@ const TimeslotManagement = () => {
         title={
           <div className="modal-title">
             <ClockCircleOutlined className="modal-icon" />
-            {editingTimeslot ? 'Chỉnh sửa khung giờ' : 'Thêm khung giờ mới'}
+            {editingTimeslot ? "Chỉnh sửa khung giờ" : "Thêm khung giờ mới"}
           </div>
         }
         open={modalVisible}
@@ -928,17 +1036,30 @@ const TimeslotManagement = () => {
           className="timeslot-form"
           initialValues={{
             statusId: 1,
-            discount: 0
+            discount: 0,
           }}
         >
           <Alert
             message="💡 Hướng dẫn chọn giờ"
             description={
               <Space direction="vertical" size={4}>
-                <Text>• <strong>Click chuột:</strong> Click vào ô input hoặc icon đồng hồ để mở bảng chọn giờ</Text>
-                <Text>• <strong>Nhập thủ công:</strong> Gõ trực tiếp <code>08:00</code> vào ô input</Text>
-                <Text>• <strong>Bước nhảy:</strong> 30 phút (08:00, 08:30, 09:00, 09:30...)</Text>
-                <Text>• <strong>Ví dụ hợp lệ:</strong> <Tag color="green">08:00 → 10:00</Tag> <Tag color="green">14:30 → 16:00</Tag></Text>
+                <Text>
+                  • <strong>Click chuột:</strong> Click vào ô input hoặc icon
+                  đồng hồ để mở bảng chọn giờ
+                </Text>
+                <Text>
+                  • <strong>Nhập thủ công:</strong> Gõ trực tiếp{" "}
+                  <code>08:00</code> vào ô input
+                </Text>
+                <Text>
+                  • <strong>Bước nhảy:</strong> 30 phút (08:00, 08:30, 09:00,
+                  09:30...)
+                </Text>
+                <Text>
+                  • <strong>Ví dụ hợp lệ:</strong>{" "}
+                  <Tag color="green">08:00 → 10:00</Tag>{" "}
+                  <Tag color="green">14:30 → 16:00</Tag>
+                </Text>
               </Space>
             }
             type="info"
@@ -953,7 +1074,7 @@ const TimeslotManagement = () => {
                 name="startTime"
                 label={
                   <Space>
-                    <ClockCircleOutlined style={{ color: '#52c41a' }} />
+                    <ClockCircleOutlined style={{ color: "#52c41a" }} />
                     <span>Giờ bắt đầu</span>
                   </Space>
                 }
@@ -967,16 +1088,18 @@ const TimeslotManagement = () => {
                   showNow={false}
                   showSecond={false}
                   size="large"
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                   allowClear={true}
                   suffixIcon={<ClockCircleOutlined />}
                   inputReadOnly={false}
                   popupClassName="custom-time-picker"
                   onChange={(time, timeString) => {
-                    console.log('Start time selected:', timeString);
+                    console.log("Start time selected:", timeString);
                     if (time) {
                       setTimeout(() => {
-                        const endTimeInput = document.querySelector('[data-field="endTime"] input');
+                        const endTimeInput = document.querySelector(
+                          '[data-field="endTime"] input'
+                        );
                         if (endTimeInput) {
                           endTimeInput.focus();
                         }
@@ -984,7 +1107,7 @@ const TimeslotManagement = () => {
                     }
                   }}
                   onOpenChange={(open) => {
-                    console.log('Start time picker open:', open);
+                    console.log("Start time picker open:", open);
                   }}
                 />
               </Form.Item>
@@ -995,7 +1118,7 @@ const TimeslotManagement = () => {
                 name="endTime"
                 label={
                   <Space>
-                    <ClockCircleOutlined style={{ color: '#f5222d' }} />
+                    <ClockCircleOutlined style={{ color: "#f5222d" }} />
                     <span>Giờ kết thúc</span>
                   </Space>
                 }
@@ -1003,7 +1126,7 @@ const TimeslotManagement = () => {
                   { required: true, message: "⚠️ Chọn giờ kết thúc!" },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
-                      const startTime = getFieldValue('startTime');
+                      const startTime = getFieldValue("startTime");
                       if (!value || !startTime) {
                         return Promise.resolve();
                       }
@@ -1012,7 +1135,9 @@ const TimeslotManagement = () => {
                         return Promise.resolve();
                       }
 
-                      return Promise.reject(new Error('⚠️ Giờ kết thúc phải sau giờ bắt đầu!'));
+                      return Promise.reject(
+                        new Error("⚠️ Giờ kết thúc phải sau giờ bắt đầu!")
+                      );
                     },
                   }),
                 ]}
@@ -1026,16 +1151,16 @@ const TimeslotManagement = () => {
                   showNow={false}
                   showSecond={false}
                   size="large"
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                   allowClear={true}
                   suffixIcon={<ClockCircleOutlined />}
                   inputReadOnly={false}
                   popupClassName="custom-time-picker"
                   onChange={(time, timeString) => {
-                    console.log('End time selected:', timeString);
+                    console.log("End time selected:", timeString);
                   }}
                   onOpenChange={(open) => {
-                    console.log('End time picker open:', open);
+                    console.log("End time picker open:", open);
                   }}
                 />
               </Form.Item>
@@ -1047,14 +1172,12 @@ const TimeslotManagement = () => {
               <Space>
                 <span>Trạng thái</span>
                 <Tooltip title="Chọn trạng thái hoạt động của khung giờ">
-                  <QuestionCircleOutlined style={{ color: '#1890ff' }} />
+                  <QuestionCircleOutlined style={{ color: "#1890ff" }} />
                 </Tooltip>
               </Space>
             }
             name="statusId"
-            rules={[
-              { required: true, message: '⚠️ Vui lòng chọn trạng thái' }
-            ]}
+            rules={[{ required: true, message: "⚠️ Vui lòng chọn trạng thái" }]}
           >
             <Select
               placeholder="Chọn trạng thái..."
@@ -1066,9 +1189,7 @@ const TimeslotManagement = () => {
               {Object.entries(STATUS_CONFIG).map(([id, config]) => (
                 <Option key={id} value={parseInt(id)}>
                   <Space>
-                    <Tag color={config.color}>
-                      {config.description}
-                    </Tag>
+                    <Tag color={config.color}>{config.description}</Tag>
                   </Space>
                 </Option>
               ))}
@@ -1080,13 +1201,18 @@ const TimeslotManagement = () => {
               <Space>
                 <span>Giảm giá (tùy chọn)</span>
                 <Tooltip title="Phần trăm giảm giá cho khung giờ này">
-                  <QuestionCircleOutlined style={{ color: '#1890ff' }} />
+                  <QuestionCircleOutlined style={{ color: "#1890ff" }} />
                 </Tooltip>
               </Space>
             }
             name="discount"
             rules={[
-              { type: 'number', min: 0, max: 100, message: '⚠️ Giảm giá phải từ 0% đến 100%' }
+              {
+                type: "number",
+                min: 0,
+                max: 100,
+                message: "⚠️ Giảm giá phải từ 0% đến 100%",
+              },
             ]}
           >
             <InputNumber
@@ -1097,15 +1223,21 @@ const TimeslotManagement = () => {
               step={5}
               precision={1}
               className="discount-input"
-              style={{ width: '100%' }}
+              style={{ width: "100%" }}
               addonAfter="%"
-              formatter={value => value ? `${value}` : ''}
-              parser={value => value ? value.replace('%', '') : ''}
+              formatter={(value) => (value ? `${value}` : "")}
+              parser={(value) => (value ? value.replace("%", "") : "")}
             />
           </Form.Item>
 
-          <Form.Item className="form-actions" style={{ marginBottom: 0, marginTop: 24 }}>
-            <Space size="middle" style={{ width: '100%', justifyContent: 'flex-end' }}>
+          <Form.Item
+            className="form-actions"
+            style={{ marginBottom: 0, marginTop: 24 }}
+          >
+            <Space
+              size="middle"
+              style={{ width: "100%", justifyContent: "flex-end" }}
+            >
               <Button
                 onClick={() => {
                   setModalVisible(false);
@@ -1124,7 +1256,7 @@ const TimeslotManagement = () => {
                 loading={loading}
                 icon={editingTimeslot ? <EditOutlined /> : <PlusOutlined />}
               >
-                {editingTimeslot ? 'Cập nhật khung giờ' : 'Thêm khung giờ'}
+                {editingTimeslot ? "Cập nhật khung giờ" : "Thêm khung giờ"}
               </Button>
             </Space>
           </Form.Item>

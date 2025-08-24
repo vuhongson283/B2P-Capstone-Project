@@ -1,10 +1,10 @@
-// Sport Theme Variables - Bold & Wide Layout
-$sport-primary: #1B5E20;      // Deep Green
-$sport-secondary: #2E7D32;    // Sport Green  
-$sport-accent: #FF6B35;       // Energy Orange
-$sport-blue: #1976D2;         // Sport Blue
-$sport-yellow: #F57F17;       // Champion Yellow
-$sport-red: #D32F2F;          // Alert Red
+// Sport Theme Variables - Compact Layout
+$sport-primary: #1B5E20; // Deep Green
+$sport-secondary: #2E7D32; // Sport Green  
+$sport-accent: #FF6B35; // Energy Orange
+$sport-blue: #1976D2; // Sport Blue
+$sport-yellow: #F57F17; // Champion Yellow
+$sport-red: #D32F2F; // Alert Red
 
 $field-green: #4CAF50;
 $grass-green: #66BB6A;
@@ -30,56 +30,56 @@ $black: #000000;
 $gradient-sport-primary: linear-gradient(135deg, $sport-primary 0%, $sport-secondary 50%, $field-green 100%);
 $gradient-sport-energy: linear-gradient(135deg, $sport-accent 0%, $energy-orange 50%, $champion-gold 100%);
 $gradient-sport-blue: linear-gradient(135deg, $sport-blue 0%, $court-blue 100%);
-$gradient-hero: linear-gradient(135deg, 
-  rgba(27, 94, 32, 0.95) 0%, 
-  rgba(46, 125, 50, 0.9) 30%,
-  rgba(76, 175, 80, 0.85) 70%,
-  rgba(102, 187, 106, 0.9) 100%);
+$gradient-hero: linear-gradient(135deg,
+    rgba(27, 94, 32, 0.95) 0%,
+    rgba(46, 125, 50, 0.9) 30%,
+    rgba(76, 175, 80, 0.85) 70%,
+    rgba(102, 187, 106, 0.9) 100%);
 
-// Enhanced Shadows
-$shadow-sport-sm: 0 4px 8px rgba(27, 94, 32, 0.12);
-$shadow-sport-md: 0 8px 16px rgba(27, 94, 32, 0.18);
-$shadow-sport-lg: 0 16px 32px rgba(27, 94, 32, 0.24);
-$shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
+// Compact Shadows
+$shadow-sport-sm: 0 2px 4px rgba(27, 94, 32, 0.12);
+$shadow-sport-md: 0 4px 8px rgba(27, 94, 32, 0.18);
+$shadow-sport-lg: 0 6px 16px rgba(27, 94, 32, 0.24);
+$shadow-sport-xl: 0 8px 24px rgba(27, 94, 32, 0.3);
 
-// WIDE Layout Mixins
+// Compact Layout Mixins
 @mixin wide-container {
   width: 100vw;
   max-width: none;
   margin: 0;
-  padding: 0 60px;
-  
+  padding: 0 30px;
+
   @media (max-width: 768px) {
-    padding: 0 20px;
+    padding: 0 15px;
   }
 }
 
 @mixin big-sport-card {
   background: $white;
-  border-radius: 24px;
-  box-shadow: $shadow-sport-lg;
-  border: 3px solid rgba(27, 94, 32, 0.1);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  box-shadow: $shadow-sport-md;
+  border: 2px solid rgba(27, 94, 32, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  
+
   &::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 6px;
+    height: 3px;
     background: $gradient-sport-primary;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-  
+
   &:hover {
-    box-shadow: $shadow-sport-xl;
-    transform: translateY(-4px);
+    box-shadow: $shadow-sport-lg;
+    transform: translateY(-2px);
     border-color: rgba(27, 94, 32, 0.3);
-    
+
     &::before {
       opacity: 1;
     }
@@ -90,18 +90,18 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   background: $gradient-sport-primary;
   color: $white;
   border: none;
-  border-radius: 16px;
-  padding: 20px 40px;
-  font-weight: 800;
-  font-size: 18px;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
-  box-shadow: $shadow-sport-lg;
-  
+  box-shadow: $shadow-sport-md;
+
   &::before {
     content: '';
     position: absolute;
@@ -110,28 +110,28 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.6s ease;
+    transition: left 0.5s ease;
   }
-  
+
   &:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: $shadow-sport-xl;
-    
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: $shadow-sport-lg;
+
     &::before {
       left: 100%;
     }
   }
-  
+
   &:active {
     transform: translateY(-1px) scale(0.98);
   }
-  
+
   &:disabled {
     background: $gray-400;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
-    
+
     &::before {
       display: none;
     }
@@ -140,55 +140,68 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
 // Animations
 @keyframes sportFloat {
-  0%, 100% { 
-    transform: translateY(0px) rotate(0deg); 
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
   }
-  50% { 
-    transform: translateY(-12px) rotate(3deg); 
+
+  50% {
+    transform: translateY(-6px) rotate(2deg);
   }
 }
 
 @keyframes sportPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
-    transform: scale(1.06);
+    transform: scale(1.03);
     opacity: 0.8;
   }
 }
 
 @keyframes championShine {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(-100%) skewX(-15deg);
   }
+
   50% {
     transform: translateX(100%) skewX(-15deg);
   }
 }
 
 @keyframes spin {
-  from { 
-    transform: rotate(0deg); 
+  from {
+    transform: rotate(0deg);
   }
-  to { 
-    transform: rotate(360deg); 
+
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.8;
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
 }
 
-// Base Styles - Clean Background
+// Base Styles
 .facility-page {
   background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
   min-height: 100vh;
@@ -200,38 +213,37 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   overflow-x: hidden;
 }
 
-// SIMPLIFIED Header (No Title)
+// Compact Header
 .facility-header {
   background: $gradient-hero;
   color: $white;
-  padding: 24px 0; // Reduced padding since no title
+  padding: 15px 0;
   position: relative;
   overflow: hidden;
-  box-shadow: $shadow-sport-lg;
+  box-shadow: $shadow-sport-md;
   width: 100vw;
-  
-  // Subtle background elements
+
   &::before {
     content: '';
     position: absolute;
     top: -50%;
     right: -20%;
-    width: 300px;
-    height: 300px;
+    width: 150px;
+    height: 150px;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
     animation: sportFloat 8s ease-in-out infinite;
   }
-  
+
   &::after {
     content: '🏆';
     position: absolute;
-    top: 15px;
-    right: 60px;
-    font-size: 2.5rem;
+    top: 10px;
+    right: 30px;
+    font-size: 1.5rem;
     opacity: 0.15;
     animation: sportFloat 6s ease-in-out infinite reverse;
   }
-  
+
   .header-inner {
     @include wide-container;
     display: flex;
@@ -240,10 +252,10 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     position: relative;
     z-index: 2;
   }
-  
+
   &__content {
     flex: 1;
-    margin: 0 40px;
+    margin: 0 20px;
   }
 }
 
@@ -251,249 +263,251 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   display: inline-flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 50px;
-  padding: 12px 24px; // Smaller since no title
-  font-size: 1rem;
+  backdrop-filter: blur(15px);
+  border-radius: 25px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   color: $sport-primary;
   font-weight: 700;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  box-shadow: $shadow-sport-lg;
-  
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: $shadow-sport-md;
+
   &::before {
     content: '👨‍💼';
-    margin-right: 8px;
-    font-size: 1.2rem;
+    margin-right: 6px;
+    font-size: 1rem;
   }
 }
 
 .btn-icon {
   background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   color: $white;
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 16px;
+  padding: 10px;
   border-radius: 50%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 70px;
-  height: 70px;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: $shadow-sport-lg;
+  box-shadow: $shadow-sport-md;
 
   &:hover {
     background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.15) rotate(12deg);
-    box-shadow: $shadow-sport-xl;
+    transform: scale(1.1) rotate(8deg);
+    box-shadow: $shadow-sport-lg;
   }
-  
+
   &.btn-back:hover {
-    transform: scale(1.15) translateX(-8px);
+    transform: scale(1.1) translateX(-4px);
   }
-  
+
   &.btn-favorite:hover {
     color: $sport-accent;
-    animation: sportPulse 0.6s ease-in-out;
+    animation: sportPulse 0.5s ease-in-out;
   }
 }
 
-// BIG Main Layout - 8:4 Ratio (2:1)
+// Compact Main Layout
 .facility-main {
   width: 100vw;
   display: grid;
-  grid-template-columns: 2fr 1fr; // 8:4 ratio (2:1)
-  gap: 60px;
-  padding: 60px;
-  
+  grid-template-columns: 2fr 1fr; // Sidebar rộng hơn, image hẹp lại
+  gap: 30px;
+  padding: 30px;
+
   @media (max-width: 1400px) {
-    gap: 50px;
-    padding: 50px;
+    gap: 25px;
+    padding: 25px;
   }
-  
+
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 40px 30px;
+    gap: 20px;
+    padding: 20px 15px;
   }
-  
+
   @media (max-width: 768px) {
-    padding: 30px 20px;
-    gap: 30px;
+    padding: 15px 10px;
+    gap: 15px;
   }
 }
 
-// ENHANCED Image Section with Title Below
+// Compact Image Section
 .facility-image-section {
   .carousel {
     @include big-sport-card;
     padding: 0;
-    border-radius: 32px;
-    
+    border-radius: 16px;
+
     &__container {
       position: relative;
-      height: 700px; // Much bigger
-      border-radius: 32px;
+      height: 600px;
+      border-radius: 16px;
       overflow: hidden;
-      
+      display: flex; // Thêm
+      align-items: center; // Thêm 
+      justify-content: center; // Thêm
+      background: #f5f5f5; // Di chuyển background lên container
+
       @media (max-width: 1400px) {
-        height: 600px;
-      }
-      
-      @media (max-width: 1200px) {
-        height: 500px;
-      }
-      
-      @media (max-width: 768px) {
         height: 350px;
       }
+
+      // ... rest of media queries
     }
-    
+
     &__image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      
+      max-width: 100%; // Thay vì width: 100%
+      max-height: 100%; // Thay vì height: 100%
+      object-fit: contain;
+      object-position: center;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      // Bỏ background ở đây vì đã move lên container
+
       &:hover {
-        transform: scale(1.03);
+        transform: scale(1.02);
       }
     }
-    
+
     &__overlay {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
       background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-      padding: 50px;
+      padding: 25px;
       color: $white;
     }
-    
+
     &__image-counter {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(15px);
       color: $sport-primary;
-      padding: 16px 28px;
-      border-radius: 50px;
-      font-size: 18px;
-      font-weight: 800;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      box-shadow: $shadow-sport-lg;
+      padding: 8px 14px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: $shadow-sport-md;
     }
-    
+
     &__btn {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       background: rgba(27, 94, 32, 0.9);
-      backdrop-filter: blur(20px);
+      backdrop-filter: blur(15px);
       border: none;
-      width: 90px;
-      height: 90px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       color: $white;
-      font-size: 2.2rem;
+      font-size: 1.5rem;
       font-weight: bold;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 3;
-      box-shadow: $shadow-sport-xl;
-      
-      &--prev { left: 40px; }
-      &--next { right: 40px; }
-      
+      box-shadow: $shadow-sport-lg;
+
+      &--prev {
+        left: 20px;
+      }
+
+      &--next {
+        right: 20px;
+      }
+
       &:hover {
         background: $sport-primary;
-        transform: translateY(-50%) scale(1.2);
+        transform: translateY(-50%) scale(1.1);
         box-shadow: $shadow-sport-xl;
       }
     }
-    
+
     &__dots {
       position: absolute;
-      bottom: 40px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 16px;
+      gap: 8px;
     }
-    
+
     &__dot {
-      width: 16px;
-      height: 16px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.5);
       border: none;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      
+
       &.active {
         background: $white;
-        transform: scale(1.4);
-        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3);
+        transform: scale(1.3);
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
       }
     }
   }
-  
-  // NEW: Facility Title Below Image
+
+  // Compact Facility Title
   .facility-title-section {
-    margin-top: 40px;
-    padding: 40px;
+    margin-top: 20px;
+    padding: 20px;
     background: $gradient-hero;
-    border-radius: 24px;
+    border-radius: 12px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    box-shadow: $shadow-sport-lg;
-    
-    // Background decoration
+    box-shadow: $shadow-sport-md;
+
     &::before {
       content: '';
       position: absolute;
       top: -50%;
       right: -20%;
-      width: 200px;
-      height: 200px;
+      width: 100px;
+      height: 100px;
       background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
       animation: sportFloat 8s ease-in-out infinite;
     }
-    
+
     &::after {
       content: '⚽';
       position: absolute;
-      top: 20px;
-      right: 40px;
-      font-size: 3rem;
+      top: 10px;
+      right: 20px;
+      font-size: 1.5rem;
       opacity: 0.2;
       animation: sportFloat 6s ease-in-out infinite reverse;
     }
   }
-  
+
   .facility-title {
-    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
     font-weight: 900;
-    margin: 0 0 20px 0;
+    margin: 0 0 10px 0;
     color: $white;
-    text-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    letter-spacing: -0.02em;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    letter-spacing: -0.01em;
     line-height: 1.1;
     position: relative;
     z-index: 2;
-    
-    // Sport emoji with animation
+
     &::before {
       content: '🏟️ ';
       opacity: 0.9;
       animation: sportPulse 3s ease-in-out infinite;
     }
-    
-    // Shine effect
+
     &::after {
       content: '';
       position: absolute;
@@ -506,17 +520,17 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
       pointer-events: none;
     }
   }
-  
+
   .facility-description {
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.9);
     font-weight: 600;
-    line-height: 1.6;
-    max-width: 600px;
+    line-height: 1.4;
+    max-width: 500px;
     margin: 0 auto;
     position: relative;
     z-index: 2;
-    
+
     &::before {
       content: '📍 ';
       opacity: 0.8;
@@ -524,209 +538,209 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   }
 }
 
-// BIG Info Sidebar - Takes 4/12 parts
+// Compact Info Sidebar
 .facility-info-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 20px;
 }
 
 .facility-info {
   @include big-sport-card;
-  padding: 50px;
-  
+  padding: 25px;
+
   &__title {
-    font-size: 2.2rem;
+    font-size: 1.4rem;
     font-weight: 900;
     color: $sport-primary;
-    margin: 0 0 40px 0;
+    margin: 0 0 20px 0;
     position: relative;
     text-align: center;
-    
+
     &::before {
       content: 'ℹ️';
-      margin-right: 16px;
-      font-size: 2.5rem;
+      margin-right: 8px;
+      font-size: 1.5rem;
     }
-    
+
     &::after {
       content: '';
       position: absolute;
-      bottom: -20px;
+      bottom: -10px;
       left: 50%;
       transform: translateX(-50%);
-      width: 80px;
-      height: 6px;
+      width: 40px;
+      height: 3px;
       background: $gradient-sport-primary;
-      border-radius: 3px;
+      border-radius: 2px;
     }
   }
-  
+
   &__details {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 14px;
   }
-  
+
   .info-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 0;
-    border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+    padding: 10px 0;
+    border-bottom: 2px solid rgba(27, 94, 32, 0.1);
     transition: all 0.3s ease;
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
+
     &:hover {
-      padding-left: 12px;
+      padding-left: 6px;
       border-bottom-color: rgba(27, 94, 32, 0.3);
     }
-    
+
     .info-label {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 8px;
       color: $gray-600;
       font-weight: 700;
-      font-size: 1.1rem;
-      
+      font-size: 0.9rem;
+
       .info-icon {
-        font-size: 2rem;
-        width: 40px;
+        font-size: 1.2rem;
+        width: 20px;
         text-align: center;
       }
     }
-    
+
     .info-value {
       color: $sport-primary;
       font-weight: 800;
-      font-size: 1.1rem;
+      font-size: 0.9rem;
       text-align: right;
       background: rgba(27, 94, 32, 0.1);
-      padding: 12px 20px;
-      border-radius: 16px;
+      padding: 6px 10px;
+      border-radius: 8px;
     }
   }
 }
 
 .facility-categories {
-  margin-top: 40px;
-  padding-top: 40px;
-  border-top: 3px solid rgba(27, 94, 32, 0.1);
-  
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid rgba(27, 94, 32, 0.1);
+
   .categories-title {
-    font-size: 1.6rem;
+    font-size: 1.2rem;
     font-weight: 900;
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     color: $sport-primary;
     display: flex;
     align-items: center;
-    gap: 14px;
-    
+    gap: 8px;
+
     &::before {
       content: '🏟️';
-      font-size: 1.8rem;
+      font-size: 1.3rem;
     }
   }
-  
+
   .categories-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
   }
-  
+
   .category-item {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
     background: $gradient-sport-primary;
     color: $white;
-    padding: 20px 28px;
-    border-radius: 20px;
+    padding: 10px 14px;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 0.9rem;
     transition: all 0.3s ease;
-    box-shadow: $shadow-sport-lg;
-    
+    box-shadow: $shadow-sport-md;
+
     .category-icon {
-      font-size: 1.6rem;
+      font-size: 1.1rem;
     }
-    
+
     &:hover {
-      transform: translateX(12px) scale(1.03);
-      box-shadow: $shadow-sport-xl;
+      transform: translateX(6px) scale(1.02);
+      box-shadow: $shadow-sport-lg;
     }
   }
 }
 
-// Enhanced Booking Section
+// Compact Booking Section
 .booking-section {
   background: $white;
-  border-top: 6px solid $sport-primary;
-  padding: 80px 0;
+  border-top: 3px solid $sport-primary;
+  padding: 40px 0;
   position: relative;
   width: 100vw;
-  
+
   .booking-inner {
     @include wide-container;
     position: relative;
     z-index: 1;
   }
-  
+
   &__title {
-    font-size: clamp(2.5rem, 7vw, 4rem);
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
     font-weight: 900;
     color: $sport-primary;
-    margin: 0 0 60px 0;
+    margin: 0 0 30px 0;
     text-align: center;
     position: relative;
-    
+
     &::before {
       content: '🎯';
-      margin-right: 20px;
-      font-size: clamp(3rem, 7vw, 4.5rem);
+      margin-right: 10px;
+      font-size: clamp(2rem, 5vw, 3rem);
       animation: sportPulse 3s ease-in-out infinite;
     }
-    
+
     &::after {
       content: '';
       position: absolute;
-      bottom: -24px;
+      bottom: -12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 160px;
-      height: 6px;
+      width: 80px;
+      height: 3px;
       background: $gradient-sport-primary;
-      border-radius: 3px;
+      border-radius: 2px;
     }
   }
 }
 
-// FIXED Booking Controls - Perfect Alignment & Better Typography
+// Compact Booking Controls
 .booking-toolbar {
   display: flex;
   justify-content: center;
-  margin-bottom: 60px;
+  margin-bottom: 30px;
 }
 
 .booking-controls {
   @include big-sport-card;
-  padding: 48px 60px;
+  padding: 24px 30px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: stretch; // Changed from 'end' to 'stretch'
+  gap: 24px;
+  align-items: stretch;
   background: linear-gradient(135deg, $white 0%, rgba(76, 175, 80, 0.04) 100%);
-  min-width: 700px;
-  border: 3px solid rgba(27, 94, 32, 0.08);
-  
+  min-width: 500px;
+  border: 2px solid rgba(27, 94, 32, 0.08);
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 32px;
-    padding: 40px 32px;
+    gap: 16px;
+    padding: 20px 16px;
     min-width: auto;
     width: 100%;
   }
@@ -735,15 +749,14 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   position: relative;
-  height: 100%; // Ensure equal height
-  
-  // Enhanced focus ring
+  height: 100%;
+
   &:focus-within {
     .control-label {
       color: $sport-primary;
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
   }
 }
@@ -751,83 +764,81 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 .control-label {
   display: flex;
   align-items: center;
-  gap: 16px; // Increased gap
+  gap: 8px;
   font-weight: 800;
   color: $sport-secondary;
-  font-size: 1.3rem; // Increased from 1.1rem
+  font-size: 0.9rem;
   text-transform: uppercase;
-  letter-spacing: 1.2px; // Increased spacing
+  letter-spacing: 0.8px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 12px; // Increased from 8px
-  
+  margin-bottom: 6px;
+
   .label-icon {
-    font-size: 2rem; // Increased from 1.8rem
-    padding: 10px; // Increased from 8px
+    font-size: 1.3rem;
+    padding: 6px;
     background: rgba(27, 94, 32, 0.12);
-    border-radius: 14px; // Increased from 12px
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    min-width: 44px; // Fixed width for consistency
-    min-height: 44px; // Fixed height for consistency
+    min-width: 28px;
+    min-height: 28px;
   }
-  
+
   &:hover .label-icon {
     background: rgba(27, 94, 32, 0.2);
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 }
 
 .form-select,
 .form-date {
-  padding: 22px 26px; // Increased padding
-  border: 3px solid rgba(27, 94, 32, 0.15);
-  border-radius: 20px;
-  font-size: 1.25rem; // Increased from 1.1rem - BIGGER TEXT
+  padding: 12px 16px;
+  border: 2px solid rgba(27, 94, 32, 0.15);
+  border-radius: 10px;
+  font-size: 0.95rem;
   background: $white;
   color: $sport-primary;
   font-weight: 700;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(27, 94, 32, 0.08);
+  box-shadow: 0 2px 6px rgba(27, 94, 32, 0.08);
   position: relative;
-  width: 100%; // Ensure full width
-  height: 64px; // Fixed height for consistency
-  
-  // Enhanced styling
+  width: 100%;
+  height: 44px;
+
   appearance: none;
   cursor: pointer;
-  line-height: 1.2; // Better line height
-  
+  line-height: 1.2;
+
   &:focus {
     outline: none;
     border-color: $sport-primary;
-    box-shadow: 
-      0 0 0 4px rgba(27, 94, 32, 0.15),
-      0 8px 24px rgba(27, 94, 32, 0.12);
-    transform: translateY(-3px);
+    box-shadow:
+      0 0 0 3px rgba(27, 94, 32, 0.15),
+      0 4px 12px rgba(27, 94, 32, 0.12);
+    transform: translateY(-1px);
   }
-  
+
   &:hover {
     border-color: $sport-secondary;
-    box-shadow: 0 6px 20px rgba(27, 94, 32, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(27, 94, 32, 0.12);
+    transform: translateY(-1px);
   }
-  
-  // Custom dropdown arrow for select
+
   &[type="date"] {
     position: relative;
-    
+
     &::-webkit-calendar-picker-indicator {
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E") no-repeat center;
-      background-size: 24px; // Increased from 20px
-      width: 24px;
-      height: 24px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3E%3C/svg%3E") no-repeat center;
+      background-size: 16px;
+      width: 16px;
+      height: 16px;
       cursor: pointer;
       opacity: 0.8;
       transition: opacity 0.3s ease;
-      margin-left: 8px; // Add spacing from text
-      
+      margin-left: 4px;
+
       &:hover {
         opacity: 1;
       }
@@ -835,30 +846,28 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   }
 }
 
-// Enhanced select styling with BIGGER dropdown arrow
 .form-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23059669' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 22px center; // Adjusted position
-  background-size: 20px; // Increased from 16px
-  padding-right: 60px; // Increased padding for larger arrow
-  
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 36px;
+
   &:focus {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%231B5E20' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231B5E20' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
   }
-  
-  // BIGGER dropdown options
+
   option {
-    font-size: 1.2rem; // Bigger option text
-    padding: 12px 16px; // More padding for options
+    font-size: 0.9rem;
+    padding: 8px 12px;
     color: $sport-primary;
     background: $white;
-    
+
     &:hover,
     &:focus {
       background: rgba(27, 94, 32, 0.1);
     }
-    
+
     &:checked {
       background: $sport-primary;
       color: $white;
@@ -866,159 +875,156 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   }
 }
 
-// ENHANCED date input styling
 .form-date {
-  // Better date text alignment
   display: flex;
   align-items: center;
   justify-content: space-between;
-  
-  // Enhanced calendar icon
+
   &::-webkit-datetime-edit-fields-wrapper {
     display: flex;
     align-items: center;
     flex: 1;
   }
-  
+
   &::-webkit-datetime-edit-text {
     color: $sport-primary;
-    padding: 0 4px;
+    padding: 0 2px;
     font-weight: 700;
   }
-  
+
   &::-webkit-datetime-edit-month-field,
   &::-webkit-datetime-edit-day-field,
   &::-webkit-datetime-edit-year-field {
     color: $sport-primary;
     font-weight: 700;
-    font-size: 1.25rem; // Match the input font size
+    font-size: 0.95rem;
   }
-  
+
   &::-webkit-inner-spin-button,
   &::-webkit-clear-button {
     display: none;
   }
 }
 
-// Enhanced Table
+// Compact Table
 .table-container {
-  margin-bottom: 60px;
+  margin-bottom: 30px;
 }
 
 .table-responsive {
   @include big-sport-card;
   overflow-x: auto;
-  margin-bottom: 28px;
-  border-radius: 28px;
+  margin-bottom: 16px;
+  border-radius: 14px;
 }
 
 .booking-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  
+
   th {
     background: $gradient-sport-primary;
     color: $white;
-    padding: 28px 20px;
+    padding: 14px 10px;
     text-align: center;
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     position: relative;
-    
+
     &:first-child {
-      border-radius: 28px 0 0 0;
+      border-radius: 14px 0 0 0;
       background: $gradient-sport-energy;
     }
-    
+
     &:last-child {
-      border-radius: 0 28px 0 0;
+      border-radius: 0 14px 0 0;
     }
-    
+
     .header-icon {
-      margin-right: 12px;
-      font-size: 1.5rem;
+      margin-right: 6px;
+      font-size: 1.1rem;
     }
   }
-  
+
   .slot-header {
     .slot-time {
-      font-size: 1rem;
+      font-size: 0.8rem;
       opacity: 0.95;
       font-weight: 800;
     }
   }
-  
+
   td {
-    padding: 28px 20px;
+    padding: 14px 10px;
     text-align: center;
     background: $white;
-    border-bottom: 3px solid rgba(27, 94, 32, 0.1);
+    border-bottom: 2px solid rgba(27, 94, 32, 0.1);
     font-weight: 700;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     &:first-child {
       background: rgba(27, 94, 32, 0.05);
       color: $sport-primary;
       font-weight: 800;
-      
+
       .label-icon {
-        margin-right: 12px;
-        font-size: 1.5rem;
+        margin-right: 6px;
+        font-size: 1.1rem;
       }
     }
   }
-  
+
   .availability-cell {
     cursor: pointer;
-    
+
     &.available {
       &:hover {
         background: rgba(76, 175, 80, 0.1);
-        transform: scale(1.06);
-        box-shadow: inset 0 0 0 4px rgba(76, 175, 80, 0.3);
+        transform: scale(1.03);
+        box-shadow: inset 0 0 0 2px rgba(76, 175, 80, 0.3);
       }
     }
-    
+
     &.unavailable {
       background: rgba(211, 47, 47, 0.05);
-      
+
       &:hover {
         background: rgba(211, 47, 47, 0.1);
       }
     }
   }
-  
+
   .availability-info {
     .count {
-      font-size: 2.2rem;
+      font-size: 1.6rem;
       font-weight: 900;
       color: $field-green;
       display: block;
       line-height: 1;
     }
-    
+
     .status-text {
-      font-size: 0.9rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.4px;
       color: $gray-600;
-      margin-top: 6px;
+      margin-top: 3px;
       font-weight: 700;
     }
   }
-  
+
   tbody tr:last-child td {
     border-bottom: none;
-    
+
     &:first-child {
-      border-radius: 0 0 0 28px;
+      border-radius: 0 0 0 14px;
     }
-    
+
     &:last-child {
-      border-radius: 0 0 28px 0;
+      border-radius: 0 0 14px 0;
     }
   }
 }
@@ -1026,67 +1032,66 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 .table-legend {
   display: flex;
   justify-content: center;
-  gap: 50px;
-  margin-top: 32px;
-  
+  gap: 25px;
+  margin-top: 16px;
+
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    font-size: 1.2rem;
+    gap: 8px;
+    font-size: 0.9rem;
     font-weight: 700;
     color: $sport-primary;
-    
+
     .legend-color {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+
       &.available {
         background: rgba(76, 175, 80, 0.3);
-        border: 4px solid $field-green;
+        border: 2px solid $field-green;
       }
-      
+
       &.unavailable {
         background: rgba(211, 47, 47, 0.3);
-        border: 4px solid $sport-red;
+        border: 2px solid $sport-red;
       }
     }
   }
 }
 
-// ENHANCED Booking Action Button - PERFECT ALIGNMENT
+// Compact Booking Action Button
 .booking-action {
   text-align: center;
-  padding-top: 60px;
-  border-top: 3px solid rgba(27, 94, 32, 0.1);
-  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid rgba(27, 94, 32, 0.1);
+  margin-top: 20px;
 }
 
 .btn-booking {
   background: $gradient-sport-primary;
   color: $white;
   border: none;
-  border-radius: 24px;
-  padding: 26px 64px; // Increased padding
+  border-radius: 12px;
+  padding: 14px 32px;
   font-weight: 900;
-  font-size: 1.4rem; // Increased from 1.3rem
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
-  letter-spacing: 1.8px; // Increased spacing
+  letter-spacing: 1px;
   position: relative;
   overflow: hidden;
-  box-shadow: 
-    0 8px 32px rgba(27, 94, 32, 0.3),
+  box-shadow:
+    0 4px 16px rgba(27, 94, 32, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   display: inline-flex;
   align-items: center;
-  gap: 18px; // Increased gap
-  min-width: 320px; // Increased from 280px
+  gap: 10px;
+  min-width: 200px;
   justify-content: center;
-  
-  // Animated background
+
   &::before {
     content: '';
     position: absolute;
@@ -1095,10 +1100,9 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.8s ease;
+    transition: left 0.6s ease;
   }
-  
-  // Animated border
+
   &::after {
     content: '';
     position: absolute;
@@ -1106,69 +1110,68 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: 24px;
-    padding: 3px;
+    border-radius: 12px;
+    padding: 2px;
     background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: exclude;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-  
+
   .btn-icon {
-    font-size: 2rem; // Increased from 1.8rem
+    font-size: 1.3rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px; // Increased from 32px
-    height: 36px;
+    width: 24px;
+    height: 24px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     transition: all 0.3s ease;
   }
-  
+
   &:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 
-      0 16px 48px rgba(27, 94, 32, 0.4),
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+      0 8px 24px rgba(27, 94, 32, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    
+
     &::before {
       left: 100%;
     }
-    
+
     &::after {
       opacity: 1;
     }
-    
+
     .btn-icon {
       background: rgba(255, 255, 255, 0.3);
-      transform: rotate(15deg) scale(1.1);
+      transform: rotate(10deg) scale(1.05);
     }
   }
-  
+
   &:active {
-    transform: translateY(-2px) scale(0.98);
+    transform: translateY(-1px) scale(0.98);
   }
-  
+
   &:disabled {
     background: linear-gradient(135deg, $gray-400 0%, $gray-500 100%);
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
     &::before,
     &::after {
       display: none;
     }
-    
+
     .btn-icon {
       background: rgba(255, 255, 255, 0.1);
       transform: none;
     }
   }
-  
-  // Loading state
+
   &.loading {
     .btn-icon {
       animation: spin 1s linear infinite;
@@ -1176,33 +1179,33 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   }
 }
 
-// Enhanced Reviews Section
+// Compact Reviews Section
 .reviews-section {
   background: linear-gradient(135deg, $gray-50 0%, rgba(76, 175, 80, 0.04) 100%);
-  padding: 80px 0;
-  border-top: 6px solid $sport-secondary;
+  padding: 40px 0;
+  border-top: 3px solid $sport-secondary;
   position: relative;
   width: 100vw;
-  
+
   .reviews-inner {
     @include wide-container;
     position: relative;
     z-index: 1;
   }
-  
+
   &__title {
-    font-size: clamp(2.5rem, 7vw, 3.5rem);
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
     font-weight: 900;
     color: $sport-primary;
-    margin: 0 0 60px 0;
+    margin: 0 0 30px 0;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    
+    gap: 10px;
+
     .title-icon {
-      font-size: clamp(3rem, 7vw, 4rem);
+      font-size: clamp(2rem, 5vw, 3rem);
       animation: sportPulse 3s ease-in-out infinite;
     }
   }
@@ -1210,98 +1213,98 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
 .rating-summary {
   @include big-sport-card;
-  padding: 50px;
-  margin-bottom: 50px;
+  padding: 25px;
+  margin-bottom: 25px;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 50px;
+  gap: 25px;
   align-items: center;
   background: $gradient-sport-primary;
   color: $white;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 32px;
-    padding: 40px;
+    gap: 16px;
+    padding: 20px;
   }
-  
+
   .rating-main {
     text-align: center;
-    
+
     .rating-value {
-      font-size: 5rem;
+      font-size: 3rem;
       font-weight: 900;
       color: $white;
       display: block;
       line-height: 1;
-      text-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
     }
-    
+
     .rating-stars {
       display: flex;
       justify-content: center;
-      gap: 8px;
-      margin: 16px 0;
-      
+      gap: 4px;
+      margin: 8px 0;
+
       .star {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         color: $champion-gold;
-        text-shadow: 0 3px 6px rgba(0,0,0,0.3);
-        
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
         &.filled {
           animation: sportPulse 2s ease-in-out infinite;
         }
-        
+
         &:not(.filled) {
           color: rgba(255, 255, 255, 0.3);
         }
       }
     }
   }
-  
+
   .rating-breakdown {
     .breakdown-header {
-      margin-bottom: 28px;
-      
+      margin-bottom: 14px;
+
       .total-reviews {
-        font-size: 1.4rem;
+        font-size: 1rem;
         font-weight: 800;
         color: rgba(255, 255, 255, 0.95);
       }
     }
-    
+
     .breakdown-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
     }
-    
+
     .breakdown-item {
       display: grid;
-      grid-template-columns: 60px 1fr 60px;
+      grid-template-columns: 30px 1fr 30px;
       align-items: center;
-      gap: 20px;
-      
+      gap: 10px;
+
       .star-label {
-        font-size: 1.2rem;
+        font-size: 0.9rem;
         font-weight: 800;
         color: $white;
       }
-      
+
       .progress-bar {
-        height: 14px;
+        height: 8px;
         background: rgba(255, 255, 255, 0.2);
-        border-radius: 7px;
+        border-radius: 4px;
         overflow: hidden;
-        
+
         .progress-fill {
           height: 100%;
           background: rgba(255, 255, 255, 0.9);
-          border-radius: 7px;
-          transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: 4px;
+          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
-          
+
           &::after {
             content: '';
             position: absolute;
@@ -1314,9 +1317,9 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
           }
         }
       }
-      
+
       .count-label {
-        font-size: 1.2rem;
+        font-size: 0.9rem;
         font-weight: 800;
         color: $white;
         text-align: center;
@@ -1327,24 +1330,24 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
 .reviews-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 32px;
-  margin-bottom: 50px;
-  
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 25px;
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 12px;
   }
 }
 
 .review-card {
   @include big-sport-card;
-  padding: 36px;
+  padding: 20px;
   background: $white;
-  
+
   &__avatar {
-    width: 80px;
-    height: 80px;
+    width: 50px;
+    height: 50px;
     background: $gradient-sport-primary;
     border-radius: 50%;
     display: flex;
@@ -1352,86 +1355,86 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
     justify-content: center;
     color: $white;
     font-weight: 800;
-    margin: 0 auto 24px;
-    box-shadow: $shadow-sport-xl;
-    
+    margin: 0 auto 12px;
+    box-shadow: $shadow-sport-lg;
+
     .avatar-text {
-      font-size: 1.3rem;
+      font-size: 1rem;
     }
   }
-  
+
   &__content {
     text-align: center;
   }
-  
+
   &__header {
-    margin-bottom: 20px;
-    
+    margin-bottom: 10px;
+
     .reviewer-info {
-      margin-bottom: 12px;
-      
+      margin-bottom: 6px;
+
       .reviewer-name {
         font-weight: 800;
         color: $sport-primary;
-        font-size: 1.3rem;
+        font-size: 1rem;
         display: block;
       }
-      
+
       .review-time {
         color: $gray-500;
-        font-size: 1rem;
+        font-size: 0.8rem;
         font-weight: 600;
       }
     }
-    
+
     .review-stars {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      
+      gap: 3px;
+
       .star {
-        font-size: 1.8rem;
+        font-size: 1.2rem;
         color: $champion-gold;
-        
+
         &:not(.filled) {
           color: $gray-300;
         }
       }
     }
   }
-  
+
   .review-text {
     color: $gray-700;
-    line-height: 1.6;
-    margin: 0 0 24px 0;
-    font-size: 1.1rem;
+    line-height: 1.4;
+    margin: 0 0 12px 0;
+    font-size: 0.9rem;
     font-weight: 500;
   }
-  
+
   .review-actions {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: 8px;
   }
-  
+
   .review-action-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
+    gap: 4px;
+    padding: 6px 12px;
     background: transparent;
-    border: 3px solid rgba(27, 94, 32, 0.2);
-    border-radius: 50px;
+    border: 2px solid rgba(27, 94, 32, 0.2);
+    border-radius: 25px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: $sport-primary;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     &:hover {
       background: rgba(27, 94, 32, 0.1);
       border-color: rgba(27, 94, 32, 0.4);
-      transform: translateY(-3px);
+      transform: translateY(-1px);
     }
   }
 }
@@ -1440,75 +1443,75 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 32px;
-  padding-top: 50px;
-  border-top: 3px solid rgba(27, 94, 32, 0.1);
-  
+  gap: 16px;
+  padding-top: 25px;
+  border-top: 2px solid rgba(27, 94, 32, 0.1);
+
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 20px;
+    gap: 10px;
   }
 }
 
 .btn-write-review {
   @include big-sport-button;
   background: $gradient-sport-energy;
-  font-size: 1.2rem;
-  padding: 20px 40px;
-  
+  font-size: 0.9rem;
+  padding: 10px 20px;
+
   .btn-icon {
-    font-size: 1.5rem;
+    font-size: 1rem;
   }
 }
 
 .btn-view-all {
   background: transparent;
   color: $sport-primary;
-  border: 3px solid $sport-primary;
-  border-radius: 20px;
-  padding: 20px 40px;
+  border: 2px solid $sport-primary;
+  border-radius: 10px;
+  padding: 10px 20px;
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  
+  letter-spacing: 0.4px;
+
   &:hover {
     background: $sport-primary;
     color: $white;
-    transform: translateY(-3px);
-    box-shadow: $shadow-sport-lg;
+    transform: translateY(-2px);
+    box-shadow: $shadow-sport-md;
   }
-  
+
   .btn-arrow {
     transition: transform 0.3s ease;
-    font-size: 1.4rem;
+    font-size: 1rem;
   }
-  
+
   &:hover .btn-arrow {
-    transform: translateX(8px);
+    transform: translateX(4px);
   }
 }
 
-// Enhanced States
+// Compact States
 .loading-state {
   text-align: center;
-  padding: 60px 40px;
-  
+  padding: 30px 20px;
+
   .loading-spinner {
-    font-size: 4rem;
-    margin-bottom: 24px;
+    font-size: 2.5rem;
+    margin-bottom: 12px;
     display: block;
     animation: spin 1.5s linear infinite;
   }
-  
+
   p {
     color: $sport-primary;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     margin: 0;
   }
@@ -1516,50 +1519,51 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 
 .empty-state {
   text-align: center;
-  padding: 60px 40px;
-  
+  padding: 30px 20px;
+
   .empty-icon {
-    font-size: 4rem;
-    margin-bottom: 24px;
+    font-size: 2.5rem;
+    margin-bottom: 12px;
     display: block;
     opacity: 0.6;
   }
-  
+
   p {
     color: $gray-600;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     margin: 0;
-    max-width: 400px;
+    max-width: 300px;
     margin: 0 auto;
-    line-height: 1.5;
+    line-height: 1.4;
   }
 }
 
 .error-state {
   text-align: center;
-  padding: 80px 60px;
-  
+  padding: 40px 30px;
+
   .error-icon {
-    font-size: 6rem;
-    margin-bottom: 32px;
+    font-size: 3.5rem;
+    margin-bottom: 16px;
     display: block;
     animation: sportFloat 3s ease-in-out infinite;
   }
-  
-  h2, p {
+
+  h2,
+  p {
     color: $sport-red;
-    margin: 16px 0;
+    margin: 8px 0;
     font-weight: 700;
   }
-  
+
   h2 {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     font-weight: 900;
   }
-  
+
   p {
-    font-size: 1.3rem;
+    font-size: 1rem;
   }
 }
 
@@ -1567,89 +1571,67 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 @media (max-width: 768px) {
   .booking-controls {
     grid-template-columns: 1fr;
-    gap: 28px; // Increased gap
-    padding: 36px 28px; // Increased padding
+    gap: 14px;
+    padding: 18px 14px;
   }
-  
+
   .control-label {
-    font-size: 1.1rem; // Bigger on mobile
-    
+    font-size: 0.85rem;
+
     .label-icon {
-      font-size: 1.7rem; // Bigger icon on mobile
-      min-width: 40px;
-      min-height: 40px;
+      font-size: 1.1rem;
+      min-width: 24px;
+      min-height: 24px;
     }
   }
-  
+
   .form-select,
   .form-date {
-    padding: 20px 24px; // Bigger padding on mobile
-    font-size: 1.15rem; // Bigger text on mobile
-    height: 60px; // Consistent height on mobile
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    height: 40px;
   }
-  
+
   .btn-booking {
-    padding: 22px 52px; // Adjusted for mobile
-    font-size: 1.2rem; // Adjusted for mobile
-    min-width: 280px;
-    
+    padding: 12px 26px;
+    font-size: 0.9rem;
+    min-width: 180px;
+
     .btn-icon {
-      font-size: 1.7rem;
-      width: 32px;
-      height: 32px;
+      font-size: 1.1rem;
+      width: 20px;
+      height: 20px;
     }
   }
 }
 
-// ENHANCED alignment for dropdown options
-.form-select {
-  // Better vertical alignment
-  display: flex;
-  align-items: center;
-  
-  // Custom styling for better appearance
-  &::-ms-expand {
-    display: none; // Hide default arrow in IE
-  }
-}
-
-// Additional fixes for perfect alignment
+// Alignment fixes
 .control-group {
-  // Ensure both controls have same baseline
-  justify-content: flex-end; // Align to bottom
-  
-  .control-label {
-    margin-bottom: auto; // Push label to top
-  }
-  
-  .form-select,
-  .form-date {
-    margin-top: auto; // Align inputs to bottom
-  }
-}
+  justify-content: flex-end;
 
-// Better focus states
-.control-group:focus-within {
+  .control-label {
+    margin-bottom: auto;
+  }
+
   .form-select,
   .form-date {
-    border-color: $sport-primary;
-    box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
+    margin-top: auto;
   }
 }
 
 // Enhanced focus states
 .control-group:focus-within {
+
   .form-select,
   .form-date {
     border-color: $sport-primary;
-    box-shadow: 0 0 0 4px rgba(27, 94, 32, 0.15);
+    box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.15);
   }
 }
 
-// Improved accessibility
 .btn-booking:focus-visible {
-  outline: 4px solid rgba(27, 94, 32, 0.5);
-  outline-offset: 4px;
+  outline: 3px solid rgba(27, 94, 32, 0.5);
+  outline-offset: 3px;
 }
 
 .form-select:focus-visible,
@@ -1661,72 +1643,73 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 // Responsive Design
 @media (max-width: 1400px) {
   .facility-main {
-    grid-template-columns: 2fr 1fr; // Keep 2:1 ratio
-    gap: 50px;
-    padding: 50px;
+    grid-template-columns: 1.6fr 1.4fr; // Giữ tỷ lệ này cho màn hình lớn
+    gap: 25px;
+    padding: 25px;
   }
 }
 
 @media (max-width: 1200px) {
   .facility-main {
     grid-template-columns: 1fr;
-    gap: 40px;
-    padding: 40px 30px;
+    gap: 20px;
+    padding: 20px 15px;
   }
-  
+
   .facility-title {
-    font-size: 2.8rem;
+    font-size: 2rem;
   }
-  
+
   .booking-section__title,
   .reviews-section__title {
-    font-size: 2.8rem;
+    font-size: 2rem;
   }
 }
 
 @media (max-width: 768px) {
   .facility-header {
-    padding: 20px 0;
-    
+    padding: 10px 0;
+
     .header-inner {
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
       text-align: center;
-      padding: 0 20px;
+      padding: 0 10px;
     }
-    
+
     &__content {
       margin: 0;
     }
   }
-  
+
   .booking-table {
-    font-size: 0.9rem;
-    
-    th, td {
-      padding: 20px 12px;
+    font-size: 0.8rem;
+
+    th,
+    td {
+      padding: 10px 6px;
     }
   }
-  
+
   .facility-main {
-    padding: 30px 20px;
+    padding: 15px 10px;
   }
-  
+
   .carousel__container {
-    height: 300px;
+    height: 200px;
   }
-  
+
   .reviews-list {
     grid-template-columns: 1fr;
   }
-  
+
   .facility-title-section {
-    margin-top: 20px;
-    padding: 30px 20px;
+    margin-top: 10px;
+    padding: 15px 10px;
   }
-  
+
   .facility-title {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 }
 
@@ -1737,6 +1720,6 @@ $shadow-sport-xl: 0 24px 48px rgba(27, 94, 32, 0.3);
 .btn-booking:focus,
 .btn-write-review:focus,
 .btn-view-all:focus {
-  outline: 4px solid rgba(27, 94, 32, 0.5);
-  outline-offset: 4px;
+  outline: 3px solid rgba(27, 94, 32, 0.5);
+  outline-offset: 3px;
 }

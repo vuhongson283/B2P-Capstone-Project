@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext.js';
-import { useCustomerSignalR } from '../../contexts/CustomerSignalRContext.js';
-import './FacilityDetails.scss';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext.js";
+import { useCustomerSignalR } from "../../contexts/CustomerSignalRContext.js";
+import "./FacilityDetails.scss";
+import { useParams } from "react-router-dom";
 import BookingModal from "./BookingModal.js";
 import BookingDetail from "./BookingDetail.js";
-import { getFacilityDetailsById, getAvailableSlots, createBookingForPlayer, createPaymentOrder, createStripePaymentOrder } from "../../services/apiService";
-import { parseInt } from 'lodash';
+import {
+  getFacilityDetailsById,
+  getAvailableSlots,
+  createBookingForPlayer,
+  createPaymentOrder,
+  createStripePaymentOrder,
+} from "../../services/apiService";
+import { parseInt } from "lodash";
 
 // Constants
 const TODAY_DATE = new Date().toISOString().slice(0, 10);
 const FACILITY_IMAGES = [
-  'https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png',
-  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=800&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
+  "https://nads.1cdn.vn/2024/11/22/74da3f39-759b-4f08-8850-4c8f2937e81a-1_mangeshdes.png",
+  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=800&h=600&fit=crop",
+  "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop",
 ];
 
 // ✅ Safe hook wrapper to handle missing provider
@@ -22,13 +28,16 @@ const useSafeCustomerSignalR = () => {
   try {
     return useCustomerSignalR();
   } catch (error) {
-    console.warn('CustomerSignalRProvider not found, using fallback:', error.message);
+    console.warn(
+      "CustomerSignalRProvider not found, using fallback:",
+      error.message
+    );
     return {
       isConnected: false,
-      connectionState: 'Disconnected',
-      joinFacilityForUpdates: () => console.log('SignalR not available'),
-      leaveFacilityUpdates: () => console.log('SignalR not available'),
-      joinedFacilities: []
+      connectionState: "Disconnected",
+      joinFacilityForUpdates: () => console.log("SignalR not available"),
+      leaveFacilityUpdates: () => console.log("SignalR not available"),
+      joinedFacilities: [],
     };
   }
 };
@@ -167,7 +176,7 @@ const isValidImageUrl = (url) => {
 // Helper function to format time
 const formatTimeSlot = (startTime, endTime) => {
   const formatTime = (timeString) => {
-    if (!timeString) return '';
+    if (!timeString) return "";
     return timeString.substring(0, 5); // Format HH:mm from HH:mm:ss
   };
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
@@ -183,7 +192,7 @@ const convertDateFormat = (dateString) => {
 
   if (match) {
     const [, day, month, year] = match;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
 
   // Already in YYYY-MM-DD format or other format
@@ -192,14 +201,14 @@ const convertDateFormat = (dateString) => {
 
 // Reviews Modal Component
 const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
-  const [selectedStars, setSelectedStars] = useState('all');
+  const [selectedStars, setSelectedStars] = useState("all");
 
   // Loại bỏ các rating trùng lặp
   const uniqueRatings = React.useMemo(() => {
     if (!ratings || ratings.length === 0) return [];
 
     const seen = new Set();
-    return ratings.filter(rating => {
+    return ratings.filter((rating) => {
       const key = `${rating.ratingId}-${rating.bookingId}`;
       if (seen.has(key)) {
         return false;
@@ -211,10 +220,12 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
 
   // Lọc ratings theo số sao được chọn
   const filteredRatings = React.useMemo(() => {
-    if (selectedStars === 'all') {
+    if (selectedStars === "all") {
       return uniqueRatings;
     }
-    return uniqueRatings.filter(rating => rating.stars === parseInt(selectedStars));
+    return uniqueRatings.filter(
+      (rating) => rating.stars === parseInt(selectedStars)
+    );
   }, [uniqueRatings, selectedStars]);
 
   // Tính thống kê
@@ -223,14 +234,14 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
       return {
         averageRating: 0,
         totalReviews: 0,
-        breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
       };
     }
 
     const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     let totalStars = 0;
 
-    uniqueRatings.forEach(rating => {
+    uniqueRatings.forEach((rating) => {
       const stars = rating.stars;
       if (stars >= 1 && stars <= 5) {
         breakdown[stars]++;
@@ -241,7 +252,7 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     return {
       averageRating: Math.round((totalStars / uniqueRatings.length) * 10) / 10,
       totalReviews: uniqueRatings.length,
-      breakdown
+      breakdown,
     };
   }, [uniqueRatings]);
 
@@ -250,9 +261,9 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
     return [...Array(5)].map((_, index) => (
       <span
         key={index}
-        className={`star ${index < starCount ? 'filled' : ''}`}
+        className={`star ${index < starCount ? "filled" : ""}`}
         style={{
-          color: index < starCount ? '#fbbf24' : '#e5e7eb'
+          color: index < starCount ? "#fbbf24" : "#e5e7eb",
         }}
       >
         ★
@@ -263,190 +274,259 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
   if (!open) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    }}>
-      <div className="modal-container reviews-modal" onClick={(e) => e.stopPropagation()} style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        width: '90%',
-        maxWidth: '900px',
-        height: '80vh',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        overflow: 'hidden'
-      }}>
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: "20px",
+      }}
+    >
+      <div
+        className="modal-container reviews-modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "white",
+          borderRadius: "16px",
+          width: "90%",
+          maxWidth: "900px",
+          height: "80vh",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <div className="modal-header" style={{
-          padding: '24px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: '#f8fafc'
-        }}>
-          <h2 className="modal-title" style={{
-            margin: 0,
-            fontSize: '20px',
-            fontWeight: '600',
-            color: '#1f2937',
-            textAlign: 'center',
-            flex: 1
-          }}>
+        <div
+          className="modal-header"
+          style={{
+            padding: "24px",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: "#f8fafc",
+          }}
+        >
+          <h2
+            className="modal-title"
+            style={{
+              margin: 0,
+              fontSize: "20px",
+              fontWeight: "600",
+              color: "#1f2937",
+              textAlign: "center",
+              flex: 1,
+            }}
+          >
             <span className="title-icon">⭐</span>
             Tất cả đánh giá - {facilityName}
           </h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close modal" style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '24px',
-            color: '#6b7280',
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '40px',
-            height: '40px',
-            transition: 'all 0.2s ease'
-          }} onMouseOver={(e) => {
-            e.target.style.backgroundColor = '#f3f4f6';
-            e.target.style.color = '#374151';
-          }} onMouseOut={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.color = '#6b7280';
-          }}>
+          <button
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "24px",
+              color: "#6b7280",
+              cursor: "pointer",
+              padding: "8px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "40px",
+              height: "40px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = "#f3f4f6";
+              e.target.style.color = "#374151";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#6b7280";
+            }}
+          >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="modal-content" style={{
-          flex: 1,
-          overflow: 'auto',
-          padding: '24px'
-        }}>
+        <div
+          className="modal-content"
+          style={{
+            flex: 1,
+            overflow: "auto",
+            padding: "24px",
+          }}
+        >
           {/* Rating Summary */}
-          <div className="reviews-modal-summary" style={{
-            marginBottom: '32px',
-            textAlign: 'center'
-          }}>
+          <div
+            className="reviews-modal-summary"
+            style={{
+              marginBottom: "32px",
+              textAlign: "center",
+            }}
+          >
             <div className="summary-main">
-              <div className="rating-display" style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <span className="rating-value" style={{
-                  fontSize: '32px',
-                  fontWeight: '700',
-                  color: '#1f2937'
-                }}>{ratingStats.averageRating}</span>
-                <div className="rating-stars" style={{
-                  color: '#fbbf24',
-                  fontSize: '20px'
-                }}>
+              <div
+                className="rating-display"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "12px",
+                  marginBottom: "16px",
+                }}
+              >
+                <span
+                  className="rating-value"
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: "700",
+                    color: "#1f2937",
+                  }}
+                >
+                  {ratingStats.averageRating}
+                </span>
+                <div
+                  className="rating-stars"
+                  style={{
+                    color: "#fbbf24",
+                    fontSize: "20px",
+                  }}
+                >
                   {renderStars(Math.round(ratingStats.averageRating))}
                 </div>
-                <span className="rating-text" style={{
-                  fontSize: '14px',
-                  color: '#6b7280'
-                }}>({ratingStats.totalReviews} đánh giá)</span>
+                <span
+                  className="rating-text"
+                  style={{
+                    fontSize: "14px",
+                    color: "#6b7280",
+                  }}
+                >
+                  ({ratingStats.totalReviews} đánh giá)
+                </span>
               </div>
             </div>
 
             {/* Filter by stars */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-              <div className="star-filter" style={{ textAlign: 'center' }}>
-                <label className="filter-label" style={{
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#374151',
-                  marginBottom: '8px',
-                  display: 'block'
-                }}>Lọc theo số sao:</label>
-                <div className="filter-buttons" style={{
-                  display: 'flex',
-                  gap: '8px',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center'
-                }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "16px",
+              }}
+            >
+              <div className="star-filter" style={{ textAlign: "center" }}>
+                <label
+                  className="filter-label"
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "8px",
+                    display: "block",
+                  }}
+                >
+                  Lọc theo số sao:
+                </label>
+                <div
+                  className="filter-buttons"
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                  }}
+                >
                   <button
-                    className={`filter-btn ${selectedStars === 'all' ? 'active' : ''}`}
-                    onClick={() => setSelectedStars('all')}
+                    className={`filter-btn ${
+                      selectedStars === "all" ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedStars("all")}
                     style={{
-                      padding: '8px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      backgroundColor: selectedStars === 'all' ? '#3b82f6' : 'white',
-                      color: selectedStars === 'all' ? 'white' : '#374151',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      transition: 'all 0.2s ease'
+                      padding: "8px 16px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      backgroundColor:
+                        selectedStars === "all" ? "#3b82f6" : "white",
+                      color: selectedStars === "all" ? "white" : "#374151",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      transition: "all 0.2s ease",
                     }}
                     onMouseOver={(e) => {
-                      if (selectedStars !== 'all') {
-                        e.target.style.backgroundColor = '#f3f4f6';
-                        e.target.style.borderColor = '#9ca3af';
+                      if (selectedStars !== "all") {
+                        e.target.style.backgroundColor = "#f3f4f6";
+                        e.target.style.borderColor = "#9ca3af";
                       }
                     }}
                     onMouseOut={(e) => {
-                      if (selectedStars !== 'all') {
-                        e.target.style.backgroundColor = 'white';
-                        e.target.style.borderColor = '#d1d5db';
+                      if (selectedStars !== "all") {
+                        e.target.style.backgroundColor = "white";
+                        e.target.style.borderColor = "#d1d5db";
                       }
                     }}
                   >
                     Tất cả ({ratingStats.totalReviews})
                   </button>
-                  {[5, 4, 3, 2, 1].map(stars => (
+                  {[5, 4, 3, 2, 1].map((stars) => (
                     <button
                       key={stars}
-                      className={`filter-btn ${selectedStars === stars.toString() ? 'active' : ''}`}
+                      className={`filter-btn ${
+                        selectedStars === stars.toString() ? "active" : ""
+                      }`}
                       onClick={() => setSelectedStars(stars.toString())}
                       style={{
-                        padding: '8px 16px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '8px',
-                        backgroundColor: selectedStars === stars.toString() ? '#3b82f6' : 'white',
-                        color: selectedStars === stars.toString() ? 'white' : '#374151',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
+                        padding: "8px 16px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "8px",
+                        backgroundColor:
+                          selectedStars === stars.toString()
+                            ? "#3b82f6"
+                            : "white",
+                        color:
+                          selectedStars === stars.toString()
+                            ? "white"
+                            : "#374151",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
                       }}
                       onMouseOver={(e) => {
                         if (selectedStars !== stars.toString()) {
-                          e.target.style.backgroundColor = '#f3f4f6';
-                          e.target.style.borderColor = '#9ca3af';
+                          e.target.style.backgroundColor = "#f3f4f6";
+                          e.target.style.borderColor = "#9ca3af";
                         }
                       }}
                       onMouseOut={(e) => {
                         if (selectedStars !== stars.toString()) {
-                          e.target.style.backgroundColor = 'white';
-                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.backgroundColor = "white";
+                          e.target.style.borderColor = "#d1d5db";
                         }
                       }}
                     >
-                      <span style={{ color: '#fbbf24' }}>{stars}★</span> ({ratingStats.breakdown[stars]})
+                      <span style={{ color: "#fbbf24" }}>{stars}★</span> (
+                      {ratingStats.breakdown[stars]})
                     </button>
                   ))}
                 </div>
@@ -457,87 +537,130 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
           {/* Reviews List */}
           <div className="reviews-modal-list">
             {filteredRatings.length === 0 ? (
-              <div className="empty-reviews" style={{
-                textAlign: 'center',
-                padding: '40px',
-                color: '#6b7280'
-              }}>
-                <div className="empty-icon" style={{ fontSize: '48px', marginBottom: '16px' }}>⭐</div>
+              <div
+                className="empty-reviews"
+                style={{
+                  textAlign: "center",
+                  padding: "40px",
+                  color: "#6b7280",
+                }}
+              >
+                <div
+                  className="empty-icon"
+                  style={{ fontSize: "48px", marginBottom: "16px" }}
+                >
+                  ⭐
+                </div>
                 <p>
-                  {selectedStars === 'all'
-                    ? 'Chưa có đánh giá nào'
-                    : `Chưa có đánh giá ${selectedStars} sao nào`
-                  }
+                  {selectedStars === "all"
+                    ? "Chưa có đánh giá nào"
+                    : `Chưa có đánh giá ${selectedStars} sao nào`}
                 </p>
               </div>
             ) : (
               filteredRatings.map((rating, index) => (
-                <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-modal-card" style={{
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  marginBottom: '16px',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                  transition: 'all 0.2s ease'
-                }} onMouseOver={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  e.currentTarget.style.borderColor = '#d1d5db';
-                }} onMouseOut={(e) => {
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
-                }}>
-                  <div className="review-modal-card__avatar" style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: '#3b82f6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      flexShrink: 0
-                    }}>
+                <div
+                  key={`${rating.ratingId}-${rating.bookingId}-${index}`}
+                  className="review-modal-card"
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    marginBottom: "16px",
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(0, 0, 0, 0.1)";
+                    e.currentTarget.style.borderColor = "#d1d5db";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 2px 4px rgba(0, 0, 0, 0.05)";
+                    e.currentTarget.style.borderColor = "#e5e7eb";
+                  }}
+                >
+                  <div
+                    className="review-modal-card__avatar"
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        backgroundColor: "#3b82f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        flexShrink: 0,
+                      }}
+                    >
                       U{rating.bookingId}
                     </div>
-                    <div className="review-modal-card__content" style={{ flex: 1 }}>
-                      <div className="review-modal-card__header" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '8px'
-                      }}>
+                    <div
+                      className="review-modal-card__content"
+                      style={{ flex: 1 }}
+                    >
+                      <div
+                        className="review-modal-card__header"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: "8px",
+                        }}
+                      >
                         <div className="reviewer-info">
-                          <span className="reviewer-name" style={{
-                            fontWeight: '600',
-                            color: '#1f2937'
-                          }}>Người dùng #{rating.bookingId}</span>
-                          <span className="review-time" style={{
-                            color: '#6b7280',
-                            fontSize: '14px'
-                          }}> • Booking #{rating.bookingId}</span>
+                          <span
+                            className="reviewer-name"
+                            style={{
+                              fontWeight: "600",
+                              color: "#1f2937",
+                            }}
+                          >
+                            Người dùng #{rating.bookingId}
+                          </span>
+                          <span
+                            className="review-time"
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "14px",
+                            }}
+                          >
+                            {" "}
+                            • Booking #{rating.bookingId}
+                          </span>
                         </div>
-                        <div className="review-stars" style={{
-                          color: '#fbbf24',
-                          fontSize: '16px'
-                        }}>
+                        <div
+                          className="review-stars"
+                          style={{
+                            color: "#fbbf24",
+                            fontSize: "16px",
+                          }}
+                        >
                           {renderStars(rating.stars)}
                         </div>
                       </div>
-                      <p className="review-text" style={{
-                        color: '#4b5563',
-                        lineHeight: '1.6',
-                        margin: 0,
-                        fontSize: '15px'
-                      }}>
-                        {rating.comment || 'Không có bình luận'}
+                      <p
+                        className="review-text"
+                        style={{
+                          color: "#4b5563",
+                          lineHeight: "1.6",
+                          margin: 0,
+                          fontSize: "15px",
+                        }}
+                      >
+                        {rating.comment || "Không có bình luận"}
                       </p>
                     </div>
                   </div>
@@ -548,33 +671,40 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
         </div>
 
         {/* Footer */}
-        <div className="modal-footer" style={{
-          padding: '20px 24px',
-          borderTop: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#f8fafc'
-        }}>
-          <button className="btn-secondary" onClick={onClose} style={{
-            padding: '10px 20px',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            backgroundColor: 'white',
-            color: '#374151',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
+        <div
+          className="modal-footer"
+          style={{
+            padding: "20px 24px",
+            borderTop: "1px solid #e5e7eb",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "#f8fafc",
           }}
+        >
+          <button
+            className="btn-secondary"
+            onClick={onClose}
+            style={{
+              padding: "10px 20px",
+              border: "1px solid #d1d5db",
+              borderRadius: "8px",
+              backgroundColor: "white",
+              color: "#374151",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "500",
+              transition: "all 0.2s ease",
+            }}
             onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#f3f4f6';
-              e.target.style.borderColor = '#9ca3af';
+              e.target.style.backgroundColor = "#f3f4f6";
+              e.target.style.borderColor = "#9ca3af";
             }}
             onMouseOut={(e) => {
-              e.target.style.backgroundColor = 'white';
-              e.target.style.borderColor = '#d1d5db';
-            }}>
+              e.target.style.backgroundColor = "white";
+              e.target.style.borderColor = "#d1d5db";
+            }}
+          >
             Đóng
           </button>
         </div>
@@ -593,12 +723,13 @@ const ImageCarousel = ({ images }) => {
 
   // Process facility images - convert Google Drive links and handle all URLs
   const displayImages = React.useMemo(() => {
-    console.log('Raw images from API:', images);
+    console.log("Raw images from API:", images);
 
     let processedImages = [];
 
     if (images && images.length > 0) {
       // Process all images, convert Google Drive links
+
       processedImages = images
         .filter(img => {
           const hasUrl = img.imageUrl && img.imageUrl.trim() !== '';
@@ -606,13 +737,13 @@ const ImageCarousel = ({ images }) => {
           return hasUrl;
         })
         .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map(img => {
+        .map((img) => {
           const originalUrl = img.imageUrl;
           const convertedUrl = convertGoogleDriveUrl(originalUrl);
           console.log(`Converting: ${originalUrl} → ${convertedUrl}`);
           return convertedUrl;
         })
-        .filter(url => url && !failedImages.has(url));
+        .filter((url) => url && !failedImages.has(url));
 
       console.log('Processed API images after filtering failed:', processedImages);
     }
@@ -651,7 +782,7 @@ const ImageCarousel = ({ images }) => {
   };
 
   const handleImageError = (failedUrl) => {
-    console.error('Image failed to load:', failedUrl);
+    console.error("Image failed to load:", failedUrl);
 
     // Don't handle error for default image to prevent infinite loop
     if (failedUrl === "/src/assets/images/default.jpg") {
@@ -676,7 +807,7 @@ const ImageCarousel = ({ images }) => {
         if (fileId) {
           // Same format order as in convertGoogleDriveUrl (focus on googleusercontent)
           const alternativeFormats = [
-            `https://lh3.googleusercontent.com/d/${fileId}=s800-c`,
+            `https://lh3.googleusercontent.com/d/${fileId}=s600-c`,
             `https://lh3.googleusercontent.com/d/${fileId}=w800-h600-p-k-no-nu`,
             `https://lh3.googleusercontent.com/d/${fileId}=s0`,
             `https://lh3.googleusercontent.com/d/${fileId}`,
@@ -786,6 +917,7 @@ const ImageCarousel = ({ images }) => {
             src={currentImage}
             alt={`Facility view ${currentIndex + 1}`}
             className="carousel__image"
+
             onError={() => handleImageError(currentImage)}
             onLoad={() => handleImageLoad(currentImage)}
             onLoadStart={() => setIsLoading(true)} // Set loading when starting
@@ -795,6 +927,7 @@ const ImageCarousel = ({ images }) => {
               transition: 'opacity 0.3s ease'
             }}
           />
+
 
           <div className="carousel__overlay"></div>
         </div>
@@ -816,6 +949,7 @@ const ImageCarousel = ({ images }) => {
             <button
               key={`dot-${idx}`}
               className={`carousel__dot ${idx === currentIndex ? 'active' : ''}`}
+
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to image ${idx + 1}`}
             />
@@ -829,38 +963,41 @@ const ImageCarousel = ({ images }) => {
 // Facility Info Component
 const FacilityInfo = ({ facilityData }) => {
   const formatTime = (timeString) => {
-    if (!timeString) return '';
+    if (!timeString) return "";
     return timeString.substring(0, 5);
   };
 
   const infoItems = [
     {
-      icon: '📍',
-      label: 'Địa điểm',
-      value: facilityData?.location || 'Chưa có thông tin'
+      icon: "📍",
+      label: "Địa điểm",
+      value: facilityData?.location || "Chưa có thông tin",
     },
     {
-      icon: '🕐',
-      label: 'Giờ hoạt động',
-      value: facilityData?.openTime && facilityData?.closeTime
-        ? `${formatTime(facilityData.openTime)} - ${formatTime(facilityData.closeTime)}`
-        : 'Chưa có thông tin'
+      icon: "🕐",
+      label: "Giờ hoạt động",
+      value:
+        facilityData?.openTime && facilityData?.closeTime
+          ? `${formatTime(facilityData.openTime)} - ${formatTime(
+              facilityData.closeTime
+            )}`
+          : "Chưa có thông tin",
     },
     {
-      icon: '📞',
-      label: 'Số điện thoại',
-      value: facilityData?.contact || 'Chưa có thông tin'
+      icon: "📞",
+      label: "Số điện thoại",
+      value: facilityData?.contact || "Chưa có thông tin",
     },
     {
-      icon: '🏟️',
-      label: 'Loại sân',
-      value: `${facilityData?.categories?.length || 0} loại sân`
+      icon: "🏟️",
+      label: "Loại sân",
+      value: `${facilityData?.categories?.length || 0} loại sân`,
     },
     {
-      icon: '⚡',
-      label: 'Trạng thái',
-      value: facilityData?.status?.statusDescription || 'Đang hoạt động'
-    }
+      icon: "⚡",
+      label: "Trạng thái",
+      value: facilityData?.status?.statusDescription || "Đang hoạt động",
+    },
   ];
 
   return (
@@ -896,6 +1033,9 @@ const FacilityInfo = ({ facilityData }) => {
 
 // Main Component
 const FacilityDetails = () => {
+  useEffect(() => {
+    document.title = "Chi tiết cơ sở - B2P";
+  }, []);
   const { userId } = useAuth();
 
   // ✅ Use safe SignalR hook
@@ -904,7 +1044,7 @@ const FacilityDetails = () => {
     connectionState,
     joinFacilityForUpdates,
     leaveFacilityUpdates,
-    joinedFacilities
+    joinedFacilities,
   } = useSafeCustomerSignalR();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -912,7 +1052,7 @@ const FacilityDetails = () => {
   const [bookingDetailOpen, setBookingDetailOpen] = useState(false);
   const [bookingDetailData, setBookingDetailData] = useState(null);
   const [facilityData, setFacilityData] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDate, setSelectedDate] = useState(TODAY_DATE);
   const [timeSlots, setTimeSlots] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -928,28 +1068,32 @@ const FacilityDetails = () => {
   // ✅ Enhanced refresh function with detailed logging
   const refreshAvailableSlots = async () => {
     if (!selectedCategory || !selectedDate || !facilityId) {
-      console.log('⚠️ [FacilityDetails] Missing required data for refresh:', {
+      console.log("⚠️ [FacilityDetails] Missing required data for refresh:", {
         selectedCategory,
         selectedDate,
-        facilityId
+        facilityId,
       });
       setTimeSlots([]);
       return;
     }
 
-    console.log('🔄 [FacilityDetails] Starting slots refresh...', {
+    console.log("🔄 [FacilityDetails] Starting slots refresh...", {
       facilityId,
       categoryId: selectedCategory,
       date: selectedDate,
       timestamp: new Date().toISOString(),
-      currentTime: '2025-08-23 06:05:37 UTC'
+      currentTime: "2025-08-23 06:05:37 UTC",
     });
 
     setLoadingSlots(true);
     try {
-      const response = await getAvailableSlots(facilityId, selectedCategory, selectedDate);
+      const response = await getAvailableSlots(
+        facilityId,
+        selectedCategory,
+        selectedDate
+      );
 
-      console.log('📊 [FacilityDetails] Slots API response:', response);
+      console.log("📊 [FacilityDetails] Slots API response:", response);
 
       let newSlots = [];
       if (response.data && response.data.data) {
@@ -958,8 +1102,8 @@ const FacilityDetails = () => {
         newSlots = response.data;
       }
 
-      console.log('📊 [FacilityDetails] Processed slots:', newSlots);
-      console.log('📊 [FacilityDetails] Slots count:', newSlots.length);
+      console.log("📊 [FacilityDetails] Processed slots:", newSlots);
+      console.log("📊 [FacilityDetails] Slots count:", newSlots.length);
 
       // ✅ Show detailed slot availability with current user context
       newSlots.forEach((slot, index) => {
@@ -967,17 +1111,21 @@ const FacilityDetails = () => {
           timeSlotId: slot.timeSlotId,
           timeRange: `${slot.startTime} - ${slot.endTime}`,
           availableCount: slot.availableCourtCount,
-          totalCourts: slot.totalCourtCount || 'N/A',
+          totalCourts: slot.totalCourtCount || "N/A",
           updated: new Date().toLocaleTimeString(),
-          user: 'bachnhhe173308'
+          user: "bachnhhe173308",
         });
       });
 
       setTimeSlots(newSlots);
-      console.log('✅ [FacilityDetails] Slots updated successfully for user bachnhhe173308');
-
+      console.log(
+        "✅ [FacilityDetails] Slots updated successfully for user bachnhhe173308"
+      );
     } catch (error) {
-      console.error('❌ [FacilityDetails] Error refreshing available slots:', error);
+      console.error(
+        "❌ [FacilityDetails] Error refreshing available slots:",
+        error
+      );
       setTimeSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -987,27 +1135,39 @@ const FacilityDetails = () => {
   // ✅ FIXED: Enhanced SignalR event listeners with proper date handling
   useEffect(() => {
     if (!isConnected || !facilityId) {
-      console.log('⚠️ [FacilityDetails] SignalR not connected or no facilityId:', {
-        isConnected,
-        facilityId,
-        user: 'bachnhhe173308',
-        timestamp: '2025-08-23 06:05:37 UTC'
-      });
+      console.log(
+        "⚠️ [FacilityDetails] SignalR not connected or no facilityId:",
+        {
+          isConnected,
+          facilityId,
+          user: "bachnhhe173308",
+          timestamp: "2025-08-23 06:05:37 UTC",
+        }
+      );
       return;
     }
 
-    console.log('🔔 [FacilityDetails] Setting up SignalR event listeners for facility:', facilityId);
-    console.log('🔔 [FacilityDetails] Current selected category:', selectedCategory);
-    console.log('🔔 [FacilityDetails] Current selected date:', selectedDate);
-    console.log('🔔 [FacilityDetails] Current user: bachnhhe173308');
+    console.log(
+      "🔔 [FacilityDetails] Setting up SignalR event listeners for facility:",
+      facilityId
+    );
+    console.log(
+      "🔔 [FacilityDetails] Current selected category:",
+      selectedCategory
+    );
+    console.log("🔔 [FacilityDetails] Current selected date:", selectedDate);
+    console.log("🔔 [FacilityDetails] Current user: bachnhhe173308");
 
     // Import signalRService to listen for events
-    const signalRService = require('../../services/signalRService').default;
+    const signalRService = require("../../services/signalRService").default;
 
     // ✅ Enhanced booking notification handler
     const handleBookingNotification = (notification) => {
-      console.log('📨 [FacilityDetails] Received booking notification:', notification);
-      console.log('📨 [FacilityDetails] Notification details:', {
+      console.log(
+        "📨 [FacilityDetails] Received booking notification:",
+        notification
+      );
+      console.log("📨 [FacilityDetails] Notification details:", {
         action: notification.action,
         facilityId: notification.facilityId,
         currentFacilityId: parseInt(facilityId),
@@ -1017,8 +1177,8 @@ const FacilityDetails = () => {
         selectedDate: selectedDate,
         timeSlot: notification.timeSlot,
         customerName: notification.customerName,
-        currentUser: 'bachnhhe173308',
-        timestamp: '2025-08-23 06:05:37 UTC'
+        currentUser: "bachnhhe173308",
+        timestamp: "2025-08-23 06:05:37 UTC",
       });
 
       // ✅ Check if notification is for current facility
@@ -1026,73 +1186,93 @@ const FacilityDetails = () => {
       const currentFacilityId = parseInt(facilityId);
 
       if (notificationFacilityId === currentFacilityId) {
-        console.log('✅ [FacilityDetails] Notification is for current facility, checking date...');
+        console.log(
+          "✅ [FacilityDetails] Notification is for current facility, checking date..."
+        );
 
         // ✅ Enhanced date format conversion
         const notificationDate = convertDateFormat(notification.date);
 
-        console.log('📅 [FacilityDetails] Date comparison:', {
+        console.log("📅 [FacilityDetails] Date comparison:", {
           originalNotificationDate: notification.date,
           convertedNotificationDate: notificationDate,
           selectedDate,
           matches: notificationDate === selectedDate,
-          currentUser: 'bachnhhe173308'
+          currentUser: "bachnhhe173308",
         });
 
         if (notificationDate === selectedDate) {
-          console.log('🎯 [FacilityDetails] Notification affects current view, refreshing slots...');
-          console.log('🎯 [FacilityDetails] Trigger details:', {
+          console.log(
+            "🎯 [FacilityDetails] Notification affects current view, refreshing slots..."
+          );
+          console.log("🎯 [FacilityDetails] Trigger details:", {
             bookingId: notification.bookingId,
             action: notification.action,
             status: notification.status,
             court: notification.courtName,
             timeSlot: notification.timeSlot,
             customer: notification.customerName,
-            currentUser: 'bachnhhe173308',
-            willRefreshAt: new Date(Date.now() + 2000).toLocaleTimeString()
+            currentUser: "bachnhhe173308",
+            willRefreshAt: new Date(Date.now() + 2000).toLocaleTimeString(),
           });
 
           // ✅ Add delay to ensure backend has processed
           setTimeout(() => {
             refreshAvailableSlots();
             setLastUpdateTime(new Date().toLocaleTimeString());
-            console.log('🔄 [FacilityDetails] Real-time refresh completed for user bachnhhe173308');
+            console.log(
+              "🔄 [FacilityDetails] Real-time refresh completed for user bachnhhe173308"
+            );
           }, 2000); // 2 second delay
         } else {
-          console.log('📅 [FacilityDetails] Date mismatch, skipping refresh for user bachnhhe173308');
+          console.log(
+            "📅 [FacilityDetails] Date mismatch, skipping refresh for user bachnhhe173308"
+          );
         }
       } else {
-        console.log('🏢 [FacilityDetails] Different facility, skipping refresh');
+        console.log(
+          "🏢 [FacilityDetails] Different facility, skipping refresh"
+        );
       }
     };
 
     // ✅ Register all booking event handlers
-    signalRService.on('onBookingCreated', handleBookingNotification);
-    signalRService.on('onBookingCancelled', handleBookingNotification);
-    signalRService.on('onBookingUpdated', handleBookingNotification);
-    signalRService.on('onBookingCompleted', handleBookingNotification);
+    signalRService.on("onBookingCreated", handleBookingNotification);
+    signalRService.on("onBookingCancelled", handleBookingNotification);
+    signalRService.on("onBookingUpdated", handleBookingNotification);
+    signalRService.on("onBookingCompleted", handleBookingNotification);
 
     // ✅ Also listen to direct SignalR connection events
     if (signalRService.connection) {
-      console.log('🎧 [FacilityDetails] Setting up direct SignalR event listeners for user bachnhhe173308...');
+      console.log(
+        "🎧 [FacilityDetails] Setting up direct SignalR event listeners for user bachnhhe173308..."
+      );
 
       const directBookingHandler = (data) => {
-        console.log('📡 [FacilityDetails] Direct SignalR booking event for user bachnhhe173308:', data);
+        console.log(
+          "📡 [FacilityDetails] Direct SignalR booking event for user bachnhhe173308:",
+          data
+        );
         handleBookingNotification(data);
       };
 
       // Listen to direct SignalR events
-      signalRService.connection.on('BookingCreated', directBookingHandler);
-      signalRService.connection.on('BookingUpdated', directBookingHandler);
-      signalRService.connection.on('BookingCancelled', directBookingHandler);
-      signalRService.connection.on('BookingCompleted', directBookingHandler);
+      signalRService.connection.on("BookingCreated", directBookingHandler);
+      signalRService.connection.on("BookingUpdated", directBookingHandler);
+      signalRService.connection.on("BookingCancelled", directBookingHandler);
+      signalRService.connection.on("BookingCompleted", directBookingHandler);
 
       // ✅ Listen for slot availability updates
-      signalRService.connection.on('SlotAvailabilityChanged', (data) => {
-        console.log('🎯 [FacilityDetails] Slot availability changed for user bachnhhe173308:', data);
+      signalRService.connection.on("SlotAvailabilityChanged", (data) => {
+        console.log(
+          "🎯 [FacilityDetails] Slot availability changed for user bachnhhe173308:",
+          data
+        );
 
         if (data.facilityId === parseInt(facilityId)) {
-          console.log('✅ [FacilityDetails] Slot change for current facility, refreshing for user bachnhhe173308...');
+          console.log(
+            "✅ [FacilityDetails] Slot change for current facility, refreshing for user bachnhhe173308..."
+          );
           setTimeout(() => {
             refreshAvailableSlots();
             setLastUpdateTime(new Date().toLocaleTimeString());
@@ -1101,11 +1281,16 @@ const FacilityDetails = () => {
       });
 
       // ✅ Listen for facility-specific updates
-      signalRService.connection.on('FacilityUpdate', (data) => {
-        console.log('🏢 [FacilityDetails] Facility update received for user bachnhhe173308:', data);
+      signalRService.connection.on("FacilityUpdate", (data) => {
+        console.log(
+          "🏢 [FacilityDetails] Facility update received for user bachnhhe173308:",
+          data
+        );
 
         if (data.facilityId === parseInt(facilityId)) {
-          console.log('✅ [FacilityDetails] Update for current facility, refreshing for user bachnhhe173308...');
+          console.log(
+            "✅ [FacilityDetails] Update for current facility, refreshing for user bachnhhe173308..."
+          );
           setTimeout(() => {
             refreshAvailableSlots();
             setLastUpdateTime(new Date().toLocaleTimeString());
@@ -1115,36 +1300,46 @@ const FacilityDetails = () => {
 
       // Cleanup function
       return () => {
-        signalRService.connection.off('BookingCreated', directBookingHandler);
-        signalRService.connection.off('BookingUpdated', directBookingHandler);
-        signalRService.connection.off('BookingCancelled', directBookingHandler);
-        signalRService.connection.off('BookingCompleted', directBookingHandler);
-        signalRService.connection.off('SlotAvailabilityChanged');
-        signalRService.connection.off('FacilityUpdate');
+        signalRService.connection.off("BookingCreated", directBookingHandler);
+        signalRService.connection.off("BookingUpdated", directBookingHandler);
+        signalRService.connection.off("BookingCancelled", directBookingHandler);
+        signalRService.connection.off("BookingCompleted", directBookingHandler);
+        signalRService.connection.off("SlotAvailabilityChanged");
+        signalRService.connection.off("FacilityUpdate");
 
-        signalRService.off('onBookingCreated');
-        signalRService.off('onBookingCancelled');
-        signalRService.off('onBookingUpdated');
-        signalRService.off('onBookingCompleted');
+        signalRService.off("onBookingCreated");
+        signalRService.off("onBookingCancelled");
+        signalRService.off("onBookingUpdated");
+        signalRService.off("onBookingCompleted");
 
-        console.log('🧹 [FacilityDetails] All SignalR event listeners cleaned up for user bachnhhe173308');
+        console.log(
+          "🧹 [FacilityDetails] All SignalR event listeners cleaned up for user bachnhhe173308"
+        );
       };
     }
 
     // Cleanup event handlers
     return () => {
-      signalRService.off('onBookingCreated');
-      signalRService.off('onBookingCancelled');
-      signalRService.off('onBookingUpdated');
-      signalRService.off('onBookingCompleted');
-      console.log('🧹 [FacilityDetails] SignalR event listeners cleaned up for user bachnhhe173308');
+      signalRService.off("onBookingCreated");
+      signalRService.off("onBookingCancelled");
+      signalRService.off("onBookingUpdated");
+      signalRService.off("onBookingCompleted");
+      console.log(
+        "🧹 [FacilityDetails] SignalR event listeners cleaned up for user bachnhhe173308"
+      );
     };
   }, [isConnected, facilityId, selectedDate]); // ✅ Add selectedDate dependency
 
   // ✅ Join facility group when facility loads
   useEffect(() => {
-    if (facilityId && isConnected && !joinedFacilities.includes(parseInt(facilityId))) {
-      console.log(`🔗 [FacilityDetails] Joining facility group: ${facilityId} for user bachnhhe173308`);
+    if (
+      facilityId &&
+      isConnected &&
+      !joinedFacilities.includes(parseInt(facilityId))
+    ) {
+      console.log(
+        `🔗 [FacilityDetails] Joining facility group: ${facilityId} for user bachnhhe173308`
+      );
       joinFacilityForUpdates(parseInt(facilityId));
       setIsRealTimeActive(true);
     }
@@ -1152,7 +1347,9 @@ const FacilityDetails = () => {
     // Leave facility group when component unmounts or facility changes
     return () => {
       if (facilityId && joinedFacilities.includes(parseInt(facilityId))) {
-        console.log(`🔗 [FacilityDetails] Leaving facility group: ${facilityId} for user bachnhhe173308`);
+        console.log(
+          `🔗 [FacilityDetails] Leaving facility group: ${facilityId} for user bachnhhe173308`
+        );
         leaveFacilityUpdates(parseInt(facilityId));
         setIsRealTimeActive(false);
       }
@@ -1161,30 +1358,43 @@ const FacilityDetails = () => {
 
   // ✅ Debug effect to monitor slot changes
   useEffect(() => {
-    console.log('📊 [FacilityDetails] TimeSlots changed for user bachnhhe173308:', {
-      count: timeSlots.length,
-      slots: timeSlots.map(slot => ({
-        id: slot.timeSlotId,
-        time: `${slot.startTime}-${slot.endTime}`,
-        available: slot.availableCourtCount
-      })),
-      timestamp: new Date().toISOString(),
-      currentTime: '2025-08-23 06:05:37 UTC'
-    });
+    console.log(
+      "📊 [FacilityDetails] TimeSlots changed for user bachnhhe173308:",
+      {
+        count: timeSlots.length,
+        slots: timeSlots.map((slot) => ({
+          id: slot.timeSlotId,
+          time: `${slot.startTime}-${slot.endTime}`,
+          available: slot.availableCourtCount,
+        })),
+        timestamp: new Date().toISOString(),
+        currentTime: "2025-08-23 06:05:37 UTC",
+      }
+    );
   }, [timeSlots]);
 
   // ✅ Debug selected values
   useEffect(() => {
-    console.log('🎯 [FacilityDetails] Selection changed for user bachnhhe173308:', {
-      facilityId,
-      selectedCategory,
-      selectedDate,
-      isConnected,
-      joinedFacilities,
-      isRealTimeActive,
-      timestamp: '2025-08-23 06:05:37 UTC'
-    });
-  }, [facilityId, selectedCategory, selectedDate, isConnected, joinedFacilities, isRealTimeActive]);
+    console.log(
+      "🎯 [FacilityDetails] Selection changed for user bachnhhe173308:",
+      {
+        facilityId,
+        selectedCategory,
+        selectedDate,
+        isConnected,
+        joinedFacilities,
+        isRealTimeActive,
+        timestamp: "2025-08-23 06:05:37 UTC",
+      }
+    );
+  }, [
+    facilityId,
+    selectedCategory,
+    selectedDate,
+    isConnected,
+    joinedFacilities,
+    isRealTimeActive,
+  ]);
 
   // Fetch facility details on component mount
   useEffect(() => {
@@ -1193,26 +1403,40 @@ const FacilityDetails = () => {
       setError(null);
 
       try {
-        console.log('🏢 [FacilityDetails] Fetching facility details for user bachnhhe173308:', facilityId);
+        console.log(
+          "🏢 [FacilityDetails] Fetching facility details for user bachnhhe173308:",
+          facilityId
+        );
         const response = await getFacilityDetailsById(parseInt(facilityId));
 
         if (response.data) {
           const facilityInfo = response.data;
-          console.log('✅ [FacilityDetails] Facility data loaded for user bachnhhe173308:', facilityInfo.facilityName);
+          console.log(
+            "✅ [FacilityDetails] Facility data loaded for user bachnhhe173308:",
+            facilityInfo.facilityName
+          );
 
           setFacilityData(facilityInfo);
 
           // Set default category to the first available category
           if (facilityInfo.categories && facilityInfo.categories.length > 0) {
-            setSelectedCategory(facilityInfo.categories[0].categoryId.toString());
-            console.log('🏟️ [FacilityDetails] Default category set for user bachnhhe173308:', facilityInfo.categories[0].categoryName);
+            setSelectedCategory(
+              facilityInfo.categories[0].categoryId.toString()
+            );
+            console.log(
+              "🏟️ [FacilityDetails] Default category set for user bachnhhe173308:",
+              facilityInfo.categories[0].categoryName
+            );
           }
         } else {
-          setError('Không tìm thấy thông tin cơ sở');
+          setError("Không tìm thấy thông tin cơ sở");
         }
       } catch (error) {
-        console.error('❌ [FacilityDetails] Error fetching facility details for user bachnhhe173308:', error);
-        setError('Không thể tải thông tin cơ sở');
+        console.error(
+          "❌ [FacilityDetails] Error fetching facility details for user bachnhhe173308:",
+          error
+        );
+        setError("Không thể tải thông tin cơ sở");
       } finally {
         setLoading(false);
       }
@@ -1229,20 +1453,28 @@ const FacilityDetails = () => {
   }, [facilityId, selectedCategory, selectedDate]);
 
   const handleCategoryChange = (categoryId) => {
-    console.log('🏟️ [FacilityDetails] Category changed for user bachnhhe173308:', categoryId);
+    console.log(
+      "🏟️ [FacilityDetails] Category changed for user bachnhhe173308:",
+      categoryId
+    );
     setSelectedCategory(categoryId);
     setTimeSlots([]);
   };
 
   const handleDateChange = (date) => {
-    console.log('📅 [FacilityDetails] Date changed for user bachnhhe173308:', date);
+    console.log(
+      "📅 [FacilityDetails] Date changed for user bachnhhe173308:",
+      date
+    );
     setSelectedDate(date);
     setTimeSlots([]);
   };
 
   // ✅ Enhanced manual refresh with user feedback
   const handleManualRefresh = () => {
-    console.log('🔄 [FacilityDetails] Manual refresh triggered by user bachnhhe173308');
+    console.log(
+      "🔄 [FacilityDetails] Manual refresh triggered by user bachnhhe173308"
+    );
 
     // Show immediate feedback
     setLoadingSlots(true);
@@ -1250,31 +1482,42 @@ const FacilityDetails = () => {
     setTimeout(() => {
       refreshAvailableSlots();
       setLastUpdateTime(new Date().toLocaleTimeString());
-      console.log('✅ [FacilityDetails] Manual refresh completed for user bachnhhe173308');
+      console.log(
+        "✅ [FacilityDetails] Manual refresh completed for user bachnhhe173308"
+      );
     }, 100);
   };
 
   // Handle proceed to booking detail - callback từ BookingModal
   const handleProceedToBookingDetail = (data) => {
-    console.log('📝 [FacilityDetails] Proceeding to booking detail for user bachnhhe173308:', data);
+    console.log(
+      "📝 [FacilityDetails] Proceeding to booking detail for user bachnhhe173308:",
+      data
+    );
     setBookingDetailData(data);
     setBookingDetailOpen(true);
   };
 
   // Handle close booking detail modal
   const handleCloseBookingDetail = () => {
-    console.log('❌ [FacilityDetails] Closing booking detail for user bachnhhe173308');
+    console.log(
+      "❌ [FacilityDetails] Closing booking detail for user bachnhhe173308"
+    );
     setBookingDetailOpen(false);
     setBookingDetailData(null);
   };
 
   // ✅ Handle successful booking with slot refresh
   const handleBookingSuccess = () => {
-    console.log('✅ [FacilityDetails] Booking successful for user bachnhhe173308, refreshing slots...');
+    console.log(
+      "✅ [FacilityDetails] Booking successful for user bachnhhe173308, refreshing slots..."
+    );
     setTimeout(() => {
       refreshAvailableSlots();
       setLastUpdateTime(new Date().toLocaleTimeString());
-      console.log('🔄 [FacilityDetails] Post-booking refresh completed for user bachnhhe173308');
+      console.log(
+        "🔄 [FacilityDetails] Post-booking refresh completed for user bachnhhe173308"
+      );
     }, 1000);
 
     setBookingDetailOpen(false);
@@ -1303,7 +1546,10 @@ const FacilityDetails = () => {
           <div className="error-icon">⚠️</div>
           <h2>Có lỗi xảy ra</h2>
           <p>{error}</p>
-          <button className="btn-primary" onClick={() => window.location.reload()}>
+          <button
+            className="btn-primary"
+            onClick={() => window.location.reload()}
+          >
             Thử lại
           </button>
         </div>
@@ -1314,11 +1560,16 @@ const FacilityDetails = () => {
   return (
     <div className="facility-page">
       {/* Full Width Main Layout */}
-      <div className="facility-main" style={{ marginTop: '2%' }}>
+      <div className="facility-main" style={{ marginTop: "5%" }}>
         {/* Left: Full width image with title below */}
-        <div className="facility-image-section" style={{ marginTop: '-5%' }}>
-          <div className="facility-title-section" style={{ marginBottom: '2%' }}>
-            <h1 className="facility-title">{facilityData?.facilityName || 'Tên cơ sở'}</h1>
+        <div className="facility-image-section" style={{ marginTop: "-5%" }}>
+          <div
+            className="facility-title-section"
+            style={{ marginBottom: "2%" }}
+          >
+            <h1 className="facility-title">
+              {facilityData?.facilityName || "Tên cơ sở"}
+            </h1>
           </div>
           <ImageCarousel images={facilityData?.images} />
         </div>
@@ -1353,11 +1604,14 @@ const FacilityDetails = () => {
                 >
                   {courtCategories.length === 0 && (
                     <option value="">
-                      {loading ? 'Đang tải...' : 'Không có loại sân'}
+                      {loading ? "Đang tải..." : "Không có loại sân"}
                     </option>
                   )}
                   {courtCategories.map((category) => (
-                    <option key={category.categoryId} value={category.categoryId}>
+                    <option
+                      key={category.categoryId}
+                      value={category.categoryId}
+                    >
                       {category.categoryName}
                     </option>
                   ))}
@@ -1397,9 +1651,7 @@ const FacilityDetails = () => {
                 <table className="booking-table">
                   <thead>
                     <tr>
-                      <th className="time-header">
-                        Khung giờ
-                      </th>
+                      <th className="time-header">Khung giờ</th>
                       {timeSlots.map((slot) => (
                         <th key={slot.timeSlotId} className="slot-header">
                           <div className="slot-time">
@@ -1412,17 +1664,25 @@ const FacilityDetails = () => {
                   <tbody>
                     <tr>
                       <td className="row-label">
-                        <span style={{ fontSize: '24px' }}>Số sân trống</span>
+                        <span style={{ fontSize: "24px" }}>Số sân trống</span>
                       </td>
                       {timeSlots.map((slot) => (
                         <td
                           key={slot.timeSlotId}
-                          className={`availability-cell ${slot.availableCourtCount > 0 ? 'available' : 'unavailable'} ${lastUpdateTime ? 'updated' : ''}`}
+                          className={`availability-cell ${
+                            slot.availableCourtCount > 0
+                              ? "available"
+                              : "unavailable"
+                          } ${lastUpdateTime ? "updated" : ""}`}
                         >
                           <div className="availability-info">
-                            <span className="count">{slot.availableCourtCount}</span>
+                            <span className="count">
+                              {slot.availableCourtCount}
+                            </span>
                             <span className="status-text">
-                              {slot.availableCourtCount > 0 ? 'Còn trống' : 'Hết chỗ'}
+                              {slot.availableCourtCount > 0
+                                ? "Còn trống"
+                                : "Hết chỗ"}
                             </span>
                           </div>
                         </td>
@@ -1487,27 +1747,49 @@ const FacilityDetails = () => {
                 <div className="rating-main">
                   <span className="rating-value">
                     {(() => {
-                      const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
-                        index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                      const uniqueRatings = facilityData.ratings.filter(
+                        (rating, index, self) =>
+                          index ===
+                          self.findIndex(
+                            (r) =>
+                              `${r.ratingId}-${r.bookingId}` ===
+                              `${rating.ratingId}-${rating.bookingId}`
+                          )
                       );
                       if (uniqueRatings.length === 0) return 0;
-                      const totalStars = uniqueRatings.reduce((sum, rating) => sum + rating.stars, 0);
-                      return Math.round((totalStars / uniqueRatings.length) * 10) / 10;
+                      const totalStars = uniqueRatings.reduce(
+                        (sum, rating) => sum + rating.stars,
+                        0
+                      );
+                      return (
+                        Math.round((totalStars / uniqueRatings.length) * 10) /
+                        10
+                      );
                     })()}
                   </span>
                   <div className="rating-stars">
                     {[...Array(5)].map((_, index) => {
-                      const uniqueRatings = facilityData.ratings.filter((rating, idx, self) =>
-                        idx === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                      const uniqueRatings = facilityData.ratings.filter(
+                        (rating, idx, self) =>
+                          idx ===
+                          self.findIndex(
+                            (r) =>
+                              `${r.ratingId}-${r.bookingId}` ===
+                              `${rating.ratingId}-${rating.bookingId}`
+                          )
                       );
-                      const averageRating = uniqueRatings.length > 0
-                        ? uniqueRatings.reduce((sum, rating) => sum + rating.stars, 0) / uniqueRatings.length
-                        : 0;
+                      const averageRating =
+                        uniqueRatings.length > 0
+                          ? uniqueRatings.reduce(
+                              (sum, rating) => sum + rating.stars,
+                              0
+                            ) / uniqueRatings.length
+                          : 0;
                       const isFilled = index < Math.round(averageRating);
                       return (
                         <span
                           key={index}
-                          className={`star ${isFilled ? 'filled' : ''}`}
+                          className={`star ${isFilled ? "filled" : ""}`}
                         >
                           ★
                         </span>
@@ -1520,22 +1802,38 @@ const FacilityDetails = () => {
                   <div className="breakdown-header">
                     <span className="total-reviews">
                       {(() => {
-                        const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
-                          index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                        const uniqueRatings = facilityData.ratings.filter(
+                          (rating, index, self) =>
+                            index ===
+                            self.findIndex(
+                              (r) =>
+                                `${r.ratingId}-${r.bookingId}` ===
+                                `${rating.ratingId}-${rating.bookingId}`
+                            )
                         );
                         return uniqueRatings.length;
-                      })()} đánh giá
+                      })()}{" "}
+                      đánh giá
                     </span>
                   </div>
                   <div className="breakdown-list">
-                    {[5, 4, 3, 2, 1].map(stars => {
-                      const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
-                        index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                    {[5, 4, 3, 2, 1].map((stars) => {
+                      const uniqueRatings = facilityData.ratings.filter(
+                        (rating, index, self) =>
+                          index ===
+                          self.findIndex(
+                            (r) =>
+                              `${r.ratingId}-${r.bookingId}` ===
+                              `${rating.ratingId}-${rating.bookingId}`
+                          )
                       );
-                      const count = uniqueRatings.filter(rating => rating.stars === stars).length;
-                      const percentage = uniqueRatings.length > 0
-                        ? Math.round((count / uniqueRatings.length) * 100)
-                        : 0;
+                      const count = uniqueRatings.filter(
+                        (rating) => rating.stars === stars
+                      ).length;
+                      const percentage =
+                        uniqueRatings.length > 0
+                          ? Math.round((count / uniqueRatings.length) * 100)
+                          : 0;
 
                       return (
                         <div key={stars} className="breakdown-item">
@@ -1556,26 +1854,41 @@ const FacilityDetails = () => {
 
               <div className="reviews-list">
                 {(() => {
-                  const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
-                    index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
+                  const uniqueRatings = facilityData.ratings.filter(
+                    (rating, index, self) =>
+                      index ===
+                      self.findIndex(
+                        (r) =>
+                          `${r.ratingId}-${r.bookingId}` ===
+                          `${rating.ratingId}-${rating.bookingId}`
+                      )
                   );
                   return uniqueRatings.slice(0, 3);
                 })().map((rating, index) => (
-                  <div key={`${rating.ratingId}-${rating.bookingId}-${index}`} className="review-card">
+                  <div
+                    key={`${rating.ratingId}-${rating.bookingId}-${index}`}
+                    className="review-card"
+                  >
                     <div className="review-card__avatar">
                       <span className="avatar-text">U{rating.bookingId}</span>
                     </div>
                     <div className="review-card__content">
                       <div className="review-card__header">
                         <div className="reviewer-info">
-                          <span className="reviewer-name">Người dùng #{rating.bookingId}</span>
-                          <span className="review-time">• Booking #{rating.bookingId}</span>
+                          <span className="reviewer-name">
+                            Người dùng #{rating.bookingId}
+                          </span>
+                          <span className="review-time">
+                            • Booking #{rating.bookingId}
+                          </span>
                         </div>
                         <div className="review-stars">
                           {[...Array(5)].map((_, starIndex) => (
                             <span
                               key={starIndex}
-                              className={`star ${starIndex < rating.stars ? 'filled' : ''}`}
+                              className={`star ${
+                                starIndex < rating.stars ? "filled" : ""
+                              }`}
                             >
                               ★
                             </span>
@@ -1583,7 +1896,7 @@ const FacilityDetails = () => {
                         </div>
                       </div>
                       <p className="review-text">
-                        {rating.comment || 'Không có bình luận'}
+                        {rating.comment || "Không có bình luận"}
                       </p>
                     </div>
                   </div>
@@ -1595,12 +1908,22 @@ const FacilityDetails = () => {
                   className="btn-view-all"
                   onClick={() => setReviewsModalOpen(true)}
                 >
-                  <span>Xem tất cả đánh giá ({(() => {
-                    const uniqueRatings = facilityData.ratings.filter((rating, index, self) =>
-                      index === self.findIndex(r => `${r.ratingId}-${r.bookingId}` === `${rating.ratingId}-${rating.bookingId}`)
-                    );
-                    return uniqueRatings.length;
-                  })()})</span>
+                  <span>
+                    Xem tất cả đánh giá (
+                    {(() => {
+                      const uniqueRatings = facilityData.ratings.filter(
+                        (rating, index, self) =>
+                          index ===
+                          self.findIndex(
+                            (r) =>
+                              `${r.ratingId}-${r.bookingId}` ===
+                              `${rating.ratingId}-${rating.bookingId}`
+                          )
+                      );
+                      return uniqueRatings.length;
+                    })()}
+                    )
+                  </span>
                   <span className="btn-arrow">→</span>
                 </button>
               </div>

@@ -34,6 +34,9 @@ const formatPrice = (price) => {
 };
 
 const FacilitiesWithCondition = () => {
+  useEffect(() => {
+    document.title = "Tìm kiếm - B2P";
+  }, []);
   const navigate = useNavigate();
   const location = useLocation();
   const searchFacility = useSelector((state) => state.searchFacility);

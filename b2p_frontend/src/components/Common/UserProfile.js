@@ -10,6 +10,9 @@ import {
 } from "../../services/apiService";
 
 const UserProfile = (props) => {
+  useEffect(() => {
+    document.title = "Hồ sơ - B2P";
+  }, []);
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);

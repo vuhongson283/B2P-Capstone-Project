@@ -1091,6 +1091,8 @@ namespace B2P_API.Services
 				foreach (var detail in bookingDetails.BookingDetails)
 				{
 					Console.WriteLine($"[SignalR] Sending BookingUpdated: bookingId={bookingId}, facilityId={detail.Court.FacilityId}, courtId={detail.CourtId}, status=paid");
+
+					// ✅ THÊM ĐẦY ĐỦ THÔNG TIN CHO BookingUpdated
 					await _hubContext.Clients.Group(detail.Court.FacilityId.ToString()).SendAsync("BookingUpdated", new
 					{
 						bookingId = bookingId,
@@ -1102,6 +1104,7 @@ namespace B2P_API.Services
 						status = "paid",
 						statusId = 7,
 						statusDescription = "Đã Cọc",
+						action = "paid", // ← QUAN TRỌNG: action = "paid"
 						customerName = user?.Email?.Split('@')[0] ?? "Khách",
 						customerEmail = user?.Email,
 						customerPhone = user?.Phone,
@@ -1109,21 +1112,12 @@ namespace B2P_API.Services
 						timestamp = DateTime.UtcNow.ToString("o")
 					});
 				}
-			}
 
-			// Gửi SignalR message cho các handler khác nếu cần
-			try
-			{
+				// Gửi BookingStatusChanged (existing)
 				await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
 				{
 					BookingId = bookingId
 				});
-
-				Console.WriteLine($"[SignalR] Message sent successfully");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"[SignalR] Error sending message: {ex.Message}");
 			}
 
 			return new ApiResponse<string>
