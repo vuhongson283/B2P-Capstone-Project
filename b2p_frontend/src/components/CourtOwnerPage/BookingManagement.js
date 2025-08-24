@@ -280,46 +280,51 @@ const BookingManagement = () => {
   useEffect(() => {
     const handleBookingPaidUpdate = (event) => {
       const notification = event.detail;
-      console.log(
-        "🎯 [BookingManagement] Payment update received:",
-        notification
-      );
-      console.log(
-        "🔍 [DEBUG] BookingId from notification:",
-        notification.bookingId
-      );
-      console.log("🔍 [DEBUG] Current bookingData structure:");
+      console.log('🎯 [BookingManagement] Payment update received:', notification);
+      console.log('🔍 [DEBUG] BookingId from notification:', notification.bookingId);
 
-      // ✅ LOG ALL BOOKING DATA TO UNDERSTAND STRUCTURE
-      Object.keys(bookingData).forEach((key) => {
-        const booking = bookingData[key];
-        console.log(`🔍 Slot [${key}]:`, {
-          bookingId: booking?.bookingId,
-          id: booking?.id,
-          Id: booking?.Id,
-          status: booking?.status,
-          statusDescription: booking?.statusDescription,
-          paymentStatus: booking?.paymentStatus,
+      // ✅ STRONG CHECK: Block payment if booking is cancelled
+      if (
+        notification.status === 'cancelled' ||
+        notification.action === 'cancelled' ||
+        notification.statusId === 9 ||
+        notification.originalStatus === 'Cancelled'
+      ) {
+        console.log(`🚫 BLOCKED: Payment update for cancelled booking ${notification.bookingId}`);
+        console.log('🔍 [DEBUG] Cancellation indicators:', {
+          status: notification.status,
+          action: notification.action,
+          statusId: notification.statusId,
+          originalStatus: notification.originalStatus
         });
+        return; // ✅ EARLY EXIT - DON'T UPDATE UI
+      }
+
+      // ✅ CHECK GLOBAL BLOCKING
+      if (window.globalBlockedBookings && window.globalBlockedBookings.has(notification.bookingId.toString())) {
+        console.log(`🚫 GLOBALLY BLOCKED: Payment UI update for cancelled booking ${notification.bookingId}`);
+        return;
+      }
+
+      console.log('🔍 [DEBUG] Current bookingData structure:');
+      Object.keys(bookingData).forEach(slotKey => {
+        const booking = bookingData[slotKey];
+        console.log(`🔍 Slot [${slotKey}]:`, booking);
       });
 
-      // ✅ TRY MULTIPLE WAYS TO FIND MATCHING BOOKING
       let foundSlot = null;
       let foundKey = null;
 
-      Object.keys(bookingData).forEach((bookingKey) => {
+      Object.keys(bookingData).forEach(bookingKey => {
         const booking = bookingData[bookingKey];
 
-        // Try different possible ID fields
         const possibleIds = [
           booking?.bookingId,
           booking?.id,
-          booking?.Id,
-          booking?.booking?.id,
-          booking?.booking?.bookingId,
-        ].filter((id) => id !== undefined && id !== null);
+          booking?.Id
+        ].filter(id => id !== undefined && id !== null);
 
-        possibleIds.forEach((id) => {
+        possibleIds.forEach(id => {
           if (id.toString() === notification.bookingId.toString()) {
             foundSlot = booking;
             foundKey = bookingKey;
@@ -329,41 +334,114 @@ const BookingManagement = () => {
       });
 
       if (foundKey) {
-        console.log(`🔄 Updating slot: ${foundKey}`);
-        console.log(`🔍 Before update:`, foundSlot);
+        // ✅ ADDITIONAL CHECK: Don't update if slot is already cancelled
+        const currentBooking = bookingData[foundKey];
+        if (
+          currentBooking.status === 'cancelled' ||
+          currentBooking.originalStatus === 'Cancelled' ||
+          currentBooking.statusId === 9
+        ) {
+          console.log(`🚫 SLOT ALREADY CANCELLED: Not updating ${foundKey} to paid`);
+          return;
+        }
 
-        setBookingData((prev) => {
+        console.log(`🔄 Updating slot: ${foundKey}`);
+        console.log('🔍 Before update:', foundSlot);
+
+        setBookingData(prev => {
           const updated = {
             ...prev,
             [foundKey]: {
               ...prev[foundKey],
-              status: "paid",
+              status: 'paid',
               statusId: 7,
-              paymentStatus: "deposit",
-              statusDescription: "Đã Cọc",
-            },
+              statusDescription: 'Đã Cọc',
+              paymentStatus: 'paid'
+            }
           };
 
-          console.log(`✅ After update:`, updated[foundKey]);
+          console.log('✅ After update:', updated[foundKey]);
           return updated;
         });
       } else {
-        console.log("❌ NO MATCHING SLOT FOUND!");
-        console.log("🔍 Available IDs vs Target:");
-        Object.keys(bookingData).forEach((key) => {
-          const booking = bookingData[key];
-          console.log(
-            `Slot ${key}: ${booking?.bookingId || booking?.id} vs ${
-              notification.bookingId
-            }`
-          );
-        });
+        console.log('❌ No matching slot found for payment ID:', notification.bookingId);
       }
     };
 
-    window.addEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+    window.addEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
     return () => {
-      window.removeEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+      window.removeEventListener('bookingPaidUpdate', handleBookingPaidUpdate);
+    };
+  }, [bookingData]);
+
+  useEffect(() => {
+    const handleBookingCancelledUpdate = (event) => {
+      const notification = event.detail;
+      console.log('🎯 [BookingManagement] Cancellation update received:', notification);
+      console.log('🔍 [DEBUG] BookingId from notification:', notification.bookingId);
+
+      // ✅ IMMEDIATELY BLOCK THIS BOOKING GLOBALLY
+      if (!window.globalBlockedBookings) {
+        window.globalBlockedBookings = new Set();
+      }
+      window.globalBlockedBookings.add(notification.bookingId.toString());
+      console.log(`🚫 BLOCKED booking ${notification.bookingId} from future payment updates`);
+
+      console.log('🔍 [DEBUG] Current bookingData structure:');
+      Object.keys(bookingData).forEach(slotKey => {
+        const booking = bookingData[slotKey];
+        console.log(`🔍 Slot [${slotKey}]:`, booking);
+      });
+
+      let foundSlot = null;
+      let foundKey = null;
+
+      Object.keys(bookingData).forEach(bookingKey => {
+        const booking = bookingData[bookingKey];
+
+        const possibleIds = [
+          booking?.bookingId,
+          booking?.id,
+          booking?.Id
+        ].filter(id => id !== undefined && id !== null);
+
+        possibleIds.forEach(id => {
+          if (id.toString() === notification.bookingId.toString()) {
+            foundSlot = booking;
+            foundKey = bookingKey;
+            console.log(`✅ FOUND MATCH for cancellation! Slot: ${bookingKey}, ID: ${id}`);
+          }
+        });
+      });
+
+      if (foundKey) {
+        console.log(`🔄 Updating slot to CANCELLED: ${foundKey}`);
+        console.log('🔍 Before cancellation update:', foundSlot);
+
+        setBookingData(prev => {
+          const updated = {
+            ...prev,
+            [foundKey]: {
+              ...prev[foundKey],
+              status: 'cancelled',
+              statusId: 9, // ✅ Use correct statusId for cancelled
+              statusDescription: 'Đã Hủy',
+              paymentStatus: 'cancelled',
+              originalStatus: 'Cancelled'
+            }
+          };
+
+          console.log(`✅ Slot ${foundKey} updated to CANCELLED status:`, updated[foundKey]);
+          return updated;
+        });
+      } else {
+        console.log('❌ No matching slot found for cancellation ID:', notification.bookingId);
+      }
+    };
+
+    window.addEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
+    return () => {
+      window.removeEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
     };
   }, [bookingData]);
 
@@ -917,9 +995,9 @@ const BookingManagement = () => {
             setSelectedBooking((prev) =>
               prev
                 ? {
-                    ...prev,
-                    ...customerDetails,
-                  }
+                  ...prev,
+                  ...customerDetails,
+                }
                 : null
             );
             console.log("✅ Customer details loaded successfully");
@@ -928,11 +1006,11 @@ const BookingManagement = () => {
             setSelectedBooking((prev) =>
               prev
                 ? {
-                    ...prev,
-                    customerName: "Không tìm thấy thông tin",
-                    customerPhone: "Không tìm thấy thông tin",
-                    customerEmail: "Không tìm thấy thông tin",
-                  }
+                  ...prev,
+                  customerName: "Không tìm thấy thông tin",
+                  customerPhone: "Không tìm thấy thông tin",
+                  customerEmail: "Không tìm thấy thông tin",
+                }
                 : null
             );
           }
@@ -941,11 +1019,11 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: "Lỗi tải thông tin",
-                  customerPhone: "Lỗi tải thông tin",
-                  customerEmail: "Lỗi tải thông tin",
-                }
+                ...prev,
+                customerName: "Lỗi tải thông tin",
+                customerPhone: "Lỗi tải thông tin",
+                customerEmail: "Lỗi tải thông tin",
+              }
               : null
           );
         }
@@ -965,12 +1043,12 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: booking.customerName,
-                  customerPhone: booking.customerPhone,
-                  customerEmail: booking.customerEmail,
-                  customerAvatar: null,
-                }
+                ...prev,
+                customerName: booking.customerName,
+                customerPhone: booking.customerPhone,
+                customerEmail: booking.customerEmail,
+                customerAvatar: null,
+              }
               : null
           );
         } else {
@@ -980,11 +1058,11 @@ const BookingManagement = () => {
           setSelectedBooking((prev) =>
             prev
               ? {
-                  ...prev,
-                  customerName: "Admin (Court Owner)",
-                  customerPhone: CUSTOMER_PHONE || "0000000000",
-                  customerEmail: CUSTOMER_EMAIL || "admin@courtowner.com",
-                }
+                ...prev,
+                customerName: "Admin (Court Owner)",
+                customerPhone: CUSTOMER_PHONE || "0000000000",
+                customerEmail: CUSTOMER_EMAIL || "admin@courtowner.com",
+              }
               : null
           );
         }
@@ -1042,12 +1120,12 @@ const BookingManagement = () => {
         setSelectedBooking((prev) =>
           prev
             ? {
-                ...prev,
-                status: newStatus,
-                statusId: 10,
-                paymentStatus: "paid",
-                originalStatus: "Completed",
-              }
+              ...prev,
+              status: newStatus,
+              statusId: 10,
+              paymentStatus: "paid",
+              originalStatus: "Completed",
+            }
             : null
         );
 
@@ -1488,9 +1566,8 @@ const BookingManagement = () => {
       return (
         <div
           key={slot}
-          className={`time-slot-card ${
-            selectedTimeSlots.includes(slot) ? "selected" : ""
-          }`}
+          className={`time-slot-card ${selectedTimeSlots.includes(slot) ? "selected" : ""
+            }`}
           onClick={() => handleTimeSlotToggle(slot)}
         >
           <div className="slot-time">
@@ -1586,9 +1663,8 @@ const BookingManagement = () => {
                   ? (e) => handleEmptySlotClick(e, court, slot)
                   : undefined
               }
-              title={`${
-                court.courtName || court.name
-              } - ${slot} - ${getSlotDisplayText(status)}`}
+              title={`${court.courtName || court.name
+                } - ${slot} - ${getSlotDisplayText(status)}`}
               style={{
                 cursor: isAvailable ? "context-menu" : "pointer",
                 position: "relative",
@@ -1872,7 +1948,7 @@ const BookingManagement = () => {
             if (
               selectedBooking &&
               selectedBooking.id.toString() ===
-                notification.bookingId.toString()
+              notification.bookingId.toString()
             ) {
               const newStatus = getBookingStatusFromString(notification.status);
               let paymentStatus = selectedBooking.paymentStatus;
@@ -1889,12 +1965,12 @@ const BookingManagement = () => {
               setSelectedBooking((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      status: newStatus,
-                      originalStatus: notification.status,
-                      paymentStatus,
-                      statusId,
-                    }
+                    ...prev,
+                    status: newStatus,
+                    originalStatus: notification.status,
+                    paymentStatus,
+                    statusId,
+                  }
                   : null
               );
             }
@@ -2397,7 +2473,7 @@ const BookingManagement = () => {
             <div className="modal-actions">
               <Button onClick={closeModal}>Đóng</Button>
               {selectedBooking.status === "paid" &&
-              !dayjs(selectedBooking.checkInDate).isAfter(dayjs(), "day") ? (
+                !dayjs(selectedBooking.checkInDate).isAfter(dayjs(), "day") ? (
                 <Button
                   type="primary"
                   className="action-button"
