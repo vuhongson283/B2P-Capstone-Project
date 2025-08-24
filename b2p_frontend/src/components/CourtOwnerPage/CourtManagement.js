@@ -1089,7 +1089,10 @@ const CourtManagement = () => {
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-map-marker-alt"></i>Địa chỉ</label>
-                <span>{courtDetail.facility.location}</span>
+                <span>
+                  {/* ✅ Xử lý bỏ dấu $$ trong địa chỉ */}
+                  {(courtDetail.facility.location || '').replace(/\$\$/g, '').replace(/^\s+|\s+$/g, '')}
+                </span>
               </div>
               <div className="detail-item">
                 <label><i className="fas fa-phone"></i>Liên hệ</label>
