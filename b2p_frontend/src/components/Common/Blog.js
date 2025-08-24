@@ -63,6 +63,41 @@ const { TextArea } = Input;
 const { Search } = Input;
 const { Option } = Select;
 
+const convertGoogleDriveUrl = (url) => {
+  if (!url) return "";
+  const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+  if (fileIdMatch) {
+    const fileId = fileIdMatch[1];
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+  }
+  return url;
+};
+
+const convertGoogleDriveLink = (driveUrl) => {
+  if (!driveUrl) return null;
+
+  if (driveUrl.includes('drive.google.com')) {
+    let fileId = null;
+
+    // Format 1: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    const match1 = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+
+    // Format 2: https://drive.google.com/open?id=FILE_ID
+    const match2 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match2) {
+      fileId = match2[1];
+    }
+
+    if (fileId) {
+      return `https://lh3.googleusercontent.com/d/${fileId}=s400-c`;
+    }
+  }
+
+  return driveUrl;
+};
 
 const Blog = () => {
   // =============== STATE MANAGEMENT ===============
@@ -75,79 +110,82 @@ const Blog = () => {
 
   // Current user info
   const { user, isLoggedIn, isLoading: authLoading } = useAuth();
-  const convertGoogleDriveUrl = (url) => {
-  if (!url) return "";
-  const fileIdMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-  if (fileIdMatch) {
-    const fileId = fileIdMatch[1];
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
-  }
-  return url;
-};
-const convertGoogleDriveLink = (driveUrl) => {
-  if (!driveUrl) return null;
-  
-  // Check if it's a Google Drive link
-  if (driveUrl.includes('drive.google.com')) {
-    // Extract file ID from different Google Drive URL formats
-    let fileId = null;
-    
-    // Format 1: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-    const match1 = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-    if (match1) {
-      fileId = match1[1];
-    }
-    
-    // Format 2: https://drive.google.com/open?id=FILE_ID
-    const match2 = driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (match2) {
-      fileId = match2[1];
-    }
-    
-    // Convert to googleusercontent format - MUCH BETTER!
-    if (fileId) {
-      return `https://lh3.googleusercontent.com/d/${fileId}=s400-c`;
-    }
-  }
-  
-  // If not Google Drive link, return as is
-  return driveUrl;
-};
-useEffect(() => {
-  const loadUserAvatar = async () => {
-    if (user?.userId) {
-      try {
-        const response = await getUserImage(user.userId);
-        if (response.data) {
-          const convertedAvatarUrl = convertGoogleDriveLink(response.data);
-          setCurrentUser(prev => ({
-            ...prev,
-            avatar: convertedAvatarUrl || prev.avatar
-          }));
-        }
-      } catch (error) {
-        console.error('❌ Error loading user avatar:', error);
-      }
-    }
-  };
 
-  loadUserAvatar();
-}, [user?.userId]);
-const [currentUser, setCurrentUser] = useState({
-  userId: user?.userId,
-  fullName: user?.fullName || "",
-  userName: user?.userName || "Người dùng",
-  avatar: user?.avatar ||
-    "https://ui-avatars.com/api/?name=Người dùng&background=27ae60&color=fff&size=200",
-  roleId: user?.roleId || 2,
-});
+  // ✅ useState với avatar mặc định
+  const [currentUser, setCurrentUser] = useState({
+    userId: user?.userId,
+    fullName: user?.fullName || "",
+    userName: user?.userName || "bachnhhe173308",
+    avatar: "https://ui-avatars.com/api/?name=bachnhhe173308&background=27ae60&color=fff&size=200",
+    roleId: user?.roleId || 2,
+  });
+
+  // ✅ Load avatar từ API khi có userId
+  useEffect(() => {
+    const loadCurrentUserAvatar = async () => {
+      if (user?.userId) {
+        try {
+          const response = await getUserImage(user.userId);
+          if (response.data) {
+            const convertedAvatarUrl = convertGoogleDriveLink(response.data);
+            setCurrentUser(prev => ({
+              ...prev,
+              avatar: convertedAvatarUrl || prev.avatar
+            }));
+          }
+        } catch (error) {
+          console.error('❌ Error loading current user avatar:', error);
+          // Giữ avatar mặc định
+        }
+      }
+    };
+
+    loadCurrentUserAvatar();
+  }, [user?.userId]);
+
   useEffect(() => {
     document.title = "Bài viết - B2P";
   }, []);
-  // User cache for displaying other users
-  const [userCache, setUserCache] = useState({
-    [currentUser.userId]: currentUser,
-  });
+
+  // ✅ User cache - khởi tạo empty, sẽ update sau
+  const [userCache, setUserCache] = useState({});
+
+  // ✅ Update userCache khi currentUser có avatar
+  useEffect(() => {
+    if (currentUser.userId) {
+      setUserCache(prev => ({
+        ...prev,
+        [currentUser.userId]: currentUser
+      }));
+    }
+  }, [currentUser]);
+
+  // ✅ Function load avatar cho users khác (dùng trong blog rendering)
+  const loadUserAvatar = async (userId) => {
+    if (userCache[userId] || loadingBlogImages[`user-${userId}`]) return;
+
+    setLoadingBlogImages(prev => ({ ...prev, [`user-${userId}`]: true }));
+
+    try {
+      const response = await getUserImage(userId);
+      if (response.data) {
+        const convertedAvatarUrl = convertGoogleDriveLink(response.data);
+
+        // Update userCache
+        setUserCache(prev => ({
+          ...prev,
+          [userId]: {
+            ...prev[userId],
+            avatar: convertedAvatarUrl || `https://ui-avatars.com/api/?name=User${userId}&background=27ae60&color=fff&size=200`
+          }
+        }));
+      }
+    } catch (error) {
+      console.error(`❌ Error loading avatar for user ${userId}:`, error);
+    } finally {
+      setLoadingBlogImages(prev => ({ ...prev, [`user-${userId}`]: false }));
+    }
+  };
 
   // Pagination & Search/Sort/Filter
   const [currentPage, setCurrentPage] = useState(1);
@@ -498,28 +536,28 @@ const [currentUser, setCurrentUser] = useState({
     const items = [
       ...(canEdit
         ? [
-            {
-              key: "edit",
-              label: (
-                <span>
-                  <EditOutlined style={{ marginRight: 8 }} />
-                  Chỉnh sửa
-                </span>
-              ),
-              onClick: () => openBlogModal(blog),
-            },
-            {
-              key: "delete",
-              label: (
-                <span>
-                  <DeleteOutlined style={{ marginRight: 8 }} />
-                  Xóa bài viết
-                </span>
-              ),
-              danger: true,
-              onClick: () => handleDeleteBlog(blog),
-            },
-          ]
+          {
+            key: "edit",
+            label: (
+              <span>
+                <EditOutlined style={{ marginRight: 8 }} />
+                Chỉnh sửa
+              </span>
+            ),
+            onClick: () => openBlogModal(blog),
+          },
+          {
+            key: "delete",
+            label: (
+              <span>
+                <DeleteOutlined style={{ marginRight: 8 }} />
+                Xóa bài viết
+              </span>
+            ),
+            danger: true,
+            onClick: () => handleDeleteBlog(blog),
+          },
+        ]
         : []),
     ];
 
@@ -952,67 +990,66 @@ const [currentUser, setCurrentUser] = useState({
             {(searchTerm ||
               sortBy !== "postAt" ||
               sortDirection !== "desc") && (
-              <div className="sidebar-section">
-                <h4>
-                  <FilterOutlined /> Bộ lọc đang áp dụng
-                </h4>
+                <div className="sidebar-section">
+                  <h4>
+                    <FilterOutlined /> Bộ lọc đang áp dụng
+                  </h4>
 
-                <div className="filter-tags">
-                  {searchTerm && (
-                    <Tag
-                      closable
-                      onClose={() => setSearchTerm("")}
-                      color="blue"
-                    >
-                      🔍 "{searchTerm}"
-                    </Tag>
-                  )}
+                  <div className="filter-tags">
+                    {searchTerm && (
+                      <Tag
+                        closable
+                        onClose={() => setSearchTerm("")}
+                        color="blue"
+                      >
+                        🔍 "{searchTerm}"
+                      </Tag>
+                    )}
 
-                  {sortBy !== "postAt" && (
-                    <Tag
-                      closable
-                      onClose={() => setSortBy("postAt")}
-                      color="green"
-                    >
-                      📊{" "}
-                      {sortBy === "commentTime"
-                        ? "Hoạt động gần nhất"
-                        : "Ngày đăng"}
-                    </Tag>
-                  )}
+                    {sortBy !== "postAt" && (
+                      <Tag
+                        closable
+                        onClose={() => setSortBy("postAt")}
+                        color="green"
+                      >
+                        📊{" "}
+                        {sortBy === "commentTime"
+                          ? "Hoạt động gần nhất"
+                          : "Ngày đăng"}
+                      </Tag>
+                    )}
 
-                  {sortDirection !== "desc" && (
-                    <Tag
-                      closable
-                      onClose={() => setSortDirection("desc")}
-                      color="orange"
-                    >
-                      ⬆️ Cũ nhất trước
-                    </Tag>
-                  )}
+                    {sortDirection !== "desc" && (
+                      <Tag
+                        closable
+                        onClose={() => setSortDirection("desc")}
+                        color="orange"
+                      >
+                        ⬆️ Cũ nhất trước
+                      </Tag>
+                    )}
+                  </div>
+
+                  <Button
+                    block
+                    icon={<ClearOutlined />}
+                    onClick={handleClearFilters}
+                    type="dashed"
+                    danger
+                    style={{ marginTop: "12px" }}
+                  >
+                    Xóa tất cả bộ lọc
+                  </Button>
                 </div>
-
-                <Button
-                  block
-                  icon={<ClearOutlined />}
-                  onClick={handleClearFilters}
-                  type="dashed"
-                  danger
-                  style={{ marginTop: "12px" }}
-                >
-                  Xóa tất cả bộ lọc
-                </Button>
-              </div>
-            )}
+              )}
 
             {isSearching && (
               <>
                 <Divider />
                 <div className="sidebar-section">
                   <div
-                    className={`search-result-info ${
-                      totalBlogs > 0 ? "success" : "error"
-                    }`}
+                    className={`search-result-info ${totalBlogs > 0 ? "success" : "error"
+                      }`}
                   >
                     {totalBlogs > 0
                       ? `🔍 Tìm thấy ${totalBlogs} bài viết`
@@ -1048,9 +1085,8 @@ const [currentUser, setCurrentUser] = useState({
 
       {/* Main Content Area */}
       <div
-        className={`main-content-area ${
-          sidebarCollapsed ? "sidebar-collapsed" : ""
-        }`}
+        className={`main-content-area ${sidebarCollapsed ? "sidebar-collapsed" : ""
+          }`}
       >
         {/* Ultra Compact Header */}
         <div className="blog-header-ultra-compact">
