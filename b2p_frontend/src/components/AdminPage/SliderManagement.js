@@ -66,6 +66,60 @@ const ModalContent = ({ title, content, type, tagLabel }) => (
     </div>
   </div>
 );
+const convertGoogleDriveUrl = (originalUrl) => {
+  if (!originalUrl) return "";
+  if (originalUrl.includes('/assets/') || originalUrl.includes('googleusercontent.com')) {
+    return originalUrl;
+  }
+
+  // Extract file ID từ các format khác nhau
+  let fileId = originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+
+  if (!fileId) {
+    fileId = originalUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+  }
+
+  if (fileId) {
+    // Dùng googleusercontent.com thay vì drive.google.com
+    return `https://lh3.googleusercontent.com/d/${fileId}=w1000-h600-c`;
+  }
+
+  return originalUrl;
+};
+
+// Error handler với retry logic
+const handleSliderImageError = (e, originalSrc, retryCount = 0) => {
+  const img = e.target;
+
+  if (retryCount >= 3) {
+    img.src = altImg;
+    return;
+  }
+
+  const fileId = originalSrc.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+    originalSrc.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+
+  if (!fileId) {
+    img.src = altImg;
+    return;
+  }
+
+  // Các format fallback
+  const formats = [
+    `https://lh3.googleusercontent.com/d/${fileId}=w1000-h600-c`,
+    `https://drive.google.com/uc?export=view&id=${fileId}`,
+    `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`
+  ];
+
+  if (formats[retryCount]) {
+    setTimeout(() => {
+      img.src = formats[retryCount];
+      img.onerror = (e2) => handleSliderImageError(e2, originalSrc, retryCount + 1);
+    }, 500);
+  } else {
+    img.src = altImg;
+  }
+};
 
 const SliderForm = ({ initialValues, onSubmit, loading }) => {
   const [form] = Form.useForm();
@@ -73,19 +127,7 @@ const SliderForm = ({ initialValues, onSubmit, loading }) => {
   const [submitting, setSubmitting] = useState(false);
   const [hasNewImage, setHasNewImage] = useState(false); // Track if user selected new image
 
-  const convertGoogleDriveUrl = (url) => {
-    if (!url) return "";
-    if (url.includes("drive.google.com")) {
-      const fileIdMatch =
-        url.match(/\/d\/([a-zA-Z0-9-_]+)/) ||
-        url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-      if (fileIdMatch) {
-        const fileId = fileIdMatch[1];
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-      }
-    }
-    return url;
-  };
+
 
   useEffect(() => {
     form.setFieldsValue(initialValues);
@@ -189,14 +231,12 @@ const SliderForm = ({ initialValues, onSubmit, loading }) => {
       // 4. Hiển thị thông báo tổng kết
       if (imageSuccess === false) {
         message.warning(
-          `${
-            isEdit ? "Cập nhật" : "Tạo"
+          `${isEdit ? "Cập nhật" : "Tạo"
           } slider thành công, nhưng lỗi khi xử lý ảnh`
         );
       } else {
         message.success(
-          `${isEdit ? "Cập nhật" : "Tạo"} slider${
-            hasNewImage ? " và ảnh" : ""
+          `${isEdit ? "Cập nhật" : "Tạo"} slider${hasNewImage ? " và ảnh" : ""
           } thành công`
         );
       }
@@ -237,16 +277,22 @@ const SliderForm = ({ initialValues, onSubmit, loading }) => {
 
       <Form.Item name="imageUrl" label="Ảnh">
         <Upload
-          listType="picture"
+          listType="picture-card" // ✅ Thay đổi này
           beforeUpload={() => false}
           fileList={fileList}
           onChange={handleChange}
-          showUploadList={{ showPreviewIcon: false }}
+          showUploadList={{
+            showPreviewIcon: true,
+            showRemoveIcon: true
+          }}
           maxCount={1}
         >
-          <Button icon={<UploadOutlined />}>
-            {fileList.length > 0 ? "Thay đổi ảnh" : "Chọn ảnh"}
-          </Button>
+          {fileList.length === 0 && (
+            <div>
+              <PlusOutlined />
+              <div style={{ marginTop: 8 }}>Upload</div>
+            </div>
+          )}
         </Upload>
         {hasNewImage && (
           <div style={{ marginTop: 8, color: "#1890ff", fontSize: 12 }}>
@@ -340,9 +386,8 @@ const SliderManagement = () => {
       content: (
         <ModalContent
           title={`Xác nhận ${isActive ? "vô hiệu hóa" : "kích hoạt"} slider`}
-          content={`Bạn có chắc chắn muốn ${
-            isActive ? "vô hiệu hóa" : "kích hoạt"
-          } slider này không?`}
+          content={`Bạn có chắc chắn muốn ${isActive ? "vô hiệu hóa" : "kích hoạt"
+            } slider này không?`}
           type={isActive ? "deactivate" : "activate"}
           tagLabel={record.slideDescription}
         />
@@ -450,23 +495,6 @@ const SliderManagement = () => {
     // Force refresh danh sách sau khi create/update thành công
     await fetchSliders();
   };
-
-  const convertGoogleDriveUrl = (url) => {
-    if (!url) return "";
-
-    if (url.includes("drive.google.com")) {
-      const fileIdMatch =
-        url.match(/\/d\/([a-zA-Z0-9-_]+)/) ||
-        url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-      if (fileIdMatch) {
-        const fileId = fileIdMatch[1];
-        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-      }
-    }
-
-    return url;
-  };
-
   const columns = [
     {
       title: "STT",
@@ -507,16 +535,16 @@ const SliderManagement = () => {
           <img
             src={imageSrc}
             alt="slider"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
             style={{
               width: 160,
               height: 100,
               objectFit: "cover",
               borderRadius: 6,
+              display: "block"
             }}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = altImg;
-            }}
+            onError={(e) => handleSliderImageError(e, text)}
           />
         ) : (
           <img

@@ -277,6 +277,95 @@ const BookingManagement = () => {
     },
     [selectedDate, formatTime, getBookingKey, getBookingStatusFromString]
   );
+  useEffect(() => {
+    const handleBookingPaidUpdate = (event) => {
+      const notification = event.detail;
+      console.log(
+        "🎯 [BookingManagement] Payment update received:",
+        notification
+      );
+      console.log(
+        "🔍 [DEBUG] BookingId from notification:",
+        notification.bookingId
+      );
+      console.log("🔍 [DEBUG] Current bookingData structure:");
+
+      // ✅ LOG ALL BOOKING DATA TO UNDERSTAND STRUCTURE
+      Object.keys(bookingData).forEach((key) => {
+        const booking = bookingData[key];
+        console.log(`🔍 Slot [${key}]:`, {
+          bookingId: booking?.bookingId,
+          id: booking?.id,
+          Id: booking?.Id,
+          status: booking?.status,
+          statusDescription: booking?.statusDescription,
+          paymentStatus: booking?.paymentStatus,
+        });
+      });
+
+      // ✅ TRY MULTIPLE WAYS TO FIND MATCHING BOOKING
+      let foundSlot = null;
+      let foundKey = null;
+
+      Object.keys(bookingData).forEach((bookingKey) => {
+        const booking = bookingData[bookingKey];
+
+        // Try different possible ID fields
+        const possibleIds = [
+          booking?.bookingId,
+          booking?.id,
+          booking?.Id,
+          booking?.booking?.id,
+          booking?.booking?.bookingId,
+        ].filter((id) => id !== undefined && id !== null);
+
+        possibleIds.forEach((id) => {
+          if (id.toString() === notification.bookingId.toString()) {
+            foundSlot = booking;
+            foundKey = bookingKey;
+            console.log(`✅ FOUND MATCH! Slot: ${bookingKey}, ID: ${id}`);
+          }
+        });
+      });
+
+      if (foundKey) {
+        console.log(`🔄 Updating slot: ${foundKey}`);
+        console.log(`🔍 Before update:`, foundSlot);
+
+        setBookingData((prev) => {
+          const updated = {
+            ...prev,
+            [foundKey]: {
+              ...prev[foundKey],
+              status: "paid",
+              statusId: 7,
+              paymentStatus: "deposit",
+              statusDescription: "Đã Cọc",
+            },
+          };
+
+          console.log(`✅ After update:`, updated[foundKey]);
+          return updated;
+        });
+      } else {
+        console.log("❌ NO MATCHING SLOT FOUND!");
+        console.log("🔍 Available IDs vs Target:");
+        Object.keys(bookingData).forEach((key) => {
+          const booking = bookingData[key];
+          console.log(
+            `Slot ${key}: ${booking?.bookingId || booking?.id} vs ${
+              notification.bookingId
+            }`
+          );
+        });
+      }
+    };
+
+    window.addEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+    return () => {
+      window.removeEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
+    };
+  }, [bookingData]);
 
   const createProcessedBooking = useCallback(
     (booking, slot, courtId, timeSlot, bookingDate, status) => {
@@ -1746,18 +1835,26 @@ const BookingManagement = () => {
 
             setBookingData((prev) => {
               if (prev[bookingKey]) {
+                const newStatus = getBookingStatusFromString(
+                  notification.status
+                );
+                let paymentStatus = prev[bookingKey].paymentStatus;
+                let statusId = prev[bookingKey].statusId;
+
+                if (newStatus === "completed") {
+                  paymentStatus = "paid";
+                  statusId = 10;
+                } else if (newStatus === "cancelled") {
+                  paymentStatus = "cancelled";
+                  statusId = 9;
+                }
+
                 const updatedBooking = {
                   ...prev[bookingKey],
-                  status: getBookingStatusFromString(notification.status),
+                  status: newStatus,
                   originalStatus: notification.status,
-                  paymentStatus:
-                    notification.status === "completed"
-                      ? "paid"
-                      : prev[bookingKey].paymentStatus,
-                  statusId:
-                    notification.status === "completed"
-                      ? 10
-                      : prev[bookingKey].statusId,
+                  paymentStatus,
+                  statusId,
                 };
 
                 console.log(
@@ -1777,20 +1874,26 @@ const BookingManagement = () => {
               selectedBooking.id.toString() ===
                 notification.bookingId.toString()
             ) {
+              const newStatus = getBookingStatusFromString(notification.status);
+              let paymentStatus = selectedBooking.paymentStatus;
+              let statusId = selectedBooking.statusId;
+
+              if (newStatus === "completed") {
+                paymentStatus = "paid";
+                statusId = 10;
+              } else if (newStatus === "cancelled") {
+                paymentStatus = "cancelled";
+                statusId = 9;
+              }
+
               setSelectedBooking((prev) =>
                 prev
                   ? {
                       ...prev,
-                      status: getBookingStatusFromString(notification.status),
+                      status: newStatus,
                       originalStatus: notification.status,
-                      paymentStatus:
-                        notification.status === "completed"
-                          ? "paid"
-                          : prev.paymentStatus,
-                      statusId:
-                        notification.status === "completed"
-                          ? 10
-                          : prev.statusId,
+                      paymentStatus,
+                      statusId,
                     }
                   : null
               );
