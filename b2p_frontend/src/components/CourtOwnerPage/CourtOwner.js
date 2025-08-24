@@ -1,31 +1,41 @@
 import React, { useState, useEffect } from "react";
-import CourtOwnerSideBar from "../SideBar/CourtOwnerSideBar";
-import "./CourtOwner.scss";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { Button } from "antd";
 import { MenuOutlined } from "@ant-design/icons";
-import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
-import NotificationBell from "../../components/NotificationBell";
-import { getFacilitiesByCourtOwnerId } from "../../services/apiService";
-import { useAuth } from "../../contexts/AuthContext";
+import CourtOwnerSideBar from "../SideBar/CourtOwnerSideBar";
+import "./CourtOwner.scss";
 
-// ✅ ADD: Import comment notification components
+// Contexts
+import { GlobalNotificationProvider } from "../../contexts/GlobalNotificationContext";
 import { SignalRProvider } from "../../contexts/SignalRContext";
 import { GlobalCommentNotificationProvider } from "../../contexts/GlobalCommentNotificationContext";
-import NotificationDropdown from "../NotificationDropdown.js"; // Assuming you have this component
+import { useAuth } from "../../contexts/AuthContext";
+
+// Components
+import NotificationBell from "../../components/NotificationBell";
+import NotificationDropdown from "../NotificationDropdown.js";
+
+// Services
+import { getFacilitiesByCourtOwnerId, getMerchantPaymentsByUserId } from "../../services/apiService";
 
 const CourtOwner = () => {
+  // UI States
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  // ✅ NEW: State for global notifications
   const [facilityIds, setFacilityIds] = useState([]);
+
+  // Payment Access States
+  const [hasPaymentAccess, setHasPaymentAccess] = useState(null); // null = loading
+  const [paymentLoading, setPaymentLoading] = useState(false);
+
+  // Auth & Location
   const { user, userId, isLoading: authLoading, isLoggedIn } = useAuth();
   const USER_ID = userId || user?.userId;
+  const location = useLocation();
 
-  // ✅ NEW: Prepare currentUser for comment notifications (same as App.js)
+  // Prepare currentUser for comment notifications
   const currentUser = user ? {
     userId: user.userId || user.id,
     fullName: user.fullName || user.name || user.userName || user.username,
@@ -37,7 +47,39 @@ const CourtOwner = () => {
     loginTime: new Date().toISOString(),
   } : null;
 
-  // ✅ NEW: Load facilities for global notifications
+  // Payment Access Check Function
+  const checkPaymentAccess = (paymentData) => {
+    console.log('🔍 Raw paymentData:', paymentData);
+    
+    if (!paymentData || !Array.isArray(paymentData)) {
+      console.log('❌ PaymentData is not array or null');
+      return false;
+    }
+    
+    const activePayments = paymentData.filter(payment => 
+      payment.statusName === "Active"
+    );
+    
+    console.log('✅ Active payments:', activePayments);
+    
+    const paymentMethods = [...new Set(
+      activePayments.map(payment => payment.paymentMethodName)
+    )];
+    
+    console.log('🎯 Unique payment methods:', paymentMethods);
+    console.log('🎯 Payment methods as string:', JSON.stringify(paymentMethods));
+    
+    const hasZaloPay = paymentMethods.includes('ZaloPay');
+    const hasStripe = paymentMethods.includes('Stripe');
+    
+    console.log('💰 Has ZaloPay:', hasZaloPay, '(looking for "ZaloPay")');
+    console.log('💳 Has Stripe:', hasStripe, '(looking for "Stripe")');
+    console.log('🏁 Final result:', hasZaloPay && hasStripe);
+    
+    return hasZaloPay && hasStripe;
+  };
+
+  // Load facilities for global notifications
   useEffect(() => {
     const loadFacilities = async () => {
       try {
@@ -55,6 +97,65 @@ const CourtOwner = () => {
       loadFacilities();
     }
   }, [USER_ID]);
+
+  // Payment Access Check
+  useEffect(() => {
+    const fetchAndCheckPayments = async () => {
+      if (!USER_ID) return;
+      
+      try {
+        setPaymentLoading(true);
+        console.log('🚀 Calling getMerchantPaymentsByUserId with USER_ID:', USER_ID);
+        
+        const response = await getMerchantPaymentsByUserId(USER_ID);
+        
+        console.log('📡 Full API response:', response);
+        console.log('📡 Response status:', response?.status);
+        console.log('📡 Response data:', response?.data);
+        console.log('📡 Response data success:', response?.data?.success);
+        console.log('📡 Response data type:', typeof response?.data);
+        console.log('📡 Response data isArray:', Array.isArray(response?.data));
+        
+        if (response?.status === 200) {
+          // Check if response.data has success property or is array directly
+          let paymentArray;
+          
+          if (response.data?.success && Array.isArray(response.data.data)) {
+            // Case: { success: true, data: [...] }
+            paymentArray = response.data.data;
+            console.log('📋 Using response.data.data (nested)');
+          } else if (Array.isArray(response.data)) {
+            // Case: response.data is array directly
+            paymentArray = response.data;
+            console.log('📋 Using response.data (direct array)');
+          } else {
+            console.log('❌ Unexpected response structure');
+            paymentArray = [];
+          }
+          
+          console.log('📋 Final payment array to check:', paymentArray);
+          const hasAccess = checkPaymentAccess(paymentArray);
+          console.log('🎯 Final payment access result:', hasAccess);
+          setHasPaymentAccess(hasAccess);
+        } else {
+          console.log('❌ API call failed or no success flag');
+          console.log('❌ Status:', response?.status);
+          console.log('❌ Success flag:', response.data?.success);
+          setHasPaymentAccess(false);
+        }
+      } catch (error) {
+        console.error('💥 Error fetching payments:', error);
+        setHasPaymentAccess(false);
+      } finally {
+        setPaymentLoading(false);
+      }
+    };
+
+    // Chỉ fetch khi auth đã load xong và có USER_ID
+    if (!authLoading && USER_ID && isLoggedIn) {
+      fetchAndCheckPayments();
+    }
+  }, [USER_ID, authLoading, isLoggedIn]);
 
   // Check screen size and set responsive states
   useEffect(() => {
@@ -85,6 +186,7 @@ const CourtOwner = () => {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, [sidebarOpen]);
 
+  // Sidebar functions
   const toggleSidebar = () => {
     if (isMobile) {
       setSidebarOpen(!sidebarOpen);
@@ -97,45 +199,56 @@ const CourtOwner = () => {
     setSidebarOpen(false);
   };
 
-  // Generate dynamic classes for container
+  // Generate dynamic classes
   const getContainerClasses = () => {
     const classes = ["court-owner-container"];
-
     if (sidebarCollapsed && !isMobile) {
       classes.push("sidebar-collapsed");
     }
-
     return classes.join(" ");
   };
 
-  // Generate dynamic classes for sidebar
   const getSidebarClasses = () => {
     const classes = ["court-owner-sidebar"];
-
     if (sidebarCollapsed && !isMobile) {
       classes.push("collapsed");
     }
-
     if (isMobile && sidebarOpen) {
       classes.push("sidebar-open");
     }
-
     return classes.join(" ");
   };
 
-  // ✅ Don't render if user not loaded
-  if (authLoading || !currentUser) {
+  // Loading states
+  if (authLoading || paymentLoading || !currentUser) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
         height: '100vh',
-        fontSize: '16px'
+        flexDirection: 'column',
+        gap: '10px'
       }}>
-        🔄 Đang tải thông tin người dùng...
+        <div>🔄 Đang kiểm tra quyền truy cập...</div>
+        {authLoading && <small>Đang xác thực...</small>}
+        {paymentLoading && <small>Đang kiểm tra phương thức thanh toán...</small>}
       </div>
     );
+  }
+
+  // Nếu chưa login hoặc không có USER_ID
+  if (!isLoggedIn || !USER_ID) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check redirect logic
+  const isOnPaymentPage = location.pathname.includes('/payment-management');
+  
+  // Nếu chưa đủ payment methods và không ở trang payment-management
+  if (hasPaymentAccess === false && !isOnPaymentPage) {
+    console.log('Redirecting to payment-management - insufficient payment methods');
+    return <Navigate to="/court-owner/payment-management" replace />;
   }
 
   return (
@@ -163,7 +276,7 @@ const CourtOwner = () => {
               />
             )}
 
-            {/* ✅ UPDATED: Notification Area with both Bell and Comment notifications */}
+            {/* Notification Area */}
             <div style={{
               position: "fixed",
               top: "20px",
@@ -173,9 +286,9 @@ const CourtOwner = () => {
               gap: "12px",
               alignItems: "center"
             }}>
-              {/* ✅ Comment Notifications */}
+              {/* Comment Notifications */}
               <div style={{
-                background: "linear-gradient(135deg, #1890ff, #40a9ff)", // Xanh dương cho comment
+                background: "linear-gradient(135deg, #1890ff, #40a9ff)",
                 borderRadius: "50%",
                 padding: "12px",
                 boxShadow: "0 6px 20px rgba(24, 144, 255, 0.4)",
@@ -186,9 +299,9 @@ const CourtOwner = () => {
                 <NotificationDropdown />
               </div>
 
-              {/* ✅ Booking Notifications */}
+              {/* Booking Notifications */}
               <div style={{
-                background: "linear-gradient(135deg, #52c41a, #73d13d)", // Xanh lá cho booking
+                background: "linear-gradient(135deg, #52c41a, #73d13d)",
                 borderRadius: "50%",
                 padding: "12px",
                 boxShadow: "0 6px 20px rgba(82, 196, 26, 0.4)",
@@ -200,6 +313,7 @@ const CourtOwner = () => {
               </div>
             </div>
 
+            {/* Sidebar */}
             <div className={getSidebarClasses()}>
               <CourtOwnerSideBar
                 onClose={closeSidebar}
@@ -211,8 +325,28 @@ const CourtOwner = () => {
               />
             </div>
 
+            {/* Main Content */}
             <div className="court-owner-main">
               <div className="court-owner-content">
+                {/* Debug info - remove in production
+                {process.env.NODE_ENV === 'development' && (
+                  <div style={{ 
+                    position: 'fixed', 
+                    top: '80px', 
+                    right: '20px', 
+                    background: 'rgba(0,0,0,0.8)', 
+                    color: 'white', 
+                    padding: '10px',
+                    fontSize: '12px',
+                    zIndex: 9999,
+                    borderRadius: '4px'
+                  }}>
+                    <div>USER_ID: {USER_ID}</div>
+                    <div>Has Payment Access: {String(hasPaymentAccess)}</div>
+                    <div>Current Path: {location.pathname}</div>
+                  </div>
+                )}
+                 */}
                 <Outlet />
               </div>
             </div>

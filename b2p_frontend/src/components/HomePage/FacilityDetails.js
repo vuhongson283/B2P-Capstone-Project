@@ -34,31 +34,128 @@ const useSafeCustomerSignalR = () => {
 };
 
 // Helper function to convert Google Drive share link to viewable image link
-const convertGoogleDriveLink = (url) => {
-  if (!url) return null;
+const convertGoogleDriveUrl = (originalUrl) => {
+  if (!originalUrl) return "/src/assets/images/default.jpg";
 
-  // Method 1: Extract file ID from various Google Drive URL formats
+  console.log('Converting URL:', originalUrl);
+
+  // Bỏ qua nếu đã là định dạng mong muốn
+  if (originalUrl.includes('lh3.googleusercontent.com')) {
+    console.log('Already in googleusercontent format');
+    return originalUrl;
+  }
+  if (originalUrl.includes('thumbnail')) {
+    console.log('Already in thumbnail format');
+    return originalUrl;
+  }
+  if (originalUrl.includes('/assets/')) {
+    console.log('Local asset path');
+    return originalUrl;
+  }
+  if (!originalUrl.includes('drive.google.com')) {
+    console.log('Not a Google Drive URL');
+    return originalUrl;
+  }
+
+  // Extract file ID từ nhiều định dạng Google Drive URL
   let fileId = null;
 
   // Format: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-  const shareMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (shareMatch) {
-    fileId = shareMatch[1];
-  }
+  // hoặc https://drive.google.com/file/d/FILE_ID/edit
+  fileId = originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
 
   // Format: https://drive.google.com/open?id=FILE_ID
-  const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (openMatch) {
-    fileId = openMatch[1];
+  // hoặc https://drive.google.com/uc?id=FILE_ID
+  if (!fileId) {
+    fileId = originalUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
   }
 
   if (fileId) {
-    // Direct download link (works for public images)
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    console.log('Extracted fileId:', fileId);
+
+    // Thử nhiều format khác nhau, ưu tiên googleusercontent (bypass CORS tốt hơn)
+    const formats = [
+      // Format 1: Google Photos format (often bypasses CORS)
+      `https://lh3.googleusercontent.com/d/${fileId}=s800-c`,
+
+      // Format 2: Google Photos with no-cache
+      `https://lh3.googleusercontent.com/d/${fileId}=w800-h600-p-k-no-nu`,
+
+      // Format 3: Original format (your current one) 
+      `https://lh3.googleusercontent.com/d/${fileId}=s0`,
+
+      // Format 4: Simple googleusercontent
+      `https://lh3.googleusercontent.com/d/${fileId}`,
+
+      // Format 5: Drive direct (often blocked by CORS)
+      `https://drive.google.com/uc?export=view&id=${fileId}`
+    ];
+
+    // Trả về format đầu tiên (thường work nhất)
+    const selectedFormat = formats[0];
+    console.log('Selected format:', selectedFormat);
+
+    return selectedFormat;
   }
 
-  // If not a Google Drive link, return as is
-  return url;
+  console.warn('Could not extract fileId from:', originalUrl);
+  return "/src/assets/images/default.jpg";
+};
+
+// Helper function để check xem URL có cần convert không
+const needsGoogleDriveConversion = (url) => {
+  return url &&
+    url.includes('drive.google.com') &&
+    !url.includes('lh3.googleusercontent.com') &&
+    !url.includes('thumbnail');
+};
+
+// Helper function để extract fileId từ bất kỳ Google Drive URL nào
+const extractGoogleDriveFileId = (url) => {
+  if (!url) return null;
+
+  // Try multiple patterns
+  const patterns = [
+    /\/d\/([a-zA-Z0-9_-]+)/, // /d/FILE_ID
+    /[?&]id=([a-zA-Z0-9_-]+)/, // ?id=FILE_ID or &id=FILE_ID
+    /googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/, // Already converted format
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+
+  return null;
+};
+
+// Version có thể tùy chỉnh kích thước (optional)
+const convertGoogleDriveUrlWithSize = (originalUrl, options = {}) => {
+  // Default options
+  const {
+    width = 300,
+    height = 200,
+    crop = true, // 'c' parameter for cropping
+    defaultImage = "/src/assets/images/default.jpg"
+  } = options;
+
+  if (!originalUrl) return defaultImage;
+
+  // Bỏ qua nếu đã là định dạng mong muốn
+  if (originalUrl.includes('lh3.googleusercontent.com')) return originalUrl;
+  if (originalUrl.includes('thumbnail')) return originalUrl;
+  if (originalUrl.includes('/assets/')) return originalUrl;
+
+  // Extract file ID
+  let fileId = originalUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+    originalUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+
+  if (fileId) {
+    const cropParam = crop ? '-c' : '';
+    return `https://lh3.googleusercontent.com/d/${fileId}=w${width}-h${height}${cropParam}`;
+  }
+
+  return defaultImage;
 };
 
 // Helper function to validate image URLs
@@ -486,18 +583,23 @@ const ReviewsModal = ({ open, onClose, ratings = [], facilityName = "" }) => {
   );
 };
 
-// Image Carousel Component
+// Fixed Image Carousel Component
+// Fixed Image Carousel Component
 const ImageCarousel = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [failedImages, setFailedImages] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [retryAttempts, setRetryAttempts] = useState(new Map());
 
   // Process facility images - convert Google Drive links and handle all URLs
   const displayImages = React.useMemo(() => {
     console.log('Raw images from API:', images);
 
+    let processedImages = [];
+
     if (images && images.length > 0) {
       // Process all images, convert Google Drive links
-      const processedImages = images
+      processedImages = images
         .filter(img => {
           const hasUrl = img.imageUrl && img.imageUrl.trim() !== '';
           console.log(`Image ${img.imageId}: ${img.imageUrl} - Has URL: ${hasUrl}`);
@@ -506,32 +608,42 @@ const ImageCarousel = ({ images }) => {
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(img => {
           const originalUrl = img.imageUrl;
-          const convertedUrl = convertGoogleDriveLink(originalUrl);
+          const convertedUrl = convertGoogleDriveUrl(originalUrl);
           console.log(`Converting: ${originalUrl} → ${convertedUrl}`);
           return convertedUrl;
         })
         .filter(url => url && !failedImages.has(url));
 
-      console.log('Processed images:', processedImages);
-
-      if (processedImages.length > 0) {
-        return processedImages;
-      }
+      console.log('Processed API images after filtering failed:', processedImages);
     }
 
-    // No valid images from API, use default images
-    console.log('No images from API, using fallback images');
-    return FACILITY_IMAGES;
+    // If no valid API images, add fallback images
+    if (processedImages.length === 0) {
+      console.log('No valid API images, adding fallback images');
+      const validFallbackImages = FACILITY_IMAGES.filter(url => !failedImages.has(url));
+      processedImages = validFallbackImages;
+    }
+
+    // If still no images (all failed), return default image
+    if (processedImages.length === 0) {
+      console.log('All images failed, using default image');
+      processedImages = ["/src/assets/images/default.jpg"];
+    }
+
+    console.log('Final displayImages:', processedImages);
+    return processedImages;
   }, [images, failedImages]);
 
   // Reset current index if it's out of bounds
   React.useEffect(() => {
-    if (currentIndex >= displayImages.length) {
+    if (currentIndex >= displayImages.length && displayImages.length > 0) {
       setCurrentIndex(0);
     }
   }, [displayImages.length, currentIndex]);
 
   const navigateImage = (direction) => {
+    if (displayImages.length <= 1) return;
+
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex + direction;
       return (newIndex + displayImages.length) % displayImages.length;
@@ -541,25 +653,118 @@ const ImageCarousel = ({ images }) => {
   const handleImageError = (failedUrl) => {
     console.error('Image failed to load:', failedUrl);
 
-    setFailedImages(prev => new Set([...prev, failedUrl]));
+    // Don't handle error for default image to prevent infinite loop
+    if (failedUrl === "/src/assets/images/default.jpg") {
+      console.log('Default image failed - stopping error handling to prevent loop');
+      return;
+    }
 
-    if (displayImages[currentIndex] === failedUrl) {
-      const remainingImages = displayImages.filter(url => !failedImages.has(url) && url !== failedUrl);
+    // Try alternative Google Drive formats before giving up
+    if (failedUrl.includes('drive.google.com') || failedUrl.includes('googleusercontent.com')) {
+      const currentRetries = retryAttempts.get(failedUrl) || 0;
 
-      if (remainingImages.length === 0) {
-        setCurrentIndex(0);
-      } else {
-        const nextIndex = displayImages.findIndex(url => !failedImages.has(url) && url !== failedUrl);
-        if (nextIndex !== -1) {
-          setCurrentIndex(nextIndex);
+      if (currentRetries < 4) { // Try 4 different formats
+        // Extract fileId from current URL
+        let fileId = null;
+
+        if (failedUrl.includes('googleusercontent.com')) {
+          fileId = failedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+        } else {
+          fileId = failedUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+        }
+
+        if (fileId) {
+          // Same format order as in convertGoogleDriveUrl (focus on googleusercontent)
+          const alternativeFormats = [
+            `https://lh3.googleusercontent.com/d/${fileId}=s800-c`,
+            `https://lh3.googleusercontent.com/d/${fileId}=w800-h600-p-k-no-nu`,
+            `https://lh3.googleusercontent.com/d/${fileId}=s0`,
+            `https://lh3.googleusercontent.com/d/${fileId}`,
+            `https://drive.google.com/uc?export=view&id=${fileId}`
+          ];
+
+          const nextFormat = alternativeFormats[currentRetries + 1]; // Try next format
+          if (nextFormat && nextFormat !== failedUrl) {
+            console.log(`🔄 Trying Google Drive format ${currentRetries + 2}/5:`, nextFormat);
+
+            setRetryAttempts(prev => {
+              const newMap = new Map(prev);
+              newMap.set(failedUrl, currentRetries + 1);
+              return newMap;
+            });
+
+            // Update image src directly
+            setTimeout(() => {
+              const img = document.querySelector(`img[src="${failedUrl}"]`);
+              if (img) {
+                console.log(`🔄 Switching from: ${failedUrl}`);
+                console.log(`🔄 Switching to: ${nextFormat}`);
+                setIsLoading(true); // Show loading for new attempt
+                img.src = nextFormat;
+              }
+            }, 300); // Increase delay to 300ms
+
+            return; // Don't mark as failed yet
+          }
         }
       }
+
+      console.warn(`❌ All Google Drive formats failed for: ${failedUrl}`);
+      console.warn('💡 Make sure the file is shared as "Anyone with the link can view"');
     }
+
+    setFailedImages(prev => {
+      const newFailedImages = new Set([...prev, failedUrl]);
+      console.log('Failed images updated:', Array.from(newFailedImages));
+      return newFailedImages;
+    });
   };
+
+  const handleImageLoad = (loadedUrl) => {
+    console.log('✅ Image loaded successfully:', loadedUrl);
+    setIsLoading(false);
+
+    // Reset retry attempts for this URL since it worked
+    setRetryAttempts(prev => {
+      const newMap = new Map(prev);
+      // Remove all retry records for this fileId
+      const fileId = loadedUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1] ||
+        loadedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1];
+      if (fileId) {
+        // Clear retry attempts for all formats of this fileId
+        for (const [key] of newMap) {
+          if (key.includes(fileId)) {
+            newMap.delete(key);
+          }
+        }
+      }
+      return newMap;
+    });
+  };
+
+  // Safety check - should not happen with the fixed logic above
+  if (displayImages.length === 0) {
+    console.log('Emergency fallback - no displayImages available');
+    return (
+      <div className="carousel">
+        <div className="carousel__container">
+          <div className="carousel__image-wrapper">
+            <div className="carousel__placeholder">
+              <p>No images available</p>
+            </div>
+            <div className="carousel__overlay"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentImage = displayImages[currentIndex];
+  const hasMultipleImages = displayImages.length > 1;
 
   return (
     <div className="carousel">
-      {displayImages.length > 1 && (
+      {hasMultipleImages && (
         <button
           className="carousel__btn carousel__btn--prev"
           onClick={() => navigateImage(-1)}
@@ -568,20 +773,34 @@ const ImageCarousel = ({ images }) => {
           ‹
         </button>
       )}
+
       <div className="carousel__container">
         <div className="carousel__image-wrapper">
+          {isLoading && (
+            <div className="carousel__loading">
+              <p>Loading image...</p>
+            </div>
+          )}
+
           <img
-            src={displayImages[currentIndex]}
+            src={currentImage}
             alt={`Facility view ${currentIndex + 1}`}
             className="carousel__image"
-            onError={() => handleImageError(displayImages[currentIndex])}
-            onLoad={() => console.log('Image loaded successfully:', displayImages[currentIndex])}
+            onError={() => handleImageError(currentImage)}
+            onLoad={() => handleImageLoad(currentImage)}
+            onLoadStart={() => setIsLoading(true)} // Set loading when starting
+            style={{
+              display: isLoading ? 'none' : 'block',
+              opacity: isLoading ? 0 : 1,
+              transition: 'opacity 0.3s ease'
+            }}
           />
-          <div className="carousel__overlay">
-          </div>
+
+          <div className="carousel__overlay"></div>
         </div>
       </div>
-      {displayImages.length > 1 && (
+
+      {hasMultipleImages && (
         <button
           className="carousel__btn carousel__btn--next"
           onClick={() => navigateImage(1)}
@@ -590,11 +809,12 @@ const ImageCarousel = ({ images }) => {
           ›
         </button>
       )}
-      {displayImages.length > 1 && (
+
+      {hasMultipleImages && (
         <div className="carousel__dots">
           {displayImages.map((_, idx) => (
             <button
-              key={idx}
+              key={`dot-${idx}`}
               className={`carousel__dot ${idx === currentIndex ? 'active' : ''}`}
               onClick={() => setCurrentIndex(idx)}
               aria-label={`Go to image ${idx + 1}`}
