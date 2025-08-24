@@ -333,6 +333,77 @@ const BookingManagement = () => {
       window.removeEventListener("bookingPaidUpdate", handleBookingPaidUpdate);
     };
   }, [bookingData]);
+  // ✅ ADD THIS CANCELLATION HANDLER AFTER THE PAYMENT HANDLER
+  useEffect(() => {
+    const handleBookingCancelledUpdate = (event) => {
+      const notification = event.detail;
+      console.log('🎯 [BookingManagement] Cancellation update received:', notification);
+      console.log('🔍 [DEBUG] BookingId from notification:', notification.bookingId);
+
+      // ✅ IMMEDIATELY BLOCK THIS BOOKING GLOBALLY
+      if (!window.globalBlockedBookings) {
+        window.globalBlockedBookings = new Set();
+      }
+      window.globalBlockedBookings.add(notification.bookingId.toString());
+      console.log(`🚫 BLOCKED booking ${notification.bookingId} from future payment updates`);
+
+      console.log('🔍 [DEBUG] Current bookingData structure:');
+      Object.keys(bookingData).forEach(slotKey => {
+        const booking = bookingData[slotKey];
+        console.log(`🔍 Slot [${slotKey}]:`, booking);
+      });
+
+      let foundSlot = null;
+      let foundKey = null;
+
+      Object.keys(bookingData).forEach(bookingKey => {
+        const booking = bookingData[bookingKey];
+
+        const possibleIds = [
+          booking?.bookingId,
+          booking?.id,
+          booking?.Id
+        ].filter(id => id !== undefined && id !== null);
+
+        possibleIds.forEach(id => {
+          if (id.toString() === notification.bookingId.toString()) {
+            foundSlot = booking;
+            foundKey = bookingKey;
+            console.log(`✅ FOUND MATCH for cancellation! Slot: ${bookingKey}, ID: ${id}`);
+          }
+        });
+      });
+
+      if (foundKey) {
+        console.log(`🔄 Updating slot to CANCELLED: ${foundKey}`);
+        console.log('🔍 Before cancellation update:', foundSlot);
+
+        setBookingData(prev => {
+          const updated = {
+            ...prev,
+            [foundKey]: {
+              ...prev[foundKey],
+              status: 'cancelled',
+              statusId: 9, // ✅ Use correct statusId for cancelled
+              statusDescription: 'Đã Hủy',
+              paymentStatus: 'cancelled',
+              originalStatus: 'Cancelled'
+            }
+          };
+
+          console.log(`✅ Slot ${foundKey} updated to CANCELLED status:`, updated[foundKey]);
+          return updated;
+        });
+      } else {
+        console.log('❌ No matching slot found for cancellation ID:', notification.bookingId);
+      }
+    };
+
+    window.addEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
+    return () => {
+      window.removeEventListener('bookingCancelledUpdate', handleBookingCancelledUpdate);
+    };
+  }, [bookingData]);
 
   const createProcessedBooking = useCallback(
     (booking, slot, courtId, timeSlot, bookingDate, status) => {
