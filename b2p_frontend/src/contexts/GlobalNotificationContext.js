@@ -285,6 +285,16 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
 
     }, []);
     const handleGlobalBookingPaid = useCallback((notification) => {
+        // Nếu đơn đã hủy thì không gửi thông báo thanh toán
+        if (
+            notification.status?.toLowerCase() === 'cancelled' ||
+            notification.action === 'cancelled' ||
+            notification.statusId === 9 // Nếu statusId 9 là "Đã hủy"
+        ) {
+            console.log('⏭️ Đơn đã hủy, không gửi thông báo thanh toán');
+            return;
+        }
+
         console.log('🔔 GLOBAL: Booking paid received!', notification);
 
         // ✅ SUPER STRONG DEBOUNCE - USING WINDOW OBJECT

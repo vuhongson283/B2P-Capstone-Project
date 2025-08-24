@@ -1515,12 +1515,24 @@ const BookingManagement = () => {
 
                         setBookingData(prev => {
                             if (prev[bookingKey]) {
+                                const newStatus = getBookingStatusFromString(notification.status);
+                                let paymentStatus = prev[bookingKey].paymentStatus;
+                                let statusId = prev[bookingKey].statusId;
+
+                                if (newStatus === 'completed') {
+                                    paymentStatus = 'paid';
+                                    statusId = 10;
+                                } else if (newStatus === 'cancelled') {
+                                    paymentStatus = 'cancelled';
+                                    statusId = 9;
+                                }
+
                                 const updatedBooking = {
                                     ...prev[bookingKey],
-                                    status: getBookingStatusFromString(notification.status),
+                                    status: newStatus,
                                     originalStatus: notification.status,
-                                    paymentStatus: notification.status === 'completed' ? 'paid' : prev[bookingKey].paymentStatus,
-                                    statusId: notification.status === 'completed' ? 10 : prev[bookingKey].statusId
+                                    paymentStatus,
+                                    statusId
                                 };
 
                                 console.log(`✅ LOCAL UI: Slot ${timeSlot} updated to ${notification.status.toUpperCase()} status`);
@@ -1534,12 +1546,24 @@ const BookingManagement = () => {
                         });
 
                         if (selectedBooking && selectedBooking.id.toString() === notification.bookingId.toString()) {
+                            const newStatus = getBookingStatusFromString(notification.status);
+                            let paymentStatus = selectedBooking.paymentStatus;
+                            let statusId = selectedBooking.statusId;
+
+                            if (newStatus === 'completed') {
+                                paymentStatus = 'paid';
+                                statusId = 10;
+                            } else if (newStatus === 'cancelled') {
+                                paymentStatus = 'cancelled';
+                                statusId = 9;
+                            }
+
                             setSelectedBooking(prev => prev ? {
                                 ...prev,
-                                status: getBookingStatusFromString(notification.status),
+                                status: newStatus,
                                 originalStatus: notification.status,
-                                paymentStatus: notification.status === 'completed' ? 'paid' : prev.paymentStatus,
-                                statusId: notification.status === 'completed' ? 10 : prev.statusId
+                                paymentStatus,
+                                statusId
                             } : null);
                         }
                     }
