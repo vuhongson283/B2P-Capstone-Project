@@ -1177,7 +1177,7 @@ const FacilityDetails = () => {
         selectedDate: selectedDate,
         timeSlot: notification.timeSlot,
         customerName: notification.customerName,
-        currentUser: "bachnhhe173308",
+        currentUser: "người dùng",
         timestamp: "2025-08-23 06:05:37 UTC",
       });
 
@@ -1533,7 +1533,7 @@ const FacilityDetails = () => {
       <div className="facility-page">
         <div className="loading-state">
           <div className="loading-spinner">⏳</div>
-          Đang tải thông tin cơ sở cho user bachnhhe173308...
+          Đang tải thông tin cơ sở cho người dùng...
         </div>
       </div>
     );
@@ -1641,7 +1641,7 @@ const FacilityDetails = () => {
           {loadingSlots && (
             <div className="loading-state">
               <div className="loading-spinner">⏳</div>
-              Đang tải lịch trống cho user bachnhhe173308...
+              Đang tải lịch trống cho người dùng...
             </div>
           )}
 
