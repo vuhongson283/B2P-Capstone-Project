@@ -6,7 +6,7 @@ NProgress.configure({
   trickleSpeed: 100,
 });
 const instance = axios.create({
-  baseURL: "https://api.book2play.site/api/",
+  baseURL: "https://localhost:5000/api/",
   timeout: 20000, // Tăng từ 1000 lên 10000ms
 });
 // Add a request interceptor
