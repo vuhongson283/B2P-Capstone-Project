@@ -512,7 +512,7 @@ const getAllCourts = (params) => {
 
 const addNewCourt = (courtData) => axios.post("CourtManagement/CreateCourt", courtData);
 
-const updateCourt = (courtData, userId = 6) => {
+const updateCourt = (courtData, userId) => {
   return axios.put(`CourtManagement/UpdateCourt?userId=${userId}`, {
     courtId: courtData.courtId,
     statusId: courtData.status,
@@ -523,7 +523,7 @@ const updateCourt = (courtData, userId = 6) => {
   });
 };
 
-const deleteCourt = (courtId, userId = 6) => {
+const deleteCourt = (courtId, userId) => {
   return axios.delete(`CourtManagement/DeleteCourt?userId=${userId}&courtId=${courtId}`);
 };
 
