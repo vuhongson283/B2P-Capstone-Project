@@ -1015,12 +1015,12 @@ namespace B2P_API.Services
             // Gửi SignalR message
             try
             {
-                await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
-                {
-                    BookingId = bookingId
-                });
+                //await _hubContext.Clients.All.SendAsync("BookingStatusChanged", new
+                //{
+                //    BookingId = bookingId
+                //});
 
-                Console.WriteLine($"[SignalR] Message sent successfully");
+                //Console.WriteLine($"[SignalR] Message sent successfully");
             }
             catch (Exception ex)
             {

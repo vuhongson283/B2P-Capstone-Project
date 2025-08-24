@@ -103,16 +103,29 @@ namespace B2P_API.Controllers
             return Ok(paymentIntent);
         }
 
-        // 3. Cancel nếu không duyệt
-        [HttpPost("cancel/{paymentIntentId}")]
-        public IActionResult CancelPayment(string paymentIntentId)
-        {
-            var service = new PaymentIntentService();
-            var paymentIntent = service.Cancel(paymentIntentId);
-            return Ok(paymentIntent);
-        }
+		// 3. Cancel nếu không duyệt
+		[HttpPost("cancel/{paymentIntentId}")]
+		public async Task<IActionResult> CancelPayment(string paymentIntentId)
+		{
+			var service = new PaymentIntentService();
+			var paymentIntent = service.Cancel(paymentIntentId);
 
-        [HttpPost("account-link")]
+			// Lấy BookingId từ metadata của PaymentIntent
+			string bookingIdStr = paymentIntent.Metadata.ContainsKey("BookingId") ? paymentIntent.Metadata["BookingId"] : null;
+			int bookingId = 0;
+			if (!string.IsNullOrEmpty(bookingIdStr))
+				int.TryParse(bookingIdStr, out bookingId);
+
+			if (bookingId > 0)
+			{
+				// Gọi service cập nhật trạng thái booking và gửi SignalR
+				await _bookingService.MarkBookingCancelledAsync(bookingId);
+			}
+
+			return Ok(paymentIntent);
+		}
+
+		[HttpPost("account-link")]
         public IActionResult CreateAccountLink([FromBody] CreateAccountLinkRequest request)
         {
             var options = new AccountLinkCreateOptions
