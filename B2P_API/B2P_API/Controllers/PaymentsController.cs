@@ -664,8 +664,19 @@ namespace B2P_API.Controllers
             return Ok(payment);
         }
 
+		[HttpPost("CreateOLK")]
+		public async Task<IActionResult> CreateOK([FromBody] CreateCommissionRequest request)
+		{
+			var payment = await _paymentService.CreateCommissionAsync(request);
+			if (payment == null)
+			{
+				return StatusCode(500, "Không thể tạo commission");
+			}
+			return Ok(payment);
+		}
 
-    }
+
+	}
 
     // Request model cho create
     public class CreatePaymentRequest

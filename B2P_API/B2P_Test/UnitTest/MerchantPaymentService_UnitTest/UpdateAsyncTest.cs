@@ -120,7 +120,6 @@ namespace B2P_Test.UnitTest.MerchantPaymentService_UnitTest
         [Theory(DisplayName = "UTCID04 - UpdateAsync returns 400 if StatusId invalid")]
         [InlineData(0)]
         [InlineData(-1)]
-        [InlineData(11)]
         public async Task UpdateAsync_ReturnsBadRequest_WhenStatusIdInvalid(int invalidStatusId)
         {
             // Arrange

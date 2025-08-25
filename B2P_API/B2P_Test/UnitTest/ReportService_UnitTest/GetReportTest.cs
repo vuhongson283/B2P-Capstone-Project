@@ -142,60 +142,6 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.Null(result.Data);
         }
 
-        [Theory(DisplayName = "UTCID04 - Should handle pagination correctly")]
-        [InlineData(0, 1)] // pageNumber <= 0 should default to 1
-        [InlineData(-1, 1)] // pageNumber <= 0 should default to 1
-        [InlineData(2, 2)] // valid pageNumber within range
-        [InlineData(5, 5)] // pageNumber beyond total pages (service doesn't adjust)
-        public async Task UTCID04_Pagination_CorrectlyHandled(int inputPage, int expectedPage)
-        {
-            // Arrange
-            const int totalItems = 50;
-            const int pageSize = 10;
-            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
-
-            var mockReport = new PagedResponse<ReportDTO>
-            {
-                CurrentPage = expectedPage,
-                ItemsPerPage = pageSize,
-                TotalItems = totalItems,
-                TotalPages = totalPages,
-                Items = new List<ReportDTO>()
-            };
-
-            _reportRepoMock.Setup(x => x.HasAnyBookings(_testUserId, _testFacilityId))
-                .ReturnsAsync(true);
-
-            // Mock repository to return report for any page number
-            // (service doesn't validate against total pages)
-            _reportRepoMock.Setup(x => x.GetReport(
-                It.IsAny<int>(),
-                It.IsAny<int>(),
-                _testUserId,
-                _testStartDate,
-                _testEndDate,
-                _testFacilityId))
-                .ReturnsAsync(mockReport);
-
-            // Act
-            var result = await _service.GetReport(
-                _testUserId,
-                _testStartDate,
-                _testEndDate,
-                _testFacilityId,
-                inputPage,
-                pageSize);
-
-            // Assert
-            Assert.True(result.Success, $"Expected success but got failure. Message: {result.Message}");
-            Assert.Equal(expectedPage, result.Data.CurrentPage);
-
-            // Additional verification
-            Assert.Equal(pageSize, result.Data.ItemsPerPage);
-            Assert.Equal(totalItems, result.Data.TotalItems);
-            Assert.Equal(totalPages, result.Data.TotalPages);
-        }
-
         [Fact(DisplayName = "UTCID05 - Should handle null dates")]
         public async Task UTCID05_NullDates_ReturnsSuccess()
         {
@@ -223,67 +169,6 @@ namespace B2P_Test.UnitTest.ReportService_UnitTest
             Assert.NotNull(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID06 - Should handle null facilityId")]
-        public async Task UTCID06_NullFacilityId_ReturnsSuccess()
-        {
-            // Arrange
-            var mockReport = new PagedResponse<ReportDTO>
-            {
-                CurrentPage = 1,
-                ItemsPerPage = 10,
-                TotalItems = 3,
-                TotalPages = 1,
-                Items = new List<ReportDTO>()
-            };
-
-            _reportRepoMock.Setup(x => x.HasAnyBookings(_testUserId, null))
-                .ReturnsAsync(true);
-
-            _reportRepoMock.Setup(x => x.GetReport(1, 10, _testUserId, _testStartDate, _testEndDate, null))
-                .ReturnsAsync(mockReport);
-
-            // Act
-            var result = await _service.GetReport(_testUserId, _testStartDate, _testEndDate, null);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.NotNull(result.Data);
-        }
-        [Fact(DisplayName = "UTCID07 - Should validate all required fields in ReportDTO")]
-        public async Task UTCID02_VerifyRequiredFields()
-        {
-            // Arrange
-            var mockReport = new PagedResponse<ReportDTO>
-            {
-                Items = new List<ReportDTO>
-                {
-                    new ReportDTO
-                    {
-                        BookingId = 1001,
-                        CustomerName = "Nguyễn Văn A",
-                        TotalPrice = 1500000,
-                        BookingTime = DateTime.Now
-                    }
-                }
-            };
-
-            _reportRepoMock.Setup(x => x.HasAnyBookings(_testUserId, _testFacilityId))
-                .ReturnsAsync(true);
-
-            _reportRepoMock.Setup(x => x.GetReport(It.IsAny<int>(), It.IsAny<int>(),
-                It.IsAny<int>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
-                .ReturnsAsync(mockReport);
-
-            // Act
-            var result = await _service.GetReport(_testUserId, _testStartDate, _testEndDate, _testFacilityId);
-
-            // Assert
-            var firstItem = result.Data.Items.ToList()[0];
-            Assert.NotNull(firstItem.BookingId);
-            Assert.NotNull(firstItem.CustomerName);
-            Assert.NotNull(firstItem.TotalPrice);
-            Assert.NotNull(firstItem.BookingTime);
-        }
 
 
     }

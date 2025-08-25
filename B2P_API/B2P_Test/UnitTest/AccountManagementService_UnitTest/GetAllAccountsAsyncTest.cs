@@ -18,10 +18,11 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
     {
         private readonly Mock<IAccountManagementRepository> _repoMock = new();
         private readonly Mock<IMapper> _mapperMock = new();
+        private readonly Mock<FacilityService> _facilityServiceMock = new();
 
         private AccountManagementService CreateService()
         {
-            return new AccountManagementService(_repoMock.Object, _mapperMock.Object);
+            return new AccountManagementService(_repoMock.Object, null, _mapperMock.Object);
         }
 
         [Fact(DisplayName = "UTCID01 - Null request returns 400")]
@@ -76,7 +77,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         public async Task UTCID04_MappedResultEmpty_Returns404()
         {
             var req = new GetListAccountRequest { PageNumber = 1, PageSize = 10 };
-            var users = new List<User>();
+            var users = new List<User>(); // mapped empty
             _repoMock.Setup(x => x.GetAllAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>()))
                 .ReturnsAsync(users);
             _repoMock.Setup(x => x.GetTotalAccountsAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<int?>()))
@@ -189,17 +190,17 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             var req = new GetListAccountRequest { PageNumber = 1, PageSize = 1 };
             var users = new List<User>
-    {
-        new User
-        {
-            UserId = 1,
-            FullName = "A",
-            Email = "a@email.com",
-            Phone = "123",
-            Role = null, // <<< branch cần test
-            Status = new Status { StatusName = "Active" }
-        }
-    };
+            {
+                new User
+                {
+                    UserId = 1,
+                    FullName = "A",
+                    Email = "a@email.com",
+                    Phone = "123",
+                    Role = null, // <<< branch cần test
+                    Status = new Status { StatusName = "Active" }
+                }
+            };
             _repoMock.Setup(x => x.GetAllAsync(1, 1, null, null, null)).ReturnsAsync(users);
             _repoMock.Setup(x => x.GetTotalAccountsAsync(null, null, null)).ReturnsAsync(1);
 
@@ -217,17 +218,17 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             var req = new GetListAccountRequest { PageNumber = 1, PageSize = 1 };
             var users = new List<User>
-    {
-        new User
-        {
-            UserId = 1,
-            FullName = "A",
-            Email = "a@email.com",
-            Phone = "123",
-            Role = new Role { RoleName = "R" },
-            Status = null // <<< branch cần test
-        }
-    };
+            {
+                new User
+                {
+                    UserId = 1,
+                    FullName = "A",
+                    Email = "a@email.com",
+                    Phone = "123",
+                    Role = new Role { RoleName = "R" },
+                    Status = null // <<< branch cần test
+                }
+            };
             _repoMock.Setup(x => x.GetAllAsync(1, 1, null, null, null)).ReturnsAsync(users);
             _repoMock.Setup(x => x.GetTotalAccountsAsync(null, null, null)).ReturnsAsync(1);
 

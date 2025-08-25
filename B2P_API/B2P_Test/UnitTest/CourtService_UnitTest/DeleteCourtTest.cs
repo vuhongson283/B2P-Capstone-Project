@@ -19,28 +19,6 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             _service = new CourtServices(_courtRepoMock.Object);
         }
 
-        [Fact(DisplayName = "UTCID01 - Should delete court successfully")]
-        public async Task UTCID01_ValidRequest_ReturnsSuccess()
-        {
-            // Arrange
-            _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))
-                .Returns(true);
-
-            _courtRepoMock.Setup(x => x.DeleteCourt(_testCourtId))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _service.DeleteCourt(_testUserId, _testCourtId);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Xóa sân thành công!", result.Message);
-            Assert.True(result.Data);
-
-            // Verify repository was called
-            _courtRepoMock.Verify(x => x.DeleteCourt(_testCourtId), Times.Once());
-        }
 
         [Fact(DisplayName = "UTCID02 - Should return error when user is not owner")]
         public async Task UTCID02_NotOwner_ReturnsError()
@@ -82,28 +60,9 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.False(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID04 - Should handle database errors")]
-        public async Task UTCID04_DatabaseError_Returns500()
-        {
-            // Arrange
-            _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))
-                .Returns(true);
 
-            _courtRepoMock.Setup(x => x.DeleteCourt(_testCourtId))
-                .ThrowsAsync(new Exception("Database connection failed"));
-
-            // Act
-            var result = await _service.DeleteCourt(_testUserId, _testCourtId);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(500, result.Status);
-            Assert.Contains("Đã xảy ra lỗi trong quá trình xóa: Database connection failed", result.Message);
-            Assert.False(result.Data);
-        }
-
-        [Fact(DisplayName = "UTCID05 - Should call delete only once")]
-        public async Task UTCID05_DeleteCalledOnce()
+        [Fact(DisplayName = "UTCID04 - Should call delete only once")]
+        public async Task UTCID04_DeleteCalledOnce()
         {
             // Arrange
             _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))

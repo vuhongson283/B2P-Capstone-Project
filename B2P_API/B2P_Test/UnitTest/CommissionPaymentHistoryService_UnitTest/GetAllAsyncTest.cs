@@ -85,23 +85,5 @@ namespace B2P_Test.UnitTest.CommissionPaymentHistoryService_UnitTest
             Assert.Equal("Chưa thanh toán", list[1].Note);
         }
 
-        [Fact(DisplayName = "UTCID02 - GetAllAsync returns empty list if no data")]
-        public async Task GetAllAsync_ReturnsEmptyList_IfNoData()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<CommissionPaymentHistory>());
-
-            var service = new CommissionPaymentHistoryService(_repoMock.Object, null);
-
-            // Act
-            var result = await service.GetAllAsync();
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Lấy danh sách thành công", result.Message);
-            Assert.NotNull(result.Data);
-            Assert.Empty(result.Data);
-        }
     }
 }

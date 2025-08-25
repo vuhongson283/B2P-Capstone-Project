@@ -27,6 +27,7 @@ import BookingHistory from "./Common/BookingHistory";
 import TimeslotManagement from "./CourtOwnerPage/TimeslotManagement";
 import UnauthorizedPage from "./Common/UnauthorizedPage";
 import PaymentManager from "./CourtOwnerPage/PaymentManager.js";
+import PaymentAccountGuide from "./CourtOwnerPage/CreateMerchantAccountGuide.js";
 import Login from './Auth/Login';
 import { AuthProvider, ProtectedRoute, PublicRoute, RoleBasedRedirect, ROLES } from "../contexts/AuthContext.js";
 
@@ -74,6 +75,7 @@ const Layout = (props) => {
           <Route path="facility/time-slots/:facilityId" element={<TimeslotManagement />} />
           <Route path="facility/time-slots" element={<TimeslotManagement />} />
           <Route path="blog" element={<Blog />} />
+          <Route path="Create-Payment-Account-Guide" element={<PaymentAccountGuide />} />
         </Route>
 
         {/* 🌐 HOME PAGE ROUTES - For Guest and Player ONLY (Admin & Court Owner restricted) */}

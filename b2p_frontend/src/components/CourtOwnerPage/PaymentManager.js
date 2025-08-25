@@ -855,7 +855,7 @@ const PaymentManager = () => {
                   Chưa có tài khoản merchant?
                 </div>
                 <button
-                  onClick={() => window.open("#", "_blank")}
+                  onClick={() => window.open("/court-owner/Create-Payment-Account-Guide", "_blank")}
                   style={{
                     background: "none",
                     border: "none",

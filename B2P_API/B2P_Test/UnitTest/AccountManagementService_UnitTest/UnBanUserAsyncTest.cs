@@ -3,21 +3,25 @@ using B2P_API.Models;
 using B2P_API.Response;
 using B2P_API.Services;
 using B2P_API.Utils;
+using AutoMapper;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+
+// Fake repo để pass constructor
 
 namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 {
     public class AccountManagementService_UnBanUserAsync_Test
     {
         private readonly Mock<IAccountManagementRepository> _repoMock = new();
+        private readonly Mock<IMapper> _mapperMock = new();
 
-        private AccountManagementService CreateService()
+        private AccountManagementService CreateService(FacilityService facilityService = null)
         {
-            // Chỉ cần repo, không cần mapper cho hàm này
-            return new AccountManagementService(_repoMock.Object, null);
+            return new AccountManagementService(_repoMock.Object, facilityService, _mapperMock.Object);
         }
 
         [Fact(DisplayName = "UTCID01 - User not found returns 404")]
@@ -25,7 +29,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             _repoMock.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((User)null);
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.UnBanUserAsync(1);
 
@@ -45,7 +49,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
             };
             _repoMock.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(user);
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.UnBanUserAsync(2);
 
@@ -66,7 +70,9 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
             _repoMock.Setup(x => x.GetByIdAsync(3)).ReturnsAsync(user);
             _repoMock.Setup(x => x.UpdateStatusAsync(user, 1)).ReturnsAsync(true);
 
-            var service = CreateService();
+            var facilityService = new FacilityServiceFake(true);
+
+            var service = CreateService(facilityService);
 
             var result = await service.UnBanUserAsync(3);
 
@@ -81,7 +87,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         {
             _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
 
-            var service = CreateService();
+            var service = CreateService(null);
 
             var result = await service.UnBanUserAsync(99);
 
@@ -100,7 +106,27 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
             _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
 
-            var service = CreateService();
+            var service = CreateService(null);
+
+            var result = await service.UnBanUserAsync(888);
+
+            Assert.False(result.Success);
+            Assert.Equal(500, result.Status);
+            Assert.Contains(MessagesCodes.MSG_37, result.Message);
+            Assert.Contains("outer error", result.Message);
+            Assert.Contains("Inner: inner error", result.Message);
+            Assert.Null(result.Data);
+        }
+
+        [Fact(DisplayName = "UTCID06 - Exception with InnerException")]
+        public async Task UTCID06_ExceptionWithInnerException_Returns500AndInnerMessage()
+        {
+            var innerEx = new Exception("inner error");
+            var outerEx = new Exception("outer error", innerEx);
+
+            _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
+
+            var service = CreateService(null);
 
             var result = await service.UnBanUserAsync(888);
 

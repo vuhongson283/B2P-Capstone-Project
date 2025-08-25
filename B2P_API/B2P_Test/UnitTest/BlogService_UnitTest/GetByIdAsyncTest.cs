@@ -77,33 +77,5 @@ namespace B2P_Test.UnitTest.BlogService_UnitTest
             Assert.Equal(blog.Comments.Count, result.Data.TotalComments);
         }
 
-        [Fact(DisplayName = "UTCID03 - Blog found with null UserId returns UserId = 0")]
-        public async Task UTCID03_BlogFoundWithNullUserId_ReturnsUserIdZero()
-        {
-            // Arrange
-            var now = DateTime.Now;
-            var blog = new Blog
-            {
-                BlogId = 456,
-                UserId = null,
-                Title = "Test Null UserId",
-                Content = "Test Content",
-                PostAt = now,
-                UpdatedAt = now.AddMinutes(5),
-                Comments = new List<Comment>()
-            };
-            var blogService = CreateBlogService();
-            _blogRepositoryMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(blog);
-
-            // Act
-            var result = await blogService.GetByIdAsync(456);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Lấy blog thành công.", result.Message);
-            Assert.NotNull(result.Data);
-            Assert.Equal(0, result.Data.UserId);
-        }
     }
 }

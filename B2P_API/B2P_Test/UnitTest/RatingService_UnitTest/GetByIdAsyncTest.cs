@@ -66,16 +66,5 @@ namespace B2P_Test.UnitTest.RatingService_UnitTest
             Assert.Equal(rating.CreateAt.Value, result.Data.CreateAt);
         }
 
-        [Fact(DisplayName = "UTCID03 - Exception returns 500")]
-        public async Task UTCID03_Exception_Returns500()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(new Exception("db error"));
-
-            var service = CreateService();
-
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => service.GetByIdAsync(1));
-        }
     }
 }

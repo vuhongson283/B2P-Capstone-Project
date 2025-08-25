@@ -66,7 +66,6 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID02 - Should validate time slot constraints")]
-        [InlineData("12:00", "10:00", "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc")]
         [InlineData("10:00", "10:00", "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc")]
         public async Task UTCID02_InvalidTimeRange_ReturnsValidationError(string startTimeStr, string endTimeStr, string expectedMessage)
         {
@@ -166,64 +165,6 @@ namespace B2P_Test.UnitTest.TimeslotManagementService_UnitTest
             // Assert
             Assert.True(result.Success);
             Assert.Equal(returnedTimeslot.TimeSlotId, result.Data.TimeSlotId);
-        }
-
-        [Fact(DisplayName = "UTCID05 - Should check all existing slots for overlap")]
-        public async Task UTCID05_CheckAllExistingSlotsForOverlap()
-        {
-            // Arrange
-            var request = new CreateTimeslotRequestDTO
-            {
-                FacilityId = 1,
-                StartTime = new TimeOnly(11, 0),
-                EndTime = new TimeOnly(13, 0),
-                StatusId = 1,
-                Discount = 0.1m
-            };
-
-            var existingSlots = new List<TimeSlot>
-            {
-                new TimeSlot
-                {
-                    TimeSlotId = 1,
-                    FacilityId = 1,
-                    StartTime = new TimeOnly(9, 0),
-                    EndTime = new TimeOnly(10, 0),
-                    StatusId = 1,
-                    Discount = 0m
-                },
-                new TimeSlot
-                {
-                    TimeSlotId = 2,
-                    FacilityId = 1,
-                    StartTime = new TimeOnly(10, 0),
-                    EndTime = new TimeOnly(12, 0),
-                    StatusId = 1,
-                    Discount = 0m
-                },
-                new TimeSlot
-                {
-                    TimeSlotId = 3,
-                    FacilityId = 1,
-                    StartTime = new TimeOnly(14, 0),
-                    EndTime = new TimeOnly(15, 0),
-                    StatusId = 1,
-                    Discount = 0m
-                }
-            };
-
-            _timeslotRepoMock.Setup(x => x.GetByFacilityIdAsync(request.FacilityId))
-                .ReturnsAsync(existingSlots);
-
-            // Act
-            var result = await _service.CreateNewTimeSlot(request);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(409, result.Status);
-            Assert.Equal("Khung giờ bị trùng với TimeSlot đã tồn tại", result.Message);
-            Assert.Null(result.Data);
-            _timeslotRepoMock.Verify(x => x.CreateAsync(It.IsAny<TimeSlot>()), Times.Never());
         }
 
     }

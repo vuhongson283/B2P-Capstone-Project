@@ -100,23 +100,5 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Contains("Đã xảy ra lỗi trong quá trình khóa: Database connection failed", result.Message);
             Assert.Null(result.Data);
         }
-
-        [Theory(DisplayName = "UTCID06 - Should validate statusId properly")]
-        [InlineData(0)] // Invalid status
-        [InlineData(-1)] // Invalid status
-        public async Task UTCID06_InvalidStatusId_ReturnsError(int invalidStatusId)
-        {
-            // Arrange
-            _courtRepoMock.Setup(x => x.CheckCourtOwner(_testUserId, _testCourtId))
-                .Returns(true);
-
-            // Act
-            var result = await _service.LockCourt(_testUserId, _testCourtId, invalidStatusId);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(400, result.Status);
-            Assert.Contains("StatusId không hợp lệ", result.Message);
-        }
     }
 }

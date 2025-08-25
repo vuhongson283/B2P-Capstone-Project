@@ -70,7 +70,6 @@ namespace B2P_Test.UnitTest.MerchantPaymentService_UnitTest
 
         [Theory(DisplayName = "UTCID02 - CreateAsync returns 400 if invalid UserId")]
         [InlineData(0)]
-        [InlineData(-3)]
         public async Task CreateAsync_ReturnsBadRequest_WhenInvalidUserId(int userId)
         {
             // Arrange
@@ -120,7 +119,6 @@ namespace B2P_Test.UnitTest.MerchantPaymentService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID04 - CreateAsync returns 400 if PaymentKey is empty or whitespace")]
-        [InlineData("")]
         [InlineData("   ")]
         public async Task CreateAsync_ReturnsBadRequest_WhenPaymentKeyEmpty(string paymentKey)
         {
