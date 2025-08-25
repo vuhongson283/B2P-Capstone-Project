@@ -24,8 +24,73 @@ namespace B2P_API.Controllers
 		[HttpPost("create-simple")]
 		public async Task<IActionResult> CreateSimpleBooking([FromBody] SimpleBookingDto request)
 		{
-			var result = await _bookingService.CreateSimpleBookingAsync(request);
-			return StatusCode(result.Status, result);
+			try
+			{
+				Console.WriteLine("=== CREATE SIMPLE BOOKING DEBUG ===");
+				Console.WriteLine($"📥 Received request: {JsonConvert.SerializeObject(request, Formatting.Indented)}");
+				Console.WriteLine($"📅 Current time: {DateTime.UtcNow}");
+
+				// ✅ Validate input data
+				if (request == null)
+				{
+					Console.WriteLine("❌ Request is null");
+					return BadRequest(new { success = false, message = "Request data is null", status = 400 });
+				}
+
+				if (request.UserId <= 0)
+				{
+					Console.WriteLine($"❌ Invalid UserId: {request.UserId}");
+					return BadRequest(new { success = false, message = "Invalid UserId", status = 400 });
+				}
+
+				if (request.FacilityId <= 0)
+				{
+					Console.WriteLine($"❌ Invalid FacilityId: {request.FacilityId}");
+					return BadRequest(new { success = false, message = "Invalid FacilityId", status = 400 });
+				}
+
+				if (request.CourtId <= 0)
+				{
+					Console.WriteLine($"❌ Invalid CourtId: {request.CourtId}");
+					return BadRequest(new { success = false, message = "Invalid CourtId", status = 400 });
+				}
+
+				Console.WriteLine("✅ Input validation passed");
+				Console.WriteLine("🔄 Calling BookingService.CreateSimpleBookingAsync...");
+
+				var startTime = DateTime.UtcNow;
+				var result = await _bookingService.CreateSimpleBookingAsync(request);
+				var endTime = DateTime.UtcNow;
+				var duration = (endTime - startTime).TotalMilliseconds;
+
+				Console.WriteLine($"⏱️ Service call took: {duration}ms");
+				Console.WriteLine($"📤 Service result: Status={result.Status}, Success={result.Success}");
+				Console.WriteLine($"📤 Result data: {JsonConvert.SerializeObject(result.Data, Formatting.Indented)}");
+				Console.WriteLine($"📤 Result message: {result.Message}");
+
+				if (!result.Success)
+				{
+					Console.WriteLine($"❌ Service returned error: {result.Message}");
+				}
+
+				Console.WriteLine("=== END DEBUG ===");
+
+				return StatusCode(result.Status, result);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("❌ EXCEPTION IN CREATE SIMPLE BOOKING");
+				Console.WriteLine($"❌ Message: {ex.Message}");
+				Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+				Console.WriteLine($"❌ Inner exception: {ex.InnerException?.Message}");
+
+				return StatusCode(500, new
+				{
+					success = false,
+					message = $"Server error: {ex.Message}",
+					status = 500
+				});
+			}
 		}
 		[HttpPost]
 		public async Task<IActionResult> CreateBooking([FromBody] BookingRequestDto request)
