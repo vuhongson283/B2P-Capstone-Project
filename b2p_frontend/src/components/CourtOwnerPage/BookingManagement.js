@@ -572,6 +572,7 @@ const BookingManagement = () => {
           return `${formatTime(startTime)} - ${formatTime(endTime)}`;
         });
         setTimeSlots(formattedTimeSlots);
+        console.log("⏰ Full timeSlotsData:", timeSlotsData);
       } catch (error) {
         console.error("Error loading time slots:", error);
         message.error("Không thể tải khung giờ");
@@ -687,6 +688,10 @@ const BookingManagement = () => {
         );
 
         const response = await createSimpleBooking(bookingRequestData);
+
+        console.log("🔍 FULL API RESPONSE:", JSON.stringify(response, null, 2));
+        console.log("🔍 Response.data:", response.data);
+        console.log("🔍 Response.data.bookingId:", response.data?.bookingId);
 
         if (response.status === 400) {
           console.error("❌ 400 Bad Request - Invalid data sent to server");
@@ -1251,12 +1256,10 @@ const BookingManagement = () => {
               }
             }
           }
+          setIsCreateBookingModalVisible(false);
+          createBookingForm.resetFields();
+          setSelectedTimeSlots([]);
 
-          setTimeout(() => {
-            setIsCreateBookingModalVisible(false);
-            createBookingForm.resetFields();
-            setSelectedTimeSlots([]);
-          }, 3000);
 
           setTimeout(() => {
             if (selectedFacility) {
