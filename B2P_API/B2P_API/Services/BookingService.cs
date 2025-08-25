@@ -182,7 +182,7 @@ namespace B2P_API.Services
 
             // ✅ Schedule job Hangfire sau 15 phút
             BackgroundJob.Schedule<BookingService>(
-                service => service.MarkBookingCancelledAsync(booking.BookingId),
+                service => service.CancelIfUnpaidAsync(booking.BookingId),
                 TimeSpan.FromMinutes(1)
             );
 
@@ -214,7 +214,7 @@ namespace B2P_API.Services
             };
         }
 
-		public async Task<ApiResponse<string>>  CancelIfUnpaidAsync(int bookingId)
+        public async Task<ApiResponse<string>> CancelIfUnpaidAsync(int bookingId)
 		{
             var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
 
