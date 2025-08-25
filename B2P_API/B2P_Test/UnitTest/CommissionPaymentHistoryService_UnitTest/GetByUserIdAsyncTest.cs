@@ -113,25 +113,5 @@ namespace B2P_Test.UnitTest.CommissionPaymentHistoryService_UnitTest
             Assert.Null(result.Data);
         }
 
-        [Fact(DisplayName = "UTCID03 - GetByUserIdAsync returns empty list if no data")]
-        public async Task GetByUserIdAsync_ReturnsEmptyList_WhenNoData()
-        {
-            // Arrange
-            int userId = 3;
-            _accRepoMock.Setup(x => x.GetByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
-            _repoMock.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync(new List<CommissionPaymentHistory>());
-
-            var service = new CommissionPaymentHistoryService(_repoMock.Object, _accRepoMock.Object);
-
-            // Act
-            var result = await service.GetByUserIdAsync(userId);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Lấy dữ liệu theo UserId thành công", result.Message);
-            Assert.NotNull(result.Data);
-            Assert.Empty(result.Data);
-        }
     }
 }

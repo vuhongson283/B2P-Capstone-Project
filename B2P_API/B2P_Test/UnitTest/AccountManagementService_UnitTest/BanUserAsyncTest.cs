@@ -139,5 +139,25 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
             Assert.Contains("Inner: inner error", result.Message);
             Assert.Null(result.Data);
         }
+
+        [Fact(DisplayName = "UTCID06 - Exception with OutnerException returns 500 and inner message")]
+        public async Task UTCID06_ExceptionWithInnerException_Returns500AndInnerMessage()
+        {
+            var innerEx = new Exception("inner error");
+            var outerEx = new Exception("outer error", innerEx);
+
+            _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(outerEx);
+
+            var service = CreateService(null);
+
+            var result = await service.BanUserAsync(999);
+
+            Assert.False(result.Success);
+            Assert.Equal(500, result.Status);
+            Assert.Contains(MessagesCodes.MSG_37, result.Message);
+            Assert.Contains("outer error", result.Message);
+            Assert.Contains("Inner: inner error", result.Message);
+            Assert.Null(result.Data);
+        }
     }
 }
