@@ -14,7 +14,6 @@ using B2P_API.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Cryptography;
 using Hangfire;
-using Newtonsoft.Json;
 
 namespace B2P_API.Services
 {
@@ -183,7 +182,7 @@ namespace B2P_API.Services
 
             // ✅ Schedule job Hangfire sau 15 phút
             BackgroundJob.Schedule<BookingService>(
-                service => service.CancelIfUnpaidAsync(booking.BookingId),
+                service => service.MarkBookingCancelledAsync(booking.BookingId),
                 TimeSpan.FromMinutes(1)
             );
 
@@ -215,190 +214,70 @@ namespace B2P_API.Services
             };
         }
 
-        public async Task<ApiResponse<string>> CancelIfUnpaidAsync(int bookingId)
-        {
-            try
+		public async Task<ApiResponse<string>>  CancelIfUnpaidAsync(int bookingId)
+		{
+            var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
+
+            if (booking == null)
             {
-                Console.WriteLine($"🔄 [CancelIfUnpaidAsync] START - Cancelling unpaid booking: {bookingId}");
-
-                // ✅ CHECK REQUIRED SERVICES
-                if (_notificationService == null)
+                return new ApiResponse<string>
                 {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] ERROR: _notificationService is null!");
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Status = 500,
-                        Message = "NotificationService not initialized"
-                    };
-                }
-
-                var booking = await _bookingRepo.GetBookingWithDetailsAsync(bookingId);
-                var bookingdt = await GetByIdAsync(bookingId);
-                if (booking == null)
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Booking {bookingId} not found");
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Status = 404,
-                        Message = "Không tìm thấy booking."
-                    };
-                }
-
-                Console.WriteLine($"📄 [CancelIfUnpaidAsync] Current booking status: {booking.StatusId}");
-                Console.WriteLine($"📄 [CancelIfUnpaidAsync] FacilityId: {bookingdt.Data.FacilityId}");
-                Console.WriteLine($"📄 [CancelIfUnpaidAsync] Email: {bookingdt.Data.Email}");
-
-                if (booking.StatusId == 10)
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Booking already completed");
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Status = 400,
-                        Message = "Booking đã hoàn thành trước đó."
-                    };
-                }
-
-                var allowedStatusToComplete = new[] { 8 };
-                if (!allowedStatusToComplete.Contains(booking.StatusId))
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Invalid status for cancellation: {booking.StatusId}");
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Status = 400,
-                        Message = "Trạng thái hiện tại không cho phép cancel booking."
-                    };
-                }
-
-                // ✅ CANCEL BOOKING IN DATABASE
-                Console.WriteLine($"🔄 [CancelIfUnpaidAsync] Marking booking {bookingId} as cancelled in database...");
-                booking.StatusId = 9;
-                foreach (var detail in booking.BookingDetails)
-                {
-                    detail.StatusId = 9;
-                }
-
-                var success = await _bookingRepo.SaveAsync();
-                if (!success)
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Failed to save booking changes");
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Status = 500,
-                        Message = "Đã xảy ra lỗi khi lưu thay đổi."
-                    };
-                }
-
-                Console.WriteLine($"✅ [CancelIfUnpaidAsync] Booking {bookingId} marked as cancelled in database");
-
-                // ✅ PREPARE SIGNALR NOTIFICATION DATA
-                int facilityId = bookingdt.Data.FacilityId;
-
-                if (facilityId == 0)
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] FacilityId is 0, cannot send notification");
-                    return new ApiResponse<string>
-                    {
-                        Success = true,
-                        Status = 200,
-                        Message = "Đã đánh dấu cancel booking thành công, nhưng không thể gửi thông báo do thiếu facilityId.",
-                        Data = "Cancelled without notification"
-                    };
-                }
-
-                // ✅ BUILD NOTIFICATION DATA (SAME AS CancelPayment)
-                string courtName = "Sân thể thao";
-                string timeSlot = "N/A";
-                int courtId = 0;
-
-                // ✅ NULL CHECK FOR SLOTS
-                if (bookingdt.Data.Slots != null && bookingdt.Data.Slots.Count > 0)
-                {
-                    var firstSlot = bookingdt.Data.Slots[0];
-                    if (firstSlot != null)
-                    {
-                        courtName = firstSlot.CourtName ?? "Sân thể thao";
-                        courtId = firstSlot.CourtId;
-                        var startTime = firstSlot.StartTime.ToString(@"hh\:mm");
-                        var endTime = firstSlot.EndTime.ToString(@"hh\:mm");
-                        timeSlot = $"{startTime} - {endTime}";
-                    }
-                }
-
-                string dateStr = bookingdt.Data.CheckInDate.ToString("dd/MM/yyyy");
-
-                var cancelNotificationData = new
-                {
-                    bookingId = bookingId,
-                    facilityId = facilityId,
-                    courtId = courtId,
-                    courtName = courtName,
-                    customerName = bookingdt.Data.Email?.Split('@')[0] ?? "Khách",
-                    customerEmail = bookingdt.Data.Email,
-                    customerPhone = bookingdt.Data.Phone,
-                    date = dateStr,
-                    timeSlot = timeSlot,
-                    totalAmount = booking.TotalPrice,
-                    status = "Cancelled",
-                    statusId = 9,
-                    statusDescription = "Đã hủy",
-                    action = "cancelled",
-                    reason = "Unpaid booking cancelled automatically",
-                    message = "Đơn đặt sân đã bị hủy do chưa thanh toán",
-                    timestamp = DateTime.UtcNow.ToString("o")
+                    Success = false,
+                    Status = 404,
+                    Message = "Không tìm thấy booking."
                 };
-
-                Console.WriteLine($"📤 [CancelIfUnpaidAsync] Sending cancellation notification to facility_{facilityId}");
-                Console.WriteLine($"📤 [CancelIfUnpaidAsync] Notification data: {JsonConvert.SerializeObject(cancelNotificationData, Formatting.Indented)}");
-
-                // ✅ SEND SIGNALR NOTIFICATION WITH TRY-CATCH
-                try
-                {
-                    Console.WriteLine($"🔄 [CancelIfUnpaidAsync] Calling NotifyBookingCancelled...");
-                    await _notificationService.NotifyBookingCancelled(facilityId, cancelNotificationData);
-                    Console.WriteLine($"✅ [CancelIfUnpaidAsync] NotifyBookingCancelled completed successfully!");
-
-                    return new ApiResponse<string>
-                    {
-                        Success = true,
-                        Status = 200,
-                        Message = "Đã đánh dấu cancel booking thành công và gửi thông báo.",
-                        Data = "Cancelled with notification sent"
-                    };
-                }
-                catch (Exception notifEx)
-                {
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Notification error: {notifEx.Message}");
-                    Console.WriteLine($"❌ [CancelIfUnpaidAsync] Notification stack trace: {notifEx.StackTrace}");
-
-                    return new ApiResponse<string>
-                    {
-                        Success = true,
-                        Status = 200,
-                        Message = $"Đã đánh dấu cancel booking thành công, nhưng gửi thông báo thất bại: {notifEx.Message}",
-                        Data = "Cancelled but notification failed"
-                    };
-                }
             }
-            catch (Exception ex)
+
+            if (booking.StatusId == 10)
             {
-                Console.WriteLine($"❌ [CancelIfUnpaidAsync] ERROR: {ex.Message}");
-                Console.WriteLine($"❌ [CancelIfUnpaidAsync] Stack trace: {ex.StackTrace}");
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Booking đã hoàn thành trước đó."
+                };
+            }
+
+            var allowedStatusToComplete = new[] { 8 };
+
+            if (!allowedStatusToComplete.Contains(booking.StatusId))
+            {
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Status = 400,
+                    Message = "Trạng thái hiện tại không cho phép cancel booking."
+                };
+            }
+
+            booking.StatusId = 9;
+
+            foreach (var detail in booking.BookingDetails)
+            {
+                detail.StatusId = 9;
+            }
+
+            var success = await _bookingRepo.SaveAsync();
+
+            if (!success)
+            {
                 return new ApiResponse<string>
                 {
                     Success = false,
                     Status = 500,
-                    Message = ex.Message,
-                    Data = null
+                    Message = "Đã xảy ra lỗi khi lưu thay đổi."
                 };
             }
+
+            return new ApiResponse<string>
+            {
+                Success = true,
+                Status = 200,
+                Message = "Đã đánh dấu cancel booking thành công."
+            };
         }
 
-        public async Task<ApiResponse<object>> MarkSmartSlot(BookingRequestDto request)
+		public async Task<ApiResponse<object>> MarkSmartSlot(BookingRequestDto request)
 		{
 			User user;
 
