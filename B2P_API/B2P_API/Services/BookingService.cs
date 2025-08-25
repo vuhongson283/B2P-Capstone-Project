@@ -13,6 +13,7 @@ using B2P_API.DTOs.RatingDTO;
 using B2P_API.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Cryptography;
+using Hangfire;
 
 namespace B2P_API.Services
 {
@@ -179,6 +180,13 @@ namespace B2P_API.Services
 
             await _bookingRepo.AddBookingDetailsAsync(details);
 
+            // ✅ Schedule job Hangfire sau 15 phút
+            BackgroundJob.Schedule<BookingService>(
+                service => service.MarkBookingCancelledAsync(booking.BookingId),
+                TimeSpan.FromMinutes(1)
+            );
+
+
             return new ApiResponse<object>
             {
                 Success = true,
@@ -205,7 +213,21 @@ namespace B2P_API.Services
                 }
             };
         }
-		public async Task<ApiResponse<object>> MarkSmartSlot(BookingRequestDto request)
+
+        /*public async Task CancelIfUnpaidAsync(int bookingId)
+        {
+            var booking = await _bookingRepo.GetByIdAsync(bookingId);
+
+            if (booking != null && booking.StatusId == 8) // 8 = Chưa thanh toán
+            {
+                booking.StatusId = 9; // 9 = Đã hủy
+                await _bookingRepo.UpdateBookingAsync(booking);
+
+                Console.WriteLine($"⏰ Booking {bookingId} đã bị hủy do quá hạn thanh toán.");
+            }
+        }*/
+
+        public async Task<ApiResponse<object>> MarkSmartSlot(BookingRequestDto request)
 		{
 			User user;
 
@@ -977,7 +999,7 @@ namespace B2P_API.Services
 				};
 			}
 
-			var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+			var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 8 };
 
 			if (!allowedStatusToComplete.Contains(booking.StatusId))
 			{
