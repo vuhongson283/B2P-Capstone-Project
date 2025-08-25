@@ -999,7 +999,7 @@ namespace B2P_API.Services
 				};
 			}
 
-			var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 8 };
+			var allowedStatusToComplete = new[] { 1, 2, 3, 4, 5, 6, 7, 8 };
 
 			if (!allowedStatusToComplete.Contains(booking.StatusId))
 			{
