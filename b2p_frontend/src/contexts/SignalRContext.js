@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 
 const SignalRContext = createContext();
 
-export const SignalRProvider = ({ children, facilityIds = [] }) => {
+export const SignalRProvider = ({ children }) => {
     const [connection, setConnection] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
@@ -68,17 +68,13 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
 
                 // Test the connection by listening to a general event
                 // Replace the entire BookingStatusChanged handler with this:
-
                 newConnection.on('BookingStatusChanged', async (data) => {
                     console.log('🎯 [SignalRProvider] RAW BookingStatusChanged received:', data);
 
                     try {
                         const bookingId = data.bookingId || data.BookingId;
-                        const courtName = data.courtName || data.CourtName;
-                        const CusName = data.customerName || data.CustomerName;
 
-
-
+                        // ✅ REMOVE API CALL - USE SIGNALR DATA DIRECTLY
                         console.log('🔍 [DEBUG] Processing SignalR data directly:', data);
                         console.log('🔍 [DEBUG] Data keys:', Object.keys(data));
                         console.log('🔍 [DEBUG] Status-related fields:', {
@@ -88,108 +84,6 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
                             newStatusId: data.newStatusId,
                             action: data.action
                         });
-
-                        // ✅ FETCH FULL BOOKING DETAILS FROM API
-                        let bookingDetails = null;
-                        try {
-                            console.log('🔍 [DEBUG] Starting API fetch for bookingId:', bookingId);
-                            const token = localStorage.getItem('token');
-                            console.log('🔍 [DEBUG] Token exists:', !!token);
-                            console.log('🔍 [DEBUG] Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-
-                            const apiUrl = `https://api.book2play.site/api/booking/${bookingId}`;
-                            console.log('🔍 [DEBUG] API URL:', apiUrl);
-
-                            console.log('🔍 [DEBUG] Making fetch request...');
-                            const response = await fetch(apiUrl, {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-
-                            console.log('🔍 [DEBUG] Response status:', response.status);
-                            console.log('🔍 [DEBUG] Response ok:', response.ok);
-
-                            if (response.ok) {
-                                const bookingDetailsRaw = await response.json();
-                                const bookingDetails = bookingDetailsRaw.data || {};
-                                const slot = Array.isArray(bookingDetails.slots) && bookingDetails.slots.length > 0 ? bookingDetails.slots[0] : {};
-
-                                // Lấy tên khách hàng nếu có
-                                const customerName = bookingDetails.customerName || bookingDetails.fullName || bookingDetails.email || 'Khách hàng';
-
-                                // Tạo notification với thông tin đúng
-                                const paymentNotification = {
-                                    bookingId: bookingId,
-                                    facilityId: bookingDetails.facilityId || slot.facilityId || data.facilityId || data.FacilityId,
-                                    courtName: slot.courtName || `Booking #${bookingId}`,
-                                    customerName: customerName,
-                                    date: bookingDetails.checkInDate
-                                        ? dayjs(bookingDetails.checkInDate).format('DD/MM/YYYY')
-                                        : (data.date || data.Date || dayjs().format('DD/MM/YYYY')),
-                                    timeSlot: slot.startTime && slot.endTime
-                                        ? `${slot.startTime} - ${slot.endTime}`
-                                        : (data.timeSlot || data.TimeSlot || 'Unknown time'),
-                                    checkInDate: bookingDetails.checkInDate,
-                                    checkInTime: slot.startTime,
-                                    checkOutTime: slot.endTime,
-                                    totalAmount: bookingDetails.totalPrice || data.totalAmount || data.TotalAmount || 0,
-                                    status: 'paid',
-                                    statusId: 7,
-                                    action: 'paid'
-                                };
-
-                                console.log('🎯 [DEBUG] Payment notification with API data:', paymentNotification);
-
-                                // ✅ DEBOUNCE FOR PAYMENT
-                                const paymentEventKey = `payment-${bookingId}`;
-
-                                if (window.lastPaymentEvents && window.lastPaymentEvents[paymentEventKey]) {
-                                    const timeSinceLastEvent = Date.now() - window.lastPaymentEvents[paymentEventKey];
-                                    if (timeSinceLastEvent < 3000) {
-                                        console.log('⏭️ Ignoring duplicate payment event within 3 seconds');
-                                        return;
-                                    }
-                                }
-
-                                if (!window.lastPaymentEvents) window.lastPaymentEvents = {};
-                                window.lastPaymentEvents[paymentEventKey] = Date.now();
-
-                                setTimeout(() => {
-                                    if (window.lastPaymentEvents && window.lastPaymentEvents[paymentEventKey]) {
-                                        delete window.lastPaymentEvents[paymentEventKey];
-                                    }
-                                }, 10000);
-
-                                // Khi đã tạo paymentNotification:
-                                // (Đặt đoạn này ngay trước khi gọi handler)
-                                if (
-                                    Array.isArray(facilityIds) &&
-                                    paymentNotification.courtId && // hoặc paymentNotification.facilityId nếu có
-                                    !facilityIds.includes(paymentNotification.courtId)
-                                ) {
-                                    console.log(`⏭️ [SignalR] Payment notification for courtId ${paymentNotification.courtId} not owned by this court owner, skipping.`);
-                                    return;
-                                }
-
-                                // Trigger payment notification
-                                if (signalRService.eventHandlers.onBookingPaid) {
-                                    signalRService.eventHandlers.onBookingPaid(paymentNotification);
-                                }
-
-                            } else {
-                                const errorText = await response.text();
-                                console.log('❌ [DEBUG] Failed to fetch booking details');
-                                console.log('❌ [DEBUG] Status:', response.status);
-                                console.log('❌ [DEBUG] Status text:', response.statusText);
-                                console.log('❌ [DEBUG] Error response:', errorText);
-                            }
-                        } catch (fetchError) {
-                            console.error('❌ [DEBUG] Fetch error occurred:', fetchError);
-                            console.error('❌ [DEBUG] Error message:', fetchError.message);
-                            console.error('❌ [DEBUG] Error stack:', fetchError.stack);
-                        }
 
                         // ✅ CHECK IF THIS IS A CANCELLATION FIRST
                         const isCancellation =
@@ -207,15 +101,11 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
 
                             const cancellationNotification = {
                                 bookingId: bookingId,
-                                courtName: bookingDetails?.courtName || data.courtName || data.CourtName || `Booking #${bookingId}`,
-                                customerName: bookingDetails?.customerName || data.customerName || data.CustomerName || 'Khách hàng',
-                                date: bookingDetails?.checkInDate ? dayjs(bookingDetails.checkInDate).format('DD/MM/YYYY') :
-                                    (data.date || data.Date || dayjs().format('DD/MM/YYYY')),
-                                timeSlot: bookingDetails?.timeSlot ||
-                                    (bookingDetails?.checkInTime && bookingDetails?.checkOutTime
-                                        ? `${bookingDetails.checkInTime} - ${bookingDetails.checkOutTime}`
-                                        : (data.timeSlot || data.TimeSlot || 'Unknown time')),
-                                totalAmount: bookingDetails?.totalAmount || data.totalAmount || data.TotalAmount || 0,
+                                courtName: data.courtName || data.CourtName || `Booking #${bookingId}`,
+                                customerName: data.customerName || data.CustomerName || 'Khách hàng',
+                                date: data.date || data.Date || dayjs().format('DD/MM/YYYY'),
+                                timeSlot: data.timeSlot || data.TimeSlot || 'Unknown time',
+                                totalAmount: data.totalAmount || data.TotalAmount || 0,
                                 status: 'cancelled',
                                 statusId: 9,
                                 action: 'cancelled',
@@ -252,29 +142,22 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
                             return; // Don't process as payment
                         }
 
-                        // ✅ OTHERWISE, PROCESS AS PAYMENT (using API data when available)
+                        // ✅ OTHERWISE, PROCESS AS PAYMENT (using SignalR data only)
                         console.log('💰 [SignalRProvider] Processing as PAYMENT:', data);
 
                         const paymentNotification = {
                             bookingId: bookingId,
-                            courtName: courtName,
-                            customerName: CusName,
-                            date: bookingDetails?.checkInDate ? dayjs(bookingDetails.checkInDate).format('DD/MM/YYYY') :
-                                (data.date || data.Date || dayjs().format('DD/MM/YYYY')),
-                            timeSlot: bookingDetails?.timeSlot ||
-                                (bookingDetails?.checkInTime && bookingDetails?.checkOutTime
-                                    ? `${bookingDetails.checkInTime} - ${bookingDetails.checkOutTime}`
-                                    : (data.timeSlot || data.TimeSlot || 'Unknown time')),
-                            checkInDate: bookingDetails?.checkInDate,
-                            checkInTime: bookingDetails?.checkInTime,
-                            checkOutTime: bookingDetails?.checkOutTime,
-                            totalAmount: bookingDetails?.totalAmount || data.totalAmount || data.TotalAmount || 0,
+                            courtName: data.courtName || data.CourtName || `Booking #${bookingId}`,
+                            customerName: data.customerName || data.CustomerName || 'Khách hàng',
+                            date: data.date || data.Date || dayjs().format('DD/MM/YYYY'),
+                            timeSlot: data.timeSlot || data.TimeSlot || 'Unknown time',
+                            totalAmount: data.totalAmount || data.TotalAmount || 0,
                             status: 'paid',
                             statusId: 7,
                             action: 'paid'
                         };
 
-                        console.log('🎯 [DEBUG] Payment notification with API data:', paymentNotification);
+                        console.log('🎯 [DEBUG] Payment notification:', paymentNotification);
 
                         // ✅ DEBOUNCE FOR PAYMENT
                         const paymentEventKey = `payment-${bookingId}`;
@@ -295,17 +178,6 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
                                 delete window.lastPaymentEvents[paymentEventKey];
                             }
                         }, 10000);
-
-                        // Khi đã tạo paymentNotification:
-                        // (Đặt đoạn này ngay trước khi gọi handler)
-                        if (
-                            Array.isArray(facilityIds) &&
-                            paymentNotification.facilityId &&
-                            !facilityIds.includes(paymentNotification.facilityId)
-                        ) {
-                            console.log(`⏭️ [SignalR] Payment notification for facilityId ${paymentNotification.facilityId} not owned by this court owner, skipping.`);
-                            return;
-                        }
 
                         // Trigger payment notification
                         if (signalRService.eventHandlers.onBookingPaid) {
@@ -394,7 +266,7 @@ export const SignalRProvider = ({ children, facilityIds = [] }) => {
                 connection.stop();
             }
         };
-    }, [facilityIds]); // Remove connection dependency to avoid infinite loop
+    }, []); // Remove connection dependency to avoid infinite loop
 
     // Helper method to subscribe to events with cleanup
     const useSignalREvent = (eventName, handler, dependencies = []) => {
