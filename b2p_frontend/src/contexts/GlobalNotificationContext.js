@@ -403,6 +403,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         });
 
     }, []);
+
     const handleGlobalBookingPaid = useCallback((notification) => {
         if (window.blockedPaymentNotifications &&
             window.blockedPaymentNotifications.has(notification.bookingId.toString())) {
@@ -420,6 +421,14 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         }
 
         console.log('🔔 GLOBAL: Booking paid received!', notification);
+        console.log('🔍 [DEBUG] Payment notification data keys:', Object.keys(notification));
+        console.log('🔍 [DEBUG] Date fields:', {
+            date: notification.date,
+            checkInDate: notification.checkInDate,
+            checkInTime: notification.checkInTime,
+            checkOutTime: notification.checkOutTime,
+            timeSlot: notification.timeSlot
+        });
 
         // ✅ SUPER STRONG DEBOUNCE - USING WINDOW OBJECT
         const debounceKey = `payment-${notification.bookingId}`;
@@ -458,12 +467,23 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
         const notificationKey = `payment-${notification.bookingId}`;
         antdNotification.destroy(notificationKey);
 
+        // ✅ FORMAT DATE AND TIME SIMILAR TO handleGlobalBookingCreated
+        const dateText = notification.date ||
+            (notification.checkInDate && dayjs(notification.checkInDate).isValid()
+                ? dayjs(notification.checkInDate).format('DD/MM/YYYY')
+                : '');
+
+        const timeText = notification.timeSlot ||
+            (notification.checkInTime && notification.checkOutTime
+                ? `${notification.checkInTime} - ${notification.checkOutTime}`
+                : notification.checkInTime || '');
+
         // Rest of your existing code...
         const newNotification = {
             id: `global-booking-paid-${notification.bookingId}-${Date.now()}`,
             type: 'booking_paid',
             title: 'Thanh toán thành công',
-            message: `${notification.courtName || 'Sân thể thao'} - ${notification.date} ${notification.timeSlot}`,
+            message: `${notification.courtName || 'Sân thể thao'} - ${dateText} ${timeText}`,
             data: notification,
             timestamp: new Date().toISOString(),
             read: false
@@ -490,7 +510,7 @@ export const GlobalNotificationProvider = ({ children, userId, facilityIds = [] 
                     <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.4' }}>
                         <div><strong>Sân:</strong> {notification.courtName || 'Sân thể thao'}</div>
                         <div><strong>Khách hàng:</strong> {notification.customerName || notification.customerEmail?.split('@')[0] || 'Khách'}</div>
-                        <div><strong>Thời gian:</strong> {notification.date} • {notification.timeSlot}</div>
+                        <div><strong>Thời gian:</strong> {dateText}{timeText ? ` • ${timeText}` : ''}</div>
                         {notification.totalAmount && (
                             <div><strong>Số tiền:</strong> {Number(notification.totalAmount).toLocaleString('vi-VN')} VND</div>
                         )}

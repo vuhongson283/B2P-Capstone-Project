@@ -185,7 +185,7 @@ namespace B2P_API.Repository
                     TimeSlotId = slot.TimeSlotId,
                     StartTime = slot.StartTime,
                     EndTime = slot.EndTime,
-                    AvailableCourtCount = courtIds.Count ,
+                    AvailableCourtCount = courtIds.Count - bookedCount,
                     Discount = slot.Discount ?? 0
                 });
             }

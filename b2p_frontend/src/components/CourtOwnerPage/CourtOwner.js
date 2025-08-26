@@ -50,32 +50,32 @@ const CourtOwner = () => {
   // Payment Access Check Function
   const checkPaymentAccess = (paymentData) => {
     console.log('🔍 Raw paymentData:', paymentData);
-    
+
     if (!paymentData || !Array.isArray(paymentData)) {
       console.log('❌ PaymentData is not array or null');
       return false;
     }
-    
-    const activePayments = paymentData.filter(payment => 
+
+    const activePayments = paymentData.filter(payment =>
       payment.statusName === "Active"
     );
-    
+
     console.log('✅ Active payments:', activePayments);
-    
+
     const paymentMethods = [...new Set(
       activePayments.map(payment => payment.paymentMethodName)
     )];
-    
+
     console.log('🎯 Unique payment methods:', paymentMethods);
     console.log('🎯 Payment methods as string:', JSON.stringify(paymentMethods));
-    
+
     const hasZaloPay = paymentMethods.includes('ZaloPay');
     const hasStripe = paymentMethods.includes('Stripe');
-    
+
     console.log('💰 Has ZaloPay:', hasZaloPay, '(looking for "ZaloPay")');
     console.log('💳 Has Stripe:', hasStripe, '(looking for "Stripe")');
     console.log('🏁 Final result:', hasZaloPay && hasStripe);
-    
+
     return hasZaloPay && hasStripe;
   };
 
@@ -102,24 +102,24 @@ const CourtOwner = () => {
   useEffect(() => {
     const fetchAndCheckPayments = async () => {
       if (!USER_ID) return;
-      
+
       try {
         setPaymentLoading(true);
         console.log('🚀 Calling getMerchantPaymentsByUserId with USER_ID:', USER_ID);
-        
+
         const response = await getMerchantPaymentsByUserId(USER_ID);
-        
+
         console.log('📡 Full API response:', response);
         console.log('📡 Response status:', response?.status);
         console.log('📡 Response data:', response?.data);
         console.log('📡 Response data success:', response?.data?.success);
         console.log('📡 Response data type:', typeof response?.data);
         console.log('📡 Response data isArray:', Array.isArray(response?.data));
-        
+
         if (response?.status === 200) {
           // Check if response.data has success property or is array directly
           let paymentArray;
-          
+
           if (response.data?.success && Array.isArray(response.data.data)) {
             // Case: { success: true, data: [...] }
             paymentArray = response.data.data;
@@ -132,7 +132,7 @@ const CourtOwner = () => {
             console.log('❌ Unexpected response structure');
             paymentArray = [];
           }
-          
+
           console.log('📋 Final payment array to check:', paymentArray);
           const hasAccess = checkPaymentAccess(paymentArray);
           console.log('🎯 Final payment access result:', hasAccess);
@@ -222,10 +222,10 @@ const CourtOwner = () => {
   // Loading states
   if (authLoading || paymentLoading || !currentUser) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
         gap: '10px'
@@ -244,7 +244,7 @@ const CourtOwner = () => {
 
   // Check redirect logic
   const isOnPaymentPage = location.pathname.includes('/payment-management');
-  
+
   // Nếu chưa đủ payment methods và không ở trang payment-management
   if (hasPaymentAccess === false && !isOnPaymentPage) {
     console.log('Redirecting to payment-management - insufficient payment methods');
@@ -252,7 +252,7 @@ const CourtOwner = () => {
   }
 
   return (
-    <SignalRProvider>
+    <SignalRProvider facilityIds={facilityIds}>
       <GlobalCommentNotificationProvider currentUser={currentUser}>
         <GlobalNotificationProvider userId={USER_ID} facilityIds={facilityIds}>
           <div className={getContainerClasses()}>
