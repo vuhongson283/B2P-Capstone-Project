@@ -47,7 +47,7 @@ namespace B2P_API.Controllers
             [FromRoute] int facilityId,
             [FromQuery] int? statusId = null,
             [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 20)
         {
             var result = await _service.GetTimeslotByFacilityIdAsync(facilityId, statusId, pageNumber, pageSize);
             return StatusCode(result.Status, result);

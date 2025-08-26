@@ -19,6 +19,9 @@ export const GlobalCommentNotificationProvider = ({ children, currentUser }) => 
     const [unreadCount, setUnreadCount] = useState(0);
     const shownNotifications = useRef(new Set());
 
+    // ✅ ADD DEBOUNCE MAP TO PREVENT DUPLICATES
+    const processedNotifications = useRef(new Map());
+
     // ✅ LOAD NOTIFICATIONS FROM LOCALSTORAGE ON MOUNT
     useEffect(() => {
         if (!currentUser?.userId) return;
@@ -66,77 +69,110 @@ export const GlobalCommentNotificationProvider = ({ children, currentUser }) => 
         }
     }, [notifications, currentUser?.userId]);
 
-    // ✅ INITIALIZE SIGNALR NOTIFICATIONS
+    // ✅ INITIALIZE SIGNALR NOTIFICATIONS WITH STRONGER DEDUPLICATION
     useEffect(() => {
         if (!currentUser?.userId) {
             console.log('⏳ No current user, skipping notification initialization');
             return;
         }
 
+        if (!connection || connection.state !== 'Connected') {
+            console.log('⏳ SignalR connection not ready, waiting...');
+            return;
+        }
+
         console.log('🔄 Initializing comment notifications for user:', currentUser.userId);
 
-        const initializeSignalR = async () => {
-            try {
-                if (!connection) {
-                    console.log('⏳ SignalR connection not ready, waiting...');
-                    return;
+        // ✅ STRONGER DEDUPLICATION BASED ON CONTENT + TIMESTAMP
+        const handleCommentNotification = (commentData) => {
+            console.log('🔔 CommentNotification received:', commentData);
+
+            // ✅ CREATE CONTENT-BASED KEY FOR BETTER DEDUPLICATION 
+            const contentHash = `${commentData.blogId}-${commentData.userId}-${commentData.content?.substring(0, 50)}-${commentData.isReply}-${Math.floor((Date.now()) / 2000)}`;
+
+            // ✅ CHECK IF ALREADY PROCESSED IN LAST 3 SECONDS
+            const now = Date.now();
+            const lastProcessed = processedNotifications.current.get(contentHash);
+
+            if (lastProcessed && (now - lastProcessed) < 3000) {
+                console.log('⏭️ Duplicate notification ignored (content-based):', contentHash);
+                return;
+            }
+
+            // ✅ ALSO CHECK BY COMMENT CONTENT TO PREVENT DUPLICATES WITH DIFFERENT IDs
+            const existingNotifications = Array.from(processedNotifications.current.keys());
+            const isDuplicateContent = existingNotifications.some(key => {
+                if (key.includes(`${commentData.blogId}-${commentData.userId}-${commentData.content?.substring(0, 50)}`)) {
+                    const keyTimestamp = processedNotifications.current.get(key);
+                    return keyTimestamp && (now - keyTimestamp) < 5000;
                 }
+                return false;
+            });
 
-                console.log('🎧 Setting up event listeners...');
-
-                setupEventListeners();
-
-                await joinUserGroup();
-
-                console.log('✅ Comment notification system initialized');
-            } catch (error) {
-                console.error('❌ Error initializing SignalR for comment notifications:', error);
-            }
-        };
-
-        const cleanup = () => {
-            console.log('🧹 Cleaning up event listeners...');
-
-            if (connection) {
-                connection.off('CommentNotification', handleNewComment);
-                connection.off('NewComment', handleNewComment);
-                connection.off('CommentReply', handleNewComment);
+            if (isDuplicateContent) {
+                console.log('⏭️ Duplicate content notification ignored:', commentData.content?.substring(0, 30));
+                return;
             }
 
-            console.log('🧹 Comment notification listeners removed');
+            // ✅ MARK AS PROCESSED
+            processedNotifications.current.set(contentHash, now);
+
+            // ✅ CLEANUP OLD ENTRIES
+            setTimeout(() => {
+                processedNotifications.current.delete(contentHash);
+            }, 10000);
+
+            handleNewComment(commentData);
         };
 
-        const setupEventListeners = () => {
-            if (!connection) return;
+        // ✅ REMOVE ALL EXISTING LISTENERS FIRST TO PREVENT ACCUMULATION
+        if (connection._callbacks && connection._callbacks['CommentNotification']) {
+            console.log('🧹 Removing existing CommentNotification listeners...');
+            connection.off('CommentNotification');
+        }
 
-            connection.on('CommentNotification', handleNewComment);
-            connection.on('NewComment', handleNewComment);
-            connection.on('CommentReply', handleNewComment);
+        // ✅ SETUP SINGLE EVENT LISTENER
+        console.log('🎧 Setting up NEW CommentNotification event listener...');
+        connection.on('CommentNotification', handleCommentNotification);
 
-            console.log('🎧 Event listeners set up for comment notifications');
-        };
-
+        // ✅ JOIN USER GROUP ONLY ONCE
         const joinUserGroup = async () => {
             try {
                 if (connection && connection.state === 'Connected') {
-                    await connection.invoke('JoinUserGroup', currentUser.userId.toString());
-                    console.log(`👥 Joined user group: ${currentUser.userId}`);
+                    // Check if already joined to prevent duplicate joins
+                    if (!window.joinedUserGroups) window.joinedUserGroups = new Set();
+
+                    if (!window.joinedUserGroups.has(currentUser.userId)) {
+                        await connection.invoke('JoinUserGroup', currentUser.userId.toString());
+                        window.joinedUserGroups.add(currentUser.userId);
+                        console.log(`👥 Joined user group: ${currentUser.userId}`);
+                    } else {
+                        console.log(`👥 Already in user group: ${currentUser.userId}`);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error joining user group:', error);
             }
         };
 
-        initializeSignalR();
+        joinUserGroup();
 
-        // Cleanup on unmount or user change
-        return cleanup;
+        // ✅ CLEANUP ON UNMOUNT
+        return () => {
+            console.log('🧹 Cleaning up CommentNotification event listener...');
+            if (connection) {
+                connection.off('CommentNotification', handleCommentNotification);
+            }
+            // Clear processed notifications map
+            processedNotifications.current.clear();
+            console.log('🧹 Comment notification listeners removed');
+        };
 
-    }, [connection, currentUser?.userId]);
+    }, [connection, connection?.state, currentUser?.userId]);
 
-    // ✅ HANDLE NEW COMMENT NOTIFICATION
+    // ✅ HANDLE NEW COMMENT NOTIFICATION (NO CHANGES NEEDED HERE)
     const handleNewComment = (commentData) => {
-        console.log('🔔 New comment notification received:', commentData);
+        console.log('🔔 Processing comment notification:', commentData);
         console.log('🔔 Current user ID:', currentUser?.userId);
         console.log('🔔 Comment data analysis:', {
             commentUserId: commentData.userId,

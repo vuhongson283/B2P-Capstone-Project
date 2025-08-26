@@ -128,20 +128,20 @@ class SignalRService {
         });
 
         // ✅ NEW: Comment notification events
-        this.connection.on('NewComment', (notification) => {
-            console.log('💬 New comment notification:', notification);
-            this.eventHandlers.onNewComment?.(notification);
-        });
+        // this.connection.on('NewComment', (notification) => {
+        //     console.log('💬 New comment notification:', notification);
+        //     this.eventHandlers.onNewComment?.(notification);
+        // });
 
-        this.connection.on('CommentReply', (notification) => {
-            console.log('↩️ Comment reply notification:', notification);
-            this.eventHandlers.onCommentReply?.(notification);
-        });
+        // this.connection.on('CommentReply', (notification) => {
+        //     console.log('↩️ Comment reply notification:', notification);
+        //     this.eventHandlers.onCommentReply?.(notification);
+        // });
 
-        this.connection.on('CommentNotification', (notification) => {
-            console.log('🔔 Comment notification received:', notification);
-            this.eventHandlers.onCommentNotification?.(notification);
-        });
+        // this.connection.on('CommentNotification', (notification) => {
+        //     console.log('🔔 Comment notification received:', notification);
+        //     this.eventHandlers.onCommentNotification?.(notification);
+        // });
 
         this.connection.on('Error', (error) => {
             console.error('SignalR hub error:', error);

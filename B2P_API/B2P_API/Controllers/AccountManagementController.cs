@@ -46,14 +46,14 @@ namespace B2P_API.Controllers
 		}
 
 		[HttpPut("{userId}/ban")]
-        [Authorize(Roles = "1")]
+        //[Authorize(Roles = "1")]
         public async Task<IActionResult> BanUser([FromRoute] int userId)
 		{
 			var response = await _accountManagementService.BanUserAsync(userId);
 			return StatusCode(response.Status, response);
 		}
 		[HttpPut("{userId}/unban")]
-        [Authorize(Roles = "1")]
+        //[Authorize(Roles = "1")]
         public async Task<IActionResult> UnBanUser([FromRoute] int userId)
 		{
 			var response = await _accountManagementService.UnBanUserAsync(userId);

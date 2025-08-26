@@ -150,9 +150,8 @@ const AccountTable = () => {
       content: (
         <ModalContent
           title={`Xác nhận ${isBanned ? "mở khóa" : "khóa"} tài khoản`}
-          content={`Bạn có chắc chắn muốn ${
-            isBanned ? "mở khóa" : "khóa"
-          } tài khoản này không?`}
+          content={`Bạn có chắc chắn muốn ${isBanned ? "mở khóa" : "khóa"
+            } tài khoản này không?`}
           type={isBanned ? "unban" : "ban"}
           tagLabel={record.fullName}
         />
@@ -286,26 +285,7 @@ const AccountTable = () => {
         </div>
       ),
     },
-    {
-      title: "Hành động",
-      key: "actions",
-      align: "center",
-      render: (_, record) => (
-        <div className="action-buttons">
-          <Tooltip title="Xóa">
-            <DeleteOutlined
-              className="delete-icon"
-              onClick={() => handleDelete(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Cài đặt">
-            <SettingOutlined className="setting-icon" />
-          </Tooltip>
-        </div>
-      ),
-    },
   ];
-
   return (
     <div className="account-table-wrapper">
       <div className="account-table-card">
@@ -384,8 +364,8 @@ const AccountTable = () => {
             emptyText: loading
               ? "Đang tải dữ liệu..."
               : searchText || roleFilter || statusFilter
-              ? "Không tìm thấy kết quả phù hợp"
-              : "Không có dữ liệu tài khoản",
+                ? "Không tìm thấy kết quả phù hợp"
+                : "Không có dữ liệu tài khoản",
           }}
         />
       </div>

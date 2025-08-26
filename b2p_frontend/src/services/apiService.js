@@ -571,7 +571,7 @@ const createSimpleBooking = async (bookingData) => {
 
     const response = await axios.post("Booking/create-simple", bookingData, {
       validateStatus: () => true, // Accept all status codes
-      timeout: 15000
+      timeout: 30000
     });
 
     console.log('✅ CreateSimpleBooking API full response:', {

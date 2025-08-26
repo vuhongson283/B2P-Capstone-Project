@@ -1667,8 +1667,8 @@ const FacilityDetails = () => {
                         <td
                           key={slot.timeSlotId}
                           className={`availability-cell ${slot.availableCourtCount > 0
-                              ? "available"
-                              : "unavailable"
+                            ? "available"
+                            : "unavailable"
                             } ${lastUpdateTime ? "updated" : ""}`}
                         >
                           <div className="availability-info">
