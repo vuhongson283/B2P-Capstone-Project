@@ -149,13 +149,13 @@ const BookingHistory = () => {
           prevBookings.map((booking) =>
             booking.id === bookingId
               ? {
-                  ...booking,
-                  status: "cancelled",
-                  originalStatus: "Cancelled",
-                  // ✅ Cập nhật thêm các trường liên quan
-                  statusId: 6, // Assuming 6 is cancelled status ID
-                  paymentMethod: "Đã hủy",
-                }
+                ...booking,
+                status: "cancelled",
+                originalStatus: "Cancelled",
+                // ✅ Cập nhật thêm các trường liên quan
+                statusId: 6, // Assuming 6 is cancelled status ID
+                paymentMethod: "Đã hủy",
+              }
               : booking
           )
         );
@@ -239,12 +239,12 @@ const BookingHistory = () => {
         prevBookings.map((booking) =>
           booking.id === bookingToCancel.id
             ? {
-                ...booking,
-                status: "deposit-paid", // Rollback về trạng thái cũ
-                originalStatus: bookingToCancel.originalStatus,
-                statusId: bookingToCancel.statusId,
-                paymentMethod: bookingToCancel.paymentMethod,
-              }
+              ...booking,
+              status: "deposit-paid", // Rollback về trạng thái cũ
+              originalStatus: bookingToCancel.originalStatus,
+              statusId: bookingToCancel.statusId,
+              paymentMethod: bookingToCancel.paymentMethod,
+            }
             : booking
         )
       );
@@ -649,12 +649,12 @@ const BookingHistory = () => {
               prevBookings.map((b) =>
                 b.uniqueKey === booking.uniqueKey
                   ? {
-                      ...b,
-                      customerName: customerInfo.customerName,
-                      customerPhone: customerInfo.customerPhone,
-                      customerEmail: customerInfo.customerEmail,
-                      contactPhone: customerInfo.customerPhone,
-                    }
+                    ...b,
+                    customerName: customerInfo.customerName,
+                    customerPhone: customerInfo.customerPhone,
+                    customerEmail: customerInfo.customerEmail,
+                    contactPhone: customerInfo.customerPhone,
+                  }
                   : b
               )
             );
@@ -742,10 +742,10 @@ const BookingHistory = () => {
           prev.map((b) =>
             b.id === selectedBooking.id
               ? {
-                  ...b,
-                  hasRated: true,
-                  ratingInfo: { rating: stars, comment: reviewText },
-                }
+                ...b,
+                hasRated: true,
+                ratingInfo: { rating: stars, comment: reviewText },
+              }
               : b
           )
         );
@@ -1230,9 +1230,8 @@ const BookingHistory = () => {
                         {[...Array(totalPages)].map((_, index) => (
                           <button
                             key={index + 1}
-                            className={`pagination-number ${
-                              currentPage === index + 1 ? "active" : ""
-                            }`}
+                            className={`pagination-number ${currentPage === index + 1 ? "active" : ""
+                              }`}
                             onClick={() => handlePageChange(index + 1)}
                           >
                             {index + 1}
@@ -1333,9 +1332,8 @@ const BookingHistory = () => {
         title="Xác nhận hủy đặt sân"
         message={
           bookingToCancel
-            ? `Bạn có chắc chắn muốn hủy đặt sân "${
-                bookingToCancel.courtName
-              }" vào ngày ${formatDate(bookingToCancel.date)} không?`
+            ? `Bạn có chắc chắn muốn hủy đặt sân "${bookingToCancel.courtName
+            }" vào ngày ${formatDate(bookingToCancel.date)} không?`
             : "Bạn có chắc chắn muốn hủy đặt sân này không?"
         }
         confirmText="Hủy đặt sân"
@@ -1565,25 +1563,6 @@ const BookingHistory = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="detail-section">
-                    <h3 className="section-title">
-                      <svg
-                        className="section-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                      Ghi chú
-                    </h3>
-                    <div className="notes-content">{selectedBooking.notes}</div>
-                  </div>
                   {/* RATING SECTION - CHỈ HIỂN THỊ KHI ĐÃ HOÀN THÀNH */}
                   {selectedBooking.status === "completed" && (
                     <div className="detail-section rating-section">
@@ -1635,24 +1614,24 @@ const BookingHistory = () => {
 
                               {(existingRating.comment ||
                                 existingRating.review) && (
-                                <div className="existing-rating-comment">
-                                  <strong>Nhận xét của bạn:</strong>
-                                  <p>
-                                    "
-                                    {existingRating.comment ||
-                                      existingRating.review}
-                                    "
-                                  </p>
-                                </div>
-                              )}
+                                  <div className="existing-rating-comment">
+                                    <strong>Nhận xét của bạn:</strong>
+                                    <p>
+                                      "
+                                      {existingRating.comment ||
+                                        existingRating.review}
+                                      "
+                                    </p>
+                                  </div>
+                                )}
 
                               <div className="rating-date">
                                 <small>
                                   Đánh giá vào:{" "}
                                   {formatDateTime(
                                     existingRating.ratingDate ||
-                                      existingRating.createdAt ||
-                                      selectedBooking.checkInDate
+                                    existingRating.createdAt ||
+                                    selectedBooking.checkInDate
                                   )}
                                 </small>
                               </div>
