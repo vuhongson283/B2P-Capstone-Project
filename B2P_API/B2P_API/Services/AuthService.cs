@@ -212,6 +212,7 @@ namespace B2P_API.Services
                     };
 
                     user = await _authRepository.CreateUserAsync(user);
+                    await _imageRepository.CreateUserDefaultImageAsync(user.UserId);
                 }
                 else
                 {
