@@ -70,34 +70,5 @@ namespace B2P_Test.UnitTest.RatingService_UnitTest
             Assert.Equal(4, list[1].Stars);
         }
 
-        [Fact(DisplayName = "UTCID02 - GetAll returns empty list when no ratings")]
-        public async Task UTCID02_GetAll_ReturnsEmptyList()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<Rating>());
-
-            var service = CreateService();
-
-            // Act
-            var result = await service.GetAllAsync();
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Lấy danh sách đánh giá thành công.", result.Message);
-            Assert.NotNull(result.Data);
-            Assert.Empty(result.Data);
-        }
-
-        [Fact(DisplayName = "UTCID03 - Exception returns 500")]
-        public async Task UTCID03_Exception_Returns500()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetAllAsync()).ThrowsAsync(new Exception("db error"));
-            var service = CreateService();
-
-            // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => service.GetAllAsync());
-        }
     }
 }

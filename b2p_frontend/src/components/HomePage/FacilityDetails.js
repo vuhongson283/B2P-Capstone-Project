@@ -1112,6 +1112,7 @@ const FacilityDetails = () => {
           updated: new Date().toLocaleTimeString(),
           user: "người dùng",
         });
+        const discount = slot.discount;
       });
 
       setTimeSlots(newSlots);
@@ -1667,8 +1668,8 @@ const FacilityDetails = () => {
                         <td
                           key={slot.timeSlotId}
                           className={`availability-cell ${slot.availableCourtCount > 0
-                              ? "available"
-                              : "unavailable"
+                            ? "available"
+                            : "unavailable"
                             } ${lastUpdateTime ? "updated" : ""}`}
                         >
                           <div className="availability-info">

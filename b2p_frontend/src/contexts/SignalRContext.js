@@ -66,17 +66,15 @@ export const SignalRProvider = ({ children }) => {
                 setIsConnected(true);
                 setConnectionStatus('Connected');
 
-                // ✅ FIXED BookingStatusChanged handler - NO API CALL
+                // Test the connection by listening to a general event
+                // Replace the entire BookingStatusChanged handler with this:
                 newConnection.on('BookingStatusChanged', async (data) => {
                     console.log('🎯 [SignalRProvider] RAW BookingStatusChanged received:', data);
 
                     try {
                         const bookingId = data.bookingId || data.BookingId;
-                        if (window.globalBlockedBookings && window.globalBlockedBookings.has(bookingId.toString())) {
-                            console.log(`🚫 SUPER BLOCKED: Ignoring ALL events for cancelled booking ${bookingId}`);
-                            return; // ✅ IGNORE COMPLETELY
-                        }
 
+                        // ✅ REMOVE API CALL - USE SIGNALR DATA DIRECTLY
                         console.log('🔍 [DEBUG] Processing SignalR data directly:', data);
                         console.log('🔍 [DEBUG] Data keys:', Object.keys(data));
                         console.log('🔍 [DEBUG] Status-related fields:', {
@@ -100,14 +98,6 @@ export const SignalRProvider = ({ children }) => {
 
                         if (isCancellation) {
                             console.log('🚨 [SignalRProvider] CANCELLATION detected:', data);
-
-                            // ✅ IMMEDIATELY BLOCK ALL FUTURE EVENTS FOR THIS BOOKING
-                            if (!window.globalBlockedBookings) {
-                                window.globalBlockedBookings = new Set();
-                            }
-                            window.globalBlockedBookings.add(bookingId.toString());
-
-                            console.log(`🚫 GLOBALLY BLOCKED booking ${bookingId} from future payments`);
 
                             const cancellationNotification = {
                                 bookingId: bookingId,
@@ -150,12 +140,6 @@ export const SignalRProvider = ({ children }) => {
                             }
 
                             return; // Don't process as payment
-                        }
-
-                        // ✅ CHECK IF BOOKING IS GLOBALLY BLOCKED
-                        if (window.globalBlockedBookings && window.globalBlockedBookings.has(bookingId.toString())) {
-                            console.log(`🚫 GLOBALLY BLOCKED: Ignoring payment event for cancelled booking ${bookingId}`);
-                            return; // ✅ COMPLETELY IGNORE THIS EVENT
                         }
 
                         // ✅ OTHERWISE, PROCESS AS PAYMENT (using SignalR data only)
@@ -225,7 +209,6 @@ export const SignalRProvider = ({ children }) => {
                         }
                     }
                 });
-
             } catch (error) {
                 console.error('❌ SignalR Connection Error:', error);
                 console.error('❌ Error details:', error.message);

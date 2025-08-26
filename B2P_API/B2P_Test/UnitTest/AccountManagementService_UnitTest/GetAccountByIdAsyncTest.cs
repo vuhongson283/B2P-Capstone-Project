@@ -19,7 +19,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
         private AccountManagementService CreateService()
         {
             // Giả sử chỉ cần repo, không cần mapper ở constructor
-            return new AccountManagementService(_repoMock.Object, null);
+            return new AccountManagementService(_repoMock.Object, null,null);
         }
 
         [Fact(DisplayName = "UTCID01 - User not found returns 404")]

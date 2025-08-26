@@ -16,7 +16,7 @@ namespace B2P_Test.UnitTest.AccountManagementService_UnitTest
 
         private AccountManagementService CreateService()
         {
-            return new AccountManagementService(_repoMock.Object, null);
+            return new AccountManagementService(_repoMock.Object, null,null);
         }
 
         [Fact(DisplayName = "UTCID01 - User not found returns 404")]

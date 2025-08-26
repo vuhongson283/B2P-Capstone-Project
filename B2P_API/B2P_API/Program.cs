@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OfficeOpenXml;
 using System.Text;
+using Hangfire;
+using Hangfire.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +32,11 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // THÊM SIGNALR
 builder.Services.AddSignalR();
+
+// Add Hangfire services
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(connectionString));
+builder.Services.AddHangfireServer(); // ✅ khởi chạy background server
 
 // FIX CORS cho SignalR - Dùng policy cụ thể
 builder.Services.AddCors(options =>
@@ -211,9 +218,12 @@ builder.Services.AddScoped<IBookingNotificationService, BookingNotificationServi
 
 var app = builder.Build();
 
+// Hangfire dashboard tại /hangfire
+app.UseHangfireDashboard();
+
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
+app.UseSwagger();
     app.UseSwaggerUI();
 //}
 

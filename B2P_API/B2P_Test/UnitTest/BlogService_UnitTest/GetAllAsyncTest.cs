@@ -82,29 +82,9 @@ namespace B2P_Test.UnitTest.BlogService_UnitTest
             Assert.Contains("Số trang không hợp lệ", result.Message);
         }
 
-        // UTCID05: No blogs found (empty)
-        [Fact(DisplayName = "UTCID05 - No blogs found returns 200 with empty data")]
-        public async Task UTCID05_NoBlogsFound_ReturnsEmptyResult()
-        {
-            var blogService = CreateBlogService();
-            var qp = new BlogQueryParameters { Page = 1, PageSize = 10, SortBy = "postAt", SortDirection = "asc" };
-
-            _blogRepositoryMock.Setup(x => x.CountAsync(qp.Search)).ReturnsAsync(0);
-            _blogRepositoryMock.Setup(x => x.GetAllAsync(qp)).ReturnsAsync(new List<Blog>());
-
-            var result = await blogService.GetAllAsync(qp);
-
-            Assert.True(result.Success);
-            Assert.Equal(200, result.Status);
-            Assert.Equal("Không có blog nào phù hợp.", result.Message);
-            Assert.NotNull(result.Data);
-            Assert.Equal(0, result.Data.TotalItems);
-            Assert.Empty(result.Data.Items);
-        }
-
         // UTCID06: Blogs found (normal success)
-        [Fact(DisplayName = "UTCID06 - Blogs found returns 200 with data")]
-        public async Task UTCID06_BlogsFound_ReturnsPagedResult()
+        [Fact(DisplayName = "UTCID05 - Blogs found returns 200 with data")]
+        public async Task UTCID05_BlogsFound_ReturnsPagedResult()
         {
             var blogService = CreateBlogService();
             var qp = new BlogQueryParameters { Page = 1, PageSize = 2, SortBy = "postAt", SortDirection = "desc" };

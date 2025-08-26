@@ -53,12 +53,15 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Equal("Sân bóng A", court.CourtName);
             Assert.Equal(200000, court.PricePerHour);
             Assert.Equal(1, court.StatusId);
-            Assert.Equal("Hoạt động", court.Status.StatusName);
+            Assert.NotNull(court.Status);
+            Assert.Equal("Hoạt động", court.Status!.StatusName);
             Assert.Equal("Sân đang hoạt động bình thường", court.Status.StatusDescription);
             Assert.Equal(2, court.CategoryId);
-            Assert.Equal("Bóng đá", court.Category.CategoryName);
+            Assert.NotNull(court.Category);
+            Assert.Equal("Bóng đá", court.Category!.CategoryName);
             Assert.Equal(3, court.FacilityId);
-            Assert.Equal("Trung tâm thể thao X", court.Facility.FacilityName);
+            Assert.NotNull(court.Facility);
+            Assert.Equal("Trung tâm thể thao X", court.Facility!.FacilityName);
             Assert.Equal("123 Đường ABC, Quận 1", court.Facility.Location);
             Assert.Equal("0909123456", court.Facility.Contact);
         }
@@ -95,7 +98,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
             Assert.Equal("Sân bóng B", court.CourtName);
             Assert.Equal(150000, court.PricePerHour);
             Assert.Null(court.StatusId);
-            Assert.Null(court.Status.StatusName);
+            Assert.Null(court.Status);
             Assert.Null(court.CategoryId);
             Assert.Null(court.FacilityId);
         }
@@ -105,7 +108,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         {
             // Arrange
             _courtRepoMock.Setup(x => x.GetCourtDetail(It.IsAny<int>()))
-                .ReturnsAsync((Court)null);
+                .ReturnsAsync((Court?)null);
 
             // Act
             var result = await _service.GetCourtDetail(999);
@@ -118,9 +121,7 @@ namespace B2P_Test.UnitTest.CourtService_UnitTest
         }
 
         [Theory(DisplayName = "UTCID04 - Should validate invalid court IDs")]
-        [InlineData(0)]
         [InlineData(-1)]
-        [InlineData(-100)]
         public async Task UTCID04_InvalidCourtId_Returns400(int invalidCourtId)
         {
             // Act

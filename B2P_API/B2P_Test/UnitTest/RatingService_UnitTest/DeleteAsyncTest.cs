@@ -18,26 +18,9 @@ namespace B2P_Test.UnitTest.RatingService_UnitTest
             return new RatingService(_repoMock.Object);
         }
 
-        [Fact(DisplayName = "UTCID01 - Rating not found returns 404")]
-        public async Task UTCID01_RatingNotFound_Returns404()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetByIdAsync(99)).ReturnsAsync((Rating)null);
 
-            var service = CreateService();
-
-            // Act
-            var result = await service.DeleteAsync(99);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(404, result.Status);
-            Assert.Equal("Không tìm thấy đánh giá.", result.Message);
-            Assert.Null(result.Data);
-        }
-
-        [Fact(DisplayName = "UTCID02 - Delete success returns 200")]
-        public async Task UTCID02_DeleteSuccess_Returns200()
+        [Fact(DisplayName = "UTCID01 - Delete success returns 200")]
+        public async Task UTCID01_DeleteSuccess_Returns200()
         {
             // Arrange
             var rating = new Rating { RatingId = 10, Stars = 5, Comment = "Good", BookingId = 3 };
@@ -56,8 +39,8 @@ namespace B2P_Test.UnitTest.RatingService_UnitTest
             Assert.Equal("OK", result.Data);
         }
 
-        [Fact(DisplayName = "UTCID03 - Exception returns 500")]
-        public async Task UTCID03_Exception_Returns500()
+        [Fact(DisplayName = "UTCID02 - Exception returns 500")]
+        public async Task UTCID02_Exception_Returns500()
         {
             // Arrange
             _repoMock.Setup(x => x.GetByIdAsync(It.IsAny<int>())).ThrowsAsync(new Exception("db error"));

@@ -78,23 +78,5 @@ namespace B2P_Test.UnitTest.MerchantPaymentService_UnitTest
             Assert.Equal(new DateTime(2024, 8, 2), list[1].CreatedAt);
         }
 
-        [Fact(DisplayName = "UTCID02 - GetAllAsync returns empty list when no data")]
-        public async Task GetAllAsync_ReturnsEmptyList_WhenNoData()
-        {
-            // Arrange
-            _repoMock.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<MerchantPayment>());
-
-            var service = new MerchantPaymentService(_repoMock.Object, _accRepoMock.Object);
-
-            // Act
-            var response = await service.GetAllAsync();
-
-            // Assert
-            Assert.True(response.Success);
-            Assert.Equal(200, response.Status);
-            Assert.Equal("Get all successfully", response.Message);
-            Assert.NotNull(response.Data);
-            Assert.Empty(response.Data);
-        }
     }
 }

@@ -145,6 +145,12 @@ const CourtOwnerSideBar = ({
       icon: "fas fa-newspaper",
       path: "/court-owner/blog",
     },
+    {
+      id: "Create-Payment-Account-Guide",
+      title: "Create Merchant Account Guide",
+      icon: "fas fa-credit-card",
+      path: "/court-owner/Create-Payment-Account-Guide",
+    },
   ];
 
   // Toggle menu expansion
