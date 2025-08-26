@@ -152,7 +152,8 @@ namespace B2P_API.Repository
                 {
                     ts.TimeSlotId,
                     ts.StartTime,
-                    ts.EndTime
+                    ts.EndTime,
+                    ts.Discount
                 })
                 .ToListAsync();
 
@@ -184,7 +185,8 @@ namespace B2P_API.Repository
                     TimeSlotId = slot.TimeSlotId,
                     StartTime = slot.StartTime,
                     EndTime = slot.EndTime,
-                    AvailableCourtCount = courtIds.Count - bookedCount
+                    AvailableCourtCount = courtIds.Count - bookedCount,
+                    Discount = slot.Discount ?? 0
                 });
             }
 
@@ -281,6 +283,7 @@ namespace B2P_API.Repository
         public TimeOnly? EndTime { get; set; }
 
         public int AvailableCourtCount { get; set; }
+        public decimal Discount { get; set; }
     }
 
 

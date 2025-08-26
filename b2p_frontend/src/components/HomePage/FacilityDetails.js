@@ -1112,6 +1112,7 @@ const FacilityDetails = () => {
           updated: new Date().toLocaleTimeString(),
           user: "người dùng",
         });
+        const discount = slot.discount;
       });
 
       setTimeSlots(newSlots);
