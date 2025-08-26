@@ -129,7 +129,15 @@ export default function BookingModal({
     }
     return sum;
   }, 0);
-  const totalPrice = totalCourts * PRICE_PER_COURT;
+  const totalPrice = Object.keys(selectedSlots).reduce((sum, slotId) => {
+  if (selectedSlots[slotId]) {
+    const slot = timeSlots.find(s => s.timeSlotId.toString() === slotId);
+    const quantity = quantities[slotId] || 1;
+    const discountedPrice = PRICE_PER_COURT * (100 - slot.discount) / 100;
+    return sum + (quantity * discountedPrice);
+  }
+  return sum;
+}, 0);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -273,7 +281,7 @@ export default function BookingModal({
                       </div>
 
                       <div className="slot-price">
-                        {formatCurrency(PRICE_PER_COURT)}/sân
+                        {formatCurrency(PRICE_PER_COURT*(100-slot.discount)/100)}/sân
                       </div>
                     </div>
 
