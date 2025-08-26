@@ -183,7 +183,7 @@ namespace B2P_API.Services
             // ✅ Schedule job Hangfire sau 15 phút
             BackgroundJob.Schedule<BookingService>(
                 service => service.CancelIfUnpaidAsync(booking.BookingId),
-                TimeSpan.FromMinutes(1)
+                TimeSpan.FromMinutes(5)
             );
 
 

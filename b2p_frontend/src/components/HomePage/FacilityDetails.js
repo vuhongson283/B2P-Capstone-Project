@@ -1926,12 +1926,7 @@ const FacilityDetails = () => {
             </>
           ) : (
             <div className="empty-state">
-              <div className="empty-icon">⭐</div>
-              <p>Chưa có đánh giá nào cho cơ sở này</p>
-              <button className="btn-write-review">
-                <span className="btn-icon">📝</span>
-                <span>Viết đánh giá đầu tiên</span>
-              </button>
+              
             </div>
           )}
         </div>

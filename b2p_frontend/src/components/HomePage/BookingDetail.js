@@ -21,7 +21,6 @@ export default function BookingDetail({
     facilityData,
     selectedDate,
     selectedSlots,
-    quantities,
     createBooking,
     createPayment,
     createStripePaymentOrder,
@@ -30,7 +29,6 @@ export default function BookingDetail({
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         phone: '',
-        email: '',
         paymentMethod: 'domestic'
     });
     const [errors, setErrors] = useState({});
@@ -45,7 +43,6 @@ export default function BookingDetail({
         if (open) {
             setFormData({
                 phone: '',
-                email: '',
                 paymentMethod: 'domestic'
             });
             setErrors({});
@@ -89,10 +86,6 @@ export default function BookingDetail({
                 newErrors.phone = 'Vui lòng nhập số điện thoại';
             } else if (!/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
                 newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
-            }
-
-            if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-                newErrors.email = 'Email không hợp lệ';
             }
         }
 
@@ -194,10 +187,6 @@ export default function BookingDetail({
 
             if (!userId && formData.phone.trim()) {
                 apiData.phone = formData.phone.trim();
-            }
-
-            if (!userId && formData.email.trim()) {
-                apiData.email = formData.email.trim();
             }
 
             console.log('Final API request data:', apiData);
@@ -313,14 +302,8 @@ export default function BookingDetail({
         }
     };
 
-    // Calculate number of selected slots and courts
+    // Calculate number of selected slots
     const selectedSlotsCount = selectedSlots ? Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId]).length : 0;
-    const totalCourts = selectedSlots && quantities ? Object.keys(selectedSlots).reduce((sum, slotId) => {
-        if (selectedSlots[slotId]) {
-            return sum + (quantities[slotId] || 1);
-        }
-        return sum;
-    }, 0) : 0;
 
     const shouldShowContactForm = !userId;
 
@@ -366,10 +349,6 @@ export default function BookingDetail({
                                 <span className="summary-label">Số khung giờ:</span>
                                 <span className="summary-value">{selectedSlotsCount}</span>
                             </div>
-                            <div className="summary-item">
-                                <span className="summary-label">Tổng số sân:</span>
-                                <span className="summary-value">{totalCourts}</span>
-                            </div>
                         </div>
                         
                         {/* Price Breakdown */}
@@ -395,47 +374,29 @@ export default function BookingDetail({
                         </div>
                     </div>
 
-
                     {/* Contact Form */}
                     {shouldShowContactForm && (
                         <div className="contact-form-section">
                             <h3 className="section-title">
                                 Thông tin liên hệ
                             </h3>
-                            <div className="form-grid">
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="phone">
-                                        Số điện thoại *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        id="phone"
-                                        className={`form-input ${errors.phone ? 'error' : ''}`}
-                                        placeholder="Nhập số điện thoại"
-                                        value={formData.phone}
-                                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                                    />
-                                    {errors.phone && <span className="error-message">{errors.phone}</span>}
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="email">
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        className={`form-input ${errors.email ? 'error' : ''}`}
-                                        placeholder="Nhập email (tùy chọn)"
-                                        value={formData.email}
-                                        onChange={(e) => handleInputChange('email', e.target.value)}
-                                    />
-                                    {errors.email && <span className="error-message">{errors.email}</span>}
-                                </div>
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="phone">
+                                    Số điện thoại *
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    className={`form-input ${errors.phone ? 'error' : ''}`}
+                                    placeholder="Nhập số điện thoại"
+                                    value={formData.phone}
+                                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                                />
+                                {errors.phone && <span className="error-message">{errors.phone}</span>}
                             </div>
 
                             <div className="form-note">
-                                Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email để xác nhận đặt sân.
+                                Chúng tôi sẽ liên hệ với bạn qua số điện thoại để xác nhận đặt sân.
                             </div>
                         </div>
                     )}

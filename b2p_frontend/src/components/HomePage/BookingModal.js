@@ -29,13 +29,11 @@ export default function BookingModal({
   onProceedToDetail
 }) {
   const [selectedSlots, setSelectedSlots] = useState({});
-  const [quantities, setQuantities] = useState({});
 
   // Reset state when modal opens/closes or timeSlots change
   useEffect(() => {
     if (open) {
       setSelectedSlots({});
-      setQuantities({});
     }
   }, [open, timeSlots]);
 
@@ -78,15 +76,12 @@ export default function BookingModal({
   const handleCheckAll = (e) => {
     const checked = e.target.checked;
     let newSelected = {};
-    let newQuantities = {};
 
     availableSlots.forEach(slot => {
       newSelected[slot.timeSlotId] = checked;
-      newQuantities[slot.timeSlotId] = 1;
     });
 
     setSelectedSlots(checked ? newSelected : {});
-    setQuantities(checked ? newQuantities : {});
   };
 
   // Chọn từng slot
@@ -94,21 +89,6 @@ export default function BookingModal({
     setSelectedSlots(prev => ({
       ...prev,
       [slotId]: checked
-    }));
-    setQuantities(prev => ({
-      ...prev,
-      [slotId]: checked ? 1 : prev[slotId]
-    }));
-  };
-
-  // Tăng/giảm số lượng với giới hạn theo số sân trống
-  const handleQuantity = (slotId, value) => {
-    const slot = timeSlots.find(s => s.timeSlotId === slotId);
-    const maxQuantity = slot ? slot.availableCourtCount : 1;
-
-    setQuantities(prev => ({
-      ...prev,
-      [slotId]: Math.max(1, Math.min(value, maxQuantity))
     }));
   };
 
@@ -123,21 +103,15 @@ export default function BookingModal({
 
   const PRICE_PER_COURT = getPricePerHour();
   const selectedSlotsCount = Object.keys(selectedSlots).filter(slotId => selectedSlots[slotId]).length;
-  const totalCourts = Object.keys(selectedSlots).reduce((sum, slotId) => {
+  
+  const totalPrice = Object.keys(selectedSlots).reduce((sum, slotId) => {
     if (selectedSlots[slotId]) {
-      return sum + (quantities[slotId] || 1);
+      const slot = timeSlots.find(s => s.timeSlotId.toString() === slotId);
+      const discountedPrice = PRICE_PER_COURT * (100 - slot.discount) / 100;
+      return sum + discountedPrice; // Mỗi slot chỉ có 1 sân
     }
     return sum;
   }, 0);
-  const totalPrice = Object.keys(selectedSlots).reduce((sum, slotId) => {
-  if (selectedSlots[slotId]) {
-    const slot = timeSlots.find(s => s.timeSlotId.toString() === slotId);
-    const quantity = quantities[slotId] || 1;
-    const discountedPrice = PRICE_PER_COURT * (100 - slot.discount) / 100;
-    return sum + (quantity * discountedPrice);
-  }
-  return sum;
-}, 0);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -186,7 +160,6 @@ export default function BookingModal({
         listSlotId: listSlotId,
         totalPrice,
         selectedSlots,
-        quantities,
         selectedDate,
         facilityData
       });
@@ -284,36 +257,6 @@ export default function BookingModal({
                         {formatCurrency(PRICE_PER_COURT*(100-slot.discount)/100)}/sân
                       </div>
                     </div>
-
-                    {selectedSlots[slot.timeSlotId] && (
-                      <div className="quantity-section">
-                        <label className="quantity-label">Số sân:</label>
-                        <div className="quantity-controls">
-                          <button
-                            className="quantity-btn decrease"
-                            onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) - 1)}
-                            disabled={(quantities[slot.timeSlotId] || 1) <= 1}
-                            aria-label="Giảm số lượng"
-                          >
-                            <span>−</span>
-                          </button>
-                          <span className="quantity-value">
-                            {quantities[slot.timeSlotId] || 1}
-                          </span>
-                          <button
-                            className="quantity-btn increase"
-                            onClick={() => handleQuantity(slot.timeSlotId, (quantities[slot.timeSlotId] || 1) + 1)}
-                            disabled={(quantities[slot.timeSlotId] || 1) >= slot.availableCourtCount}
-                            aria-label="Tăng số lượng"
-                          >
-                            <span>+</span>
-                          </button>
-                        </div>
-                        <div className="slot-subtotal">
-                          {formatCurrency((quantities[slot.timeSlotId] || 1) * PRICE_PER_COURT)}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -328,10 +271,6 @@ export default function BookingModal({
               <div className="summary-item">
                 <span className="summary-label">Khung giờ đã chọn</span>
                 <span className="summary-value">{selectedSlotsCount}</span>
-              </div>
-              <div className="summary-item">
-                <span className="summary-label">Tổng số sân</span>
-                <span className="summary-value">{totalCourts}</span>
               </div>
             </div>
 

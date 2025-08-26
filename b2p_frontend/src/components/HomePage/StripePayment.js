@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { confirmStripePayment } from "../../services/apiService";
+import { confirmStripePayment, getBookingById } from "../../services/apiService";
 import './StripePayment.scss';
 
 const StripePayment = () => {
@@ -14,8 +14,7 @@ const StripePayment = () => {
         cardNumber: '',
         expiry: '',
         cvc: '',
-        name: '',
-        email: ''
+        name: ''
     });
     
     const [cardErrors, setCardErrors] = useState({});
@@ -36,16 +35,56 @@ const StripePayment = () => {
     const amountUSD = urlParams.get('amount_usd'); // Số tiền USD đã chuyển đổi
 
     useEffect(() => {
-        // Simulate loading payment data với dữ liệu từ URL parameters
-        setTimeout(() => {
-            setPaymentData({
-                paymentId: paymentId || 'pi_3OxxxxxxxxxxxxxFake123',
-                bookingId: bookingId || '12345',
-                amount: parseFloat(amountUSD) || 25.00, // Lấy từ URL hoặc default
-                currency: 'USD'
-            });
-            setLoading(false);
-        }, 1500);
+        // Kiểm tra trạng thái booking trước khi cho phép thanh toán
+        const checkBookingStatus = async () => {
+            if (!bookingId) {
+                setError('Không tìm thấy thông tin booking');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const bookingResponse = await getBookingById(bookingId);
+                if (bookingResponse.success && bookingResponse.data) {
+                    const bookingStatus = bookingResponse.data.status;
+                    
+                    // Kiểm tra nếu booking đã Cancelled hoặc Paid
+                    if (bookingStatus === 'Cancelled' || bookingStatus === 'Paid') {
+                        // Hiển thị thông báo giao dịch đã kết thúc
+                        setPaymentData({
+                            bookingId: bookingId,
+                            status: bookingStatus,
+                            facilityName: bookingResponse.data.facilityName,
+                            totalPrice: bookingResponse.data.totalPrice
+                        });
+                        setError(`Giao dịch đã kết thúc. Trạng thái booking: ${bookingStatus === 'Paid' ? 'Đã thanh toán' : 'Đã hủy'}`);
+                        setLoading(false);
+                        
+                        // Chuyển hướng về trang chủ sau 3 giây
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 3000);
+                        return;
+                    }
+                }
+            } catch (bookingError) {
+                console.error('Error checking booking status:', bookingError);
+                // Nếu lỗi khi check booking, vẫn cho phép tiếp tục (fallback)
+            }
+
+            // Nếu booking hợp lệ, tiếp tục với payment data
+            setTimeout(() => {
+                setPaymentData({
+                    paymentId: paymentId || 'pi_3OxxxxxxxxxxxxxFake123',
+                    bookingId: bookingId || '12345',
+                    amount: parseFloat(amountUSD) || 25.00,
+                    currency: 'USD'
+                });
+                setLoading(false);
+            }, 1500);
+        };
+
+        checkBookingStatus();
     }, [paymentId, bookingId, amountUSD, amountVND]);
 
     // Format card number with spaces
@@ -144,13 +183,6 @@ const StripePayment = () => {
             errors.name = 'Tên trên thẻ không hợp lệ';
         }
         
-        // Email validation
-        if (!cardData.email) {
-            errors.email = 'Vui lòng nhập email';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cardData.email)) {
-            errors.email = 'Email không hợp lệ';
-        }
-        
         setCardErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -162,9 +194,7 @@ const StripePayment = () => {
             cleanCardNumber === VALID_CARD.number &&
             cardData.expiry === VALID_CARD.expiry &&
             cardData.cvc === VALID_CARD.cvc &&
-            cardData.name === VALID_CARD.name &&
-            cardData.email &&
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cardData.email)
+            cardData.name === VALID_CARD.name
         );
     };
 
@@ -231,27 +261,44 @@ const StripePayment = () => {
                 <div className="modal-card">
                     <div className="text-center">
                         <div className="error-icon">
-                            <span>❌</span>
+                            <span>⚠️</span>
                         </div>
-                        <h2 className="text-2xl font-bold text-red-600 mb-4">Lỗi</h2>
+                        <h2 className="text-2xl font-bold text-orange-600 mb-4">
+                            {error.includes('Giao dịch đã kết thúc') ? 'Giao dịch đã kết thúc' : 'Lỗi'}
+                        </h2>
                         <p className="text-gray-700 mb-6">{error}</p>
-                        <div className="space-x-4">
-                            <button
-                                onClick={() => {
-                                    setError(null);
-                                    setProcessing(false);
-                                }}
-                                className="btn-primary"
-                            >
-                                Thử lại
-                            </button>
-                            <button
-                                onClick={() => window.close()}
-                                className="btn-secondary"
-                            >
-                                Đóng
-                            </button>
-                        </div>
+                        {error.includes('Giao dịch đã kết thúc') ? (
+                            <div className="space-y-4">
+                                <div className="info-box warning">
+                                    <span>🏠</span>
+                                    <p>Bạn sẽ được chuyển hướng về trang chủ trong giây lát...</p>
+                                </div>
+                                <button
+                                    onClick={() => window.location.href = '/'}
+                                    className="btn-primary"
+                                >
+                                    Về trang chủ ngay
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-x-4">
+                                <button
+                                    onClick={() => {
+                                        setError(null);
+                                        setProcessing(false);
+                                    }}
+                                    className="btn-primary"
+                                >
+                                    Thử lại
+                                </button>
+                                <button
+                                    onClick={() => window.close()}
+                                    className="btn-secondary"
+                                >
+                                    Đóng
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -271,15 +318,9 @@ const StripePayment = () => {
                         <div className="success-details">
                             <p className="text-gray-700 mb-6">
                                 Số tiền: <strong>${paymentData.amount} USD</strong> 
-                                
                             </p>
                         </div>
-                        <div className="success-info">
-                            <div className="info-box success">
-                                <span>📧</span>
-                                <p>Email xác nhận đã được gửi tới: <strong>{cardData.email}</strong></p>
-                            </div>
-                        </div>
+                        
                         <div className="action-buttons mt-6">
                             <button
                                 onClick={handleBackToBooking}
@@ -410,23 +451,6 @@ const StripePayment = () => {
                                     <p className="field-error">{cardErrors.name}</p>
                                 )}
                             </div>
-
-                            <div className="field-group">
-                                <label className="field-label">
-                                    Email *
-                                </label>
-                                <input
-                                    type="email"
-                                    placeholder="example@email.com"
-                                    className={`field-input ${cardErrors.email ? 'error' : ''}`}
-                                    value={cardData.email}
-                                    onChange={(e) => handleCardInputChange('email', e.target.value)}
-                                    disabled={processing}
-                                />
-                                {cardErrors.email && (
-                                    <p className="field-error">{cardErrors.email}</p>
-                                )}
-                            </div>
                             
                             {/* Validation Status */}
                             {Object.keys(cardData).some(key => cardData[key]) && (
@@ -504,8 +528,6 @@ const StripePayment = () => {
                             <h3 className="summary-title">Tóm tắt thanh toán</h3>
                             
                             <div className="summary-content">
-                                
-                                
                                 <div className="summary-row total">
                                     <span className="summary-label">Số tiền thanh toán:</span>
                                     <span className="summary-value amount">
