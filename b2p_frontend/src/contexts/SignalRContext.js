@@ -73,6 +73,10 @@ export const SignalRProvider = ({ children }) => {
 
                     try {
                         const bookingId = data.bookingId || data.BookingId;
+                        const cusName = data.customerName || data.CustomerName;
+
+
+
 
                         // ✅ REMOVE API CALL - USE SIGNALR DATA DIRECTLY
                         console.log('🔍 [DEBUG] Processing SignalR data directly:', data);
@@ -148,10 +152,10 @@ export const SignalRProvider = ({ children }) => {
                         const paymentNotification = {
                             bookingId: bookingId,
                             courtName: data.courtName || data.CourtName || `Booking #${bookingId}`,
-                            customerName: data.customerName || data.CustomerName || 'Khách hàng',
+                            customerName: cusName,
                             date: data.date || data.Date || dayjs().format('DD/MM/YYYY'),
-                            timeSlot: data.timeSlot || data.TimeSlot || 'Unknown time',
-                            totalAmount: data.totalAmount || data.TotalAmount || 0,
+                            timeSlot: data.timeSlot || data.TimeSlot,
+                            totalAmount: data.totalAmount || data.TotalAmount,
                             status: 'paid',
                             statusId: 7,
                             action: 'paid'
