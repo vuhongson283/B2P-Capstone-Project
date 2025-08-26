@@ -144,7 +144,7 @@ namespace B2P_API.Services
 
                 // Nếu Discount > 0 thì lấy Discount, ngược lại lấy PricePerHour
                 decimal finalPrice = (slot.Discount.HasValue && slot.Discount.Value > 0)
-                    ? slot.Discount.Value
+                    ? ((court.PricePerHour ?? 0) * (100 - slot.Discount.Value) / 100)
                     : (court.PricePerHour ?? 0);
 
                 // ✅ THÊM DÒNG NÀY
