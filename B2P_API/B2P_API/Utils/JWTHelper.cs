@@ -38,7 +38,7 @@ namespace B2P_API.Utils
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var expiresAt = DateTime.UtcNow.AddMinutes(15); // 15 phút
+            var expiresAt = DateTime.UtcNow.AddMinutes(60); // 60 phút
 
             var claims = new List<Claim>
             {

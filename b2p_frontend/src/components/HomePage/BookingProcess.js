@@ -235,7 +235,7 @@ export default function BookingProcess() {
         };
       case 'paid':
         return {
-          text: 'Đã thanh toán',
+          text: 'Đã thanh toán cọc (30%)',
           className: 'status-paid',
           description: 'Đã thanh toán thành công'
         };
